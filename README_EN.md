@@ -1,122 +1,112 @@
-<div align="center">
+<p align="center">
+  <img src="docs/icon.png" width="120" height="120" alt="RikkaHub Agents" style="border-radius: 24px" />
+</p>
 
-<img src="docs/icon.png" width="96" height="96" alt="RikkaHub Agents" style="border-radius: 24px" />
+<h1 align="center">RikkaHub Agents</h1>
 
-# RikkaHub Agents
+<p align="center">
+  <b>🤖 AI-maintained · ❌ NOT official · ❌ NOT original</b>
+</p>
 
-**🤖 AI-maintained fork · ❌ NOT official · ❌ NOT original**
+<p align="center">
+  <a href="README_EN.md">English</a> · <a href="README.md">中文</a>
+</p>
 
-[**English**](README_EN.md) | [**中文**](README.md)
+<p align="center">
+  <a href="https://github.com/xiwangone/rikkahub-agents/releases/tag/v2.4.3">
+    <img src="https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat-square&label=version&color=2196F3" alt="Version" />
+  </a>
+  <a href="https://github.com/xiwangone/rikkahub-agents/releases">
+    <img src="https://img.shields.io/github/downloads/xiwangone/rikkahub-agents/total?style=flat-square&label=downloads&color=4CAF50" alt="Downloads" />
+  </a>
+  <a href="https://github.com/xiwangone/rikkahub-agents/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-AGPL--3.0-FF5722?style=flat-square" alt="License" />
+  </a>
+  <img src="https://img.shields.io/badge/Android-8%2B-3DDC84?style=flat-square&logo=android" alt="Android" />
+  <img src="https://img.shields.io/badge/arch-arm64%20%7C%20universal-9C27B0?style=flat-square" alt="Arch" />
+</p>
 
-</div>
+---
+
+## 📥 Download
+
+<p align="center">
+  <a href="https://github.com/xiwangone/rikkahub-agents/releases/tag/v2.4.3">
+    <img src="https://img.shields.io/badge/⬇️_Download_APK-2196F3?style=for-the-badge&logo=android" alt="Download" />
+  </a>
+</p>
+
+| Version | Size | Description |
+|:-------:|:----:|:-----------|
+| 📱 **arm64-v8a** | ~55 MB | ✅ **Recommended — for most phones** |
+| 🌐 **universal** | ~76 MB | Works on all devices |
+
+> 💡 Not sure? Download **arm64-v8a** — 90% of phones use this architecture.
 
 ---
 
 ## 🚨 DISCLAIMER
 
-| Project | Link | Description |
-|---------|------|-------------|
-| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | Official upstream, source of this code |
-| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | Original fork this repo is based on |
-| 🟡 **This repo (AI-maintained)** | https://github.com/xiwangone/rikkahub-agents | AI auto-merged + compiled |
+| Project | Link |
+|:--------|:-----|
+| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub |
+| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent |
+| 🟡 **This repo (AI-maintained)** | https://github.com/xiwangone/rikkahub-agents |
 
-> ### 🚨🚨🚨 WARNING
+> ⚠️ **This repository is AI-maintained.** Code is auto-merged from official upstream and original fork, compiled via GitHub Actions.
 >
-> **This repository is AI-maintained.** Code is pulled from the official upstream and original fork, auto-merged, and compiled via GitHub Actions.
->
-> - **❌ NOT official release** — Not from the RikkaHub team
-> - **❌ NOT original release** — Not from the ExTV developer
-> - ✅ Code sources are trustworthy (official + original), but compilation and release are **AI-automated**
-> - **⚠️ Use at your own risk. No quality guarantee.**
-> - **💡 For issues, please use [Official](https://github.com/rikkahub/rikkahub) or [Original Fork](https://github.com/ExTV/rikkahub-agent) first.**
+> - ❌ **NOT official release** — Not from the RikkaHub team
+> - ❌ **NOT original release** — Not from the ExTV developer
+> - ✅ Code sources are trustworthy, but compilation & release are AI-automated
+> - ⚠️ Use at your own risk. No quality guarantee.
 
 ---
 
-## Overview
+## ✨ Features
 
-A fork that turns the native Android LLM chat client into a full on-device agent: **80+ device tools**, AI-driven workflows, scheduled jobs, an in-app browser the AI controls, SSH, screen automation, file manager, music player, voice transcription, downloadable on-device LLMs, and a remote Telegram bot. All features start disabled.
-
-> *"Export my todos to a Markdown file in the workspace."*
-> *"Take a screenshot every 2 hours for the next 4 hours."*
-> *"When I receive a delivery notification, screenshot and save it."*
-> *"When I connect to my work WiFi, disable the personal Telegram bot."*
-> *"Write a Python script in Termux to check the weather forecast."*
-
-Each is a one-line setup.
-
----
-
-## Features
-
-### Device Control
-Tap, swipe, scroll, type, screenshot, open apps, adjust brightness/volume, check battery/WiFi/signal/location/sensors, read contacts & SMS, send SMS, set wallpaper, NFC, ZIP management. **80+ tools**.
-
-### Workflows & Schedules
-**Workflows** — Natural language triggers & actions: *"When I get home, silence the ringer."* 19 triggers, 14 conditions.
-
-**Schedules** — *"Every Monday at 8am"*, *"Every 2 hours"*. Survives reboots.
-
-### Telegram Bot
-Chat with your assistant from anywhere. Send text, photos, PDFs, voice notes. Yes/No approval buttons.
-
-### In-App Browser
-A real browser driven by AI. Auto-clicks cookie banners, fills search boxes, scrolls, reads pages.
-
-### File Manager
-Find, read, save, copy, move, rename, delete files.
-
-### SSH
-Save servers, run commands, upload files, pull backups — all from chat.
-
-### Sub-Agents
-Long tasks dispatch to focused sub-agents in parallel.
-
-### MCP Servers
-Connect Model Context Protocol servers.
-
-### Safety & Privacy
-1. Per-assistant toggles — all tools start disabled
-2. Per-call approval for modifying actions
-3. HARDLINE floor — dangerous commands blocked unconditionally
+| Feature | Description |
+|:--------|:------------|
+| 🤖 **80+ Device Tools** | Tap, swipe, screenshot, open apps, adjust volume, notifications… |
+| ⚡ **Workflow Engine** | 19 triggers + 14 conditions, natural language automation |
+| ⏰ **Scheduler** | "Every Monday 8am", "Every 2 hours", survives reboots |
+| 💬 **Telegram Bot** | Remote control, send images/PDF/voice, AI approval buttons |
+| 🌐 **In-App Browser** | AI-driven web browsing, live screenshot streaming |
+| 📁 **File Manager** | Find, edit, copy, move files — one sentence |
+| 🔗 **SSH** | Save servers, run commands, transfer files from chat |
+| 🧩 **Sub-Agents** | Complex tasks parallelized into sub-agents |
+| 🔌 **MCP Servers** | Connect Model Context Protocol for extended capabilities |
+| 🛡️ **Privacy & Safety** | Tools off by default, approval required, dangerous commands blocked |
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Download APK
-From **Releases** or **Actions** page.
+### 1️⃣ Install
+Download APK from [Releases](https://github.com/xiwangone/rikkahub-agents/releases) and install.
 
-### 2. Install
-Open APK, allow unknown sources.
+> Package name: `excp.rikkahub.agents` — can coexist with official/original versions.
 
-### 3. Configure
-Settings → Providers → Add → OpenAI-compatible or LiteRT local model.
+### 2️⃣ Configure LLM
+**Settings → Providers → Add** → OpenAI-compatible or built-in LiteRT local model.
 
-### 4. Enable Tools (optional)
-Settings → Assistants → Local Tools.
+### 3️⃣ Enable Features (optional)
+**Settings → Assistants → Local Tools** → toggle as needed.
 
----
-
-## Requirements
-
-| | |
-|---|---|
-| **Architecture** | arm64 or x86_64 |
-| **Android** | 8.0+ (API 26) |
-| **Storage** | ~80 MB |
+### 4️⃣ Telegram Bot (optional)
+Get a token from [@BotFather](https://t.me/BotFather), tell the assistant to configure it.
 
 ---
 
-## Credits
+## 🔗 Related Links
 
-- **[RikkaHub (Official)](https://github.com/rikkahub/rikkahub)** — Upstream project
-- **[ExTV/rikkahub-agent (Original Fork)](https://github.com/ExTV/rikkahub-agent)** — Original fork
-- **GitHub Actions** — Auto build & release
+- [RikkaHub (Official)](https://github.com/rikkahub/rikkahub)
+- [ExTV/rikkahub-agent (Original Fork)](https://github.com/ExTV/rikkahub-agent)
+- [GitHub Actions](https://github.com/xiwangone/rikkahub-agents/actions) — Build logs
 
 ---
 
-## License
+## 📄 License
 
-**GNU Affero General Public License v3.0 (AGPL-3.0)**
+**GNU Affero General Public License v3.0**
 
 See [LICENSE](LICENSE).
