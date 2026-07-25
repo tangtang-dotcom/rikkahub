@@ -361,7 +361,7 @@ class DoctorChecks(
                 capabilityRow(
                     id = "perm.background_location",
                     category = DoctorCategory.Permissions,
-                    label = "Background location",
+                    label = "后台定位",
                     cap = Capability.BackgroundLocation,
                     enabled = enabled,
                     granted = PermissionHelper.hasRuntime(context, listOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION)),
@@ -398,7 +398,7 @@ class DoctorChecks(
                                 nfcNeeders.joinToString(", ") { it.shortName() } + ".",
                         severity = if (nfcNeeders.isEmpty()) Severity.INFO else Severity.WARN,
                         fix = if (nfcNeeders.isEmpty()) null else FixAction.OpenIntent(
-                            label = "Open NFC settings",
+                            label = "打开 NFC 设置",
                             intent = android.content.Intent(android.provider.Settings.ACTION_NFC_SETTINGS)
                                 .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                         ),
@@ -468,7 +468,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "service.telegram_token",
                     category = DoctorCategory.Services,
-                    label = "Telegram bot token",
+                    label = "Telegram Bot Token",
                     // Don't render any portion of the token — Telegram bot tokens are
                     // formatted "<bot_id>:<secret>" and even the first 6 chars reveal the
                     // bot id, which an attacker could use to enumerate bot endpoints.
@@ -484,7 +484,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "service.telegram_running",
                     category = DoctorCategory.Services,
-                    label = "Telegram bot foreground service",
+                    label = "Telegram Bot 前台服务",
                     detail = if (TelegramBotService.isRunning) "Service is running."
                     else "Service is stopped. Telegram messages won't reach the assistant. The watchdog will retry on the next 30-min health pass.",
                     severity = when {
@@ -499,7 +499,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "service.telegram_off",
                     category = DoctorCategory.Services,
-                    label = "Telegram bot",
+                    label = "Telegram Bot",
                     detail = "Disabled — that's fine if you don't use Telegram.",
                     severity = Severity.INFO,
                 )
@@ -512,7 +512,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "service.accessibility_bound",
                     category = DoctorCategory.Services,
-                    label = "AccessibilityService bound",
+                    label = "无障碍服务已绑定",
                     detail = if (AccessibilityServiceHandle.isRunning())
                         "Service object is alive — ${accNeeders.joinToString(", ") { it.shortName() }} can run."
                     else if (PermissionHelper.hasAccessibilityService(context))
@@ -537,7 +537,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "service.notification_listener_bound",
                     category = DoctorCategory.Services,
-                    label = "NotificationListener bound",
+                    label = "通知监听已绑定",
                     detail = if (NotificationListenerHandle.isBound())
                         "Listener is bound — ${nlNeeders.joinToString(", ") { it.shortName() }} can run."
                     else if (PermissionHelper.hasNotificationListener(context))
@@ -583,7 +583,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "assistant.default",
                     category = DoctorCategory.AssistantInfo,
-                    label = "Default assistant",
+                    label = "默认助手",
                     detail = if (assistants.isEmpty())
                         "No assistants configured — the app won't be able to start a conversation."
                     else
@@ -600,7 +600,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "assistant.count",
                     category = DoctorCategory.AssistantInfo,
-                    label = "Assistant count",
+                    label = "助手数量",
                     detail = "${assistants.size} assistant(s) configured.",
                     severity = Severity.INFO,
                     fix = FixAction.OpenAppRoute("Open Assistants", AppRouteKey.Assistant),
@@ -648,7 +648,7 @@ class DoctorChecks(
             DoctorCheck(
                 id = "db.version",
                 category = DoctorCategory.Database,
-                label = "Database schema version",
+                label = "数据库版本",
                 // Room refuses to open the DB unless the stored version matches the compiled schema;
                 // if we got here, version is the live schema version (migrations ran successfully).
                 detail = if (version > 0) "v$version — migrations completed, schema is consistent."
@@ -673,7 +673,7 @@ class DoctorChecks(
             DoctorCheck(
                 id = "db.integrity",
                 category = DoctorCategory.Database,
-                label = "DB integrity_check",
+                label = "数据库完整性",
                 detail = when (integrity) {
                     null -> "Integrity check timed out or failed."
                     "ok" -> "PRAGMA integrity_check returned ok."
@@ -681,7 +681,7 @@ class DoctorChecks(
                 },
                 severity = if (integrity == "ok") Severity.OK else Severity.FAIL,
                 fix = if (mentionsFts) FixAction.AutoFix(
-                    label = "Rebuild search index",
+                    label = "重建搜索索引",
                     run = {
                         runCatching {
                             val n = conversationRepository.repairAndRebuildIndexes()
@@ -704,7 +704,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "db.workflows",
                     category = DoctorCategory.Database,
-                    label = "Workflows",
+                    label = "工作流",
                     detail = "${all.size} total, $enabled enabled.",
                     severity = Severity.INFO,
                     fix = if (all.isNotEmpty())
@@ -721,7 +721,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "db.scheduled_jobs",
                     category = DoctorCategory.Database,
-                    label = "Scheduled jobs",
+                    label = "定时任务",
                     detail = "${all.size} total, $enabled enabled.",
                     severity = Severity.INFO,
                     fix = if (all.isNotEmpty())
@@ -799,7 +799,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "net.providers",
                     category = DoctorCategory.Network,
-                    label = "LLM providers configured",
+                    label = "LLM 提供商",
                     detail = "$configured provider(s) configured (API key set, AICore enabled, or local model loaded) out of ${provs.size} total.",
                     severity = if (configured > 0) Severity.OK else Severity.WARN,
                     fix = FixAction.OpenAppRoute("Open Providers", AppRouteKey.SettingProvider),
@@ -840,7 +840,7 @@ class DoctorChecks(
                     DoctorCheck(
                         id = "net.litert_accel",
                         category = DoctorCategory.Network,
-                        label = "LiteRT accelerator",
+                        label = "LiteRT 加速器",
                         detail = detail,
                         severity = severity,
                         fix = FixAction.OpenAppRoute(
@@ -866,7 +866,7 @@ class DoctorChecks(
                         DoctorCheck(
                             id = "net.litert_perf",
                             category = DoctorCategory.Network,
-                            label = "LiteRT performance",
+                            label = "LiteRT 性能",
                             detail = "Last-known per-model rates (character-based estimate, " +
                                 "~10% accurate for English text):\n$detail",
                             severity = Severity.INFO,
@@ -890,7 +890,7 @@ class DoctorChecks(
                         DoctorCheck(
                             id = "net.litert_vision",
                             category = DoctorCategory.Network,
-                            label = "LiteRT vision encoder",
+                            label = "LiteRT 视觉编码器",
                             detail = "Vision encoder unavailable on this device for: " +
                                 visionUnavailable.joinToString(", ") +
                                 ". These multimodal models run in text-only mode — chat works, " +
@@ -917,7 +917,7 @@ class DoctorChecks(
             DoctorCheck(
                 id = "net.dns",
                 category = DoctorCategory.Network,
-                label = "DNS resolution",
+                label = "DNS 解析",
                 detail = if (dnsOk) "dns.google resolved within 2.5 s."
                 else "DNS resolution failed or timed out. NetworkChangeMonitor evicts the OkHttp pool on network changes — if this stays red, check connectivity.",
                 severity = if (dnsOk) Severity.OK else Severity.WARN,
@@ -939,7 +939,7 @@ class DoctorChecks(
             DoctorCheck(
                 id = "termux.installed",
                 category = DoctorCategory.Termux,
-                label = "Termux installed",
+                label = "Termux 已安装",
                 detail = if (termuxInstalled) "com.termux is installed on this device."
                 else "Termux not installed. Required by: ${needers.joinToString(", ") { it.shortName() }}.",
                 severity = if (termuxInstalled) Severity.OK else Severity.WARN,
@@ -1054,12 +1054,12 @@ class DoctorChecks(
             DoctorCheck(
                 id = "maint.cache_size",
                 category = DoctorCategory.Maintenance,
-                label = "App cache size",
+                label = "应用缓存",
                 detail = "Cache is using ${humanBytes(cacheBytes)}. " +
                     if (cacheBytes > 200L * 1024 * 1024) "Consider clearing — over 200 MB." else "Within normal range.",
                 severity = if (cacheBytes > 500L * 1024 * 1024) Severity.WARN else Severity.OK,
                 fix = FixAction.AutoFix(
-                    label = "Clear cache",
+                    label = "清除缓存",
                     run = {
                         val freed = clearDirectoryContents(context.cacheDir)
                         AutoFixResult(ok = true, message = "Freed ${humanBytes(freed)}.")
@@ -1075,7 +1075,7 @@ class DoctorChecks(
         DoctorCheck(
             id = "diag.app",
             category = DoctorCategory.Diagnostics,
-            label = "App build",
+            label = "构建版本",
             detail = "RikkaHub-agent ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) — debug=${BuildConfig.DEBUG}",
             severity = Severity.INFO,
         ),
