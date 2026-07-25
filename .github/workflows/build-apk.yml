@@ -60,7 +60,7 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: 发送微信通知
-        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
+        if: failure() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
         env:
           STATUS: ${{ job.status }}
         run: |
