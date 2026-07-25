@@ -193,7 +193,7 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.notifications",
                 category = DoctorCategory.Permissions,
-                label = "Post-notifications permission",
+                label = "发送通知权限",
                 cap = Capability.Notifications,
                 enabled = enabled,
                 granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -207,7 +207,7 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.location",
                 category = DoctorCategory.Permissions,
-                label = "Fine location permission",
+                label = "精确定位权限",
                 cap = Capability.FineLocation,
                 enabled = enabled,
                 granted = PermissionHelper.hasRuntime(context, listOf(Manifest.permission.ACCESS_FINE_LOCATION)),
@@ -220,14 +220,14 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.battery_opt",
                 category = DoctorCategory.Permissions,
-                label = "Battery optimisation whitelist",
+                label = "电池优化白名单",
                 cap = Capability.BatteryWhitelist,
                 enabled = enabled,
                 granted = PermissionHelper.ignoresBatteryOptimizations(context),
                 grantedDetail = "App is whitelisted — background services run reliably.",
                 missingDetail = "Doze can kill the Telegram bot, cron jobs, and workflows.",
                 fix = FixAction.OpenIntent(
-                    label = "Request whitelist",
+                    label = "申请白名单",
                     intent = PermissionHelper.requestIgnoreBatteryOptimizationsIntent(context),
                 ),
             )
@@ -236,14 +236,14 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.notification_listener",
                 category = DoctorCategory.Permissions,
-                label = "Notification Listener access",
+                label = "通知监听访问",
                 cap = Capability.NotificationListener,
                 enabled = enabled,
                 granted = PermissionHelper.hasNotificationListener(context),
                 grantedDetail = "Granted — listener can read notifications.",
                 missingDetail = "Not granted. The notification_received trigger and notification tools won't work.",
                 fix = FixAction.OpenIntent(
-                    label = "Open settings",
+                    label = "打开设置",
                     intent = PermissionHelper.notificationListenerSettingsIntent(),
                 ),
             )
@@ -252,14 +252,14 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.accessibility",
                 category = DoctorCategory.Permissions,
-                label = "Accessibility Service",
+                label = "无障碍服务",
                 cap = Capability.Accessibility,
                 enabled = enabled,
                 granted = PermissionHelper.hasAccessibilityService(context),
                 grantedDetail = "Enabled in system settings.",
                 missingDetail = "Not enabled. take_screenshot, swipe, scroll, click_at, and gesture tools won't work.",
                 fix = FixAction.OpenIntent(
-                    label = "Open settings",
+                    label = "打开设置",
                     intent = PermissionHelper.accessibilitySettingsIntent(),
                 ),
             )
@@ -269,14 +269,14 @@ class DoctorChecks(
                 capabilityRow(
                     id = "perm.all_files",
                     category = DoctorCategory.Permissions,
-                    label = "All-files access",
+                    label = "所有文件访问",
                     cap = Capability.AllFiles,
                     enabled = enabled,
                     granted = PermissionHelper.hasAllFilesAccess(context),
                     grantedDetail = "Granted — file_read / file_write tools can reach any path.",
                     missingDetail = "Not granted. File tools are restricted to scoped storage.",
                     fix = FixAction.OpenIntent(
-                        label = "Open settings",
+                        label = "打开设置",
                         intent = PermissionHelper.allFilesAccessIntent(context),
                     ),
                 )
@@ -287,7 +287,7 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.send_sms",
                 category = DoctorCategory.Permissions,
-                label = "Send-SMS permission",
+                label = "发送短信权限",
                 cap = Capability.SendSms,
                 enabled = enabled,
                 granted = PermissionHelper.hasRuntime(context, listOf(Manifest.permission.SEND_SMS)),
@@ -304,7 +304,7 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.overlay",
                 category = DoctorCategory.Permissions,
-                label = "Display over other apps",
+                label = "在其他应用上层显示",
                 cap = Capability.Overlay,
                 enabled = enabled,
                 granted = android.provider.Settings.canDrawOverlays(context),
@@ -317,7 +317,7 @@ class DoctorChecks(
             capabilityRow(
                 id = "perm.write_settings",
                 category = DoctorCategory.Permissions,
-                label = "Modify system settings",
+                label = "修改系统设置",
                 cap = Capability.WriteSettings,
                 enabled = enabled,
                 granted = PermissionHelper.hasWriteSettings(context),
@@ -331,7 +331,7 @@ class DoctorChecks(
                 capabilityRow(
                     id = "perm.bluetooth_connect",
                     category = DoctorCategory.Permissions,
-                    label = "Bluetooth Connect",
+                    label = "蓝牙连接",
                     cap = Capability.BluetoothConnect,
                     enabled = enabled,
                     granted = PermissionHelper.hasRuntime(context, listOf(Manifest.permission.BLUETOOTH_CONNECT)),
@@ -346,7 +346,7 @@ class DoctorChecks(
                 capabilityRow(
                     id = "perm.nearby_wifi",
                     category = DoctorCategory.Permissions,
-                    label = "Nearby WiFi devices",
+                    label = "附近 WiFi 设备",
                     cap = Capability.NearbyWifi,
                     enabled = enabled,
                     granted = PermissionHelper.hasRuntime(context, listOf(Manifest.permission.NEARBY_WIFI_DEVICES)),
@@ -524,7 +524,7 @@ class DoctorChecks(
                         else -> Severity.WARN
                     },
                     fix = if (!AccessibilityServiceHandle.isRunning()) FixAction.OpenIntent(
-                        label = "Open settings",
+                        label = "打开设置",
                         intent = PermissionHelper.accessibilitySettingsIntent(),
                     ) else null,
                 )
@@ -549,7 +549,7 @@ class DoctorChecks(
                         else -> Severity.WARN
                     },
                     fix = if (!NotificationListenerHandle.isBound()) FixAction.OpenIntent(
-                        label = "Open settings",
+                        label = "打开设置",
                         intent = PermissionHelper.notificationListenerSettingsIntent(),
                     ) else null,
                 )

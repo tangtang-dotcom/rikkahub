@@ -93,8 +93,8 @@ object PermissionInventory {
                 val granted = Settings.canDrawOverlays(context)
                 return Row(
                     id = perm,
-                    label = "Display over other apps",
-                    description = "Lets RikkaHub draw the \"agent is working\" overlay while automation is in progress.",
+                    label = "在其他应用上层显示",
+                    description = "允许 RikkaHub 在自动化执行时显示\"Agent 工作\"悬浮窗。",
                     status = if (granted) Status.GRANTED else Status.DENIED,
                     group = Group.SpecialAccess,
                     grant = GrantAction.SystemSettings(
@@ -106,8 +106,8 @@ object PermissionInventory {
                 val granted = Settings.System.canWrite(context)
                 return Row(
                     id = perm,
-                    label = "Modify system settings",
-                    description = "Lets the agent change brightness via set_brightness.",
+                    label = "修改系统设置",
+                    description = "允许 Agent 通过 set_brightness 调节亮度。",
                     status = if (granted) Status.GRANTED else Status.DENIED,
                     group = Group.SpecialAccess,
                     grant = GrantAction.SystemSettings(
@@ -120,7 +120,7 @@ object PermissionInventory {
                 val granted = nm?.isNotificationPolicyAccessGranted == true
                 return Row(
                     id = perm,
-                    label = "Do Not Disturb access",
+                    label = "勿扰模式访问",
                     description = "Lets the agent change ringer mode and per-stream volume.",
                     status = if (granted) Status.GRANTED else Status.DENIED,
                     group = Group.SpecialAccess,
@@ -134,8 +134,8 @@ object PermissionInventory {
                 val granted = pwm?.isIgnoringBatteryOptimizations(context.packageName) == true
                 return Row(
                     id = perm,
-                    label = "Ignore battery optimizations",
-                    description = "Keeps the Telegram bot foreground service responsive when the screen is off.",
+                    label = "忽略电池优化",
+                    description = "保持 Telegram Bot 在息屏时正常运行。",
                     status = if (granted) Status.GRANTED else Status.DENIED,
                     group = Group.SpecialAccess,
                     // ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS pops a system dialog asking
@@ -151,7 +151,7 @@ object PermissionInventory {
                         PackageManager.PERMISSION_GRANTED
                     Row(
                         id = perm,
-                        label = "Post notifications",
+                        label = "发送通知",
                         description = "Required so the bot foreground service and TTS / progress notifications can show.",
                         status = if (granted) Status.GRANTED else Status.DENIED,
                         group = Group.Runtime,
@@ -224,7 +224,7 @@ object PermissionInventory {
         ) ?: "").split(":").any { it.equals(component, ignoreCase = true) }
         return Row(
             id = "rikkahub.SERVICE_ACCESSIBILITY",
-            label = "Screen automation (Accessibility)",
+            label = "屏幕自动化（无障碍）",
             description = "Required for tap, swipe, click_node, screenshot, read_window_tree, set_text and other UI-driving tools.",
             status = if (enabled) Status.GRANTED else Status.DENIED,
             group = Group.ServicesAndIntegrations,
@@ -242,7 +242,7 @@ object PermissionInventory {
         ) ?: "").split(":").any { it.equals(component, ignoreCase = true) }
         return Row(
             id = "rikkahub.SERVICE_NOTIFICATION_LISTENER",
-            label = "Notification access",
+            label = "通知访问",
             description = "Lets the agent read incoming notifications and auto-forward whitelisted apps to Telegram.",
             status = if (enabled) Status.GRANTED else Status.DENIED,
             group = Group.ServicesAndIntegrations,
