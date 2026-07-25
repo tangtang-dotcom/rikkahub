@@ -113,6 +113,6 @@ jobs:
           else
             MSG="自动合并或编译失败。请查看：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           fi
-          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+          curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=🔄 RikkaHub Agents 自动构建 $STATUS" \
             -d "desp=$MSG"

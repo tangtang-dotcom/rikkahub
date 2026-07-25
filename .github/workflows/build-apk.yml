@@ -71,6 +71,6 @@ jobs:
             TITLE="❌ RikkaHub Agent 手动构建失败"
             CONTENT="编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           fi
-          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+          curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=$TITLE" \
             -d "desp=$CONTENT"
