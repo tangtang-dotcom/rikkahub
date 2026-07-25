@@ -1,4 +1,4 @@
-name: 🔨 编译 APK（已合并上游 v2.4.3）
+name: 🤖 编译 APK · Release 优化版 · AI 自动构建
 
 on:
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: 发送微信通知
-        if: always()
+        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
         env:
           STATUS: ${{ job.status }}
         run: |

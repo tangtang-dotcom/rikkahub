@@ -4,29 +4,11 @@
 
 # RikkaHub Agents
 
-**🤖 AI-maintained fork · Not official · Not original**
+**🤖 AI 自动维护版本 · ❌ 非官方 · ❌ 非原版**
+
+[**English**](README_EN.md) | [**中文**](README.md)
 
 </div>
-
----
-
-## ⚠️ DISCLAIMER
-
-| Project | Link | Description |
-|---------|------|-------------|
-| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | Official upstream, the source of this code |
-| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | Original fork this repo is based on |
-| 🟡 **This repo (AI-maintained)** | https://github.com/xiwangone/rikkahub-agents | This repo, AI auto-merged + compiled |
-
-> ### 🚨 WARNING
->
-> **This repository is AI-maintained.** Code is pulled from the official upstream and original fork, auto-merged, and compiled via GitHub Actions.
->
-> - ❌ **NOT official release** — Not from RikkaHub team
-> - ❌ **NOT original release** — Not from ExTV developer
-> - ✅ Code sources are trustworthy (official + original), but compilation and release are **AI-automated**
-> - ⚠️ Use at your own risk. **No quality guarantee.**
-> - 💡 For issues, please use [Official](https://github.com/rikkahub/rikkahub) or [Original Fork](https://github.com/ExTV/rikkahub-agent) first.
 
 ---
 
@@ -38,15 +20,15 @@
 | 🟢 **ExTV/rikkahub-agent（原版）** | https://github.com/ExTV/rikkahub-agent | **原版 Fork，本仓库基于此** |
 | 🟡 **本仓库（AI 维护版）** | https://github.com/xiwangone/rikkahub-agents | **本仓库，AI 自动合并 + 编译** |
 
-> ### 🚨 警告
+> ### 🚨🚨🚨 警告
 >
 > **本仓库由 AI 自动维护**，代码从上述官方仓库和原版 Fork 拉取后进行自动合并，并通过 GitHub Actions 自动编译和签名 APK。
 >
-> - ❌ **非官方发布** — 不是 RikkaHub 官方团队发布
-> - ❌ **非原版发布** — 不是 ExTV 原版开发者发布
+> - **❌ 非官方发布** — 不是 RikkaHub 官方团队发布
+> - **❌ 非原版发布** — 不是 ExTV 原版开发者发布
 > - ✅ 代码来源可信（官方 + 原版），但编译和发布过程**由 AI 自动处理**
-> - ⚠️ 使用前请自行评估风险，**本仓库不提供任何质量保证**
-> - 💡 如遇到问题，建议优先使用 [官方版](https://github.com/rikkahub/rikkahub) 或 [原版 Fork](https://github.com/ExTV/rikkahub-agent)
+> - **⚠️ 使用前请自行评估风险，本仓库不提供任何质量保证**
+> - **💡 如遇到问题，建议优先使用 [官方版](https://github.com/rikkahub/rikkahub) 或 [原版 Fork](https://github.com/ExTV/rikkahub-agent)**
 
 ---
 
@@ -154,14 +136,11 @@ English、简体中文、繁體中文、日本語、한국어、Русский�
 
 ## 许可证
 
-本仓库继承上游 [RikkaHub](https://github.com/rikkahub/rikkahub) 的许可证。
-
 **GNU Affero General Public License v3.0 (AGPL-3.0)**
 
-该许可证要求：
 - ✅ 可以自由使用、修改、分发
 - ✅ 可以用于商业用途
 - ⚠️ 如果通过网络提供服务，必须公开源代码
 - ⚠️ 修改后的版本必须使用相同许可证
 
-完整许可证文本见根目录 [LICENSE](LICENSE) 文件。
+完整文本见 [LICENSE](LICENSE)。

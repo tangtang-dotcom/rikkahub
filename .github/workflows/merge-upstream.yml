@@ -1,4 +1,4 @@
-name: 自动合并上游并编译
+name: 🔄 自动合并上游 · 编译 APK · AI 自动维护
 
 on:
   workflow_dispatch:
@@ -9,12 +9,110 @@ permissions:
   contents: write
   actions: write
 
+env:
+  UPSTREAM_REPO: rikkahub/rikkahub
+  UPSTREAM_BRANCH: master
+
 jobs:
+  check-and-merge:
+    runs-on: ubuntu-latest
+    outputs:
+      has_update: ${{ steps.check.outputs.has_update }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 添加上游
+        run: |
+          git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
+          git fetch upstream --tags
+
+      - name: 检查更新
+        id: check
+        run: |
+          CURRENT=$(git rev-parse HEAD)
+          UPSTREAM=$(git rev-parse upstream/${{ env.UPSTREAM_BRANCH }})
+          if [ "$CURRENT" != "$UPSTREAM" ]; then
+            echo "has_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 合并代码
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          git config user.name "Auto Merge Bot"
+          git config user.email "bot@rikkahub-agents.local"
+          git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit 2>&1 || true
+          CONFLICTS=$(git diff --name-only --diff-filter=U)
+          if [ -n "$CONFLICTS" ]; then
+            echo "自动解决冲突..."
+            for f in $CONFLICTS; do
+              git checkout --ours "$f" 2>/dev/null || true
+              git add "$f" 2>/dev/null || true
+            done
+            git commit -m "auto-merge: 自动解决合并冲突" --no-edit 2>&1 || true
+          fi
+          git push origin master 2>&1
+
+      - name: 无更新
+        if: steps.check.outputs.has_update != 'true'
+        run: echo "上游无新版本，跳过"
+
   build:
+    needs: check-and-merge
+    if: ${{ needs.check-and-merge.outputs.has_update == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
-      - run: echo "ok"
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 设置 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 安装 bun & pnpm
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          npm install -g pnpm
+
+      - name: 生成签名并编译
+        run: |
+          KEYSTORE="$HOME/rikkahub.jks"
+          if [ ! -f "$KEYSTORE" ]; then
+            keytool -genkey -v -keystore "$KEYSTORE" \
+              -alias rikkahub -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=RikkaHub, OU=Dev, O=xiwangone, L=Beijing, ST=Beijing, C=CN"
+          fi
+          echo "storeFile=$KEYSTORE" > local.properties
+          echo "storePassword=android" >> local.properties
+          echo "keyAlias=rikkahub" >> local.properties
+          echo "keyPassword=android" >> local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: 微信通知
+        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
+        env:
+          STATUS: ${{ job.status }}
+        run: |
+          if [ "$STATUS" = "success" ]; then
+            MSG="自动合并成功，新 APK 已发布！下载：https://github.com/xiwangone/rikkahub-agents/releases"
+          else
+            MSG="自动合并或编译失败。请查看：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+          fi
+          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=🔄 RikkaHub Agents 自动构建 $STATUS" \
+            -d "desp=$MSG"
