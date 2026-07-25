@@ -1,13 +1,11 @@
 package me.rerere.highlight
 
 import android.content.Context
-import com.whl.quickjs.android.QuickJSLoader
 import com.whl.quickjs.wrapper.QuickJSArray
 import com.whl.quickjs.wrapper.QuickJSContext
 import com.whl.quickjs.wrapper.QuickJSObject
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Polymorphic
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -16,20 +14,23 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
 import me.rerere.highlight.HighlightToken.Token.StringContent
+import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class Highlighter(ctx: Context) {
+    private val executor = Executors.newSingleThreadExecutor()
+
     init {
-        QuickJSLoader.init()
+        executor.submit {
+            context // init context
+        }
     }
 
     private val script: String by lazy {
@@ -48,36 +49,44 @@ class Highlighter(ctx: Context) {
         context.globalObject.getJSFunction("highlight")
     }
 
-    fun highlight(code: String, language: String) = runCatching {
-        val result = highlightFn.call(code, language)
-        require(result is QuickJSArray) {
-            "highlight result must be an array"
-        }
-        val tokens = arrayListOf<HighlightToken>()
-        for (i in 0 until result.length()) {
-            when (val element = result[i]) {
-                is String -> tokens.add(
-                    HighlightToken.Plain(
-                        content = element,
-                    )
-                )
+    suspend fun highlight(code: String, language: String) =
+        suspendCancellableCoroutine { continuation ->
+            executor.submit {
+                runCatching {
+                    val result = highlightFn.call(code, language)
+                    require(result is QuickJSArray) {
+                        "highlight result must be an array"
+                    }
+                    val tokens = arrayListOf<HighlightToken>()
+                    for (i in 0 until result.length()) {
+                        when (val element = result[i]) {
+                            is String -> tokens.add(
+                                HighlightToken.Plain(
+                                    content = element,
+                                )
+                            )
 
-                is QuickJSObject -> {
-                    val json = element.stringify()
-                    val token = format.decodeFromString<HighlightToken.Token>(
-                        HighlightTokenSerializer, json)
-                    tokens.add(token)
+                            is QuickJSObject -> {
+                                val json = element.stringify()
+                                val token = format.decodeFromString<HighlightToken.Token>(
+                                    HighlightTokenSerializer, json
+                                )
+                                tokens.add(token)
+                            }
+
+                            else -> error("Unknown type: ${element::class.java.name}")
+                        }
+                    }
+                    result.release()
+                    continuation.resume(tokens)
+                }.onFailure {
+                    it.printStackTrace()
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(it)
+                    }
                 }
-
-                else -> error("Unknown type: ${element::class.java.name}")
             }
         }
-        result.release()
-
-        tokens
-    }.onFailure {
-        it.printStackTrace()
-    }
 
     fun destroy() {
         context.destroy()
@@ -111,6 +120,13 @@ sealed class HighlightToken {
             val type: String,
             val length: Int,
         ) : Token()
+
+        @Serializable
+        data class Nested(
+            val content: List<Token>,
+            val type: String,
+            val length: Int,
+        ) : Token()
     }
 }
 
@@ -136,13 +152,32 @@ object HighlightTokenSerializer : KSerializer<HighlightToken.Token> {
 
         return when (content) {
             is JsonArray -> {
-                val listContent = content.map { it.jsonPrimitive.content }
-                HighlightToken.Token.StringListContent(
-                    content = listContent,
+                val nestedContent = arrayListOf<HighlightToken.Token>()
+
+                content.forEach { part ->
+                    if (part is JsonPrimitive) {
+                        nestedContent += StringContent(
+                            content = part.content,
+                            type = type,
+                            length = length,
+                        )
+                    } else if (part is JsonObject) {
+                        nestedContent += format.decodeFromJsonElement(
+                            HighlightTokenSerializer,
+                            part
+                        )
+                    } else {
+                        error("unknown content part type: $content / $part")
+                    }
+                }
+
+                HighlightToken.Token.Nested(
+                    content = nestedContent,
                     type = type,
                     length = length,
                 )
             }
+
             is JsonPrimitive -> {
                 val stringContent = content.content
                 HighlightToken.Token.StringContent(
@@ -151,6 +186,7 @@ object HighlightTokenSerializer : KSerializer<HighlightToken.Token> {
                     length = length,
                 )
             }
+
             else -> error("Unknown content type: ${content::class.java.name}")
         }
     }
