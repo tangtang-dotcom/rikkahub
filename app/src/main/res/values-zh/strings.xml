@@ -1853,7 +1853,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
     <string name="setting_termux_command_timeout">命令超时</string>
     <string name="setting_termux_command_timeout_desc">单条命令的最大运行时间</string>
     <string name="setting_termux_help_allow_external_apps_title">允许外部应用</string>
-    <string name="setting_termux_help_allow_external_apps_body">在 Termux 中运行：mkdir -p ~/.termux ; echo allow-external-apps=true >> ~/.termux/termux.properties，然后强制停止 Termux 并重新打开。点击上方的验证行确认。</string>
+    <string name="setting_termux_help_allow_external_apps_body">在 Termux 中运行以下命令：\n\nmkdir -p ~/.termux\necho allow-external-apps=true >> ~/.termux/termux.properties\n\n然后强制停止 Termux 并重新打开。之后点击上方的验证行确认。</string>
 
     <string name="setting_termux_turn_budget">轮次时间预算（所有工具）</string>
     <string name="setting_termux_turn_budget_desc">每次 AI 调用可用的总时间上限。范围 1 分钟到 60 分钟。</string>

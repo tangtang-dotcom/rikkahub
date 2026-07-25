@@ -270,15 +270,15 @@ object PermissionInventory {
     )
 
     private val DESCRIPTIONS = mapOf(
-        Manifest.permission.CAMERA to "Used by take_photo to capture a still image.",
-        Manifest.permission.RECORD_AUDIO to "Used by record_audio and speech_to_text.",
-        Manifest.permission.READ_PHONE_STATE to "Used by get_telephony_info (SIM operator, signal).",
-        Manifest.permission.ACCESS_FINE_LOCATION to "Used by get_location and get_wifi_info.",
+        Manifest.permission.CAMERA to "用于 take_photo 拍照。",
+        Manifest.permission.RECORD_AUDIO to "用于 record_audio 和 speech_to_text。",
+        Manifest.permission.READ_PHONE_STATE to "用于 get_telephony_info（运营商、信号）。",
+        Manifest.permission.ACCESS_FINE_LOCATION to "用于 get_location 和 get_wifi_info。",
         Manifest.permission.ACCESS_COARSE_LOCATION to "Approximate location fallback for get_location.",
-        Manifest.permission.READ_CONTACTS to "Used by search_contacts and list_contacts.",
-        Manifest.permission.READ_CALL_LOG to "Used by list_call_log.",
-        Manifest.permission.READ_SMS to "Used by list_sms_inbox and search_sms.",
-        Manifest.permission.SEND_SMS to "Used by send_sms to send text messages programmatically.",
+        Manifest.permission.READ_CONTACTS to "用于 search_contacts 和 list_contacts。",
+        Manifest.permission.READ_CALL_LOG to "用于 list_call_log。",
+        Manifest.permission.READ_SMS to "用于 list_sms_inbox 和 search_sms。",
+        Manifest.permission.SEND_SMS to "用于 send_sms 发送短信。",
         "com.termux.permission.RUN_COMMAND" to "Lets RikkaHub start commands inside Termux for the termux_run_command tool.",
     )
 
