@@ -115,4 +115,4 @@ jobs:
           fi
           curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=🔄 RikkaHub Agents 自动构建 $STATUS" \
-            -d "desp=$MSG"
+            -d "desp=$MSG" || true

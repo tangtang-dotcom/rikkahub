@@ -73,4 +73,4 @@ jobs:
           fi
           curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=$TITLE" \
-            -d "desp=$CONTENT"
+            -d "desp=$CONTENT" || true
