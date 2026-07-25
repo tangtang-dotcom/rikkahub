@@ -620,7 +620,7 @@ class DoctorChecks(
                     DoctorCheck(
                         id = "assistant.telegram_override",
                         category = DoctorCategory.AssistantInfo,
-                        label = "Telegram bot assistant override",
+                        label = "Telegram Bot 助手覆盖",
                         detail = when {
                             tgAssistant != null ->
                                 "Telegram inbound messages route to \"${tgAssistant.name.ifBlank { "(unnamed)" }}\" " +
@@ -737,7 +737,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "db.stranded_runs",
                     category = DoctorCategory.Database,
-                    label = "Stranded scheduled-job runs",
+                    label = "残留定时任务",
                     detail = if (stranded.isEmpty())
                         "None. Worker has been finishing all runs cleanly."
                     else
@@ -992,7 +992,7 @@ class DoctorChecks(
             DoctorCheck(
                 id = "browser.profile_dir_writable",
                 category = DoctorCategory.Permissions,
-                label = "Browser profile directory",
+                label = "浏览器配置目录",
                 detail = when {
                     ok && browserNeeded -> "${profileDir.absolutePath} exists and is writable — cookies persist."
                     ok -> "${profileDir.absolutePath} exists. Not required by any enabled tool."
@@ -1007,7 +1007,7 @@ class DoctorChecks(
                     else -> Severity.INFO
                 },
                 fix = if (!ok && browserNeeded) FixAction.AutoFix(
-                    label = "Create directory",
+                    label = "创建目录",
                     run = {
                         val created = runCatching { profileDir.mkdirs() }.getOrDefault(false)
                         val nowOk = profileDir.exists() && profileDir.canWrite()
@@ -1037,7 +1037,7 @@ class DoctorChecks(
                 DoctorCheck(
                     id = "browser.write_tools_status",
                     category = DoctorCategory.Permissions,
-                    label = "Browser write tools enabled",
+                    label = "浏览器写入工具",
                     detail = detail,
                     severity = Severity.INFO,
                 )
