@@ -10,7 +10,7 @@
 [![Repo Size](https://img.shields.io/github/repo-size/xiwangone/rikkahub-agents?style=flat&label=Size)](https://github.com/xiwangone/rikkahub-agents)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0?style=flat&logo=telegram)](https://t.me/your_bot)
 
-> AI 自动维护编译 · 提交即构建 · 结果推送微信 & Telegram
+> AI 自动维护编译 · 提交即构建 · 结果推送 Telegram
 
 </div>
 
@@ -26,10 +26,8 @@
 |------|------|
 | 🤖 **AI 自动化维护** | 通过 Action 工作流自动编译、检测代码变更 |
 | 🔧 **80+ 设备工具** | 集成 SSH、ADB、Telegram Bot 等设备管理工具 |
-| ⚙️ **自动编译** | 提交代码后自动构建 APK，编译结果微信/Telegram 通知 |
+| ⚙️ **自动编译** | 提交代码后自动构建 APK，编译结果推送 Telegram 通知 |
 | 🔗 **Telegram Bot** | 远程控制、查询编译状态、触发任务 |
-| 🔄 **SSH 通道** | 内网穿透与远程设备管理 |
-| 🌐 **Server酱通知** | 编译成功/失败即时推送到微信 |
 
 ### 📱 上游特性（源自 RikkaHub）
 
