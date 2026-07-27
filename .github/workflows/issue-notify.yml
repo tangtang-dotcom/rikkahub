@@ -1,17 +1,33 @@
-name: 💬 议题通知
+name: Issue Notify
 
 on:
   issues:
     types: [opened, reopened]
 
+permissions:
+  contents: read
+  issues: read
+
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: 发送通知
+      - name: Notify on new issue
+        env:
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_USER: ${{ github.event.issue.user.login }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          REPO: ${{ github.repository }}
         run: |
-          TITLE="💬 新议题：${{ github.event.issue.title }}"
-          MSG="仓库：${{ github.repository }}%0A%0A作者：${{ github.event.issue.user.login }}%0A%0A内容：${{ github.event.issue.body }}%0A%0A链接：${{ github.event.issue.html_url }}"
-          curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+          if [ -z "$SERVERCHAN_KEY" ]; then
+            echo "SERVERCHAN_KEY not set; skip"
+            exit 0
+          fi
+          BODY_TRIM=$(printf '%s' "$ISSUE_BODY" | head -c 1500)
+          TITLE="New issue: ${ISSUE_TITLE}"
+          MSG="repo: ${REPO}%0A%0Aauthor: ${ISSUE_USER}%0A%0Abody: ${BODY_TRIM}%0A%0A${ISSUE_URL}"
+          curl -s "https://sctapi.ftqq.com/${SERVERCHAN_KEY}.send" \
             -d "title=$TITLE" \
-            -d "desp=$MSG"
+            -d "desp=$MSG" || true

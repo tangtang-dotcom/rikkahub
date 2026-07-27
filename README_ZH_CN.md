@@ -1,98 +1,87 @@
 <div align="center">
-  <img src="docs/icon.png" alt="App 图标" width="100" />
-  <h1>RikkaHub</h1>
+  <img src="docs/logo.svg" alt="RikkaHub Agents" width="100" height="100" />
+  <h1>RikkaHub Agents</h1>
 
-一个原生Android LLM 聊天客户端，支持切换不同的供应商进行聊天 🤖💬
+RikkaHub 的 Android Agent 维护版 Fork：自动 CI 编译、上游同步、完整设备工具能力 🤖
 
-[English](README.md) | [繁體中文](README_ZH_TW.md) | 简体中文
+[English](README.md) | 简体中文
 
-点击链接加入群聊 👉 [【RikkaHub】](https://qm.qq.com/q/I8MSU0FkOu)
+[![Build](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/build-apk.yml?style=flat&logo=githubactions&label=Build)](https://github.com/xiwangone/rikkahub-agents/actions/workflows/build-apk.yml)
+[![Upstream](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/merge-upstream.yml?style=flat&logo=git&label=Upstream)](https://github.com/xiwangone/rikkahub-agents/actions/workflows/merge-upstream.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/codeql.yml?style=flat&logo=github&label=CodeQL)](https://github.com/xiwangone/rikkahub-agents/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases)
+[![License](https://img.shields.io/github/license/xiwangone/rikkahub-agents?style=flat)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/xiwangone/rikkahub-agents?style=flat&label=Updated)](https://github.com/xiwangone/rikkahub-agents/commits/master)
 
 </div>
 
 <div align="center">
-  <img src="docs/img/chat.png" alt="Chat Interface" width="150" />
-  <img src="docs/img/desktop.png" alt="Models Picker" width="450" />
+  <img src="docs/img/chat.png" alt="聊天界面" width="150" />
+  <img src="docs/img/desktop.png" alt="桌面 / 模型" width="450" />
 </div>
-
 
 ## 🚀 下载
 
-🔗 [前往官网下载](https://rikka-ai.com/download)（推荐）
-🔗 [前往 Google Play 下载](https://play.google.com/store/apps/details?id=me.rerere.rikkahub)
+🔗 [Releases](https://github.com/xiwangone/rikkahub-agents/releases) — 最新签名 APK  
+🔗 [Actions 产物](https://github.com/xiwangone/rikkahub-agents/actions) — 每次构建的 artifact
 
 > [!WARNING]
-> RikkaHub 存在许多 fork 版本，fork 版本出现问题与 RikkaHub 无关，请谨慎使用 fork 版本，避免隐私泄露或者过度索要权限问题。
+> 本仓库为**非官方 Fork**。Fork 问题与上游 RikkaHub 无关。
+> 请谨慎使用第三方构建，注意隐私与权限。
 
-## 💖 赞助商
+## ✨ 本 Fork 额外能力
 
-|                                         赞助商                                         | 介绍                                                                                                                                              |
-|:-----------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="docs/sponsors/aihubmix.png" alt="Aihubmix" width="50" /><br /><b>Aihubmix</b> | 感谢 <a href="https://aihubmix.com?aff=pG7r">aihubmix.com</a> 的资金支持。我们推荐使用 aihubmix 作为全球主流模型的一站式服务平台。（OpenAI、Claude、Google Gemini、DeepSeek、Qwen 以及数百种其他模型）。 |
-| <img src="docs/sponsors/suixiang.jpg" alt="随想AI中转" width="50" /><br /><b><a href="https://sui-xiang.com">随想AI中转</a></b> | 感谢<a href="https://sui-xiang.com">随想AI中转</a>对本项目的赞助！随想AI中转 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站·无数据倒卖·无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。99.9% 可用性，关键调用从不掉队。 |
-| <img src="docs/sponsors/ztest.png" alt="真测 ztest.ai" width="50" /><br /><b><a href="https://ztest.ai">真测 ztest.ai</a></b> | 感谢<a href="https://ztest.ai">真测 ztest.ai</a>对本项目的赞助！真测 ztest.ai 是一个 AI 中转站模型检测平台，检测结果数据全公开，23 项探针覆盖协议、身份、能力、内容完整性、安全性、性能六大维度，交叉印证识别伪造与降级。作为独立第三方验证平台，实时监测 AI 中转站的模型真实性、响应质量与服务可用性。 |
+| 能力 | 说明 |
+|:--|:--|
+| 🤖 **自动维护** | Release 编译与定时合并上游工作流 |
+| 🔧 **Agent 工具链** | SSH、Termux、设备工具、Telegram Bot 等 Agent 系能力 |
+| 🔐 **稳定 CI 签名** | 仓库 Secrets 固定密钥，产物可覆盖安装 |
+| 🔍 **代码扫描** | 每周 / 手动 CodeQL（不在每次 push 触发，节省 runner） |
 
-## ✨ 功能特色
+## ✨ 功能特色（源自 RikkaHub）
 
-- 🎨 现代化安卓APP设计（Material You / 预测性返回）和 🌙 暗色模式
+- 🎨 Material You 设计与 🌙 深色模式
 - 📦 工作区：基于 proot 的 Linux 智能体环境
-- 🖥️ Web多端访问支持
+- 🔄 多 AI 供应商（OpenAI / Google / Anthropic 兼容 API）
+- 🖼️ 多模态输入（图片、PDF、DOCX 等）
+- 🖥️ 内嵌 Web 多端访问
 - 🛠️ MCP 支持
-- 🔄 多种类型的供应商支持，自定义 API / URL / 模型（目前支持 OpenAI、Google、Anthropic）
-- 🖼️ 多模态输入支持
-- 📝 Markdown 渲染（支持代码高亮、数学公式、表格、Mermaid）
-- 🔍 搜索功能（Exa、Tavily、Zhipu、LinkUp、Brave、Perplexity、..）
-- 🧩 Prompt 变量（模型名称、时间等）
-- 🤳 二维码导出和导入提供商
-- 🤖 智能体自定义
-- 🧠 类ChatGPT记忆功能
-- 📝 AI翻译
-- 🌐 自定义HTTP请求头和请求体
+- 📝 Markdown（代码高亮、LaTeX、表格、Mermaid）
+- 🔍 搜索（Exa、Tavily、Zhipu、Brave 等）
+- 🧩 Prompt 变量、智能体自定义、记忆
+
+## ⚡ 构建
+
+```bash
+git clone --recurse-submodules https://github.com/xiwangone/rikkahub-agents.git
+cd rikkahub-agents
+./gradlew assembleDebug
+```
+
+> [!TIP]
+> 需在 `app/` 放置 `google-services.json`。  
+> `web` 模块构建依赖 **pnpm**（`web-ui/`）。
+
+### 关于 CI
+
+- 工作流在 `.github/workflows/`，属于仓库文件：`git clone` / fork **会一并拉取**。
+- Secrets（`KEYSTORE_*`、通知密钥、可选 `PAT_TOKEN`）只存在于 GitHub，**不会**被 clone。
+- 签名 Release：Actions → **Build APK** → Run workflow。
 
 ## ✨ 贡献
 
-本项目使用[Android Studio](https://developer.android.com/studio)开发，欢迎提交PR
+使用 [Android Studio](https://developer.android.com/studio) 开发。欢迎修复类 / 文档类 PR。
 
-技术栈文档:
+技术栈：Kotlin · Koin · Jetpack Compose · DataStore · Room · Coil · Material You · Navigation 3 · OkHttp · kotlinx.serialization
 
-- [Kotlin](https://kotlinlang.org/) (开发语言)
-- [Koin](https://insert-koin.io/) (依赖注入)
-- [Jetpack Compose](https://developer.android.com/jetpack/compose) (UI 框架)
-- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore?hl=zh-cn#preferences-datastore) (
-  偏好数据存储)
-- [Room](https://developer.android.com/training/data-storage/room) (数据库)
-- [Coil](https://coil-kt.github.io/coil/) (图片加载)
-- [Material You](https://m3.material.io/) (UI 设计)
-- [Navigation 3](https://developer.android.com/guide/navigation/navigation-3) (导航)
-- [Okhttp](https://square.github.io/okhttp/) (HTTP 客户端)
-- [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) (Json序列化)
+> [!IMPORTANT]
+> Fork 相关问题请在**本仓库**提 Issue / PR，勿打扰上游。
 
-> [!TIP]
-> 你需要在 `app` 文件夹下添加 `google-services.json` 文件才能构建应用。
+## 🙏 致谢
 
-> [!IMPORTANT]  
-> 以下PR将被拒绝：
-> 1. 添加新语言，因为添加新语言会增加后续本地化的工作量
-> 2. 添加新功能，这个项目是有态度的
-> 3. AI生成的大规模重构和更改
-
-## 💰 捐赠
-
-* [Patreon](https://patreon.com/rikkahub)
-* [爱发电](https://afdian.com/a/reovo)
-
-## ⭐ Star History
-
-如果喜欢这个项目，请给个Star ⭐
-
-<a href="https://www.star-history.com/?type=date&repos=re-ovo%2Frikkahub">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&theme=dark&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
- </picture>
-</a>
+- [**RikkaHub**](https://github.com/rikkahub/rikkahub) — 官方客户端
+- [**ExTV/rikkahub-agent**](https://github.com/ExTV/rikkahub-agent) — Agent 模式上游 Fork
 
 ## 📄 许可证
 
-本项目基于 [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0) 开源。
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0)
