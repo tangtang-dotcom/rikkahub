@@ -105,13 +105,15 @@ jobs:
             exit 1
           fi
 
+          # 删除上游带来的不需要的工作流文件（GITHUB_TOKEN 无法推送工作流文件变更）
+          rm -f .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
+          git rm --cached .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
+          git add -A 2>/dev/null || true
+
           # 提交合并结果
           git commit -m "🔄 合并上游 rikkahub/rikkahub 更新" --no-edit 2>&1 || true
           echo "merge_status=success" >> $GITHUB_OUTPUT
 
-          # 删除上游带来的不需要的工作流文件（GITHUB_TOKEN 无法推送工作流文件变更）
-          rm -f .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
-          git add -A 2>/dev/null || true
           echo "=== 推送合并结果 ==="
           git push origin master 2>&1
           echo "=== 推送成功 ==="
