@@ -99,15 +99,14 @@ jobs:
             echo "=== 警告: 仍有 $REMAINING 个未解决的冲突 ==="
             echo "merge_status=failure_conflict" >> $GITHUB_OUTPUT
             echo "自动解决冲突失败，需要人工干预"
-            # 输出冲突文件列表
-            echo "未解决文件:"
             git diff --name-only --diff-filter=U
             exit 1
           fi
 
-          # 删除上游带来的不需要的工作流文件（GITHUB_TOKEN 无法推送工作流文件变更）
-          rm -f .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
-          git rm --cached .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
+          # 删除上游带来的不需要的工作流文件
+          for f in close-blank-issues.yml daily-build.yml; do
+            [ -f ".github/workflows/$f" ] && git rm ".github/workflows/$f" 2>/dev/null || true
+          done
           git add -A 2>/dev/null || true
 
           # 提交合并结果
@@ -134,13 +133,13 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: 设置 JDK 17
+      - name: 配置 JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 设置 Android SDK
+      - name: 配置 Android SDK
         uses: android-actions/setup-android@v3
 
       - name: 安装 bun & pnpm
@@ -162,10 +161,9 @@ jobs:
           echo "storePassword=android" >> local.properties
           echo "keyAlias=rikkahub" >> local.properties
           echo "keyPassword=android" >> local.properties
-          chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 微信通知
+      - name: 发送通知
         if: always()
         env:
           STATUS: ${{ job.status }}
