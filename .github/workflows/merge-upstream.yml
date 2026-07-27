@@ -42,8 +42,8 @@ jobs:
           OFFICIAL=$(git rev-parse upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }})
           if [ "$CURRENT" != "$OFFICIAL" ]; then
             echo "has_update=true" >> $GITHUB_OUTPUT
-            echo "当前: $CURRENT" >> $GITHUB_OUTPUT
-            echo "官方: $OFFICIAL" >> $GITHUB_OUTPUT
+            echo "当前: $CURRENT"
+            echo "官方: $OFFICIAL"
           else
             echo "has_update=false" >> $GITHUB_OUTPUT
           fi
