@@ -32,6 +32,10 @@ jobs:
         working-directory: web-ui
         run: pnpm --ignore-workspace install --frozen-lockfile
 
+      - name: 构建 Web 界面 · Build web UI
+        working-directory: web-ui
+        run: pnpm --ignore-workspace run build
+
       - name: 准备 Firebase 配置 · Prepare Firebase config
         run: |
           if [ ! -f app/google-services.json ]; then
@@ -63,7 +67,7 @@ jobs:
           } > local.properties
 
       - name: Build signed Release APK
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -x :web:buildWebUi
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
