@@ -120,8 +120,6 @@ import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.assistant.detail.CustomBodies
 import me.rerere.rikkahub.ui.pages.assistant.detail.CustomHeaders
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
-import me.rerere.rikkahub.ui.pages.setting.components.CodexProviderConfigure
-import me.rerere.rikkahub.ui.pages.setting.components.GrokProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConnectionTester
 import me.rerere.rikkahub.ui.pages.setting.components.SettingProviderBalanceOption
 import me.rerere.rikkahub.ui.pages.setting.components.isUsingDefaultBaseUrl
@@ -184,16 +182,14 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                     }
                 },
                 actions = {
-                    if (provider !is ProviderSetting.Codex && provider !is ProviderSetting.Grok) {
-                        val shareSheetState = rememberShareSheetState()
-                        ShareSheet(shareSheetState)
-                        IconButton(
-                            onClick = {
-                                shareSheetState.show(provider)
-                            }
-                        ) {
-                            Icon(HugeIcons.Share01, null)
+                    val shareSheetState = rememberShareSheetState()
+                    ShareSheet(shareSheetState)
+                    IconButton(
+                        onClick = {
+                            shareSheetState.show(provider)
                         }
+                    ) {
+                        Icon(HugeIcons.Share01, null)
                     }
                 }
             )
@@ -265,20 +261,6 @@ private fun SettingProviderConfigPage(
     onEdit: (ProviderSetting) -> Unit,
     onDelete: () -> Unit
 ) {
-    if (provider is ProviderSetting.Codex) {
-        CodexProviderConfigure(
-            provider = provider,
-            onEdit = onEdit,
-        )
-        return
-    }
-    if (provider is ProviderSetting.Grok) {
-        GrokProviderConfigure(
-            provider = provider,
-            onEdit = onEdit,
-        )
-        return
-    }
     var internalProvider by remember(provider) { mutableStateOf(provider) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -404,26 +386,15 @@ private fun ModelList(
     onUpdateProvider: (ProviderSetting) -> Unit
 ) {
     val providerManager = koinInject<ProviderManager>()
-    val toaster = LocalToaster.current
     val modelList by produceState(emptyList(), providerSetting) {
         runCatching {
+            println("loading models...")
             value = providerManager.getProviderByType(providerSetting)
                 .listModels(providerSetting)
                 .sortedBy { it.modelId }
                 .toList()
-        }.onFailure { error ->
-            // runCatching catches Throwable, which includes CancellationException
-            // (e.g. when the user navigates away from the Models tab mid-fetch
-            // and Compose cancels this produceState's coroutine). Re-throw so
-            // we don't print a stack trace + show a toast for normal teardown.
-            if (error is kotlinx.coroutines.CancellationException) throw error
-            error.printStackTrace()
-            // Surface real failures (missing/invalid API key, providers like
-            // Minimax that return an HTTP 200 error envelope instead of a 4xx).
-            toaster.show(
-                error.message ?: "Failed to load models",
-                type = ToastType.Error
-            )
+        }.onFailure {
+            it.printStackTrace()
         }
     }
     var expanded by rememberSaveable { mutableStateOf(true) }
@@ -724,7 +695,16 @@ private fun AddModelButton(
             models = models,
             selectedModels = selectedModels,
             onModelSelected = { model ->
-                onAddModel(model.enrichCapabilities())
+                val inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(model.modelId)
+                val outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(model.modelId)
+                val abilities = ModelRegistry.MODEL_ABILITIES.getData(model.modelId)
+                onAddModel(
+                    model.copy(
+                        inputModalities = inputModalities,
+                        outputModalities = outputModalities,
+                        abilities = abilities
+                    )
+                )
             },
             onModelDeselected = { model ->
                 onRemoveModel(model)
@@ -734,7 +714,13 @@ private fun AddModelButton(
                     parentProvider.copyProvider(
                         models = parentProvider.models + it.filter { model ->
                             parentProvider.models.none { existing -> existing.modelId == model.modelId }
-                        }.map { model -> model.enrichCapabilities() }
+                        }.map { model ->
+                            model.copy(
+                                inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(model.modelId),
+                                outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(model.modelId),
+                                abilities = ModelRegistry.MODEL_ABILITIES.getData(model.modelId)
+                            )
+                        }
                     )
                 )
             },
@@ -926,7 +912,7 @@ private fun ModelPicker(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(8.dp),
                 ) {
-                    items(filteredModels, key = { it.id }) {
+                    items(filteredModels) {
                         Card {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -956,7 +942,13 @@ private fun ModelPicker(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
-                                        val modelMeta = remember(it) { it.enrichCapabilities() }
+                                        val modelMeta = remember(it) {
+                                            it.copy(
+                                                inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(it.modelId),
+                                                outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(it.modelId),
+                                                abilities = ModelRegistry.MODEL_ABILITIES.getData(it.modelId),
+                                            )
+                                        }
                                         ModelModalityTag(
                                             model = modelMeta,
                                         )
@@ -1578,20 +1570,3 @@ private fun ProviderOverrideSettings(
         }
     }
 }
-
-/**
- * Prefer capabilities auto-detected at fetch time (OpenRouter's /models populates
- * supportedParameters, modalities, abilities and the IMAGE model type); only fall back to
- * the static ModelRegistry lookup for providers that return bare model ids. Without this,
- * the registry lookup clobbered OpenRouter's detected image/tool/reasoning capabilities.
- */
-private fun Model.enrichCapabilities(): Model =
-    if (supportedParameters.isNotEmpty()) {
-        this
-    } else {
-        copy(
-            inputModalities = ModelRegistry.MODEL_INPUT_MODALITIES.getData(modelId),
-            outputModalities = ModelRegistry.MODEL_OUTPUT_MODALITIES.getData(modelId),
-            abilities = ModelRegistry.MODEL_ABILITIES.getData(modelId),
-        )
-    }

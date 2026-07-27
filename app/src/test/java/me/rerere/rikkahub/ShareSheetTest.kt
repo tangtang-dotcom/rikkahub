@@ -40,14 +40,8 @@ class ShareSheetTest {
         assertEquals("Test OpenAI", decodedOpenAI.name)
         assertEquals("sk-test-key", decodedOpenAI.apiKey)
         assertEquals("https://api.openai.com/v1", decodedOpenAI.baseUrl)
-        // encodeForShare INTENTIONALLY strips the models list — share semantics are
-        // "credentials only, not the curated model list". See ShareSheet.encodeForShare:93
-        // (`copyProvider(models = emptyList())`). The decoded receiver discovers / pins
-        // their own models on import.
-        assertTrue(
-            "models must be stripped on share — got ${decodedOpenAI.models.size}",
-            decodedOpenAI.models.isEmpty(),
-        )
+        assertEquals(1, decodedOpenAI.models.size)
+        assertEquals("gpt-4", decodedOpenAI.models[0].displayName)
     }
 
     @Test

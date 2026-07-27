@@ -39,8 +39,13 @@ fun JsonElement.parseErrorDetail(): HttpException {
         }
 
         is JsonPrimitive -> {
-            // 对于基本类型，直接使用其内容 (covers JsonNull too — it's a JsonPrimitive subclass)
+            // 对于基本类型，直接使用其内容
             HttpException(this.jsonPrimitive.content)
+        }
+
+        else -> {
+            // 其他情况，序列化整个元素
+            HttpException(Json.encodeToString(JsonElement.serializer(), this))
         }
     }
 }

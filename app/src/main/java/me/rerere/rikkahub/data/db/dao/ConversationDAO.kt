@@ -81,10 +81,6 @@ interface ConversationDAO {
     @Query("UPDATE conversationentity SET is_pinned = :isPinned WHERE id = :id")
     suspend fun updatePinStatus(id: String, isPinned: Boolean)
 
-    /** Toggle is_pinned atomically in a single UPDATE — avoids read→write TOCTOU. */
-    @Query("UPDATE conversationentity SET is_pinned = NOT is_pinned WHERE id = :id")
-    suspend fun togglePinStatus(id: String)
-
     @Query("UPDATE conversationentity SET folder_id = :folderId WHERE id = :id")
     suspend fun updateFolderId(id: String, folderId: String)
 

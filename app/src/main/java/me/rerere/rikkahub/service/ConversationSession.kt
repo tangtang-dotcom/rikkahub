@@ -7,7 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.model.Conversation
 import java.util.concurrent.atomic.AtomicInteger
@@ -71,18 +70,10 @@ class ConversationSession(
     }
 
     fun setJob(job: Job?) {
-        // Atomic swap so two concurrent setJob callers can't race-write a stale job.
-        // The previous code (cancel() then assign) had a window where two writers could
-        // each read the prior value, A cancels old, B reads old (already cancelled,
-        // no-op), A writes newA, B writes newB → A's job is untracked but still running;
-        // getJob() returns B; stopGeneration only cancels B; A leaks until completion.
-        val previous = _generationJob.getAndUpdate { job }
-        previous?.cancel()
-        // Identity-checked completion handler: only null the StateFlow if the value is
-        // STILL the same job we just set. Without this an out-of-order setJob(B) →
-        // A.invokeOnCompletion → clobber-B race could null out the live job.
+        _generationJob.value?.cancel()
+        _generationJob.value = job
         job?.invokeOnCompletion {
-            _generationJob.compareAndSet(job, null)
+            _generationJob.value = null
             if (refCount.get() <= 0) {
                 scheduleIdleCheck()
             }
@@ -107,14 +98,8 @@ class ConversationSession(
     }
 
     fun cleanup() {
-        // Use getAndUpdate (same as setJob) so cleanup() is consistent with the atomic
-        // swap used elsewhere. Direct .value = null would bypass the CAS and could
-        // theoretically race with a concurrent setJob that's running post-removal
-        // (e.g., a coroutine that had already acquired a session reference before
-        // dropSession removed it from the map). In practice the risk is tiny because
-        // cleanup() is only called after removal, but correctness still matters.
-        val job = _generationJob.getAndUpdate { null }
-        job?.cancel()
+        _generationJob.value?.cancel()
+        _generationJob.value = null
         idleCheckJob?.cancel()
         idleCheckJob = null
     }

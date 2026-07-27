@@ -377,10 +377,10 @@ fun ChatDrawerContent(
 
                 DrawerAction(
                     icon = {
-                        Icon(HugeIcons.ChartColumn, stringResource(R.string.chat_drawer_statistics))
+                        Icon(HugeIcons.ChartColumn, "统计数据")
                     },
                     label = {
-                        Text(stringResource(R.string.chat_drawer_statistics))
+                        Text("统计数据")
                     },
                     onClick = {
                         navController.navigate(Screen.Stats)
@@ -652,7 +652,7 @@ fun ChatDrawerContent(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(settings.assistants, key = { it.id }) { assistant ->
+                    items(settings.assistants) { assistant ->
                         AssistantItem(
                             assistant = assistant,
                             isCurrentAssistant = assistant.id == conversationToMove?.assistantId,

@@ -58,7 +58,6 @@ class AcceptLanguageBuilder private constructor(
                 val list = cfg.locales
                 (0 until list.size()).map { idx -> list[idx] }
             } else {
-                @Suppress("DEPRECATION")
                 listOf(cfg.locale)
             }
         }

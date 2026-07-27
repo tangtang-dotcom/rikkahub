@@ -2,7 +2,6 @@ package me.rerere.rikkahub.ui.pages.setting
 
 import android.net.Uri
 import me.rerere.hugeicons.HugeIcons
-import me.rerere.rikkahub.ui.pages.setting.components.ProviderRequirement
 import me.rerere.hugeicons.stroke.Camera01
 import me.rerere.hugeicons.stroke.DragDropHorizontal
 import me.rerere.hugeicons.stroke.Image02
@@ -13,8 +12,6 @@ import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.Cancel01
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -99,7 +96,6 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var searchQuery by remember { mutableStateOf("") }
     val lazyListState = rememberLazyListState()
-    var providerToDelete by remember { mutableStateOf<ProviderSetting?>(null) }
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
         val newProviders = settings.providers.toMutableList().apply {
             add(to.index, removeAt(from.index))
@@ -226,53 +222,11 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                             },
                             onClick = {
                                 navController.navigate(Screen.SettingProviderDetail(providerId = provider.id.toString()))
-                            },
-                            onLongClick = {
-                                providerToDelete = provider
                             }
                         )
                     }
                 }
             }
-        }
-
-        providerToDelete?.let { target ->
-            AlertDialog(
-                onDismissRequest = { providerToDelete = null },
-                title = { Text(stringResource(R.string.setting_provider_delete_title)) },
-                text = {
-                    Text(stringResource(R.string.setting_provider_delete_body, target.name))
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            vm.updateSettings(
-                                settings.copy(
-                                    providers = settings.providers.filter { it.id != target.id },
-                                    // If the user removed a built-in default, remember the
-                                    // intent so the re-seed pass on settings load doesn't
-                                    // resurrect it. Without this gate the row just bobs to
-                                    // the bottom of the list on next reload.
-                                    deletedBuiltInProviderIds =
-                                        if (target.builtIn) settings.deletedBuiltInProviderIds + target.id
-                                        else settings.deletedBuiltInProviderIds,
-                                )
-                            )
-                            providerToDelete = null
-                        }
-                    ) {
-                        Text(
-                            text = stringResource(R.string.setting_provider_delete_confirm),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { providerToDelete = null }) {
-                        Text(stringResource(R.string.setting_provider_delete_cancel))
-                    }
-                },
-            )
         }
     }
 }
@@ -630,25 +584,23 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProviderItem(
     provider: ProviderSetting,
     modifier: Modifier = Modifier,
     dragHandle: @Composable () -> Unit,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick,
-        ),
+        modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = if (provider.enabled) {
                 CustomColors.listItemColors.containerColor
             } else MaterialTheme.colorScheme.errorContainer,
         ),
+        onClick = {
+            onClick()
+        }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -691,12 +643,7 @@ private fun ProviderItem(
                     }
                     if (provider.name == "AiHubMix") {
                         Tag(type = TagType.INFO) {
-                            Text(stringResource(R.string.setting_provider_page_discount_badge))
-                        }
-                    }
-                    ProviderRequirement.from(provider).forEach { req ->
-                        Tag(type = req.severity) {
-                            Text(req.label)
+                            Text("10% 优惠")
                         }
                     }
                 }

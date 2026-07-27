@@ -93,13 +93,6 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.uuid.Uuid
 
-// The image-generation picker should surface any model that can OUTPUT images, not only ones
-// explicitly typed IMAGE: a model added before its type was known, or one the user tagged with an
-// image output modality by hand, still belongs there. Chat/embedding pickers stay an exact match.
-internal fun Model.matchesPickerType(pickerType: ModelType): Boolean =
-    type == pickerType ||
-        (pickerType == ModelType.IMAGE && Modality.IMAGE in outputModalities)
-
 class ModelListState internal constructor(
     modelId: Uuid?,
     providers: List<ProviderSetting>,
@@ -122,7 +115,7 @@ class ModelListState internal constructor(
 
     val filteredProviders: List<ProviderSetting>
         get() = providers.fastFilter { provider ->
-            provider.enabled && provider.models.fastAny { model -> model.matchesPickerType(type) }
+            provider.enabled && provider.models.fastAny { model -> model.type == type }
         }
 
     fun open() {
@@ -312,7 +305,7 @@ private fun ColumnScope.ModelList(
 
     val favoriteModels = settings.value.favoriteModels.mapNotNull { modelId ->
         val model = settings.value.providers.findModelById(modelId) ?: return@mapNotNull null
-        if (!model.matchesPickerType(modelType)) return@mapNotNull null
+        if (model.type != modelType) return@mapNotNull null
         val provider = model.findProvider(providers = settings.value.providers, checkOverwrite = false) ?: return@mapNotNull null
         model to provider
     }
@@ -321,14 +314,14 @@ private fun ColumnScope.ModelList(
 
     val typeFilteredModelsByProvider = remember(providers, modelType) {
         providers.associate { provider ->
-            provider.id to provider.models.fastFilter { it.matchesPickerType(modelType) }
+            provider.id to provider.models.fastFilter { it.type == modelType }
         }
     }
 
     val searchFilteredModelsByProvider = remember(providers, modelType, searchKeywords) {
         providers.associate { provider ->
             provider.id to provider.models.fastFilter {
-                it.matchesPickerType(modelType) && it.displayName.contains(searchKeywords, true)
+                it.type == modelType && it.displayName.contains(searchKeywords, true)
             }
         }
     }
@@ -624,7 +617,6 @@ private fun ColumnScope.ModelList(
     val providerBadgeListState = rememberLazyListState()
     LaunchedEffect(lazyListState) {
         // 当LazyColumn滚动时，LazyRow也跟随滚动
-        @OptIn(kotlinx.coroutines.FlowPreview::class)
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .distinctUntilChanged()
             .debounce(100) // 防抖处理
@@ -651,7 +643,7 @@ private fun ColumnScope.ModelList(
             contentPadding = PaddingValues(horizontal = 8.dp),
             state = providerBadgeListState
         ) {
-            items(providers, key = { it.id }) { provider ->
+            items(providers) { provider ->
                 AssistChip(
                     onClick = {
                         val position = providerPositions[provider.id] ?: 0

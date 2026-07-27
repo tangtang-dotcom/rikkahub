@@ -8,9 +8,6 @@ data class TokenUsage(
     val completionTokens: Int = 0,
     val cachedTokens: Int = 0,
     val totalTokens: Int = 0,
-    // Provider-reported generation cost in USD (OpenRouter `usage.cost`). Null when the
-    // provider doesn't report it. Nullable + defaulted so older persisted messages decode fine.
-    val cost: Double? = null,
 )
 
 fun TokenUsage?.merge(other: TokenUsage): TokenUsage {
@@ -30,12 +27,10 @@ fun TokenUsage?.merge(other: TokenUsage): TokenUsage {
     } else {
         this?.cachedTokens ?: 0
     }
-    val cost = other.cost ?: this?.cost
     return TokenUsage(
         promptTokens = promptTokens,
         completionTokens = completionTokens,
         totalTokens = totalTokens,
-        cachedTokens = cachedTokens,
-        cost = cost,
+        cachedTokens = cachedTokens
     )
 }

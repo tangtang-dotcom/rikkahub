@@ -21,6 +21,8 @@ fun <T> Flow<T>.toMutableStateFlow(
         }.onFailure {
             it.printStackTrace()
             Log.e(TAG, "Error while collecting flow: ${it.message}", it)
+
+            Runtime.getRuntime().halt(1)
         }
     }
     return stateFlow

@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,7 +55,6 @@ fun ProviderConnectionTester(
     var showTestDialog by remember { mutableStateOf(false) }
     val providerManager = koinInject<ProviderManager>()
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     IconButton(onClick = { showTestDialog = true }) {
         Icon(HugeIcons.Connect, null)
@@ -95,19 +93,19 @@ fun ProviderConnectionTester(
                     }
 
                     TestResultItem(
-                        label = stringResource(R.string.provider_test_non_streaming),
+                        label = "非流式",
                         state = nonStreamingState,
                         resultText = (nonStreamingState as? UiState.Success)?.data ?: ""
                     )
 
                     TestResultItem(
-                        label = stringResource(R.string.provider_test_streaming),
+                        label = "流式",
                         state = streamingState,
                         resultText = streamingText
                     )
 
                     TestResultItem(
-                        label = stringResource(R.string.provider_test_tool_call),
+                        label = "工具调用",
                         state = toolsState,
                         resultText = (toolsState as? UiState.Success)?.data ?: ""
                     )
@@ -186,16 +184,12 @@ fun ProviderConnectionTester(
                                         ?.filterIsInstance<UIMessagePart.Tool>()
                                         ?.firstOrNull()
                                     val result = if (toolCall != null) {
-                                        context.getString(
-                                            R.string.provider_test_tool_called,
-                                            toolCall.toolName,
-                                            toolCall.input,
-                                        )
+                                        "调用: ${toolCall.toolName}  入参: ${toolCall.input}"
                                     } else {
                                         val text = message?.parts
                                             ?.filterIsInstance<UIMessagePart.Text>()
                                             ?.joinToString("") { it.text } ?: ""
-                                        context.getString(R.string.provider_test_no_tool, text)
+                                        "未调用工具，响应: $text"
                                     }
                                     toolsState = UiState.Success(result)
                                 }.onFailure { toolsState = UiState.Error(it) }

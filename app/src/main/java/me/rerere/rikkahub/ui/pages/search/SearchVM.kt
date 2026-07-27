@@ -45,7 +45,6 @@ class SearchVM(
 
     init {
         viewModelScope.launch {
-            @OptIn(kotlinx.coroutines.FlowPreview::class)
             _searchQuery
                 .debounce(300L)
                 .collectLatest { query -> performSearch(query) }

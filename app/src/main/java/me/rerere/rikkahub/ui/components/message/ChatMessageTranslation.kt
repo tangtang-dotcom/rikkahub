@@ -69,11 +69,8 @@ fun LanguageSelectionDialog(
             Locale.KOREAN,
             Locale.FRENCH,
             Locale.GERMAN,
-            Locale.forLanguageTag("es-ES"),
+            Locale("es", "ES"),
             Locale.ITALIAN,
-            Locale.forLanguageTag("ar"),
-            Locale.forLanguageTag("fa"),
-            Locale.forLanguageTag("ur"),
         )
     }
 
@@ -89,10 +86,7 @@ fun LanguageSelectionDialog(
             Locale.FRENCH -> stringResource(R.string.language_french)
             Locale.GERMAN -> stringResource(R.string.language_german)
             Locale.ITALIAN -> stringResource(R.string.language_italian)
-            Locale.forLanguageTag("es-ES") -> stringResource(R.string.language_spanish)
-            Locale.forLanguageTag("ar") -> stringResource(R.string.language_arabic)
-            Locale.forLanguageTag("fa") -> stringResource(R.string.language_persian)
-            Locale.forLanguageTag("ur") -> stringResource(R.string.language_urdu)
+            Locale("es", "ES") -> stringResource(R.string.language_spanish)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
     }
@@ -119,7 +113,7 @@ fun LanguageSelectionDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(languages, key = { it.toLanguageTag() }) { language ->
+                items(languages) { language ->
                     Card(
                         onClick = {
                             onLanguageSelected(language)

@@ -26,14 +26,10 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.provider.BuiltInTools
-import me.rerere.ai.provider.ImageGenerationParams
-import me.rerere.ai.ui.ImageAspectRatio
-import me.rerere.ai.ui.ImageGenerationItem
 import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
@@ -131,7 +127,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             )
             val response = client.newCall(request).await()
             if (response.isSuccessful) {
-                val body = response.body.string()
+                val body = response.body?.string() ?: error("empty body")
                 Log.d(TAG, "listModels: $body")
                 val bodyObject = json.parseToJsonElement(body).jsonObject
                 val models = bodyObject["models"]?.jsonArray ?: return@withContext emptyList()
@@ -188,10 +184,10 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
 
         val response = client.newCall(request).await()
         if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
+            throw Exception("Failed to get response: ${response.code} ${response.body?.string()}")
         }
 
-        val bodyStr = response.body.string()
+        val bodyStr = response.body?.string() ?: ""
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
         val candidates = bodyJson["candidates"]!!.jsonArray
@@ -297,7 +293,8 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                         Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "onEvent: failed to parse $data", e)
+                    e.printStackTrace()
+                    println("[onEvent] 解析错误: $data")
                 }
             }
 
@@ -308,14 +305,15 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             ) {
                 var exception = t
 
-                Log.w(TAG, "onFailure: ${t?.message}", t)
+                t?.printStackTrace()
+                println("[onFailure] 发生错误: ${t?.message}")
 
                 try {
                     if (t == null && response != null) {
                         val bodyStr = response.body.stringSafe()
                         if (!bodyStr.isNullOrEmpty()) {
                             val bodyElement = json.parseToJsonElement(bodyStr)
-                            Log.d(TAG, "onFailure: error body $bodyElement")
+                            println(bodyElement)
                             if (bodyElement is JsonObject) {
                                 exception = Exception(
                                     bodyElement["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
@@ -327,7 +325,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                         }
                     }
                 } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse error body", e)
+                    e.printStackTrace()
                     exception = e
                 } finally {
                     close(exception ?: Exception("Stream failed"))
@@ -557,15 +555,11 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
         return when {
             jsonObject.containsKey("text") -> {
                 val thought = jsonObject["thought"]?.jsonPrimitive?.booleanOrNull ?: false
-                val thoughtSignature = jsonObject["thoughtSignature"]?.jsonPrimitive?.contentOrNull
                 val text = jsonObject["text"]?.jsonPrimitive?.content ?: ""
                 if (thought) UIMessagePart.Reasoning(
                     reasoning = text,
                     createdAt = Clock.System.now(),
-                    finishedAt = null,
-                    metadata = thoughtSignature?.let {
-                        buildJsonObject { put("thoughtSignature", JsonPrimitive(it)) }
-                    },
+                    finishedAt = null
                 ) else UIMessagePart.Text(text)
             }
 
@@ -625,45 +619,16 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
     private fun JsonArrayBuilder.addModelMessage(message: UIMessage) {
         val groups = groupPartsByToolBoundary(message.parts)
         val partsBuffer = mutableListOf<JsonObject>()
-        // Forward thoughtSignature from any preceding Reasoning part to the next Tool
-        // part that doesn't already carry one. Gemini emits the signature on the thought
-        // (text + thought=true), but Reasoning parts are not sent back to Gemini in
-        // continuation requests — without forwarding, the next functionCall arrives
-        // unsigned and Gemini rejects with "Function call is missing a thought_signature
-        // in functionCall parts". Tracked across the message's parts list so cross-chunk
-        // streaming (thought in chunk N, functionCall in chunk N+1) still attaches the
-        // signature when the assistant message is finally serialized.
-        var carriedSig: String? = null
 
         for (group in groups) {
             when (group) {
                 is PartGroup.Content -> {
-                    // Track most recent reasoning signature for the next tool group.
-                    group.parts.forEach { part ->
-                        if (part is UIMessagePart.Reasoning) {
-                            part.metadata?.get("thoughtSignature")
-                                ?.jsonPrimitive?.contentOrNull
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let { carriedSig = it }
-                        }
-                    }
                     group.parts.mapNotNull { it.toGooglePart() }.forEach { partsBuffer.add(it) }
                 }
 
                 is PartGroup.Tools -> {
                     // 添加 functionCall 到 parts 缓冲
-                    group.tools.forEach { tool ->
-                        val effective = if (
-                            tool.metadata?.get("thoughtSignature")?.jsonPrimitive?.contentOrNull.isNullOrBlank()
-                            && carriedSig != null
-                        ) {
-                            tool.copy(metadata = buildJsonObject {
-                                put("thoughtSignature", JsonPrimitive(carriedSig))
-                            })
-                        } else tool
-                        partsBuffer.add(effective.toFunctionCallPart())
-                    }
-                    carriedSig = null  // consumed by this tool group
+                    group.tools.forEach { partsBuffer.add(it.toFunctionCallPart()) }
 
                     // 输出 model 消息
                     add(buildJsonObject {
@@ -833,85 +798,5 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             totalTokens = totalTokens,
             cachedTokens = cachedTokens
         )
-    }
-
-    override suspend fun generateImage(
-        providerSetting: ProviderSetting,
-        params: ImageGenerationParams
-    ): Flow<ImageGenerationItem> = flow {
-        require(providerSetting is ProviderSetting.Google) {
-            "Expected Google provider setting"
-        }
-
-        val items = withContext(Dispatchers.IO) {
-            val requestBody = buildJsonObject {
-                putJsonArray("instances") {
-                    add(buildJsonObject {
-                        put("prompt", params.prompt)
-                    })
-                }
-                putJsonObject("parameters") {
-                    put("sampleCount", params.numOfImages)
-                    put(
-                        "aspectRatio", when (params.aspectRatio) {
-                            ImageAspectRatio.SQUARE -> "1:1"
-                            ImageAspectRatio.LANDSCAPE -> "16:9"
-                            ImageAspectRatio.PORTRAIT -> "9:16"
-                        }
-                    )
-                }
-            }.mergeCustomBody(params.customBody)
-
-            val url = buildUrl(
-                providerSetting = providerSetting,
-                path = if (providerSetting.vertexAI) {
-                    "publishers/google/models/${params.model.modelId}:predict"
-                } else {
-                    "models/${params.model.modelId}:predict"
-                }
-            )
-
-            val request = transformRequest(
-                providerSetting = providerSetting,
-                request = Request.Builder()
-                    .url(url)
-                    .headers(params.customHeaders.toHeaders())
-                    .post(
-                        json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                    )
-                    .configureReferHeaders(providerSetting.baseUrl)
-                    .build()
-            )
-
-            val response = client.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("Failed to generate image: ${response.code} ${response.body.string()}")
-            }
-
-            val bodyStr = response.body.string()
-            val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-
-            val predictions = bodyJson["predictions"]?.jsonArray ?: error("No predictions in response")
-
-            predictions.mapNotNull { prediction ->
-                val predictionObj = prediction.jsonObject
-                val bytesBase64Encoded = predictionObj["bytesBase64Encoded"]?.jsonPrimitive?.contentOrNull
-
-                if (bytesBase64Encoded != null) {
-                    ImageGenerationItem(
-                        data = bytesBase64Encoded,
-                        mimeType = "image/png"
-                    )
-                } else {
-                    null
-                }
-            }
-        }
-
-        if (items.isEmpty()) error("No images in response (the model may have refused the prompt).")
-
-        items.forEach { item ->
-            emit(item)
-        }
     }
 }
