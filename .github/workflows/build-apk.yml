@@ -67,7 +67,7 @@ jobs:
           } > local.properties
 
       - name: Build signed Release APK
-        run: ./gradlew assembleRelease --no-daemon -x :web:buildWebUi -x :web:buildWebUi
+        run: ./gradlew assembleRelease --no-daemon -x :web:buildWebUi -x :web:buildWebUi -x :web:buildWebUi
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
