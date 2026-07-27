@@ -10,141 +10,152 @@ permissions:
   actions: write
 
 env:
-  UPSTREAM_OFFICIAL_REPO: rikkahub/rikkahub
-  UPSTREAM_OFFICIAL_BRANCH: master
-  UPSTREAM_EXTV_REPO: ExTV/rikkahub-agent
-  UPSTREAM_EXTV_BRANCH: master
+  OFFICIAL_REPO: rikkahub/rikkahub
+  OFFICIAL_BRANCH: master
+  AGENT_REPO: ExTV/rikkahub-agent
+  AGENT_BRANCH: master
 
 jobs:
-  check-and-merge:
+  sync:
     runs-on: ubuntu-latest
     outputs:
-      has_update: ${{ steps.check.outputs.has_update }}
-      merge_status: ${{ steps.merge.outputs.merge_status }}
+      should_build: ${{ steps.sync.outputs.should_build }}
+      official_updated: ${{ steps.sync.outputs.official_updated }}
+      agent_updated: ${{ steps.sync.outputs.agent_updated }}
+      agent_mode: ${{ steps.sync.outputs.agent_mode }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
-          # PAT_TOKEN can push workflow files; falls back to GITHUB_TOKEN
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Add upstream remotes
+      - name: 检查并合并双上游 · Check and merge upstreams
+        id: sync
+        shell: bash
         run: |
-          git remote add upstream-official https://github.com/${{ env.UPSTREAM_OFFICIAL_REPO }}.git
-          git remote add upstream-extv https://github.com/${{ env.UPSTREAM_EXTV_REPO }}.git
-          git fetch upstream-official --tags
-          git fetch upstream-extv --tags
-
-      - name: Check for upstream updates
-        id: check
-        run: |
-          CURRENT=$(git rev-parse HEAD)
-          OFFICIAL=$(git rev-parse upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }})
-          EXTV=$(git rev-parse upstream-extv/${{ env.UPSTREAM_EXTV_BRANCH }})
-          echo "current=$CURRENT"
-          echo "official=$OFFICIAL"
-          echo "extv=$EXTV"
-          # Track official as primary; log ExTV only
-          if [ "$CURRENT" != "$OFFICIAL" ]; then
-            echo "has_update=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_update=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Merge official upstream
-        id: merge
-        if: steps.check.outputs.has_update == 'true'
-        run: |
-          set -e
+          set -euo pipefail
           git config user.name "Auto Merge Bot"
           git config user.email "bot@rikkahub-agents.local"
+          git remote add official "https://github.com/${OFFICIAL_REPO}.git"
+          git remote add agent "https://github.com/${AGENT_REPO}.git"
+          git fetch official "${OFFICIAL_BRANCH}" --tags
+          git fetch agent "${AGENT_BRANCH}" --tags
 
-          echo "=== merge official upstream ==="
-          git merge upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }} --no-commit --no-ff 2>&1 || true
+          START_HEAD=$(git rev-parse HEAD)
+          OFFICIAL_REF="official/${OFFICIAL_BRANCH}"
+          AGENT_REF="agent/${AGENT_BRANCH}"
+          OFFICIAL_UPDATED=false
+          AGENT_UPDATED=false
+          AGENT_MODE=none
+          SHOULD_BUILD=false
 
-          CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-          if [ -n "$CONFLICTS" ]; then
-            echo "=== resolve conflicts ==="
-            OURS_COUNT=0
-            THEIRS_COUNT=0
-            for f in $CONFLICTS; do
-              if git ls-tree upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }} "$f" 2>/dev/null | grep -q .; then
-                echo "  [theirs] $f"
-                git checkout --theirs "$f" 2>/dev/null || true
-                THEIRS_COUNT=$((THEIRS_COUNT + 1))
-              else
-                echo "  [ours]   $f"
-                git checkout --ours "$f" 2>/dev/null || true
-                OURS_COUNT=$((OURS_COUNT + 1))
-              fi
-              git add "$f" 2>/dev/null || true
-            done
-            echo "=== done: official=$THEIRS_COUNT fork-only=$OURS_COUNT ==="
+          # Merge official updates first. Stop on real conflicts instead of
+          # silently discarding fork functionality.
+          if ! git merge-base --is-ancestor "$OFFICIAL_REF" HEAD; then
+            OFFICIAL_UPDATED=true
+            SHOULD_BUILD=true
+            echo "Official updates detected; merging official first"
+            if ! git merge "$OFFICIAL_REF" --no-ff --no-edit; then
+              git merge --abort || true
+              echo "Official merge has conflicts; manual review required"
+              exit 1
+            fi
           else
-            echo "=== no conflicts ==="
+            echo "Official upstream is already contained"
           fi
 
-          REMAINING=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-          if [ -n "$REMAINING" ]; then
-            echo "=== unresolved conflicts remain ==="
-            echo "merge_status=failure_conflict" >> "$GITHUB_OUTPUT"
-            git diff --name-only --diff-filter=U
-            exit 1
+          if ! git merge-base --is-ancestor "$AGENT_REF" HEAD; then
+            AGENT_UPDATED=true
+            SHOULD_BUILD=true
+            UNIQUE_AGENT_PATCHES=$(git cherry HEAD "$AGENT_REF" | awk '$1 == "+" {count++} END {print count+0}')
+            if [ "$UNIQUE_AGENT_PATCHES" -eq 0 ]; then
+              AGENT_MODE=equivalent
+              echo "Agent update is patch-equivalent to current/official code"
+              git merge "$AGENT_REF" -s ours --no-ff --no-edit
+            else
+              AGENT_MODE=merge
+              echo "Agent has $UNIQUE_AGENT_PATCHES unique patch(es); merging after official"
+              if ! git merge "$AGENT_REF" --no-ff --no-edit; then
+                git merge --abort || true
+                echo "Agent differs from official and has conflicts; manual review required"
+                exit 1
+              fi
+            fi
+          else
+            echo "Agent upstream is already contained"
           fi
 
-          for f in close-blank-issues.yml daily-build.yml; do
-            [ -f ".github/workflows/$f" ] && git rm -f ".github/workflows/$f" 2>/dev/null || true
+          # Keep this fork's language, signing, notification and CI policy.
+          git checkout "$START_HEAD" -- \
+            README.md README_EN.md \
+            .github/workflows/build-apk.yml \
+            .github/workflows/codeql.yml \
+            .github/workflows/issue-notify.yml \
+            .github/workflows/merge-upstream.yml
+          for file in close-blank-issues.yml daily-build.yml; do
+            [ ! -e ".github/workflows/$file" ] || git rm -f ".github/workflows/$file"
           done
-          git add -A 2>/dev/null || true
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: restore fork-owned configuration after upstream sync"
+          fi
 
-          git commit -m "chore: merge upstream rikkahub/rikkahub" --no-edit 2>&1 || true
-          echo "merge_status=success" >> "$GITHUB_OUTPUT"
-          git push origin master 2>&1
-          echo "=== push ok ==="
+          echo "official_updated=$OFFICIAL_UPDATED" >> "$GITHUB_OUTPUT"
+          echo "agent_updated=$AGENT_UPDATED" >> "$GITHUB_OUTPUT"
+          echo "agent_mode=$AGENT_MODE" >> "$GITHUB_OUTPUT"
+          echo "should_build=$SHOULD_BUILD" >> "$GITHUB_OUTPUT"
+          if [ "$SHOULD_BUILD" = true ]; then
+            git push origin master
+          else
+            echo "Both upstreams are current; no push or build"
+          fi
 
-      - name: No update
-        if: steps.check.outputs.has_update != 'true'
+      - name: 同步失败通知 · Notify sync failure
+        if: failure()
+        env:
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
         run: |
-          echo "upstream unchanged; skip"
-          echo "merge_status=skipped" >> "$GITHUB_OUTPUT"
+          if [ -z "$SERVERCHAN_KEY" ]; then
+            echo "SERVERCHAN_KEY not set; skip notification"
+            exit 0
+          fi
+          curl -s "https://sctapi.ftqq.com/${SERVERCHAN_KEY}.send" \
+            -d "title=RikkaHub Agents: upstream sync failed" \
+            -d "desp=Manual conflict review required.%0A%0Ahttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
 
   build:
-    needs: check-and-merge
-    if: ${{ needs.check-and-merge.outputs.has_update == 'true' && needs.check-and-merge.outputs.merge_status == 'success' }}
+    needs: sync
+    if: needs.sync.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
           submodules: true
-          ref: master
-
-      - name: Set up JDK 17
+      - name: 配置 JDK 17 · Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Set up Android SDK
+      - name: 配置 Android SDK · Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Set up pnpm
+      - name: 配置 pnpm · Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
-
-      - name: Install web-ui dependencies
+      - name: 安装 Web 依赖 · Install web dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
-
-      - name: Sign and build Release APK
+      - name: 签名并编译 · Sign and build
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           chmod +x gradlew
           if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
             echo "Missing signing secrets"
@@ -158,32 +169,22 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > local.properties
           ./gradlew assembleRelease --no-daemon
-
-      - name: Upload APK artifacts
+      - name: 上传 APK · Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
-
-      - name: Notify build status
+      - name: 构建结果通知 · Notify build result
         if: always()
         env:
           STATUS: ${{ job.status }}
-          MERGE_STATUS: ${{ needs.check-and-merge.outputs.merge_status }}
           SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
         run: |
           if [ -z "$SERVERCHAN_KEY" ]; then
             echo "SERVERCHAN_KEY not set; skip notification"
             exit 0
           fi
-          if [ "$STATUS" = "success" ]; then
-            MSG="Merge + build OK.%0A%0Ahttps://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
-          elif [ "$MERGE_STATUS" = "failure_conflict" ]; then
-            MSG="Merge conflict; manual fix required.%0A%0Ahttps://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
-          else
-            MSG="Build failed.%0A%0Ahttps://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
-          fi
           curl -s "https://sctapi.ftqq.com/${SERVERCHAN_KEY}.send" \
-            -d "title=RikkaHub Agents: upstream workflow" \
-            -d "desp=$MSG" || true
+            -d "title=RikkaHub Agents: upstream build ${STATUS}" \
+            -d "desp=official=${{ needs.sync.outputs.official_updated }}, agent=${{ needs.sync.outputs.agent_updated }}, mode=${{ needs.sync.outputs.agent_mode }}%0A%0Ahttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true

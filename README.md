@@ -13,18 +13,17 @@
 
 </div>
 
-<div align="center">
-  <img src="docs/img/chat.png" alt="聊天界面" width="150" />
-  <img src="docs/img/desktop.png" alt="桌面界面" width="450" />
-</div>
 
 ## 下载
 
 - [Releases](https://github.com/xiwangone/rikkahub-agents/releases)：稳定发布包
 - [Actions](https://github.com/xiwangone/rikkahub-agents/actions)：每次成功构建的 APK 产物
 
-> [!WARNING]
-> 本仓库为独立维护的 Fork。安装前请核对来源、签名和权限；本仓库问题请在本仓库反馈。
+> [!CAUTION]
+> ## 非官方、非原版构建
+> **本仓库不是 RikkaHub 官方仓库，也不是 ExTV/rikkahub-agent 原版仓库。**
+> 这是由第三方独立维护的 Fork，代码、自动化流程、签名与发布产物均可能不同。
+> 安装前请核对仓库地址、APK 签名、权限范围和发布说明；请勿将本仓库问题提交给官方或原版维护者。
 
 ## 核心能力
 
@@ -74,6 +73,13 @@ cd rikkahub-agents
 - Fork 专属问题请提交到本仓库的 [Issues](https://github.com/xiwangone/rikkahub-agents/issues)。
 - 提交改动前请完成对应模块构建或测试，避免混入无关重构。
 
-## 来源与许可
+## 致谢与来源
 
-本仓库源自 [ExTV/rikkahub-agent](https://github.com/ExTV/rikkahub-agent)，其项目基于 [RikkaHub](https://github.com/rikkahub/rikkahub)。项目遵循 [GNU AGPL v3.0](LICENSE)。
+感谢以下项目及其维护者提供的代码与设计基础：
+
+- **RikkaHub 官方项目**：[rikkahub/rikkahub](https://github.com/rikkahub/rikkahub)
+- **Agent 原版项目**：[ExTV/rikkahub-agent](https://github.com/ExTV/rikkahub-agent)
+
+本仓库源自 Agent 原版，并持续检查和合并官方更新。本仓库的修改、构建及发布均由本仓库独立负责，不代表上述项目。
+
+项目遵循 [GNU AGPL v3.0](LICENSE)。
