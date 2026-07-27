@@ -61,14 +61,6 @@ cd rikkahub-agents
 > [!TIP]
 > 需要在 `app/` 目录下放置 `google-services.json`（Firebase 配置）。
 
-### 自动化工作流
-
-仓库内置 GitHub Actions 工作流，支持：
-
-- `build.yml` - 自动编译 Debug/Release APK
-- `release.yml` - 自动发布 Release
-- 编译结果推送到 **Server酱**（微信）和 **Telegram**
-
 ---
 
 ## 📁 仓库结构
@@ -102,6 +94,15 @@ cd rikkahub-agents
 - **DataStore** / **Room** / **Coil**
 - **Material You** / **Navigation 3**
 - **OkHttp** / **kotlinx.serialization**
+
+---
+
+## 🙏 致谢
+
+感谢以下开源项目为本仓库提供的坚实基础：
+
+- [**RikkaHub**](https://github.com/rikkahub/rikkahub) — 官方原版，多 LLM Provider 的 Android 客户端
+- [**ExTV/rikkahub-agent**](https://github.com/ExTV/rikkahub-agent) — 上游 Fork，引入 Full Agent Mode 特性
 
 ---
 
