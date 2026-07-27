@@ -1,104 +1,115 @@
 <div align="center">
-  <img src="docs/icon.png" alt="App Icon" width="100" />
-  <h1>RikkaHub</h1>
+  <img src="docs/icon.png" alt="RikkaHub Agents" width="100" />
+  <h1>RikkaHub Agents</h1>
+  <p><b>AI 自动维护 · 官方 RikkaHub + ExTV 合并版</b></p>
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rikkahub/rikkahub)
-[![Ask DeepWiki](https://img.shields.io/badge/zread.ai-blue?style=flat&logo=readthedocs)](https://zread.ai/rikkahub/rikkahub)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/build.yml?style=flat&logo=githubactions)](https://github.com/xiwangone/rikkahub-agents/actions)
+[![License](https://img.shields.io/github/license/xiwangone/rikkahub-agents?style=flat)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases)
+[![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0?style=flat&logo=telegram)](https://t.me/your_bot)
 
-A native Android LLM chat client that supports switching between different providers for
-conversations 🤖💬
+🤖 基于 RikkaHub 的 AI 设备自动化与编译维护仓库
 
-Click to join our Discord server 👉 [【RikkaHub】](https://discord.gg/9weBqxe5c4)
-
-[简体中文](README_ZH_CN.md) | [繁體中文](README_ZH_TW.md) | English
 </div>
 
-<div align="center">
-  <img src="docs/img/chat.png" alt="Chat Interface" width="150" />
-  <img src="docs/img/desktop.png" alt="Models Picker" width="450" />
-</div>
+---
 
-## 🚀 Download
+## 📋 概述
 
-🔗 [Download from Website](https://rikka-ai.com/download) (Recommended)
+本仓库是 **RikkaHub** 官方版与 **ExTV** 原版 Fork 的合并维护版，集成了 AI 驱动的自动化编译、设备管理和通知推送能力。
 
-🔗 [Download from Google Play](https://play.google.com/store/apps/details?id=me.rerere.rikkahub)
+### 🎯 核心能力
 
-> [!WARNING]
-> There are many forked versions of RikkaHub. Issues with forks are unrelated to RikkaHub, so please use forks with caution to avoid privacy leaks or excessive permission requests.
+| 功能 | 说明 |
+|------|------|
+| 🤖 **AI 自动化维护** | 通过 Action 工作流自动编译、检测代码变更 |
+| 🔧 **80+ 设备工具** | 集成 SSH、ADB、Telegram Bot 等设备管理工具 |
+| ⚙️ **自动编译** | 提交代码后自动构建 APK，编译结果微信/Telegram 通知 |
+| 🔗 **Telegram Bot** | 远程控制、查询编译状态、触发任务 |
+| 🔄 **SSH 通道** | 内网穿透与远程设备管理 |
+| 🌐 **Server酱通知** | 编译成功/失败即时推送到微信 |
 
-## 💖 Sponsors
+### 📱 上游特性（源自 RikkaHub）
 
-|                                         Sponsor                                         | Description                                                                                                                                                                                                                                         |
-|:---------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="docs/sponsors/aihubmix.png" alt="Aihubmix" width="50" /><br /><b>Aihubmix</b> | Thanks to <a href="https://aihubmix.com?aff=pG7r">aihubmix.com</a> for their financial support. We recommend using aihubmix as a one-stop shop for mainstream models worldwide. (OpenAI, Claude, Google Gemini, DeepSeek, Qwen, and hundreds more). |
-| <img src="docs/sponsors/suixiang.jpg" alt="随想AI中转" width="50" /><br /><b><a href="https://sui-xiang.com">随想AI中转</a></b> | 感谢<a href="https://sui-xiang.com">随想AI中转</a>对本项目的赞助！随想AI中转 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站·无数据倒卖·无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。99.9% 可用性，关键调用从不掉队。 |
-| <img src="docs/sponsors/ztest.png" alt="真测 ztest.ai" width="50" /><br /><b><a href="https://ztest.ai">真测 ztest.ai</a></b> | 感谢<a href="https://ztest.ai">真测 ztest.ai</a>对本项目的赞助！真测 ztest.ai 是一个 AI 中转站模型检测平台，检测结果数据全公开，23 项探针覆盖协议、身份、能力、内容完整性、安全性、性能六大维度，交叉印证识别伪造与降级。作为独立第三方验证平台，实时监测 AI 中转站的模型真实性、响应质量与服务可用性。 |
+- 🎨 Material You 设计 + 深色模式
+- 📦 Workspace：基于 proot 的 Linux agent 环境
+- 🔄 多 AI Provider 支持（OpenAI / Google / Anthropic 兼容 API）
+- 🖼️ 多模态输入（图片、PDF、DOCX）
+- 🖥️ Web 多端访问
+- 🛠️ MCP 支持
+- 🔍 多搜索引擎（Exa / Tavily / Zhipu / Bing / Brave 等）
+- 🧩 Prompt 变量、Agent 自定义、记忆功能
+- 📝 Markdown 渲染（代码高亮、LaTeX、图表）
 
-## ✨ Features
+---
 
-- 🎨 Material You Design and 🌙 Dark mode
-- 📦 Workspace: a proot-based Linux agent environment
-- 🔄 Multiple AI Provider Support: custom API / URL / models (all OpenAI, Google, Anthropic compatible api)
-- 🖼️ Multimodal input support (Image, Text Documentation, PDF, Docx)
-- 🖥️ Web access for multi-platform use
-- 🛠️ MCP support
-- 📝 Markdown Rendering (with code highlighting, Latex formulas, tables, Mermaid)
-- 🪾 Message Branching
-- 🔍 Search capabilities (Exa, Tavily, Zhipu, LinkUp, Brave, Perplexity, etc.)
-- 🧩 Prompt variables (model name, time, etc.)
-- 🤳 QR code export and import for providers
-- 🤖 Agent customization
-- 🧠 ChatGPT-like memory feature
-- 📝 AI Translation
-- 🌐 Custom HTTP request headers and request bodies
-- 💌 Silly Tavern character card import
+## ⚡ 快速开始
 
-## ✨ Contributing
+### 构建
 
-This project is developed using [Android Studio](https://developer.android.com/studio). PRs are
-welcome!
+```bash
+# 克隆仓库
+git clone https://github.com/xiwangone/rikkahub-agents.git
+cd rikkahub-agents
 
-Technology stack documentation:
-
-- [Kotlin](https://kotlinlang.org/) (Development language)
-- [Koin](https://insert-koin.io/) (Dependency Injection)
-- [Jetpack Compose](https://developer.android.com/jetpack/compose) (UI framework)
-- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) (Preference data
-  storage)
-- [Room](https://developer.android.com/training/data-storage/room) (Database)
-- [Coil](https://coil-kt.github.io/coil/) (Image loading)
-- [Material You](https://m3.material.io/) (UI design)
-- [Navigation 3](https://developer.android.com/guide/navigation/navigation-3) (Navigation)
-- [Okhttp](https://square.github.io/okhttp/) (HTTP client)
-- [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) (JSON serialization)
+# 使用 Android Studio 打开
+./gradlew assembleDebug
+```
 
 > [!TIP]
-> You need a `google-services.json` file at `app` folder to build the app.
+> 需要在 `app/` 目录下放置 `google-services.json`（Firebase 配置）。
 
-> [!IMPORTANT]  
-> The following PRs will be rejected:
-> 1. Translation related changes, such as adding new languages or updating existing translations
-> 2. Adding new features, this project is opinionated and will not accept pull requests for new features
-> 3. Large-scale refactoring and changes generated by AI
+### 自动化工作流
 
-## 💰 Donate
+仓库内置 GitHub Actions 工作流，支持：
 
-* [Patreon](https://patreon.com/rikkahub)
-* [爱发电](https://afdian.com/a/reovo)
+- `build.yml` - 自动编译 Debug/Release APK
+- `release.yml` - 自动发布 Release
+- 编译结果推送到 **Server酱**（微信）和 **Telegram**
 
-## ⭐ Star History
+---
 
-If you like this project, please give it a star ⭐
+## 📁 仓库结构
 
-<a href="https://www.star-history.com/?type=date&repos=re-ovo%2Frikkahub">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&theme=dark&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=re-ovo/rikkahub&type=date&legend=top-left&sealed_token=qSytWeq7LkzQQViTjK0MYlvvA_qkfuwjOxOqgbRpLUZZwok5rO6LXhpVL7Mq-q3o89BfKpzE7g66BCy18H6eiqTsD8czD0J-HejLqmHy-npcvCTHu11wZw" />
- </picture>
-</a>
+```
+├── .agents/              # AI Agent 配置文件
+├── .github/              # GitHub Actions 工作流
+├── app/                  # 主应用模块
+├── ai/                   # AI SDK 抽象层
+├── common/               # 公共工具库
+├── workspace/            # Proot Linux 环境模块
+├── web/                  # 嵌入式 Web 服务器
+├── docs/                 # 文档与图标资源
+│   ├── icon.png          # 应用图标
+│   └── img/              # 截图
+└── AGENTS.md             # Agent 开发指南
+```
 
-## 📄 License
+---
 
-This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+## 📦 下载
+
+> 来自 Actions 的自动构建产物，可在 [Releases](https://github.com/xiwangone/rikkahub-agents/releases) 页面获取最新 APK。
+
+---
+
+## 🛠️ 技术栈
+
+- **Kotlin** / **Koin** / **Jetpack Compose**
+- **DataStore** / **Room** / **Coil**
+- **Material You** / **Navigation 3**
+- **OkHttp** / **kotlinx.serialization**
+
+---
+
+## ⚠️ 声明
+
+- 本仓库为个人维护的 **Fork 版本**，与原版 RikkaHub 无关
+- Issues / PRs 请提交到本仓库，不要打扰上游原项目
+- 使用 Fork 版本请注意隐私安全与权限管理
+
+---
+
+## 📄 许可
+
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0)
