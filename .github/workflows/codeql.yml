@@ -1,4 +1,4 @@
-name: CodeQL
+name: 代码扫描 · CodeQL
 
 # Quota-friendly: weekly + manual only (no push trigger)
 on:

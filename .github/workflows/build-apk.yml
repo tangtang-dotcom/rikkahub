@@ -1,4 +1,4 @@
-name: Build APK
+name: 编译 APK · Build APK
 
 on:
   workflow_dispatch:

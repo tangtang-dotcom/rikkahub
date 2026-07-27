@@ -1,4 +1,4 @@
-name: Issue Notify
+name: 议题通知 · Issue Notify
 
 on:
   issues:

@@ -1,4 +1,4 @@
-name: Merge Upstream
+name: 合并上游 · Merge Upstream
 
 on:
   workflow_dispatch:
