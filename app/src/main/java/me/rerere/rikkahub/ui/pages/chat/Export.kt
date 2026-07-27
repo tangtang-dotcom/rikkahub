@@ -427,8 +427,9 @@ private suspend fun exportToImage(
             bitmap.compress(Bitmap.CompressFormat.PNG, 90, fos)
         }
 
-        // Save to gallery
-        context.exportImage(activity, bitmap, filename)
+        // Save to gallery (best-effort; a gallery-save failure must not abort sharing)
+        runCatching { context.exportImage(activity, bitmap, filename) }
+            .onFailure { it.printStackTrace() }
 
         // Share the file
         val uri = FileProvider.getUriForFile(
@@ -542,7 +543,8 @@ private fun ExportedChatMessage(
         model?.displayName?.isNotBlank() == true -> model.displayName
         else -> "AI"
     }
-    val groupedParts = remember(message.parts) { message.parts.groupMessageParts() }
+    val partsKey = message.parts.size.toString() + (message.parts.lastOrNull()?.hashCode()?.toString() ?: "")
+    val groupedParts = remember(partsKey) { message.parts.groupMessageParts() }
     val messageContent: @Composable () -> Unit = {
         Column(
             modifier = Modifier

@@ -85,7 +85,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.rerere.ai.provider.ModelType
-import me.rerere.ai.ui.ImageGenSize
+import me.rerere.ai.ui.ImageAspectRatio
 import me.rerere.common.android.appTempFolder
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
@@ -239,7 +239,7 @@ private fun ImageGenScreen(
 ) {
     val prompt by vm.prompt.collectAsStateWithLifecycle()
     val numberOfImages by vm.numberOfImages.collectAsStateWithLifecycle()
-    val size by vm.size.collectAsStateWithLifecycle()
+    val aspectRatio by vm.aspectRatio.collectAsStateWithLifecycle()
     val isGenerating by vm.isGenerating.collectAsStateWithLifecycle()
     val currentGeneratedImages by vm.currentGeneratedImages.collectAsStateWithLifecycle()
     val referenceImages by vm.referenceImages.collectAsStateWithLifecycle()
@@ -248,10 +248,7 @@ private fun ImageGenScreen(
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
     var showSettingsSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-    )
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
 
     LaunchedEffect(error) {
         error?.let { errorMessage ->
@@ -318,8 +315,9 @@ private fun ImageGenScreen(
     if (showSettingsSheet) {
         SettingsBottomSheet(
             vm = vm,
+            settings = settings,
             numberOfImages = numberOfImages,
-            size = size,
+            aspectRatio = aspectRatio,
             scope = scope,
             sheetState = sheetState,
             onDismiss = { showSettingsSheet = false }
@@ -520,6 +518,7 @@ private fun ImageGalleryScreen(
     val generatedImages = vm.generatedImages.collectAsLazyPagingItems()
     val context = LocalContext.current
     val filesManager: FilesManager = koinInject()
+    @Suppress("DEPRECATION")  // LocalClipboard requires a suspend-friendly callsite refactor
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -684,8 +683,9 @@ private fun ImageGalleryScreen(
 @Composable
 private fun SettingsBottomSheet(
     vm: ImgGenVM,
+    settings: Settings,
     numberOfImages: Int,
-    size: String,
+    aspectRatio: ImageAspectRatio,
     scope: CoroutineScope,
     sheetState: SheetState,
     onDismiss: () -> Unit
@@ -709,6 +709,25 @@ private fun SettingsBottomSheet(
             )
 
             FormItem(
+                label = { Text(stringResource(R.string.imggen_page_model_selection)) },
+                description = { Text(stringResource(R.string.imggen_page_model_selection_desc)) }
+            ) {
+                ModelSelector(
+                    modelId = settings.imageGenerationModelId,
+                    providers = settings.providers,
+                    type = ModelType.IMAGE,
+                    onlyIcon = false,
+                    onSelect = { model ->
+                        scope.launch {
+                            vm.settingsStore.update { oldSettings ->
+                                oldSettings.copy(imageGenerationModelId = model.id)
+                            }
+                        }
+                    }
+                )
+            }
+
+            FormItem(
                 label = { Text(stringResource(R.string.imggen_page_generation_count)) },
                 description = { Text(stringResource(R.string.imggen_page_generation_count_desc)) }
             ) {
@@ -720,32 +739,31 @@ private fun SettingsBottomSheet(
             }
 
             FormItem(
-                label = { Text("Image Size") }
+                label = { Text(stringResource(R.string.imggen_page_aspect_ratio)) },
+                description = { Text(stringResource(R.string.imggen_page_aspect_ratio_desc)) }
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    ImageGenSize.entries.forEach { sizeOption ->
+                    ImageAspectRatio.entries.forEach { ratio ->
                         FilterChip(
-                            selected = size == sizeOption.value,
-                            onClick = { vm.updateSize(sizeOption.value) },
-                            label = { Text(sizeOption.value) }
+                            selected = aspectRatio == ratio,
+                            onClick = { vm.updateAspectRatio(ratio) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (ratio) {
+                                            ImageAspectRatio.SQUARE -> R.string.imggen_page_aspect_ratio_square
+                                            ImageAspectRatio.LANDSCAPE -> R.string.imggen_page_aspect_ratio_landscape
+                                            ImageAspectRatio.PORTRAIT -> R.string.imggen_page_aspect_ratio_portrait
+                                        }
+                                    )
+                                )
+                            }
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = size,
-                    onValueChange = vm::updateSize,
-                    label = { Text("Custom size") },
-                    placeholder = { Text("e.g. 1024x1024") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodySmall,
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

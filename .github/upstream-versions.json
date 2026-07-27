@@ -1,9 +1,0 @@
-{
-  "official": {
-    "last_processed_version": "2.4.3"
-  },
-  "agent": {
-    "last_processed_version": "v2.4.1-agent.2"
-  },
-  "policy": "Process only newer stable releases/tags. Merge official first, then compare Agent release patches."
-}

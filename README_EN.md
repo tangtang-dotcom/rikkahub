@@ -1,85 +1,122 @@
 <div align="center">
-  <img src="docs/logo.svg" alt="RikkaHub Agents" width="104" height="104" />
-  <h1>RikkaHub Agents</h1>
-  <p><strong>🤖 A full-featured Agent client for Android</strong></p>
-  <p>📱 Device automation · 💻 Remote terminal · 🧠 Multi-model chat · 🛠️ Tool execution</p>
 
-[简体中文](README.md) | [English](README_EN.md)
+<img src="docs/icon.png" width="96" height="96" alt="RikkaHub Agents" style="border-radius: 24px" />
 
-[![Build](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/build-apk.yml?style=flat&logo=githubactions&label=Build)](https://github.com/xiwangone/rikkahub-agents/actions/workflows/build-apk.yml)
-[![Upstream](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/merge-upstream.yml?style=flat&logo=git&label=Sync)](https://github.com/xiwangone/rikkahub-agents/actions/workflows/merge-upstream.yml)
-[![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases)
-[![License](https://img.shields.io/github/license/xiwangone/rikkahub-agents?style=flat)](LICENSE)
+# RikkaHub Agents
+
+**🤖 AI-maintained fork · ❌ NOT official · ❌ NOT original**
+
+[**English**](README_EN.md) | [**中文**](README.md)
 
 </div>
 
+---
 
-## 🚀 Download
+## 🚨 DISCLAIMER
 
-- [Releases](https://github.com/xiwangone/rikkahub-agents/releases): stable packages
-- [Actions](https://github.com/xiwangone/rikkahub-agents/actions): APK artifacts from successful runs
+| Project | Link | Description |
+|---------|------|-------------|
+| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | Official upstream, source of this code |
+| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | Original fork this repo is based on |
+| 🟡 **This repo (AI-maintained)** | https://github.com/xiwangone/rikkahub-agents | AI auto-merged + compiled |
 
-> [!CAUTION]
-> ## Unofficial, non-original build
-> **This is neither the official RikkaHub repository nor the original ExTV/rikkahub-agent repository.**
-> It is an independently maintained third-party fork; its code, automation, signing, and release artifacts may differ.
-> Before installing, verify the repository URL, APK signature, requested permissions, and release notes. Do not report this fork's issues to official or original maintainers.
+> ### 🚨🚨🚨 WARNING
+>
+> **This repository is AI-maintained.** Code is pulled from the official upstream and original fork, auto-merged, and compiled via GitHub Actions.
+>
+> - **❌ NOT official release** — Not from the RikkaHub team
+> - **❌ NOT original release** — Not from the ExTV developer
+> - ✅ Code sources are trustworthy (official + original), but compilation and release are **AI-automated**
+> - **⚠️ Use at your own risk. No quality guarantee.**
+> - **💡 For issues, please use [Official](https://github.com/rikkahub/rikkahub) or [Original Fork](https://github.com/ExTV/rikkahub-agent) first.**
 
-## ✨ Capabilities
+---
 
-| Capability | Description |
-|:--|:--|
-| Agent mode | Continuous tool execution for complex tasks |
-| Device tools | SSH, terminal, files, apps, and Android automation |
-| Multi-model access | OpenAI, Google, Anthropic-compatible APIs, and custom services |
-| Workspace | Isolated proot Linux environment and command execution |
-| Multimodal input | Images, documents, PDFs, and content processing |
-| Integrations | MCP, search, web access, and Telegram Bot |
-| Automated maintenance | Scheduled source sync and on-demand signed APK builds |
+## Overview
 
-## 🧰 Build
+A fork that turns the native Android LLM chat client into a full on-device agent: **80+ device tools**, AI-driven workflows, scheduled jobs, an in-app browser the AI controls, SSH, screen automation, file manager, music player, voice transcription, downloadable on-device LLMs, and a remote Telegram bot. All features start disabled.
 
-```bash
-git clone --recurse-submodules https://github.com/xiwangone/rikkahub-agents.git
-cd rikkahub-agents
-./gradlew assembleDebug
-```
+> *"Export my todos to a Markdown file in the workspace."*
+> *"Take a screenshot every 2 hours for the next 4 hours."*
+> *"When I receive a delivery notification, screenshot and save it."*
+> *"When I connect to my work WiFi, disable the personal Telegram bot."*
+> *"Write a Python script in Termux to check the weather forecast."*
 
-> [!TIP]
-> Place `google-services.json` under `app/` before building.  
-> The `web` module requires **pnpm** to build `web-ui/`.
+Each is a one-line setup.
 
-## 🔐 CI and signing
+---
 
-- `.github/workflows/` is tracked by Git and is included in clones and forks.
-- GitHub Secrets are not part of the repository and are never cloned or forked.
-- Release builds use a stable signing key, allowing later APKs signed by the same key to overwrite-install.
-- Manual build: Actions → **编译 APK · Build APK** → Run workflow.
+## Features
 
-## 📁 Structure
+### Device Control
+Tap, swipe, scroll, type, screenshot, open apps, adjust brightness/volume, check battery/WiFi/signal/location/sensors, read contacts & SMS, send SMS, set wallpaper, NFC, ZIP management. **80+ tools**.
 
-```text
-├── app/                    # Android application
-├── ai/                     # Model and message abstractions
-├── workspace/              # Agent workspace and device tools
-├── web/                    # Embedded web service
-├── web-ui/                 # Web frontend
-├── .github/workflows/      # Maintenance and builds
-└── docs/                   # Icons and screenshots
-```
+### Workflows & Schedules
+**Workflows** — Natural language triggers & actions: *"When I get home, silence the ringer."* 19 triggers, 14 conditions.
 
-## 🤝 Feedback and contributions
+**Schedules** — *"Every Monday at 8am"*, *"Every 2 hours"*. Survives reboots.
 
-- Report fork-specific problems in this repository's [Issues](https://github.com/xiwangone/rikkahub-agents/issues).
-- Build or test the affected modules before submitting changes, and keep unrelated refactors separate.
+### Telegram Bot
+Chat with your assistant from anywhere. Send text, photos, PDFs, voice notes. Yes/No approval buttons.
 
-## 🙏 Acknowledgments and origin
+### In-App Browser
+A real browser driven by AI. Auto-clicks cookie banners, fills search boxes, scrolls, reads pages.
 
-Thanks to the maintainers and contributors of:
+### File Manager
+Find, read, save, copy, move, rename, delete files.
 
-- **Official RikkaHub**: [rikkahub/rikkahub](https://github.com/rikkahub/rikkahub)
-- **Original Agent fork**: [ExTV/rikkahub-agent](https://github.com/ExTV/rikkahub-agent)
+### SSH
+Save servers, run commands, upload files, pull backups — all from chat.
 
-This repository originated from the Agent fork and continues to check and integrate official updates. Its modifications, builds, and releases are independently maintained and do not represent either project.
+### Sub-Agents
+Long tasks dispatch to focused sub-agents in parallel.
 
-Licensed under the [GNU AGPL v3.0](LICENSE).
+### MCP Servers
+Connect Model Context Protocol servers.
+
+### Safety & Privacy
+1. Per-assistant toggles — all tools start disabled
+2. Per-call approval for modifying actions
+3. HARDLINE floor — dangerous commands blocked unconditionally
+
+---
+
+## Quick Start
+
+### 1. Download APK
+From **Releases** or **Actions** page.
+
+### 2. Install
+Open APK, allow unknown sources.
+
+### 3. Configure
+Settings → Providers → Add → OpenAI-compatible or LiteRT local model.
+
+### 4. Enable Tools (optional)
+Settings → Assistants → Local Tools.
+
+---
+
+## Requirements
+
+| | |
+|---|---|
+| **Architecture** | arm64 or x86_64 |
+| **Android** | 8.0+ (API 26) |
+| **Storage** | ~80 MB |
+
+---
+
+## Credits
+
+- **[RikkaHub (Official)](https://github.com/rikkahub/rikkahub)** — Upstream project
+- **[ExTV/rikkahub-agent (Original Fork)](https://github.com/ExTV/rikkahub-agent)** — Original fork
+- **GitHub Actions** — Auto build & release
+
+---
+
+## License
+
+**GNU Affero General Public License v3.0 (AGPL-3.0)**
+
+See [LICENSE](LICENSE).

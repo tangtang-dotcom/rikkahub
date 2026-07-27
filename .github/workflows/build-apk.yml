@@ -1,10 +1,7 @@
-name: 编译 APK · Build APK
+name: 🤖 编译 APK · Release 优化版 · AI 自动构建
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
@@ -20,79 +17,55 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install web-ui dependencies
-        working-directory: web-ui
-        run: pnpm --ignore-workspace install --frozen-lockfile
-
-      - name: 构建 Web 界面 · Build web UI
-        working-directory: web-ui
-        run: pnpm --ignore-workspace run build
-
-      - name: 准备 Firebase 配置 · Prepare Firebase config
+      - name: Install bun & pnpm
         run: |
-          if [ ! -f app/google-services.json ]; then
-            cat > app/google-services.json <<'JSON'
-          {"project_info":{"project_number":"000000000000","project_id":"rikkahub-agents-build","storage_bucket":"rikkahub-agents-build.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000000000","android_client_info":{"package_name":"me.rerere.rikkahub"}},"oauth_client":[],"api_key":[{"current_key":"build-placeholder"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}]}
-          JSON
-          fi
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          npm install -g pnpm
 
-      - name: Grant execute permission for gradlew
+      - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Prepare signing keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: 生成签名并编译 APK（release 优化）
         run: |
-          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "Missing signing secrets: KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD"
-            exit 1
+          # 生成密钥（如果不存在）
+          KEYSTORE="$HOME/rikkahub.jks"
+          if [ ! -f "$KEYSTORE" ]; then
+            keytool -genkey -v -keystore "$KEYSTORE" \
+              -alias rikkahub -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=RikkaHub, OU=Dev, O=xiwangone, L=Beijing, ST=Beijing, C=CN"
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/rikkahub.jks"
-          {
-            echo "storeFile=$HOME/rikkahub.jks"
-            echo "storePassword=$KEYSTORE_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
-          } > local.properties
+          # 创建 local.properties（build.gradle.kts 会读取这里面的签名配置）
+          echo "storeFile=$KEYSTORE" > local.properties
+          echo "storePassword=android" >> local.properties
+          echo "keyAlias=rikkahub" >> local.properties
+          echo "keyPassword=android" >> local.properties
+          # 编译 release 版（带 R8 压缩 + 资源缩减）
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
-      - name: Build signed Release APK
-        run: ./gradlew assembleRelease --no-daemon -x :web:buildWebUi -x :web:buildWebUi -x :web:buildWebUi
-
-      - name: Upload APK artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
 
-      - name: Notify build status
-        if: always() && (github.actor == 'xiwangone' || github.actor == 'github-actions[bot]')
+      - name: 发送微信通知
+        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
         env:
           STATUS: ${{ job.status }}
-          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
         run: |
-          if [ -z "$SERVERCHAN_KEY" ]; then
-            echo "SERVERCHAN_KEY not set; skip notification"
-            exit 0
-          fi
           if [ "$STATUS" = "success" ]; then
-            TITLE="RikkaHub Agents: manual build OK"
-            CONTENT="APK uploaded as workflow artifact.%0A%0Ahttps://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+            TITLE="✅ RikkaHub Agent 手动构建成功"
+            CONTENT="APK 已上传到构建产物。%0A%0A下载：https://github.com/xiwangone/rikkahub-agent/actions/runs/${{ github.run_id }}"
           else
-            TITLE="RikkaHub Agents: manual build failed"
-            CONTENT="See logs:%0Ahttps://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+            TITLE="❌ RikkaHub Agent 手动构建失败"
+            CONTENT="编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agent/actions/runs/${{ github.run_id }}"
           fi
-          curl -s "https://sctapi.ftqq.com/${SERVERCHAN_KEY}.send" \
+          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=$TITLE" \
-            -d "desp=$CONTENT" || true
+            -d "desp=$CONTENT"

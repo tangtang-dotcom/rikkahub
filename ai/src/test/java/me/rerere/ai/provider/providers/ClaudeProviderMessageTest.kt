@@ -33,7 +33,9 @@ class ClaudeProviderMessageTest {
         provider = ClaudeProvider(OkHttpClient())
     }
 
-    // Helper to invoke private buildMessages method via reflection
+    // Helper to invoke private buildMessages method via reflection.
+    // Signature is (List, Boolean, ClaudePromptCacheTtl); we pass promptCaching=false
+    // so the TTL argument has no effect on the produced message array.
     private fun invokeBuildMessages(messages: List<UIMessage>): JsonArray {
         val method = ClaudeProvider::class.java.getDeclaredMethod(
             "buildMessages",

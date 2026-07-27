@@ -1,7 +1,0 @@
-{
-  "release": "v2.4.3",
-  "published_apk_certificate_sha256": "90EAF37F0C7F85198AF216BC6F95DD3C25C0DD5F0B02D4C46465A37915DA3E2B",
-  "current_ci_certificate_sha256": "AC21C200595094D34C9CD3360A8B4FA393A4A2CD1C0E7210E8182E4F01F03B89",
-  "same_certificate": false,
-  "coverage_note": "Direct overwrite install is supported only when same_certificate is true."
-}

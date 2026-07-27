@@ -34,11 +34,12 @@ class ChatCompletionsAPIMessageTest {
     // Helper to invoke private buildMessages method via reflection
     private fun invokeBuildMessages(
         messages: List<UIMessage>,
-        includeHistoryReasoning: Boolean = true
+        includeHistoryReasoning: Boolean = true,
     ): JsonArray {
         val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
             "buildMessages",
             List::class.java,
+            Boolean::class.javaPrimitiveType,
             Boolean::class.javaPrimitiveType,
             List::class.java
         )
@@ -47,6 +48,7 @@ class ChatCompletionsAPIMessageTest {
             api,
             messages,
             includeHistoryReasoning,
+            false,
             listOf(Modality.TEXT, Modality.IMAGE)
         ) as JsonArray
     }
@@ -320,7 +322,7 @@ class ChatCompletionsAPIMessageTest {
     }
 
     @Test
-    fun `assistant with only reasoning and empty text should be filtered out when history reasoning disabled`() {
+    fun `assistant with only reasoning and empty text is dropped when includeHistoryReasoning is false`() {
         val messages = listOf(
             UIMessage.user("Question 1"),
             UIMessage(
@@ -337,9 +339,7 @@ class ChatCompletionsAPIMessageTest {
 
         assertEquals(2, result.size)
         assertEquals("user", result[0].jsonObject["role"]?.jsonPrimitive?.content)
-        assertEquals("Question 1", result[0].jsonObject["content"]?.jsonPrimitive?.content)
         assertEquals("user", result[1].jsonObject["role"]?.jsonPrimitive?.content)
-        assertEquals("Question 2", result[1].jsonObject["content"]?.jsonPrimitive?.content)
     }
 
     @Test

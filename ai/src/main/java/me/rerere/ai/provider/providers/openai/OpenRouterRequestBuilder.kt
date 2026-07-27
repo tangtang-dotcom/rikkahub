@@ -115,6 +115,10 @@ fun openRouterModelFromJson(modelObj: JsonObject): Model? {
         inputModalities = inputModalities,
         outputModalities = outputModalities,
         abilities = abilities,
+        contextLength = modelObj["context_length"]?.jsonPrimitive?.intOrNull,
+        supportedParameters = supported,
         // OpenRouter pricing values are strings of USD-per-token.
+        pricePromptPerToken = pricing?.get("prompt")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
+        priceCompletionPerToken = pricing?.get("completion")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
     )
 }

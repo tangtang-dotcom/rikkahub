@@ -90,7 +90,7 @@ fun SettingTermuxPage(
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text("Termux 设置") },
+                title = { Text(stringResource(R.string.setting_termux_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -109,7 +109,7 @@ fun SettingTermuxPage(
         ) {
             // Section 1: Status
             CardGroup(
-                title = { Text("Section Status") },
+                title = { Text(stringResource(R.string.setting_termux_section_status)) },
             ) {
                 val appInstalled = integrationState != TermuxIntegration.State.NOT_INSTALLED
                 val hasPermission = integrationState == TermuxIntegration.State.READY
@@ -140,11 +140,11 @@ fun SettingTermuxPage(
                             }
                         }
                     },
-                    headlineContent = { Text("Status App") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_status_app)) },
                     supportingContent = {
                         Text(
-                            if (appInstalled) "Status App Installed"
-                            else "Status App Missing"
+                            if (appInstalled) stringResource(R.string.setting_termux_status_app_installed)
+                            else stringResource(R.string.setting_termux_status_app_missing)
                         )
                     },
                     leadingContent = {
@@ -164,11 +164,11 @@ fun SettingTermuxPage(
                             runCommandPermLauncher.launch(perms.toTypedArray())
                         }
                     },
-                    headlineContent = { Text("Status Permission") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_status_permission)) },
                     supportingContent = {
                         Text(
-                            if (hasPermission) "Status Permission Granted"
-                            else "Status Permission Missing"
+                            if (hasPermission) stringResource(R.string.setting_termux_status_permission_granted)
+                            else stringResource(R.string.setting_termux_status_permission_missing)
                         )
                     },
                     leadingContent = {
@@ -187,8 +187,8 @@ fun SettingTermuxPage(
                                 ?.let { ctx.startActivity(it) }
                         }
                     },
-                    headlineContent = { Text("Status Open") },
-                    supportingContent = { Text("Status Open Desc") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_status_open)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_status_open_desc)) },
                 )
                 item(
                     onClick = {
@@ -212,11 +212,11 @@ fun SettingTermuxPage(
                             toaster.show(msg, type = type)
                         }
                     },
-                    headlineContent = { Text("Status Verify") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_status_verify)) },
                     supportingContent = {
                         Text(
-                            if (lastVerifiedOk) "Status Verify Ok"
-                            else "Status Verify Unknown"
+                            if (lastVerifiedOk) stringResource(R.string.setting_termux_status_verify_ok)
+                            else stringResource(R.string.setting_termux_status_verify_unknown)
                         )
                     },
                     leadingContent = {
@@ -233,37 +233,37 @@ fun SettingTermuxPage(
 
             // Section 2: Timeouts
             CardGroup(
-                title = { Text("超时设置") },
+                title = { Text(stringResource(R.string.setting_termux_section_timeouts)) },
             ) {
                 item(
-                    headlineContent = { Text("命令超时") },
-                    supportingContent = { Text("单次命令的最大执行时间") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_command_timeout)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_command_timeout_desc)) },
                     trailingContent = {
                         TimeoutInput(
                             currentValue = config.commandTimeoutMs / 1_000L,
-                            unitLabel = "秒",
+                            unitLabel = stringResource(R.string.setting_termux_unit_seconds),
                             onCommit = vm::setCommandTimeoutSeconds,
                         )
                     },
                 )
                 item(
-                    headlineContent = { Text("会话超时") },
-                    supportingContent = { Text("单次对话工具调用会话的累计超时") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_turn_budget)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_turn_budget_desc)) },
                     trailingContent = {
                         TimeoutInput(
                             currentValue = config.turnBudgetMs / 60_000L,
-                            unitLabel = "分钟",
+                            unitLabel = stringResource(R.string.setting_termux_unit_minutes),
                             onCommit = vm::setTurnBudgetMinutes,
                         )
                     },
                 )
                 item(
-                    headlineContent = { Text("验证超时") },
-                    supportingContent = { Text("验证 Termux 响应的最大等待时间") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_verify_timeout)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_verify_timeout_desc)) },
                     trailingContent = {
                         TimeoutInput(
                             currentValue = config.verifyTimeoutMs / 1_000L,
-                            unitLabel = "秒",
+                            unitLabel = stringResource(R.string.setting_termux_unit_seconds),
                             onCommit = vm::setVerifyTimeoutSeconds,
                         )
                     },
@@ -272,10 +272,10 @@ fun SettingTermuxPage(
 
             // Section 3: Defaults & limits
             CardGroup(
-                title = { Text("默认值") },
+                title = { Text(stringResource(R.string.setting_termux_section_defaults)) },
             ) {
                 item(
-                    headlineContent = { Text("工作目录") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_working_dir)) },
                     supportingContent = {
                         WorkingDirInput(
                             currentValue = config.defaultWorkingDir,
@@ -284,30 +284,30 @@ fun SettingTermuxPage(
                     },
                 )
                 item(
-                    headlineContent = { Text("标准输出限制") },
-                    supportingContent = { Text("单次命令允许的最大输出字节数") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_max_stdout)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_max_stdout_desc)) },
                     trailingContent = {
                         TimeoutInput(
                             currentValue = config.maxStdoutBytes.toLong(),
-                            unitLabel = "字节",
+                            unitLabel = stringResource(R.string.setting_termux_unit_bytes),
                             onCommit = { vm.setMaxStdoutBytes(it.toInt()) },
                         )
                     },
                 )
                 item(
-                    headlineContent = { Text("标准错误限制") },
-                    supportingContent = { Text("单次命令允许的最大错误输出字节数") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_max_stderr)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_max_stderr_desc)) },
                     trailingContent = {
                         TimeoutInput(
                             currentValue = config.maxStderrBytes.toLong(),
-                            unitLabel = "字节",
+                            unitLabel = stringResource(R.string.setting_termux_unit_bytes),
                             onCommit = { vm.setMaxStderrBytes(it.toInt()) },
                         )
                     },
                 )
                 item(
-                    headlineContent = { Text("APT 包管理") },
-                    supportingContent = { Text("自动为 apt 命令添加非交互参数") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_apt_wrap)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_apt_wrap_desc)) },
                     trailingContent = {
                         Switch(
                             checked = config.aptWrapEnabled,
@@ -319,11 +319,11 @@ fun SettingTermuxPage(
 
             // Section 4: Help
             CardGroup(
-                title = { Text("配置帮助") },
+                title = { Text(stringResource(R.string.setting_termux_section_help)) },
             ) {
                 item(
-                    headlineContent = { Text("允许外部应用") },
-                    supportingContent = { Text("在 ~/.termux/termux.properties 中设置 allow-external-apps=true，然后重启 Termux") },
+                    headlineContent = { Text(stringResource(R.string.setting_termux_help_allow_external_apps_title)) },
+                    supportingContent = { Text(stringResource(R.string.setting_termux_help_allow_external_apps_body)) },
                 )
             }
         }
