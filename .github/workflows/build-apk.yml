@@ -30,7 +30,15 @@ jobs:
 
       - name: Install web-ui dependencies
         working-directory: web-ui
-        run: pnpm install --frozen-lockfile
+        run: pnpm --ignore-workspace install --frozen-lockfile
+
+      - name: 准备 Firebase 配置 · Prepare Firebase config
+        run: |
+          if [ ! -f app/google-services.json ]; then
+            cat > app/google-services.json <<'JSON'
+          {"project_info":{"project_number":"000000000000","project_id":"rikkahub-agents-build","storage_bucket":"rikkahub-agents-build.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000000000","android_client_info":{"package_name":"me.rerere.rikkahub"}},"oauth_client":[],"api_key":[{"current_key":"build-placeholder"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}]}
+          JSON
+          fi
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

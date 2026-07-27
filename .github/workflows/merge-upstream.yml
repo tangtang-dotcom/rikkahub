@@ -116,6 +116,9 @@ jobs:
             echo "Agent upstream is already contained"
           fi
 
+          # Block Release when a merged feature introduces untranslated UI.
+          python3 .github/scripts/check-new-localization.py "$START_HEAD" HEAD
+
           # Keep this fork's language, signing, notification and CI policy.
           git checkout "$START_HEAD" -- \
             README.md README_EN.md .github/upstream-versions.json \
@@ -183,7 +186,7 @@ jobs:
           version: 9
       - name: 安装 Web 依赖 · Install web dependencies
         working-directory: web-ui
-        run: pnpm install --frozen-lockfile
+        run: pnpm --ignore-workspace install --frozen-lockfile
       - name: 签名并编译 · Sign and build
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}

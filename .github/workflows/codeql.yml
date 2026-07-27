@@ -41,7 +41,7 @@ jobs:
 
       - name: Install web-ui dependencies
         working-directory: web-ui
-        run: pnpm install --frozen-lockfile
+        run: pnpm --ignore-workspace install --frozen-lockfile
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

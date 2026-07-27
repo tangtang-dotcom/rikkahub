@@ -25,6 +25,7 @@ import me.rerere.rikkahub.data.ai.AgentTurnTracker
 import me.rerere.rikkahub.data.preferences.TermuxDefaults
 import me.rerere.rikkahub.data.preferences.TermuxRuntime
 import java.util.UUID
+import androidx.compose.foundation.text.selection.SelectionContainer
 
 private const val TERMUX_PACKAGE = "com.termux"
 private const val TERMUX_RUN_COMMAND_SERVICE = "com.termux.app.RunCommandService"
@@ -339,9 +340,11 @@ fun termuxRunCommandTool(context: Context): Tool = Tool(
 
         if (rawCommand.isNullOrBlank() && executable.isNullOrBlank()) {
             return@Tool listOf(
-                UIMessagePart.Text(
-                    buildJsonObject { put("error", "either 'command' or 'executable' is required") }.toString()
-                )
+                UIMessagePart.SelectionContainer {
+                UIMessagePart.    Text(
+                UIMessagePart.                        buildJsonObject { put("error", "either 'command' or 'executable' is required") }.toString()
+                UIMessagePart.                    )
+                UIMessagePart.}
             )
         }
         if (!rawCommand.isNullOrBlank() && !executable.isNullOrBlank()) {

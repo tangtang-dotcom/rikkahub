@@ -1,8 +1,8 @@
 <div align="center">
   <img src="docs/logo.svg" alt="RikkaHub Agents" width="104" height="104" />
   <h1>RikkaHub Agents</h1>
-  <p><strong>面向 Android 的全功能 Agent 客户端</strong></p>
-  <p>设备自动化 · 远程终端 · 多模型会话 · 工具调用</p>
+  <p><strong>🤖 面向 Android 的全功能 Agent 客户端</strong></p>
+  <p>📱 设备自动化 · 💻 远程终端 · 🧠 多模型会话 · 🛠️ 工具调用</p>
 
 [简体中文](README.md) | [English](README_EN.md)
 
@@ -14,7 +14,7 @@
 </div>
 
 
-## 下载
+## 🚀 下载
 
 - [Releases](https://github.com/xiwangone/rikkahub-agents/releases)：稳定发布包
 - [Actions](https://github.com/xiwangone/rikkahub-agents/actions)：每次成功构建的 APK 产物
@@ -25,7 +25,7 @@
 > 这是由第三方独立维护的 Fork，代码、自动化流程、签名与发布产物均可能不同。
 > 安装前请核对仓库地址、APK 签名、权限范围和发布说明；请勿将本仓库问题提交给官方或原版维护者。
 
-## 核心能力
+## ✨ 核心能力
 
 | 能力 | 说明 |
 |:--|:--|
@@ -37,7 +37,7 @@
 | 扩展集成 | 支持 MCP、搜索、Web 访问和 Telegram Bot |
 | 自动维护 | 定时同步源代码，按需构建签名 APK |
 
-## 快速构建
+## 🧰 快速构建
 
 ```bash
 git clone --recurse-submodules https://github.com/xiwangone/rikkahub-agents.git
@@ -49,14 +49,14 @@ cd rikkahub-agents
 > 构建前需在 `app/` 放置 `google-services.json`。  
 > `web` 模块依赖 **pnpm** 构建 `web-ui/`。
 
-## CI 与签名
+## 🔐 CI 与签名
 
 - `.github/workflows/` 属于仓库内容，clone 或 fork 时会一并获得工作流文件。
 - GitHub Secrets 不属于 Git 仓库，不会被 clone 或 fork。
 - Release 构建使用固定签名密钥，使用同一密钥生成的后续 APK 可覆盖安装。
 - 手动构建入口：Actions → **编译 APK · Build APK** → Run workflow。
 
-## 项目结构
+## 📁 项目结构
 
 ```text
 ├── app/                    # Android 应用
@@ -68,12 +68,12 @@ cd rikkahub-agents
 └── docs/                   # 图标与界面资源
 ```
 
-## 反馈与贡献
+## 🤝 反馈与贡献
 
 - Fork 专属问题请提交到本仓库的 [Issues](https://github.com/xiwangone/rikkahub-agents/issues)。
 - 提交改动前请完成对应模块构建或测试，避免混入无关重构。
 
-## 致谢与来源
+## 🙏 致谢与来源
 
 感谢以下项目及其维护者提供的代码与设计基础：
 

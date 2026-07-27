@@ -1,8 +1,8 @@
 <div align="center">
   <img src="docs/logo.svg" alt="RikkaHub Agents" width="104" height="104" />
   <h1>RikkaHub Agents</h1>
-  <p><strong>A full-featured Agent client for Android</strong></p>
-  <p>Device automation · Remote terminal · Multi-model chat · Tool execution</p>
+  <p><strong>🤖 A full-featured Agent client for Android</strong></p>
+  <p>📱 Device automation · 💻 Remote terminal · 🧠 Multi-model chat · 🛠️ Tool execution</p>
 
 [简体中文](README.md) | [English](README_EN.md)
 
@@ -14,7 +14,7 @@
 </div>
 
 
-## Download
+## 🚀 Download
 
 - [Releases](https://github.com/xiwangone/rikkahub-agents/releases): stable packages
 - [Actions](https://github.com/xiwangone/rikkahub-agents/actions): APK artifacts from successful runs
@@ -25,7 +25,7 @@
 > It is an independently maintained third-party fork; its code, automation, signing, and release artifacts may differ.
 > Before installing, verify the repository URL, APK signature, requested permissions, and release notes. Do not report this fork's issues to official or original maintainers.
 
-## Capabilities
+## ✨ Capabilities
 
 | Capability | Description |
 |:--|:--|
@@ -37,7 +37,7 @@
 | Integrations | MCP, search, web access, and Telegram Bot |
 | Automated maintenance | Scheduled source sync and on-demand signed APK builds |
 
-## Build
+## 🧰 Build
 
 ```bash
 git clone --recurse-submodules https://github.com/xiwangone/rikkahub-agents.git
@@ -49,14 +49,14 @@ cd rikkahub-agents
 > Place `google-services.json` under `app/` before building.  
 > The `web` module requires **pnpm** to build `web-ui/`.
 
-## CI and signing
+## 🔐 CI and signing
 
 - `.github/workflows/` is tracked by Git and is included in clones and forks.
 - GitHub Secrets are not part of the repository and are never cloned or forked.
 - Release builds use a stable signing key, allowing later APKs signed by the same key to overwrite-install.
 - Manual build: Actions → **编译 APK · Build APK** → Run workflow.
 
-## Structure
+## 📁 Structure
 
 ```text
 ├── app/                    # Android application
@@ -68,12 +68,12 @@ cd rikkahub-agents
 └── docs/                   # Icons and screenshots
 ```
 
-## Feedback and contributions
+## 🤝 Feedback and contributions
 
 - Report fork-specific problems in this repository's [Issues](https://github.com/xiwangone/rikkahub-agents/issues).
 - Build or test the affected modules before submitting changes, and keep unrelated refactors separate.
 
-## Acknowledgments and origin
+## 🙏 Acknowledgments and origin
 
 Thanks to the maintainers and contributors of:
 
