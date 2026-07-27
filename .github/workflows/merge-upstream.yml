@@ -8,13 +8,14 @@ on:
 permissions:
   contents: write
   actions: write
-  workflows: write
 
 env:
   UPSTREAM_OFFICIAL_REPO: rikkahub/rikkahub
   UPSTREAM_OFFICIAL_BRANCH: master
   UPSTREAM_EXTV_REPO: ExTV/rikkahub-agent
   UPSTREAM_EXTV_BRANCH: master
+  # 使用 PAT 推送以绕过 GITHUB_TOKEN 的工作流文件限制
+  # 需在仓库 Secrets 中配置 PAT_TOKEN
 
 jobs:
   check-and-merge:
@@ -108,7 +109,9 @@ jobs:
           git commit -m "🔄 合并上游 rikkahub/rikkahub 更新" --no-edit 2>&1 || true
           echo "merge_status=success" >> $GITHUB_OUTPUT
 
-          # 推送
+          # 删除上游带来的不需要的工作流文件（GITHUB_TOKEN 无法推送工作流文件变更）
+          rm -f .github/workflows/close-blank-issues.yml .github/workflows/daily-build.yml 2>/dev/null || true
+          git add -A 2>/dev/null || true
           echo "=== 推送合并结果 ==="
           git push origin master 2>&1
           echo "=== 推送成功 ==="
