@@ -1,14 +1,16 @@
 <div align="center">
-  <img src="docs/icon.png" alt="RikkaHub Agents" width="100" />
+  <img src="docs/logo.svg" alt="RikkaHub Agents" width="100" height="100" />
   <h1>RikkaHub Agents</h1>
-  <p><b>AI 自动维护 · 官方 RikkaHub + ExTV 合并版</b></p>
+  <p><b>🤖 AI 自动维护 · Android Agent Fork · 多 LLM 自动编译</b></p>
 
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/build.yml?style=flat&logo=githubactions)](https://github.com/xiwangone/rikkahub-agents/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/xiwangone/rikkahub-agents/build.yml?style=flat&logo=githubactions&label=Build)](https://github.com/xiwangone/rikkahub-agents/actions)
+[![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases)
 [![License](https://img.shields.io/github/license/xiwangone/rikkahub-agents?style=flat)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?style=flat&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/xiwangone/rikkahub-agents?style=flat&label=Updated)](https://github.com/xiwangone/rikkahub-agents/commits/master)
+[![Repo Size](https://img.shields.io/github/repo-size/xiwangone/rikkahub-agents?style=flat&label=Size)](https://github.com/xiwangone/rikkahub-agents)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0?style=flat&logo=telegram)](https://t.me/your_bot)
 
-🤖 基于 RikkaHub 的 AI 设备自动化与编译维护仓库
+> AI 自动维护编译 · 提交即构建 · 结果推送微信 & Telegram
 
 </div>
 
@@ -16,7 +18,7 @@
 
 ## 📋 概述
 
-本仓库是 **RikkaHub** 官方版与 **ExTV** 原版 Fork 的合并维护版，集成了 AI 驱动的自动化编译、设备管理和通知推送能力。
+本仓库是 **RikkaHub** 官方版与 **ExTV** Fork 的合并维护版，集成了 AI 驱动的自动化编译、设备管理和通知推送能力。
 
 ### 🎯 核心能力
 
@@ -80,6 +82,7 @@ cd rikkahub-agents
 ├── workspace/            # Proot Linux 环境模块
 ├── web/                  # 嵌入式 Web 服务器
 ├── docs/                 # 文档与图标资源
+│   ├── logo.svg          # 项目 Logo
 │   ├── icon.png          # 应用图标
 │   └── img/              # 截图
 └── AGENTS.md             # Agent 开发指南
