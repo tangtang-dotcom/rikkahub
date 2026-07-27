@@ -43,16 +43,46 @@ jobs:
           git fetch agent "${AGENT_BRANCH}" --tags
 
           START_HEAD=$(git rev-parse HEAD)
-          OFFICIAL_REF="official/${OFFICIAL_BRANCH}"
-          AGENT_REF="agent/${AGENT_BRANCH}"
+          STATE_FILE=".github/upstream-versions.json"
           OFFICIAL_UPDATED=false
           AGENT_UPDATED=false
           AGENT_MODE=none
           SHOULD_BUILD=false
 
+          normalize_version() {
+            printf '%s' "$1" | sed -E 's/^[vV]//; s/-agent\././; s/[^0-9.].*$//'
+          }
+          version_gt() {
+            local left right
+            left=$(normalize_version "$1")
+            right=$(normalize_version "$2")
+            [ -n "$left" ] && [ -n "$right" ] && [ "$left" != "$right" ] &&               [ "$(printf '%s\n%s\n' "$left" "$right" | sort -V | tail -n1)" = "$left" ]
+          }
+          latest_release() {
+            local repo="$1" fallback_ref="$2" release
+            release=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" |               python3 -c 'import json,sys; print(json.load(sys.stdin).get("tag_name", ""))' 2>/dev/null || true)
+            if [ -n "$release" ]; then
+              printf '%s' "$release"
+            else
+              git tag --merged "$fallback_ref" --list | grep -E '^[vV]?[0-9]+(\.[0-9]+)+(\-agent\.[0-9]+)?$' | sort -V | tail -n1
+            fi
+          }
+          OFFICIAL_VERSION=$(latest_release "$OFFICIAL_REPO" "official/${OFFICIAL_BRANCH}")
+          AGENT_VERSION=$(latest_release "$AGENT_REPO" "agent/${AGENT_BRANCH}")
+          OFFICIAL_REF="refs/tags/${OFFICIAL_VERSION}"
+          AGENT_REF="refs/tags/${AGENT_VERSION}"
+          LAST_OFFICIAL=$(python3 -c 'import json; print(json.load(open(".github/upstream-versions.json"))["official"]["last_processed_version"])')
+          LAST_AGENT=$(python3 -c 'import json; print(json.load(open(".github/upstream-versions.json"))["agent"]["last_processed_version"])')
+          OFFICIAL_RELEASED=false
+          AGENT_RELEASED=false
+          version_gt "$OFFICIAL_VERSION" "$LAST_OFFICIAL" && OFFICIAL_RELEASED=true || true
+          version_gt "$AGENT_VERSION" "$LAST_AGENT" && AGENT_RELEASED=true || true
+          echo "official release: $LAST_OFFICIAL -> ${OFFICIAL_VERSION:-none}"
+          echo "agent release: $LAST_AGENT -> ${AGENT_VERSION:-none}"
+
           # Merge official updates first. Stop on real conflicts instead of
           # silently discarding fork functionality.
-          if ! git merge-base --is-ancestor "$OFFICIAL_REF" HEAD; then
+          if [ "$OFFICIAL_RELEASED" = true ]; then
             OFFICIAL_UPDATED=true
             SHOULD_BUILD=true
             echo "Official updates detected; merging official first"
@@ -65,7 +95,7 @@ jobs:
             echo "Official upstream is already contained"
           fi
 
-          if ! git merge-base --is-ancestor "$AGENT_REF" HEAD; then
+          if [ "$AGENT_RELEASED" = true ]; then
             AGENT_UPDATED=true
             SHOULD_BUILD=true
             UNIQUE_AGENT_PATCHES=$(git cherry HEAD "$AGENT_REF" | awk '$1 == "+" {count++} END {print count+0}')
@@ -88,7 +118,7 @@ jobs:
 
           # Keep this fork's language, signing, notification and CI policy.
           git checkout "$START_HEAD" -- \
-            README.md README_EN.md \
+            README.md README_EN.md .github/upstream-versions.json \
             .github/workflows/build-apk.yml \
             .github/workflows/codeql.yml \
             .github/workflows/issue-notify.yml \
@@ -99,6 +129,12 @@ jobs:
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m "chore: restore fork-owned configuration after upstream sync"
+          fi
+
+          python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d["official"]["last_processed_version"]=sys.argv[2] if sys.argv[4]=="true" else d["official"]["last_processed_version"]; d["agent"]["last_processed_version"]=sys.argv[3] if sys.argv[5]=="true" else d["agent"]["last_processed_version"]; open(p,"w").write(json.dumps(d,ensure_ascii=False,indent=2)+"\n")' "$STATE_FILE" "$OFFICIAL_VERSION" "$AGENT_VERSION" "$OFFICIAL_UPDATED" "$AGENT_UPDATED"
+          git add "$STATE_FILE"
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: record processed upstream releases"
           fi
 
           echo "official_updated=$OFFICIAL_UPDATED" >> "$GITHUB_OUTPUT"
