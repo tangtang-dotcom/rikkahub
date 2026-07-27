@@ -10,14 +10,17 @@ permissions:
   actions: write
 
 env:
-  UPSTREAM_REPO: rikkahub/rikkahub
-  UPSTREAM_BRANCH: master
+  UPSTREAM_OFFICIAL_REPO: rikkahub/rikkahub
+  UPSTREAM_OFFICIAL_BRANCH: master
+  UPSTREAM_EXTV_REPO: ExTV/rikkahub-agent
+  UPSTREAM_EXTV_BRANCH: master
 
 jobs:
   check-and-merge:
     runs-on: ubuntu-latest
     outputs:
       has_update: ${{ steps.check.outputs.has_update }}
+      merge_status: ${{ steps.merge.outputs.merge_status }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,46 +28,99 @@ jobs:
           submodules: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 添加上游
+      - name: 添加双上游（官方 + ExTV）
         run: |
-          git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
-          git fetch upstream --tags
+          git remote add upstream-official https://github.com/${{ env.UPSTREAM_OFFICIAL_REPO }}.git
+          git remote add upstream-extv https://github.com/${{ env.UPSTREAM_EXTV_REPO }}.git
+          git fetch upstream-official --tags
+          git fetch upstream-extv --tags
 
       - name: 检查更新
         id: check
         run: |
           CURRENT=$(git rev-parse HEAD)
-          UPSTREAM=$(git rev-parse upstream/${{ env.UPSTREAM_BRANCH }})
-          if [ "$CURRENT" != "$UPSTREAM" ]; then
+          OFFICIAL=$(git rev-parse upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }})
+          if [ "$CURRENT" != "$OFFICIAL" ]; then
             echo "has_update=true" >> $GITHUB_OUTPUT
+            echo "当前: $CURRENT" >> $GITHUB_OUTPUT
+            echo "官方: $OFFICIAL" >> $GITHUB_OUTPUT
           else
             echo "has_update=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 合并代码
+      - name: 智能合并上游
+        id: merge
         if: steps.check.outputs.has_update == 'true'
         run: |
+          set -e
           git config user.name "Auto Merge Bot"
           git config user.email "bot@rikkahub-agents.local"
-          git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit 2>&1 || true
-          CONFLICTS=$(git diff --name-only --diff-filter=U)
+
+          # 尝试第一次合并（仅合并官方，不自动提交）
+          echo "=== 开始合并官方上游 ==="
+          git merge upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }} --no-commit --no-ff 2>&1 || true
+
+          # 处理冲突：智能区分 ExTV 专用文件和核心官方文件
+          CONFLICTS=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
           if [ -n "$CONFLICTS" ]; then
-            echo "自动解决冲突..."
+            echo "=== 发现冲突文件，开始智能解决 ==="
+            TOTAL_CONFLICTS=$(echo "$CONFLICTS" | wc -l)
+            echo "冲突总数: $TOTAL_CONFLICTS"
+
+            OURS_COUNT=0
+            THEIRS_COUNT=0
+
             for f in $CONFLICTS; do
-              git checkout --ours "$f" 2>/dev/null || true
+              # 检查该文件是否存在于官方上游
+              if git ls-tree upstream-official/${{ env.UPSTREAM_OFFICIAL_BRANCH }} "$f" 2>/dev/null | grep -q .; then
+                # 文件在官方存在 → 双方都改了 → 取官方的（theirs），保留新功能/修复
+                echo "  [THEIRS] $f (官方和 ExTV 都有修改, 采用官方版本)"
+                git checkout --theirs "$f" 2>/dev/null || true
+                THEIRS_COUNT=$((THEIRS_COUNT + 1))
+              else
+                # 文件只存在于 ExTV（官方没有）→ 取我们的（ours）
+                echo "  [OURS]   $f (ExTV 专用文件, 保留)"
+                git checkout --ours "$f" 2>/dev/null || true
+                OURS_COUNT=$((OURS_COUNT + 1))
+              fi
               git add "$f" 2>/dev/null || true
             done
-            git commit -m "auto-merge: 自动解决合并冲突" --no-edit 2>&1 || true
+
+            echo "=== 冲突解决完成: 采用官方 $THEIRS_COUNT 个 · 保留 ExTV $OURS_COUNT 个 ==="
+          else
+            echo "=== 无冲突，合并成功 ==="
           fi
+
+          # 检查是否有未解决的冲突
+          REMAINING=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+          if [ -n "$REMAINING" ]; then
+            echo "=== 警告: 仍有 $REMAINING 个未解决的冲突 ==="
+            echo "merge_status=failure_conflict" >> $GITHUB_OUTPUT
+            echo "自动解决冲突失败，需要人工干预"
+            # 输出冲突文件列表
+            echo "未解决文件:"
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+
+          # 提交合并结果
+          git commit -m "🔄 合并上游 rikkahub/rikkahub 更新" --no-edit 2>&1 || true
+          echo "merge_status=success" >> $GITHUB_OUTPUT
+
+          # 推送
+          echo "=== 推送合并结果 ==="
           git push origin master 2>&1
+          echo "=== 推送成功 ==="
 
       - name: 无更新
         if: steps.check.outputs.has_update != 'true'
-        run: echo "上游无新版本，跳过"
+        run: |
+          echo "上游无新版本，跳过"
+          echo "merge_status=skipped" >> $GITHUB_OUTPUT
 
   build:
     needs: check-and-merge
-    if: ${{ needs.check-and-merge.outputs.has_update == 'true' }}
+    if: ${{ needs.check-and-merge.outputs.has_update == 'true' && needs.check-and-merge.outputs.merge_status == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,15 +160,18 @@ jobs:
           ./gradlew assembleRelease
 
       - name: 微信通知
-        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
+        if: always()
         env:
           STATUS: ${{ job.status }}
+          MERGE_STATUS: ${{ needs.check-and-merge.outputs.merge_status }}
         run: |
           if [ "$STATUS" = "success" ]; then
-            MSG="自动合并成功，新 APK 已发布！下载：https://github.com/xiwangone/rikkahub-agents/releases"
+            MSG="✅ 合并成功 + 编译成功！%0A%0A下载：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+          elif [ "$MERGE_STATUS" = "failure_conflict" ]; then
+            MSG="⚠️ 合并冲突，需要人工手动解决后重试。%0A%0A查看：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           else
-            MSG="自动合并或编译失败。请查看：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+            MSG="❌ 编译失败，请检查日志。%0A%0A日志：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           fi
           curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=🔄 RikkaHub Agents 自动构建 $STATUS" \
+            -d "title=🔄 RikkaHub Agents 自动构建" \
             -d "desp=$MSG" || true
