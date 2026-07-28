@@ -31,17 +31,17 @@ jobs:
 
       - name: 固定签名构建 · Fixed signing build (overwrite-install)
         env:
-          KEYSTORE_BASE64: \${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: \${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: \${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: \${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          KEYSTORE="\$HOME/rikkahub.jks"
-          echo "\$KEYSTORE_BASE64" | base64 -d > "\$KEYSTORE"
-          echo "storeFile=\$KEYSTORE" >> local.properties
-          echo "storePassword=\$KEYSTORE_PASSWORD" >> local.properties
-          echo "keyAlias=\$KEY_ALIAS" >> local.properties
-          echo "keyPassword=\$KEY_PASSWORD" >> local.properties
+          KEYSTORE="$HOME/rikkahub.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+          echo "storeFile=$KEYSTORE" >> local.properties
+          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=$KEY_ALIAS" >> local.properties
+          echo "keyPassword=$KEY_PASSWORD" >> local.properties
           chmod +x gradlew
           ./gradlew assembleRelease
 
