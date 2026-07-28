@@ -49,7 +49,7 @@ class UpdateChecker(
                             .get()
                             .addHeader(
                                 "User-Agent",
-                                "RikkaHub $currentVersionName #${BuildConfig.VERSION_CODE}"
+                                "RikkaHub Agents $currentVersionName #${BuildConfig.VERSION_CODE}"
                             )
                             .build()
                     ).await()
