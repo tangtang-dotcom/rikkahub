@@ -6,7 +6,7 @@
 
 **🤖 Android 设备端 LLM 智能体 · AI 自动维护 · 固定签名编译**
 
-[**English**](README_EN.md) | [**简体中文**](README_ZH_CN.md) | [**繁體中文（香港）**](README_ZH_HK.md)
+[**English**](README_EN.md) | **简体中文**
 
 </div>
 

@@ -4,100 +4,110 @@
 
 # RikkaHub Agents
 
-**🤖 AI-maintained fork · ❌ NOT official · ❌ NOT original**
+**🤖 Android On-Device LLM Agent · AI-Maintained · Fixed-Signature Build**
 
-[**English**](README_EN.md) | [**中文**](README.md)
+[**简体中文**](README.md) | **English**
 
 </div>
 
 ---
 
-## 🚨 DISCLAIMER
+## 🚨 Disclaimer
 
 | Project | Link | Description |
-|---------|------|-------------|
-| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | Official upstream, source of this code |
-| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | Original fork this repo is based on |
-| 🟡 **This repo (AI-maintained)** | https://github.com/xiwangone/rikkahub-agents | AI auto-merged + compiled |
+|------|------|------|
+| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | **Official upstream, source of this code** |
+| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | **Original fork this repo is based on** |
+| 🟡 **This Repo (AI-Maintained)** | https://github.com/xiwangone/rikkahub-agents | **AI auto-merges upstream + builds** |
 
-> ### 🚨🚨🚨 WARNING
+> ### ⚠️ Usage Notice
 >
-> **This repository is AI-maintained.** Code is pulled from the official upstream and original fork, auto-merged, and compiled via GitHub Actions.
->
-> - **❌ NOT official release** — Not from the RikkaHub team
-> - **❌ NOT original release** — Not from the ExTV developer
-> - ✅ Code sources are trustworthy (official + original), but compilation and release are **AI-automated**
-> - **⚠️ Use at your own risk. No quality guarantee.**
-> - **💡 For issues, please use [Official](https://github.com/rikkahub/rikkahub) or [Original Fork](https://github.com/ExTV/rikkahub-agent) first.**
+> - **❌ NOT an official release** — Not published by the RikkaHub team
+> - **❌ NOT the original release** — Not published by the ExTV developer
+> - ✅ Code sources are trustworthy (official + original), auto-merged by AI and built with a fixed signing key
+> - 💡 For issues, use the [official RikkaHub](https://github.com/rikkahub/rikkahub) or [original fork](https://github.com/ExTV/rikkahub-agent) first
 
 ---
 
 ## Overview
 
-A fork that turns the native Android LLM chat client into a full on-device agent: **80+ device tools**, AI-driven workflows, scheduled jobs, an in-app browser the AI controls, SSH, screen automation, file manager, music player, voice transcription, downloadable on-device LLMs, and a remote Telegram bot. All features start disabled.
+A fork that turns a native Android LLM chat client into a true on-device Agent: **80+ device tools**, AI-driven workflows, scheduled jobs, an in-app browser (AI-controlled), SSH, screen automation, file manager, music player, speech-to-text, downloadable local LLMs, and a remote Telegram Bot. All features default to OFF.
 
-> *"Export my todos to a Markdown file in the workspace."*
-> *"Take a screenshot every 2 hours for the next 4 hours."*
-> *"When I receive a delivery notification, screenshot and save it."*
-> *"When I connect to my work WiFi, disable the personal Telegram bot."*
-> *"Write a Python script in Termux to check the weather forecast."*
+> *"Export my phone's to-do list as a Markdown file into the workspace."*
+> *"Take a screenshot every 2 hours for 4 hours — let's see what I did this afternoon."*
+> *"When I get a delivery notification, auto-screenshot and save to gallery."*
+> *"When I connect to my work WiFi, disable the personal Telegram Bot."*
+> *"Write a Python script in Termux to check the weather forecast on a schedule."*
 
-Each is a one-line setup.
+Each is a one-sentence setup.
 
 ---
 
 ## Features
 
 ### Device Control
-Tap, swipe, scroll, type, screenshot, open apps, adjust brightness/volume, check battery/WiFi/signal/location/sensors, read contacts & SMS, send SMS, set wallpaper, NFC, ZIP management. **80+ tools**.
+Tap, swipe, scroll, type, screenshot, open apps, adjust brightness/volume, send notifications, check battery/WiFi/signal/location/sensors, read contacts & SMS, send SMS, set wallpaper, read/write NFC, manage ZIP archives. **80+ tools**, all disabled by default.
 
-### Workflows & Schedules
-**Workflows** — Natural language triggers & actions: *"When I get home, silence the ringer."* 19 triggers, 14 conditions.
+### Workflows & Scheduled Jobs
+**Workflows** — Describe triggers and actions in natural language: *"When I get home, silence the ringer."* 19 trigger types (WiFi, Bluetooth, headset, geofence, app launch, notification, time, charging, screen state, etc.) and 14 conditions.
 
-**Schedules** — *"Every Monday at 8am"*, *"Every 2 hours"*. Survives reboots.
+**Scheduled Jobs** — *"Every Monday at 8 AM"*, *"Every 2 hours"*, *"Next Friday at 3 PM"*. Survives reboots and battery saver.
 
 ### Telegram Bot
-Chat with your assistant from anywhere. Send text, photos, PDFs, voice notes. Yes/No approval buttons.
+Talk to your assistant from anywhere. Send questions, photos, PDFs, voice messages. AI pops up Yes/No buttons when confirmation is needed. Long messages auto-pack as downloadable files.
 
 ### In-App Browser
-A real browser driven by AI. Auto-clicks cookie banners, fills search boxes, scrolls, reads pages.
+A real browser embedded in the app. AI auto-clicks cookie banners, fills search boxes, scrolls, reads page content. Each step streams a screenshot into the chat.
 
 ### File Manager
-Find, read, save, copy, move, rename, delete files.
+Find, read, save, copy, move, rename, delete files. *"Find all PDFs on my phone that mention 'invoice'"* — one sentence.
 
 ### SSH
-Save servers, run commands, upload files, pull backups — all from chat.
+Save server info. Run commands, upload files, pull backups, check disk, tail logs — all in chat. Works over WiFi and mobile data.
+
+### Music & Media
+Play music through Android's normal media controls: lock screen album art, headset buttons, all supported. Pause, resume, adjust volume — from chat or Telegram.
+
+### Skills
+Drop in Markdown Skill files and the AI gains new capabilities. Built-in: QR code generator, Wikipedia lookup, piano, interactive map, and more.
 
 ### Sub-Agents
-Long tasks dispatch to focused sub-agents in parallel.
+Long tasks auto-split into parallel sub-agents, optionally using smaller, cheaper models. `/stop` cancels all sub-tasks at once.
 
 ### MCP Servers
-Connect Model Context Protocol servers.
+Connect Model Context Protocol servers and the AI gets their tools.
 
-### Safety & Privacy
-1. Per-assistant toggles — all tools start disabled
-2. Per-call approval for modifying actions
-3. HARDLINE floor — dangerous commands blocked unconditionally
+### Notifications & External Triggers
+AI can read, summarize, and forward notifications from specified apps. The whitelist is empty by default.
+
+### Security & Privacy
+Three layers of protection:
+1. **Per-assistant toggles** — all tools start disabled
+2. **Per-call approval** — modifying actions require approval before execution
+3. **HARDLINE floor** — dangerous commands are unconditionally blocked
 
 ---
 
 ## Quick Start
 
 ### 1. Download APK
-From **Releases** or **Actions** page.
+Get the latest APK from the **Releases** page on the right.
 
 ### 2. Install
-Open APK, allow unknown sources.
+Open the APK file, allow installation from unknown sources, and install.
 
-### 3. Configure
-Settings → Providers → Add → OpenAI-compatible or LiteRT local model.
+### 3. Configure LLM
+Open the app → **Settings → Providers → Add** → Choose OpenAI-compatible or the built-in LiteRT local model.
 
-### 4. Enable Tools (optional)
-Settings → Assistants → Local Tools.
+### 4. Enable Features (Optional)
+**Settings → Assistants → Local Tools** → enable as needed.
+
+### 5. Telegram Bot (Optional)
+Get a token from [@BotFather](https://t.me/BotFather) and tell the assistant to configure it.
 
 ---
 
-## Requirements
+## System Requirements
 
 | | |
 |---|---|
@@ -107,11 +117,16 @@ Settings → Assistants → Local Tools.
 
 ---
 
+## Supported Languages
+
+English, 简体中文, 繁體中文（香港）, 日本語, 한국어, Русский.
+
+---
+
 ## Credits
 
 - **[RikkaHub (Official)](https://github.com/rikkahub/rikkahub)** — Upstream project
 - **[ExTV/rikkahub-agent (Original Fork)](https://github.com/ExTV/rikkahub-agent)** — Original fork
-- **GitHub Actions** — Auto build & release
 
 ---
 
@@ -119,4 +134,9 @@ Settings → Assistants → Local Tools.
 
 **GNU Affero General Public License v3.0 (AGPL-3.0)**
 
-See [LICENSE](LICENSE).
+- ✅ Free to use, modify, and distribute
+- ✅ Commercial use allowed
+- ⚠️ If providing as a network service, source code must be made public
+- ⚠️ Modified versions must use the same license
+
+Full text in [LICENSE](LICENSE).
