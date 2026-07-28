@@ -393,7 +393,7 @@ class DoctorChecks(
                         detail = if (nfcNeeders.isEmpty())
                             "NFC 已在系统设置中关闭。当前未启用任何需要它的工具。"
                         else
-                            "NFC 已在系统设置中关闭。需求方:  +
+                            "NFC 已在系统设置中关闭。需求方: " +
                                 nfcNeeders.joinToString(", ") { it.shortName() } + ".",
                         severity = if (nfcNeeders.isEmpty()) Severity.INFO else Severity.WARN,
                         fix = if (nfcNeeders.isEmpty()) null else FixAction.OpenIntent(
@@ -822,8 +822,8 @@ class DoctorChecks(
                         "CPU（设置 -> 本地 LiteRT 中"尝试 GPU 加速"已关闭）" +
                             "开启以在下次加载时重试设备 GPU。"
                     accel == "CPU" ->
-                        "CPU（备用：此设备 GPU delegate 初始化失败， +
-                            "likely an MLDrift issue. Tap 'Re-detect' in Settings -> Local LiteRT " +
+                        "CPU（备用：此设备 GPU delegate 初始化失败， " +
+                            "likely an MLDrift issue. Tap 'Re-detect' in Settings → Local LiteRT " +
                             "to retry with a fresh probe.)"
                     accel == "GPU" -> "GPU（OpenCL 或 OpenGL，由 LiteRT 内部探测选择）。"
                     accel == "QNN" || accel == "NPU" -> "NPU（Qualcomm QNN delegate）。"
