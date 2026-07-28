@@ -100,7 +100,7 @@ fun launchAppTool(
         val result = try {
             context.startActivity(intent)
             // Confirm the launched app actually took focus. If the user is physically
-            // in another app (e.g. RikkaHub's own chat), the launch can be silently
+            // in another app (e.g. RikkaHub Agents's own chat), the launch can be silently
             // ignored and subsequent screen-automation calls will loop on
             // wrong_foreground_app. Only meaningful when AccessibilityService is bound;
             // when unbound we cannot verify and report confirmed_foreground:false.
@@ -118,7 +118,7 @@ fun launchAppTool(
                             put("current_foreground", finalForeground.orEmpty())
                             put(
                                 "recovery",
-                                "The launch intent was dispatched but the OS did not move ${pkg} to the foreground within 2.5s. The user is likely actively viewing another app (often RikkaHub itself) — do NOT pass package_name to read_window_tree on this turn. Either ask the user to switch to ${pkg}, or call read_window_tree with no package_name guard so you can see whatever IS currently on screen."
+                                "The launch intent was dispatched but the OS did not move ${pkg} to the foreground within 2.5s. The user is likely actively viewing another app (often RikkaHub Agents itself) — do NOT pass package_name to read_window_tree on this turn. Either ask the user to switch to ${pkg}, or call read_window_tree with no package_name guard so you can see whatever IS currently on screen."
                             )
                             if (wasOff) put("woke_screen", woke)
                         }.toString()

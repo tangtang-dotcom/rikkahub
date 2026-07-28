@@ -954,7 +954,7 @@ class DoctorChecks(
                     id = "termux.run_command",
                     category = DoctorCategory.Termux,
                     label = "Termux RUN_COMMAND 权限",
-                    detail = if (runCommandPerm) "已授予 — RikkaHub 可向 Termux 派发 Shell 命令。"
+                    detail = if (runCommandPerm) "已授予 — RikkaHub Agents 可向 Termux 派发 Shell 命令。"
                     else "未授予。请在本地工具中重新切换 Termux 开关以查看授权后对话框。",
                     severity = if (runCommandPerm) Severity.OK else Severity.WARN,
                 )

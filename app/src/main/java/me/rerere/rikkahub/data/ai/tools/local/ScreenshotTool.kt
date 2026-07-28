@@ -37,7 +37,7 @@ private fun pruneOldCacheScreenshots(dir: File) {
 
 fun takeScreenshotTool(context: Context): Tool = Tool(
     name = "take_screenshot",
-    description = "Capture the current display via AccessibilityService and return it as a vision attachment. PNG also saved to Pictures/RikkaHub/Screenshots/ — gallery_path in the result is the on-device absolute path. Secure surfaces (banking, DRM, password fields) error gracefully. OS-rate-limited to ~1/sec.",
+    description = "Capture the current display via AccessibilityService and return it as a vision attachment. PNG also saved to Pictures/RikkaHub Agents/Screenshots/ — gallery_path in the result is the on-device absolute path. Secure surfaces (banking, DRM, password fields) error gracefully. OS-rate-limited to ~1/sec.",
     parameters = {
         InputSchema.Obj(
             properties = buildJsonObject {
@@ -92,7 +92,7 @@ fun takeScreenshotTool(context: Context): Tool = Tool(
                         }
                     }
 
-                    // 2) Save a user-visible copy to Pictures/RikkaHub/Screenshots — visible in
+                    // 2) Save a user-visible copy to Pictures/RikkaHub Agents/Screenshots — visible in
                     //    Gallery, the Files app, and the list_files / find_files tools.
                     val galleryPath: String? = saveToGallery(context, res.bitmap, displayName)
                     res.bitmap.recycle()
@@ -127,7 +127,7 @@ fun takeScreenshotTool(context: Context): Tool = Tool(
 )
 
 /**
- * Persist [bitmap] as a PNG into the device gallery at Pictures/RikkaHub/Screenshots/.
+ * Persist [bitmap] as a PNG into the device gallery at Pictures/RikkaHub Agents/Screenshots/.
  *
  * Q+ (API 29+): use MediaStore (no permission required for own-app inserts; visible to
  * the user's Gallery app via media indexing).

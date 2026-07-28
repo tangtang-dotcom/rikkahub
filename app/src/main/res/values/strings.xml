@@ -899,7 +899,7 @@
   <string name="setting_page_web_server">Web Server</string>
   <string name="setting_page_web_server_address_note">Address Notes</string>
   <string name="setting_page_web_server_address_note_desc">LAN Address: Uses device WiFi IP, accessible to other devices on the same network. Unavailable on mobile data.\nLocal Address: Uses localhost, accessible on this device only.\nmDNS Address: Uses .local hostname, accessible by name from other devices on the same network without knowing the IP.</string>
-  <string name="setting_page_web_server_desc">Allow you access RikkaHub via Web</string>
+  <string name="setting_page_web_server_desc">Allow you access RikkaHub Agents via Web</string>
   <string name="setting_page_web_server_error">Error</string>
   <string name="setting_page_web_server_jwt_enable">Enable authentication</string>
   <string name="setting_page_web_server_jwt_enable_desc">Require password verification when accessing the web interface</string>
@@ -1205,7 +1205,7 @@
   <string name="setting_page_telegram_boot_note">When started, the bot also auto-starts on device boot.</string>
   <string name="setting_page_telegram_battery_ok">Battery optimization: whitelisted</string>
   <string name="setting_page_telegram_battery_needed">Battery optimization: not whitelisted - tap to fix</string>
-  <string name="setting_page_telegram_battery_desc">When the screen turns off, aggressive OEM ROMs (Xiaomi, OPPO, OnePlus, Vivo) cut network for non-whitelisted apps. The bot will only deliver during occasional maintenance windows. Tap to whitelist RikkaHub.</string>
+  <string name="setting_page_telegram_battery_desc">When the screen turns off, aggressive OEM ROMs (Xiaomi, OPPO, OnePlus, Vivo) cut network for non-whitelisted apps. The bot will only deliver during occasional maintenance windows. Tap to whitelist RikkaHub Agents.</string>
   <string name="setting_page_telegram_battery_already_ok">Already whitelisted from battery optimization.</string>
   <string name="assistant_page_local_tools_media_player_desc">Play and stop audio from a file path or URL.</string>
   <string name="assistant_page_local_tools_media_player_title">Media player</string>
@@ -1289,7 +1289,7 @@
   <string name="assistant_page_local_tools_speech_to_text_desc">Listen to the microphone and convert spoken words to text.</string>
   <string name="assistant_page_local_tools_fingerprint_title">Fingerprint</string>
   <string name="assistant_page_local_tools_fingerprint_desc">Show the system biometric prompt to verify the user\'s identity.</string>
-  <string name="accessibility_service_summary">Lets RikkaHub tap, swipe, scroll, read screen content, and take screenshots when the LLM uses the Screen automation tools.</string>
+  <string name="accessibility_service_summary">Lets RikkaHub Agents tap, swipe, scroll, read screen content, and take screenshots when the LLM uses the Screen automation tools.</string>
   <string name="assistant_page_local_tools_section_screen_automation">Screen automation</string>
   <string name="assistant_page_local_tools_screen_automation_title">Screen automation</string>
   <string name="assistant_page_local_tools_screen_automation_desc">Let the LLM tap, swipe, scroll, read on-screen content, and take screenshots via Android\'s accessibility service.</string>
@@ -1335,7 +1335,7 @@
   <string name="setting_page_accessibility_status_section">Status</string>
   <string name="setting_page_accessibility_status_running">Service: Running</string>
   <string name="setting_page_accessibility_status_not_running">Service: Not running</string>
-  <string name="setting_page_accessibility_status_help">RikkaHub Agents needs accessibility permission to perform taps, swipes, and read the screen for the LLM. Open Settings &#x2192; Accessibility &#x2192; Installed Apps &#x2192; RikkaHub and turn it on.</string>
+  <string name="setting_page_accessibility_status_help">RikkaHub Agents needs accessibility permission to perform taps, swipes, and read the screen for the LLM. Open Settings &#x2192; Accessibility &#x2192; Installed Apps &#x2192; RikkaHub Agents and turn it on.</string>
   <string name="setting_page_accessibility_open_settings">Open Accessibility settings</string>
   <string name="setting_page_accessibility_diagnostics_section">Diagnostics</string>
   <string name="setting_page_accessibility_capture_diag">Capture diagnostic screenshot</string>
@@ -1352,7 +1352,7 @@
   <string name="setting_page_accessibility_overlay_help">Shows a small \"The agent is working\" pill at the top of the screen while the agent is automating, so you always know when it is driving the UI. Optional but recommended.</string>
   <string name="setting_page_accessibility_overlay_open_settings">Grant Display over other apps</string>
   <string name="setting_page_permissions">Permissions</string>
-  <string name="setting_page_permissions_desc">Auto-discovered list of every permission RikkaHub uses, with a one-tap grant button for each.</string>
+  <string name="setting_page_permissions_desc">Auto-discovered list of every permission RikkaHub Agents uses, with a one-tap grant button for each.</string>
   <string name="setting_page_permissions_group_services">Services and integrations</string>
   <string name="setting_page_permissions_group_special">Special access</string>
   <string name="setting_page_permissions_group_runtime">Runtime permissions</string>
@@ -1365,13 +1365,13 @@
   <string name="setting_provider_delete_confirm">Remove</string>
   <string name="setting_provider_delete_cancel">Cancel</string>
   <string name="setting_provider_aicore_release_stage">Release stage</string>
-  <string name="setting_provider_aicore_status_help">On-device. Requires Pixel 8/9/10 with the AICore app installed AND enrollment in the GenAI Prompt-API early-access program (separate opt-in). If you see ErrorCode 606 / FEATURE_NOT_FOUND on first run, you have AICore installed but not the Prompt-API channel — request access via the GenAI Prompt-API early-access form, then reboot. Tool calling is supported via prompt engineering — Gemini Nano emits &lt;tool_call&gt; markup which RikkaHub parses and dispatches.</string>
+  <string name="setting_provider_aicore_status_help">On-device. Requires Pixel 8/9/10 with the AICore app installed AND enrollment in the GenAI Prompt-API early-access program (separate opt-in). If you see ErrorCode 606 / FEATURE_NOT_FOUND on first run, you have AICore installed but not the Prompt-API channel — request access via the GenAI Prompt-API early-access form, then reboot. Tool calling is supported via prompt engineering — Gemini Nano emits &lt;tool_call&gt; markup which RikkaHub Agents parses and dispatches.</string>
   <string name="setting_page_notifications">Notifications</string>
   <string name="setting_page_notifications_desc">Notification access status, recent activity log, and the per-app whitelist that auto-forwards to Telegram.</string>
   <string name="setting_page_notifications_status_section">Status</string>
   <string name="setting_page_notifications_status_connected">Service: Connected</string>
   <string name="setting_page_notifications_status_not_connected">Service: Not connected</string>
-  <string name="setting_page_notifications_status_help">RikkaHub Agents needs notification access to read incoming notifications. Open Settings → Notification access → Notification access and enable RikkaHub.</string>
+  <string name="setting_page_notifications_status_help">RikkaHub Agents needs notification access to read incoming notifications. Open Settings → Notification access → Notification access and enable RikkaHub Agents.</string>
   <string name="setting_page_notifications_open_settings">Open Notification access settings</string>
   <string name="setting_page_notifications_default_chat_set">Default Telegram chat: %1$s</string>
   <string name="setting_page_notifications_default_chat_unset">Default Telegram chat: not set (auto-route disabled)</string>
@@ -1401,7 +1401,7 @@
   <string name="assistant_page_local_tools_system_intents_title">System intents</string>
   <string name="assistant_page_local_tools_system_intents_desc">Let the assistant pre-fill system apps for you to finalise: Calendar event, new Contact, email composer, SMS composer, WiFi settings, Maps. Nothing is saved or sent without your tap in the destination app.</string>
   <string name="assistant_page_local_tools_workflows_hint_title">Workflows need extra setup</string>
-  <string name="assistant_page_local_tools_workflows_hint_message">Workflows are enabled. Some trigger types need permissions the toggle can\'t request:\n\n• Geofences (you arrive somewhere): Settings → Apps → RikkaHub → Permissions → Location → Allow all the time.\n• Notification arrives: Settings → Apps → Special access → Notification access → enable RikkaHub.\n• App launches/closes: Settings → Accessibility → enable RikkaHub.\n• Bluetooth connect/disconnect: grant BLUETOOTH_CONNECT when the system asks.\n\nSchedule, WiFi, headphones, power, screen on/off, and battery triggers work right out of the box. The assistant will flag any extra setup at the moment you author a workflow that needs it.</string>
+  <string name="assistant_page_local_tools_workflows_hint_message">Workflows are enabled. Some trigger types need permissions the toggle can\'t request:\n\n• Geofences (you arrive somewhere): Settings → Apps → RikkaHub Agents → Permissions → Location → Allow all the time.\n• Notification arrives: Settings → Apps → Special access → Notification access → enable RikkaHub Agents.\n• App launches/closes: Settings → Accessibility → enable RikkaHub Agents.\n• Bluetooth connect/disconnect: grant BLUETOOTH_CONNECT when the system asks.\n\nSchedule, WiFi, headphones, power, screen on/off, and battery triggers work right out of the box. The assistant will flag any extra setup at the moment you author a workflow that needs it.</string>
   <string name="assistant_page_local_tools_workflows_title">Workflows</string>
   <string name="assistant_page_local_tools_workflows_desc">Let the assistant create automations that run on triggers — WiFi connect, schedule, geofence, notification arrival, and more.</string>
   <string name="setting_page_workflows_empty">No workflows yet. Ask your assistant to create one.</string>

@@ -275,5 +275,5 @@ private fun routeFor(key: AppRouteKey): Screen = when (key) {
 
 private fun copyToClipboard(ctx: Context, text: String) {
     val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-    cm.setPrimaryClip(ClipData.newPlainText("RikkaHub diagnostic report", text))
+    cm.setPrimaryClip(ClipData.newPlainText("RikkaHub Agents diagnostic report", text))
 }

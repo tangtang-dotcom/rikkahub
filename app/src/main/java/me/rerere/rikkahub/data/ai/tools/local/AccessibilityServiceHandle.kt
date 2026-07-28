@@ -44,6 +44,6 @@ object AccessibilityServiceHandle {
 
     fun notActiveEnvelope(): JsonObject = buildJsonObject {
         put("error", "AccessibilityService not active")
-        put("recovery", "Enable RikkaHub in Settings → Accessibility → Installed Apps")
+        put("recovery", "Enable RikkaHub Agents in Settings → Accessibility → Installed Apps")
     }
 }
