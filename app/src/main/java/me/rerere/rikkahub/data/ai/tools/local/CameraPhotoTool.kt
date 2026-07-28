@@ -22,7 +22,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-private const val PICTURES_SUBDIR = "RikkaHub"
+private const val PICTURES_SUBDIR = "RikkaHub Agents"
 
 fun cameraPhotoTool(context: Context, buffer: CameraResultBuffer): Tool = Tool(
     name = "take_photo",
@@ -42,7 +42,7 @@ fun cameraPhotoTool(context: Context, buffer: CameraResultBuffer): Tool = Tool(
         }
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val displayName = "RikkaHub_${timestamp}_${UUID.randomUUID().toString().take(8)}.jpg"
+        val displayName = "RikkaHub_Agents_${timestamp}_${UUID.randomUUID().toString().take(8)}.jpg"
 
         val useMediaStore = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
         val mediaStoreUri: Uri?

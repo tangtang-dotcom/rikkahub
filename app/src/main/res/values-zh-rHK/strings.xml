@@ -819,7 +819,7 @@
   <string name="setting_page_search_title">搜尋服務</string>
   <string name="setting_page_share">分享</string>
   <string name="setting_page_share_desc">分享本APP給朋友</string>
-  <string name="setting_page_share_text">RikkaHub - 開源安卓AI助手\n\n官網: https://rikka-ai.com/</string>
+  <string name="setting_page_share_text">RikkaHub Agents - 開源安卓AI助手\n\n官網: https://rikka-ai.com/</string>
   <string name="setting_page_sponsor_alert_confirm">捐款</string>
   <string name="setting_page_sponsor_alert_desc">您已啟動應用程式超過 100 次！如果您喜歡使用它，請考慮支持開發者。</string>
   <string name="setting_page_sponsor_alert_dismiss">稍後再說</string>
@@ -1286,7 +1286,7 @@
   <string name="local_llm_download_cancel">取消</string>
   <string name="local_llm_download_continue">下載</string>
   <string name="local_llm_download_default">下載預設模型</string>
-  <string name="local_llm_download_message">RikkaHub 需要為此服務商下載一個入門模型。下載約 1.5 GB（Qwen2.5 1.5B Q8）。繼續？</string>
+  <string name="local_llm_download_message">RikkaHub Agents 需要為此服務商下載一個入門模型。下載約 1.5 GB（Qwen2.5 1.5B Q8）。繼續？</string>
   <string name="local_llm_download_progress">正在下載… %1$d%%</string>
   <string name="local_llm_download_title">下載預設模型</string>
   <string name="local_llm_downloading_format">正在下載… %1$d%%（%2$s / %3$s）</string>
@@ -1396,7 +1396,7 @@
   <string name="setting_page_accessibility_overlay_open_settings">授予顯示在其他應用程式上層</string>
   <string name="setting_page_accessibility_overlay_section">活動浮動視窗</string>
   <string name="setting_page_accessibility_recent_section">最近操作</string>
-  <string name="setting_page_accessibility_status_help">RikkaHub 需要無障礙權限來為大型語言模型執行點選、滑動和讀取螢幕。開啟 設定 &#x2192; 無障礙 &#x2192; 已安裝的應用程式 &#x2192; RikkaHub 並開啟它。</string>
+  <string name="setting_page_accessibility_status_help">RikkaHub Agents 需要無障礙權限來為大型語言模型執行點選、滑動和讀取螢幕。開啟 設定 &#x2192; 無障礙 &#x2192; 已安裝的應用程式 &#x2192; RikkaHub 並開啟它。</string>
   <string name="setting_page_accessibility_status_not_running">服務：未執行</string>
   <string name="setting_page_accessibility_status_running">服務：執行中</string>
   <string name="setting_page_accessibility_status_section">狀態</string>
@@ -1419,7 +1419,7 @@
   <string name="setting_page_notifications_recent_empty">尚未擷取任何通知。</string>
   <string name="setting_page_notifications_recent_section">最近活動</string>
   <string name="setting_page_notifications_status_connected">服務：已連接</string>
-  <string name="setting_page_notifications_status_help">RikkaHub 需要通知存取權限來讀取傳入的通知。開啟 設定 → 通知存取權 → 通知存取權 並啟用 RikkaHub。</string>
+  <string name="setting_page_notifications_status_help">RikkaHub Agents 需要通知存取權限來讀取傳入的通知。開啟 設定 → 通知存取權 → 通知存取權 並啟用 RikkaHub。</string>
   <string name="setting_page_notifications_status_not_connected">服務：未連接</string>
   <string name="setting_page_notifications_status_section">狀態</string>
   <string name="setting_page_notifications_whitelist_help">其通知會自動轉發到你預設 Telegram 聊天的應用程式。留空 = 不轉發任何內容。在選擇器中逐個開關應用程式。</string>

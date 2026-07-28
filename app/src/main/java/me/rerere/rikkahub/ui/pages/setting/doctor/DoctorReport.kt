@@ -10,7 +10,7 @@ import java.util.Locale
  * output is greppable for support flows.
  */
 object DoctorReport {
-    fun format(checks: List<DoctorCheck>, header: String = "RikkaHub-agent — 诊断报告"): String =
+    fun format(checks: List<DoctorCheck>, header: String = "RikkaHub Agents — 诊断报告"): String =
         buildString {
             appendLine(header)
             appendLine("生成时间: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")

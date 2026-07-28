@@ -25,7 +25,7 @@ import java.util.Date
 import java.util.Locale
 
 private const val SCREENSHOT_CACHE_DIR = "screenshots"
-private const val PICTURES_SUBDIR = "RikkaHub/Screenshots"
+private const val PICTURES_SUBDIR = "RikkaHub Agents/Screenshots"
 private const val PRUNE_OLDER_THAN_MS = 60L * 60L * 1000L  // 1 hour — cache only
 
 private fun pruneOldCacheScreenshots(dir: File) {

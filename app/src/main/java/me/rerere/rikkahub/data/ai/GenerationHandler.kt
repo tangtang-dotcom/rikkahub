@@ -914,7 +914,7 @@ class GenerationHandler(
             Handler(Looper.getMainLooper()).post {
                 Toast.makeText(
                     context.applicationContext,
-                    "RikkaHub: skipped auto-return because you switched apps. (Safety feature)",
+                    "RikkaHub Agents: skipped auto-return because you switched apps. (Safety feature)",
                     Toast.LENGTH_LONG
                 ).show()
             }

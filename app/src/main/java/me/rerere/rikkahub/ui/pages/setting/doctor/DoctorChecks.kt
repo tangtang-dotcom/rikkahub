@@ -1075,7 +1075,7 @@ class DoctorChecks(
             id = "diag.app",
             category = DoctorCategory.Diagnostics,
             label = "应用构建信息",
-            detail = "RikkaHub-agent ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) — debug=${BuildConfig.DEBUG}",
+            detail = "RikkaHub Agents ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) — debug=${BuildConfig.DEBUG}",
             severity = Severity.INFO,
         ),
         DoctorCheck(

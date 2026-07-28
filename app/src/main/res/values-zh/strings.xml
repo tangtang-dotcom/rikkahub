@@ -851,7 +851,7 @@
   <string name="setting_page_search_title">搜索服务</string>
   <string name="setting_page_share">分享</string>
   <string name="setting_page_share_desc">分享本APP给朋友</string>
-  <string name="setting_page_share_text">RikkaHub - 开源安卓AI助手\n\n官网: https://rikka-ai.com/</string>
+  <string name="setting_page_share_text">RikkaHub Agents - 开源安卓AI助手\n\n官网: https://rikka-ai.com/</string>
   <string name="setting_page_sponsor_alert_confirm">捐赠</string>
   <string name="setting_page_sponsor_alert_desc">您已启动应用超过100次！如果您喜欢使用它，请考虑支持开发者。</string>
   <string name="setting_page_sponsor_alert_dismiss">暂不</string>
@@ -1318,7 +1318,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="local_llm_download_cancel">取消</string>
   <string name="local_llm_download_continue">下载</string>
   <string name="local_llm_download_default">下载默认模型</string>
-  <string name="local_llm_download_message">RikkaHub 需要为此服务商下载一个入门模型。下载约 1.5 GB（Qwen2.5 1.5B Q8）。继续？</string>
+  <string name="local_llm_download_message">RikkaHub Agents 需要为此服务商下载一个入门模型。下载约 1.5 GB（Qwen2.5 1.5B Q8）。继续？</string>
   <string name="local_llm_download_progress">正在下载… %1$d%%</string>
   <string name="local_llm_download_title">下载默认模型</string>
   <string name="local_llm_downloading_format">正在下载… %1$d%%（%2$s / %3$s）</string>
@@ -1428,7 +1428,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_page_accessibility_overlay_open_settings">授予在其他应用上层显示</string>
   <string name="setting_page_accessibility_overlay_section">活动悬浮窗</string>
   <string name="setting_page_accessibility_recent_section">最近操作</string>
-  <string name="setting_page_accessibility_status_help">RikkaHub 需要无障碍权限来为大模型执行点击、滑动和读取屏幕。打开 设置 &#x2192; 无障碍 &#x2192; 已安装的应用 &#x2192; RikkaHub 并开启它。</string>
+  <string name="setting_page_accessibility_status_help">RikkaHub Agents 需要无障碍权限来为大模型执行点击、滑动和读取屏幕。打开 设置 &#x2192; 无障碍 &#x2192; 已安装的应用 &#x2192; RikkaHub 并开启它。</string>
   <string name="setting_page_accessibility_status_not_running">服务：未运行</string>
   <string name="setting_page_accessibility_status_running">服务：运行中</string>
   <string name="setting_page_accessibility_status_section">状态</string>
@@ -1451,7 +1451,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_page_notifications_recent_empty">尚未捕获任何通知。</string>
   <string name="setting_page_notifications_recent_section">最近活动</string>
   <string name="setting_page_notifications_status_connected">服务：已连接</string>
-  <string name="setting_page_notifications_status_help">RikkaHub 需要通知访问权限来读取传入的通知。打开 设置 → 通知使用权 → 通知使用权 并启用 RikkaHub。</string>
+  <string name="setting_page_notifications_status_help">RikkaHub Agents 需要通知访问权限来读取传入的通知。打开 设置 → 通知使用权 → 通知使用权 并启用 RikkaHub。</string>
   <string name="setting_page_notifications_status_not_connected">服务：未连接</string>
   <string name="setting_page_notifications_status_section">状态</string>
   <string name="setting_page_notifications_whitelist_help">其通知会自动转发到你默认 Telegram 聊天的应用。留空 = 不转发任何内容。在选择器中逐个开关应用。</string>
