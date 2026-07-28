@@ -1,122 +1,44 @@
 package me.rerere.ai.util
 
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import me.rerere.ai.provider.CustomBody
-import me.rerere.ai.provider.CustomHeader
-import okhttp3.Headers
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.Request
-import okhttp3.ResponseBody
-import okhttp3.internal.http.RealResponseBody
-
-fun List<CustomHeader>.toHeaders(): Headers {
-    return Headers.Builder().apply {
-        this@toHeaders
-            .filter { it.name.isNotBlank() }
+import kotlinx.ser¥…±¥é…Ñ¥½¸¹©Í½¸¹)Í½¹ÉÉ…ä)¥µÁ½ÉĞ­½Ñ±¥¹à¹Í•É¦vÆ—¦F–öâæ§6öâä§6öäVÆVÖVç@¦–×÷'B¶÷FÆ–ç‚ç6W)ÚX[^˜][Û‹šœÛÛ‹’œÛÛ“Øš™Xİš[\ÜYKœ™\™\™K˜gi.provider.CustomBody
+import me.rerere.ai.proÙ¥‘•È¹ÕÍÑ½µ!•…‘•È)¥µÁ½ÉĞ½­¡ÑÑÀÌ¹!•…‘•ÉÌ)¥µÂv÷'Bö¶‡GG2ä‡GGW&Âä6ö×æ–öâçFô‡GGW&À¦–×÷)İÚÚË”™\]Y\İš[\ÜÚÚË”™\ÜÛœÙP›Ùg
+import okhttp3.internal.http.RealResponseBodä()™Õ¸1¥ÍĞñÕÍÑ½µ!•…‘•Èø¹Ñ½!•…‘•ÉÌ ¤è!•…‘•Êw2°¢&WGW&â†VFW'2ä'V–ÆFW"‚’æÇ’°¢	È\ĞÒXY\œÂˆ™š[\ˆÈ]›§ame.isNotBlank() }
             .forEach {
-                add(it.name, it.value)
-            }
-    }.build()
-}
-
-fun Request.Builder.configureReferHeaders(url: String): Request.Builder {
+   œ€€€€€€€€€€€€…‘¡¥Ğ¹¹…µ”°¥Ğ¹Ù…±Õ”¤(€€€€€€€€‚rĞ¢Òæ'V–ÆB‚§Ğ ¦gVâ&WVW7Bä'V–ÆFW"æ6öéÙšYİ\™T™Y™\’XY\œÊ\›ˆİš[™ÊNˆ™\]Y\İZ['der {
     val httpUrl = url.toHttpUrl()
-    return when (httpUrl.host) {
-        "aihubmix.com" -> {
-            addHeader("APP-Code", "DKHA9468")
-        }
-
-        "openrouter.ai" -> {
+    r•ÑÕÉ¸İ¡•¸€¡¡ÑÑÁUÉ°¹¡½ÍĞ¤ì(€€€€€€€€‰…¥¡Õ‰µ¥âræ6öÒ"Óâ°¢FD†VFW"‚$Ô6öFR"Â	È‘ÒNMŠBˆB‚ˆ›Ü[œ›İ]\‹˜Zg" -> {
             this
-                .addHeader("X-Title", "RikkaHub")
-                .addHeader("HTTP-Referer", "https://rikka-ai.com")
-        }
-
-        else -> this
-    }
-}
+                .addH•…‘•È ‰`µQ¥Ñ±”ˆ°€‰I¥­­…!Õˆˆ¤(€€€€€€€€€€€€€€€‚ræFD†VFW"‚$…EEÕ&VfW&W""Â&‡GG3¢ò÷&–¶¶Ö’éØÛÛHŠBˆB‚ˆ[ÙHOˆ\ÂˆBŸg
 
 fun ResponseBody.stringSafe(): String? {
-    return when (this) {
-        is RealResponseBody -> string()
-        else -> null
-    }
-}
-
-fun JsonObject.mergeCustomBody(bodies: List<CustomBody>): JsonObject {
-    if (bodies.isEmpty()) return this
-
-    val content = toMutableMap()
-    bodies.forEach { body ->
-        if (body.key.isNotBlank()) {
-            // å¦‚æœå·²å­˜åœ¨ç›¸åŒé”®ä¸”ä¸¤è€…éƒ½æ˜¯JsonObjectï¼Œåˆ™éœ€è¦é€’å½’åˆå¹¶
-            val existingValue = content[body.key]
-            val newValue = body.value
-
-            if (existingValue is JsonObject && newValue is JsonObject) {
-                // é€’å½’åˆå¹¶ä¸¤ä¸ªJsonObject
-                content[body.key] = mergeJsonObjects(existingValue, newValue)
+  œ€É•ÑÕÉ¸İ¡•¸€¡Ñ¡¥Ì¤ì(€€€€€€€¥ÌI•…±I•ÍÁ½¹ÎvT&öG’Óâ7G&–ær‚¢VÇ6RÓâçVÆÀ¢Ğ©ßB‚™[ˆœÛÛ“Øš™Xİ›Y\™ÙPİ\İÛP›ÙJ›ÙY\Îˆ\çt<CustomBody>): JsonObject {
+    if (bodies.iÍµÁÑä ¤¤É•ÑÕÉ¸Ñ¡¥Ì((€€€Ù…°½¹Ñ•¹Ğ€ôÑ½5ÖwF&ÆTÖ‚¢&öF–W2æf÷$V6‚²&öG’Óà¢	ÈYˆ
+›ÙKšÙ^Kš\Ó›İ›[šÊ
+JHÂˆç/ å¦‚æœå·²å­˜åœ¨ç›¸åŒé”®ä¸”ä¸¤è€…éƒ½æ˜¯Json=‰©•Ó¾ò3–"g¦r¢š¦K–öK–B#–æØ(€€€€€€€€€€€Ù†vÂW†—7F–æufÇVRÒ6öçFVçE¶&öG’æ¶W•Ğ¢	È˜[™]Õ˜[YHH›ÙK˜[YB‚ˆYˆ'(existingValue is JsonObject && newValue is JÍ½¹=‰©•Ğ¤ì(€€€€€€€€€€€€€€€€¼¼ƒ¦K–öK–B#–æÛ’{ŠNKŠ¤§6öäö&¦V7@¢6öçFVçE¶&öG’éÚÙ^WHHY\™ÙRœÛÛ“Øš™XİÊ^\İ[™Õ˜[YK™]Õ˜['ue)
             } else {
-                // ç›´æ¥æ›¿æ¢æˆ–æ·»åŠ 
-                content[body.key] = newValue
-            }
-        }
-    }
-    return JsonObject(content)
-}
-
-/**
- * é€’å½’åˆå¹¶ä¸¤ä¸ªJsonObject
+                // çnÓš:—šnÿš6‹š"[šŞï–*€(€€€€€€€€€€€€€€€½¹Ñ•¹Ñnv&öG’æ¶W•ÒÒæWufÇVP¢Ğ¢Ğ©ÈBˆ™]\›ˆœÛÛ“Øš™Xİ
+ÛÛ[
+BŸB‚‹ÊŠ‚ˆ'* é€’å½’åˆå¹¶ä¸¤ä¸ªJsonObject
  */
-private fun mergeJsonObjects(base: JsonObject, overlay: JsonObject): JsonObject {
-    val result = base.toMutableMap()
+private fu¸µ•É•)Í½¹=‰©•ÑÌ¡‰…Í”è)Í½¹=‰©•Ğ°½Ù•É±…äêr§6öäö&¦V7B“¢§6öäö&¦V7B°¢fÂ&W7VÇBÒ)Ø\ÙKÓ]]X›SX\
 
-    for ((key, value) in overlay) {
-        val baseValue = result[key]
+B‚ˆ›Üˆ
 
-        result[key] = if (baseValue is JsonObject && value is JsonObject) {
-            // å¦‚æœä¸¤è€…éƒ½æ˜¯JsonObjectï¼Œé€’å½’åˆå¹¶
-            mergeJsonObjects(baseValue, value)
-        } else {
-            // å¦åˆ™ä½¿ç”¨æ–°å€¼æ›¿æ¢æ—§å€¼
-            value
-        }
-    }
-
-    return JsonObject(result)
-}
-
+Ù^K˜[YJH[ˆ'overlay) {
+        val baseValue = result[keyt((€€€€€€€É•ÍÕ±Ñm­•åt€ô¥˜€¡‰…Í•Y…±Õ”¥Ì)Í¾väö&¦V7BbbfÇVR—2§6öäö&¦V7B’°¢	ÈËÈ9i ¹§§9.): !z`ïy¦+ÒœÛÛ“Øš™Xİ;ï#:`$¹od¹d"9g¹¶
+            mergeJsonObjects(baseValue, va±Õ”¤(€€€€€€€ô•±Í”ì(€€€€€€€€€€€€¼¼ƒ–B›–"g’ö{şyJikXÎi»şhÚ.iz~XÀ¢fÇVP¢	ÈBˆB‚ˆ™]\›ˆœÛÛ“Øš™Xİ
+™\İ[
+BŸB§
 /**
- * ä» JsonElement ä¸­ç§»é™¤æˆ–ä¿ç•™æŒ‡å®šçš„é”®
- * @param keys è¦æ“ä½œçš„é”®åˆ—è¡¨
- * @param keepOnly å¦‚æœä¸º trueï¼Œåˆ™åªä¿ç•™æŒ‡å®šçš„é”®ï¼›å¦‚æœä¸º falseï¼Œåˆ™ç§»é™¤æŒ‡å®šçš„é”®
- * @return å¤„ç†åçš„ JsonElement
- */
-fun JsonElement.removeElements(keys: List<String>, keepOnly: Boolean = false): JsonElement {
-    return when (this) {
-        is JsonObject -> {
-            val newContent = if (keepOnly) {
-                // åªä¿ç•™æŒ‡å®šçš„é”®ï¼ˆä¸”é”®å­˜åœ¨ï¼‰
-                keys.mapNotNull { key ->
-                    get(key)?.let { key to it }
-                }.toMap()
-            } else {
-                // ç§»é™¤æŒ‡å®šçš„é”®
-                toMap().filterKeys { key -> key !in keys }
-            }
+ * ä» JsonElement ä¸­ç§»é™¤æˆ–ä¿ç•™æŒ‡Ÿ–ºkj¦R¸(€¨Á…É…´­•åÌƒ¢ššN7’ösj¦R»–"_¢†z€¢¢&Ò¶VWöæÇ’Zh.iéÎK‹¢G'V^ûÈÎX‰Xú®Iïçyåfy£!ùk¦¹æ¡:e+»ï&ùi ¹§§9..ˆ˜[Ù{ï#9b&yéîúg™¤æŒ‡å®šçš„é”®
+ * @return å¤„ç†åçš„ JsonEl•µ•¹Ğ(€¨¼)™Õ¸)Í½¹±•µ•¹Ğ¹É•µ½Ù•±•µ•¹ÑÌ¡­•åÎs¢Æ—7CÅ7G&–æsâÂ¶VWöæÇ“¢&ööÆVâÒfÇ6R“¢©ÜÛÛ‘[[Y[Âˆ™]\›ˆÚ[ˆ
+\ÊHÂˆ' is JsonObject -> {
+            val newContenĞ€ô¥˜€¡­••Á=¹±ä¤ì(€€€€€€€€€€€€€€€€¼¼ƒ–>«’şv~yYhÈ~Zé®y¨N™JîûÈK‰N™JîZÙYÊûÈ¢	ÈÙ^\Ë›X\›İ[ÈÙ^HO‚ˆ'     get(key)?.let { key to it }
+            œ€€€ô¹Ñ½5…À ¤(€€€€€€€€€€€ô•±Í”ì(€€€€€€€€€‚ròòz{¾™šNhÈ~Zé®y¨N™Jà¢IÛÓX\
 
-            // é€’å½’å¤„ç†åµŒå¥—çš„ JsonElement
-            JsonObject(newContent.mapValues { (_, value) ->
-                value.removeElements(keys, keepOnly)
-            })
+K™š[\’Ù^\ÈÈÙ^HOˆÙ^HZ[ˆÙ^\ÈBˆ'         }
+
+            // é€’å½’å¤„ç†åµŒå¥—Ÿj)Í½¹±•µ•¹Ğ(€€€€€€€€€€€)Í½¹=‰©•Ğ¡¹•İ½ºwFVçBæÖfÇVW2²…òÂfÇVR’Óà¢	È˜[YKœ™[[İ™Q[[Y[ÊÙ^\ËÙY\Û›JBˆ'      })
         }
 
-        is JsonArray -> {
-            JsonArray(map { it.removeElements(keys, keepOnly) })
-        }
-
-        else -> this // åŸºæœ¬ç±»å‹ç›´æ¥è¿”å›
-    }
-}
+        is JsonArray -> {œ(€€€€€€€€€€€)Í½¹ÉÉ…ä¡µ…Àì¥Ğ¹É•µ½Ù•±•µ•¹Òw2†¶W—2Â¶VWöæÇ’’Ò¢Ğ ¢VÇ6R	ËOˆ\ÈËÈ9gî¹§+9ìnùg¢ùæí9£©z/å9fç‚ˆBŸB
