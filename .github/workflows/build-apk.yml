@@ -29,19 +29,19 @@ jobs:
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: 生成签名并编译 APK（release 优化）
+      - name: 固定签名构建 · Fixed signing build (overwrite-install)
+        env:
+          KEYSTORE_BASE64: \${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: \${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: \${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: \${{ secrets.KEY_PASSWORD }}
         run: |
-          KEYSTORE="$HOME/rikkahub.jks"
-          if [ ! -f "$KEYSTORE" ]; then
-            keytool -genkey -v -keystore "$KEYSTORE" \
-              -alias rikkahub -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android \
-              -dname "CN=RikkaHub, OU=Dev, O=xiwangone, L=Beijing, ST=Beijing, C=CN"
-          fi
-          echo "storeFile=$KEYSTORE" > local.properties
-          echo "storePassword=android" >> local.properties
-          echo "keyAlias=rikkahub" >> local.properties
-          echo "keyPassword=android" >> local.properties
+          KEYSTORE="\$HOME/rikkahub.jks"
+          echo "\$KEYSTORE_BASE64" | base64 -d > "\$KEYSTORE"
+          echo "storeFile=\$KEYSTORE" >> local.properties
+          echo "storePassword=\$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=\$KEY_ALIAS" >> local.properties
+          echo "keyPassword=\$KEY_PASSWORD" >> local.properties
           chmod +x gradlew
           ./gradlew assembleRelease
 
