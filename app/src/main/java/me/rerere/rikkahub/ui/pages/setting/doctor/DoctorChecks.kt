@@ -819,7 +819,7 @@ class DoctorChecks(
                 val detail = when {
                     accel == null -> "尚未探测。加速器将在首次模型加载时决定。"
                     forceCpu && accel == "CPU" ->
-                        "CPU（设置 -> 本地 LiteRT 中"尝试 GPU 加速"已关闭）" +
+                        "CPU（设置 -> 本地 LiteRT 中「尝试 GPU 加速」已关闭）" +
                             "开启以在下次加载时重试设备 GPU。"
                     accel == "CPU" ->
                         "CPU（备用：此设备 GPU delegate 初始化失败， " +
@@ -866,7 +866,7 @@ class DoctorChecks(
                             id = "net.litert_perf",
                             category = DoctorCategory.Network,
                             label = "LiteRT 性能",
-                            detail = "各模型最近已知速率（基于字符估算， +
+                            detail = "各模型最近已知速率（基于字符估算， " +
                                 "~10% accurate for English text):\n$detail",
                             severity = Severity.INFO,
                             fix = FixAction.OpenAppRoute(
@@ -890,7 +890,7 @@ class DoctorChecks(
                             id = "net.litert_vision",
                             category = DoctorCategory.Network,
                             label = "LiteRT 视觉编码器",
-                            detail = "此设备不支持以下模型的视觉编码器:  +
+                            detail = "此设备不支持以下模型的视觉编码器: " +
                                 visionUnavailable.joinToString(", ") +
                                 ". These multimodal models run in text-only mode — chat works, " +
                                 "image inputs don't. Often fixed by a future LiteRT-LM SDK update " +
@@ -1054,7 +1054,7 @@ class DoctorChecks(
                 id = "maint.cache_size",
                 category = DoctorCategory.Maintenance,
                 label = "应用缓存大小",
-                detail = "缓存占用 ${humanBytes(cacheBytes)}。 +
+                detail = "缓存占用 ${humanBytes(cacheBytes)}。" +
                     if (cacheBytes > 200L * 1024 * 1024) "建议清理 — 已超过 200 MB。" else "正常范围内。",
                 severity = if (cacheBytes > 500L * 1024 * 1024) Severity.WARN else Severity.OK,
                 fix = FixAction.AutoFix(
