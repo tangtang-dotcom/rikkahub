@@ -35,10 +35,10 @@ val DEFAULT_PROVIDERS = listOf(
         enabled = false,
         builtIn = true,
         description = {
-            Text("Runs Gemini Nano on-device through Android AICore. Off by default — flip the switch to enable. Requires AICore beta on a supported Pixel device.")
+            Text("通过 Android AICore 在设备上运行 Gemini Nano。默认关闭 — 开启即可启用。需要受支持的 Pixel 设备上的 AICore 测试版。")
         },
         shortDescription = {
-            Text("On-device — no API key, no network")
+            Text("本地运行 — 无需 API 密钥，无需网络")
         },
     ),
     ProviderSetting.LiteRtLocal(
@@ -52,10 +52,10 @@ val DEFAULT_PROVIDERS = listOf(
         enabled = false,
         builtIn = true,
         description = {
-            Text("Runs .litertlm models on-device via LiteRT-LM. Pick a curated model from Settings → Local · LiteRT (Google AI Edge Gallery's allowlist) — no API key, no network at inference.")
+            Text("通过 LiteRT-LM 在设备上运行 .litertlm 模型。从设置 → 本地 · LiteRT（Google AI Edge Gallery 白名单）中选择精选模型 — 推理时无需 API 密钥，无需网络。")
         },
         shortDescription = {
-            Text("On-device — LiteRT-LM")
+            Text("本地运行 — LiteRT-LM")
         },
     ),
     // All built-in providers ship DISABLED by default. New installs start with zero

@@ -445,7 +445,7 @@ private fun ChatListNormal(
                 ) {
                     Tooltip(
                         tooltip = {
-                            Text("Clear selection")
+                            Text("清除选择")
                         }
                     ) {
                         IconButton(
@@ -459,7 +459,7 @@ private fun ChatListNormal(
                     }
                     Tooltip(
                         tooltip = {
-                            Text("Select all")
+                            Text("全选")
                         }
                     ) {
                         IconButton(
@@ -476,7 +476,7 @@ private fun ChatListNormal(
                     }
                     Tooltip(
                         tooltip = {
-                            Text("Confirm")
+                            Text("确认")
                         }
                     ) {
                         FilledIconButton(

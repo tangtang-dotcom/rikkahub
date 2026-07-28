@@ -245,7 +245,7 @@ class ToolHostActivity : AppCompatActivity() {
             .setTitle(title)
             .setAllowedAuthenticators(authenticators)
         if (subtitle != null) infoBuilder.setSubtitle(subtitle)
-        if (!allowDeviceCredential) infoBuilder.setNegativeButtonText("Cancel")
+        if (!allowDeviceCredential) infoBuilder.setNegativeButtonText("取消")
 
         prompt.authenticate(infoBuilder.build())
     }

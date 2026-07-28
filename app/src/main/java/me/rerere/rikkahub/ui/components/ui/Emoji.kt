@@ -142,16 +142,16 @@ fun EmojiPicker(
                         ) {
                             Text(
                                 text = when (category.name) {
-                                    "Smileys & Emotion" -> "\uD83D\uDE03"
-                                    "People & Body" -> "\uD83D\uDC64"
-                                    "Component" -> "\uD83E\uDDF4"
-                                    "Animals & Nature" -> "\uD83D\uDC3B"
-                                    "Food & Drink" -> "\uD83C\uDF5B"
-                                    "Travel & Places" -> "\uD83C\uDF04"
-                                    "Activities" -> "\uD83C\uDFA3"
-                                    "Objects" -> "\uD83D\uDCBB"
-                                    "Symbols" -> "\uD83C\uDF00"
-                                    "Flags" -> "\uD83D\uDEA9"
+                                    "表情与情感" -> "\uD83D\uDE03"
+                                    "人物与身体" -> "\uD83D\uDC64"
+                                    "组件" -> "\uD83E\uDDF4"
+                                    "动物与自然" -> "\uD83D\uDC3B"
+                                    "食物与饮品" -> "\uD83C\uDF5B"
+                                    "旅行与地点" -> "\uD83C\uDF04"
+                                    "活动" -> "\uD83C\uDFA3"
+                                    "物品" -> "\uD83D\uDCBB"
+                                    "符号" -> "\uD83C\uDF00"
+                                    "旗帜" -> "\uD83D\uDEA9"
                                     else -> category.name
                                 },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
