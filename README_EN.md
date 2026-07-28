@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/icon.png" width="96" height="96" alt="RikkaHub Agent" style="border-radius: 24px" />
+<img src="docs/icon.png" width="96" height="96" alt="RikkaHub Agents" style="border-radius: 24px" />
 
-# RikkaHub Agent
+# RikkaHub Agents
 
 **🤖 Android On-Device LLM Agent · AI-Maintained · Fixed-Signature Build**
 
