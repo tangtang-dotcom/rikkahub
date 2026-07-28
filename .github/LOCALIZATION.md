@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 基准 commit | `7b79d8f` |
+| 基准 commit | `36618f46` |
 | 基准日期 | 2026-07-28 |
 | 英文 strings 总数 | 1879 |
 | 简中 strings 覆盖 | 1879/1879 |
@@ -18,7 +18,7 @@
 | 语言 | app | search | web-ui |
 |------|-----|--------|--------|
 | zh-CN | 1879/1879 | 5/5 | 20/20 |
-| zh-TW | 1879/1879 | 5/5 | — |
+| zh-HK | 1879/1879 | 5/5 | — |
 | ja | 1770/1879 | 5/5 | — |
 | ko | 1770/1879 | 5/5 | — |
 | ru | 1770/1879 | 5/5 | — |
@@ -29,7 +29,7 @@
 用 diff 对比检测新增英文 key：
 
 ```
-git diff 7b79d8f HEAD -- app/src/main/res/values/strings.xml | grep '^+.*<string name='
+git diff 36618f46 HEAD -- app/src/main/res/values/strings.xml | grep '^+.*<string name='
 ```
 
 或精确 key 对比脚本（见仓库根目录 `check_zh.sh` 可用）。
@@ -51,7 +51,7 @@ git diff 7b79d8f HEAD -- app/src/main/res/values/strings.xml | grep '^+.*<string
 ## 翻译工作流
 
 1. 上游合并后 diff 定位新增 strings key
-2. 翻译并同步更新 `values-zh/strings.xml` 和 `values-zh-rTW/strings.xml`
+2. 翻译并同步更新 `values-zh/strings.xml` 和 `values-zh-rHK/strings.xml`
 3. 检查硬编码文件是否有新增英文
 4. 更新本文件基准 commit
 

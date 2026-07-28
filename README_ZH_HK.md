@@ -6,7 +6,7 @@
 
 點擊加入我們的Discord伺服器 👉 [【RikkaHub】](https://discord.gg/9weBqxe5c4)
 
-[English](README.md) | 繁體中文 | [简体中文](README_ZH_CN.md)
+[English](README.md) | 繁體中文（香港） | [简体中文](README_ZH_CN.md)
 
 </div>
 

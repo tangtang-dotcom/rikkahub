@@ -6,7 +6,7 @@
 
 **🤖 Android 设备端 LLM 智能体 · AI 自动维护 · 固定签名编译**
 
-[**English**](README_EN.md) | [**简体中文**](README_ZH_CN.md) | [**繁體中文**](README_ZH_TW.md)
+[**English**](README_EN.md) | [**简体中文**](README_ZH_CN.md) | [**繁體中文（香港）**](README_ZH_HK.md)
 
 </div>
 
@@ -119,7 +119,7 @@ AI 可读取、汇总和转发指定应用的通知。白名单默认全空。
 
 ## 语言支持
 
-English、简体中文、繁體中文、日本語、한국어、Русский。
+English、简体中文、繁體中文（香港）、日本語、한국어、Русский。
 
 ---
 
