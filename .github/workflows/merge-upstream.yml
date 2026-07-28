@@ -1,13 +1,10 @@
-name: 🔄 自动合并上游 · 编译 APK · AI 自动维护
+name: 合并上游代码
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
 
 permissions:
   contents: write
-  actions: write
 
 env:
   UPSTREAM_REPO: rikkahub/rikkahub
@@ -53,83 +50,11 @@ jobs:
             git push origin master 2>&1
           else
             echo "has_conflict=true" >> $GITHUB_OUTPUT
-            CONFLICTS=$(git diff --name-only --diff-filter=U)
-            echo "conflict_files<<EOF" >> $GITHUB_OUTPUT
-            echo "$CONFLICTS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
             git merge --abort
+            echo "::error::合并冲突，请手动处理"
+            exit 1
           fi
 
       - name: 无更新
         if: steps.check.outputs.has_update != 'true'
         run: echo "上游无新版本，跳过"
-
-  build:
-    needs: check-and-merge
-    if: ${{ needs.check-and-merge.outputs.has_update == 'true' && needs.check-and-merge.outputs.has_conflict != 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: true
-
-      - name: 设置 JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: 设置 Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 安装 bun & pnpm
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-          npm install -g pnpm
-
-      - name: 固定签名构建 · Fixed signing build
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          KEYSTORE="$HOME/rikkahub.jks"
-          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
-          echo "storeFile=$KEYSTORE" > local.properties
-          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
-          echo "keyAlias=$KEY_ALIAS" >> local.properties
-          echo "keyPassword=$KEY_PASSWORD" >> local.properties
-          chmod +x gradlew
-          ./gradlew assembleRelease
-
-      - name: Upload APK (artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikkahub-agents-release
-          path: app/build/outputs/apk/release/*.apk
-
-      - name: 微信通知 · 构建结果
-        if: always()
-        env:
-          STATUS: ${{ job.status }}
-          HAS_CONFLICT: ${{ needs.check-and-merge.outputs.has_conflict }}
-          CONFLICT_FILES: ${{ needs.check-and-merge.outputs.conflict_files }}
-        run: |
-          if [ "$HAS_CONFLICT" = "true" ]; then
-            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-              -d "title=⚠️ RikkaHub Agents 合并冲突" \
-              -d "desp=上游有新代码，但合并时发生冲突，需人工处理。%0A%0A冲突文件：%0A$CONFLICT_FILES%0A%0A请手动合并后重新触发构建。"
-            exit 0
-          fi
-          if [ "$STATUS" = "success" ]; then
-            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-              -d "title=🔄 RikkaHub Agents 自动构建成功" \
-              -d "desp=自动合并+编译成功。%0A%0A下载：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
-          else
-            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-              -d "title=❌ RikkaHub Agents 自动构建失败" \
-              -d "desp=自动合并或编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
-          fi
