@@ -3,6 +3,9 @@ name: 编译 APK · Release 优化版
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,28 +46,16 @@ jobs:
           ./gradlew assembleRelease
 
       - name: 上传 APK 到 Release
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="2.4.3"
-          # Delete existing assets
-          ASSETS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | \
-            jq -r '.assets[]?.id')
-          for aid in $ASSETS; do
-            curl -s -X DELETE -H "Authorization: Bearer $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/assets/$aid"
-          done
-          # Rename and upload
           cd app/build/outputs/apk/release
           for apk in *.apk; do
-            name=$(echo "$apk" | sed 's/app-/rikkahub-agents-v2.4.3-/')
-            curl -s --data-binary "@$apk" \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Content-Type: application/vnd.android.package-archive" \
-              "https://uploads.github.com/repos/${{ github.repository }}/releases/361193961/assets?name=$name"
+            name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'"$TAG"'-/')
+            gh release upload "$TAG" "$apk" --clobber
+            echo "Uploaded $name"
           done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 上传 APK (artifact)
         uses: actions/upload-artifact@v4
