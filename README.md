@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**Android 设备端 LLM 智能体 · 80+ 设备工具 · 工作流自动化 · Telegram Bot**
+**🤖 Android 设备端 LLM 智能体 · AI 自动维护 · 固定签名编译**
 
 [**English**](README_EN.md) | [**简体中文**](README_ZH_CN.md) | [**繁體中文**](README_ZH_TW.md)
 
@@ -12,41 +12,98 @@
 
 ---
 
-## 简介
+## 🚨 重要声明
 
-基于 [RikkaHub（官方）](https://github.com/rikkahub/rikkahub) 和 [ExTV/rikkahub-agent（原版）](https://github.com/ExTV/rikkahub-agent) 的 Fork。将原生 Android LLM 聊天客户端变为真正的设备端智能体：用自然语言操控手机 — 点击、截图、短信、NFC、SSH、自动化工作流、Telegram Bot 远程控制。
+| 项目 | 链接 | 说明 |
+|------|------|------|
+| 🔵 **RikkaHub（官方）** | https://github.com/rikkahub/rikkahub | **官方上游项目，本仓库的代码来源** |
+| 🟢 **ExTV/rikkahub-agent（原版）** | https://github.com/ExTV/rikkahub-agent | **原版 Fork，本仓库基于此** |
+| 🟡 **本仓库（AI 维护版）** | https://github.com/xiwangone/rikkahub-agents | **AI 自动合并上游 + 编译** |
 
-> *"收到快递通知时，自动截图并保存到相册。"*
-> *"每两小时截屏，持续 4 小时，看看下午都干了什么。"*
-> *"连上公司 WiFi 后自动关闭个人 Telegram Bot。"*
+> ### ⚠️ 使用须知
+>
+> - **❌ 非官方发布** — 不是 RikkaHub 官方团队发布
+> - **❌ 非原版发布** — 不是 ExTV 原版开发者发布
+> - ✅ 代码来源可信（官方 + 原版），由 AI 自动合并上游代码并使用固定签名编译
+> - 💡 如遇到问题，建议优先使用 [官方版](https://github.com/rikkahub/rikkahub) 或 [原版 Fork](https://github.com/ExTV/rikkahub-agent)
 
 ---
 
-## 功能
+## 功能简介
+
+一个将原生 Android LLM 聊天客户端变为真正设备端 Agent 的 Fork：**80+ 设备工具**、AI 驱动的工作流、定时任务、内置浏览器（AI 操控）、SSH、屏幕自动化、文件管理、音乐播放、语音转文字、可下载的本地 LLM，以及远程 Telegram Bot。所有功能默认关闭，按需开启。
+
+> *"把手机上的待办事项导出为 Markdown 文件，放到工作区。"*
+> *"每两小时截一次屏，持续 4 小时，看看我今天下午都干了什么。"*
+> *"收到快递通知时，自动截图并保存到相册。"*
+> *"在我连上公司 WiFi 后，自动关闭个人 Telegram Bot。"*
+> *"用 Termux 写一个 Python 脚本，定时检查天气预报。"*
+
+每一条都是一句话设置。
+
+---
+
+## 功能列表
 
 ### 设备控制
-80+ 工具：点击、滑动、打字、截图、亮度/音量、通知、电池/WiFi/信号/位置/传感器、联系人/短信、发送短信、壁纸、NFC 读写、ZIP 压缩 — 全部默认关闭。
+点击、滑动、滚动、打字、截图、打开应用、调节亮度/音量、发送通知、检查电池/WiFi/信号/位置/传感器、读取联系人 & 短信、发送短信、设置壁纸、读写 NFC、管理 ZIP 压缩包。**80+ 工具**，全部默认关闭。
 
 ### 工作流与定时任务
-19 种触发器（WiFi、蓝牙、地理围栏、通知、时间等）+ 14 种条件，自然语言配置。定时任务重启后仍有效。
+**工作流** — 用自然语言描述触发器和动作：*"当我到家时，关闭响铃模式。"* 19 种触发器（WiFi、蓝牙、耳机、地理围栏、应用启动、通知、时间、充电、屏幕状态等）和 14 种条件。
+
+**定时任务** — *"每周一早上 8 点"*、*"每两小时"*、*"下周五下午 3 点"*。重启和节电模式后仍有效。
 
 ### Telegram Bot
-远程对话，支持照片、PDF、语音、确认按钮，长消息自动打包。
+从任何地方与你的助手对话。发问题、发照片、发 PDF、发语音消息。AI 需要确认时弹出 Yes/No 按钮。长消息自动打包为可下载文件。
 
 ### 内置浏览器
-AI 自动操作 WebView — 点击弹窗、填表单、滚动、读取页面。
+真正的浏览器内置于应用中。AI 自动点击 Cookie 弹窗、填写搜索框、滚动、读取页面内容。每一步截图流式发送到聊天。
 
 ### 文件管理
-查找、读写、复制、移动、删除。一句话搜全机 PDF。
+查找文件、读取、保存、复制、移动、重命名、删除。*"找到手机上所有提到'发票'的 PDF"* — 一句话搞定。
 
-### SSH 远程
-聊天中运行命令、上传文件、跟踪日志。
+### SSH
+保存服务器信息。运行命令、上传文件、拉取备份、检查磁盘、跟踪日志——全部在聊天中完成。支持 WiFi 和移动网络。
 
-### Skills / 子 Agent / MCP
-拖入 Markdown Skill 扩展能力。长任务自动拆分并行。MCP 协议接入外部工具。
+### 音乐与媒体
+通过 Android 正常媒体控制播放音乐：锁屏封面、耳机键、全部支持。暂停、继续、调音量——聊天或 Telegram 均可。
 
-### 安全
-三层保护：独立开关、调用批准、HARDLINE 底线规则。
+### Skills
+拖入 Markdown Skill 文件，AI 即获得新能力。内置 QR 码生成器、Wikipedia 查询、钢琴、交互式地图等。
+
+### 子 Agent
+长任务自动拆分为子 Agent 并行处理，可选择用更小更便宜的模型。`/stop` 一键取消所有子任务。
+
+### MCP 服务器
+连接 Model Context Protocol 服务器，AI 获取对应工具。
+
+### 通知与外部触发
+AI 可读取、汇总和转发指定应用的通知。白名单默认全空。
+
+### 安全与隐私
+三层保护：
+1. **每个助手独立开关** — 所有工具默认关闭
+2. **每次调用需批准** — 修改性操作执行前询问
+3. **HARDLINE 底线** — 危险命令无条件阻止
+
+---
+
+## 快速开始
+
+### 1. 下载 APK
+从本仓库右侧 **Releases** 页面下载最新 APK。
+
+### 2. 安装
+打开 APK 文件，允许未知来源安装，完成安装。
+
+### 3. 配置 LLM
+打开应用 → **设置 → 提供商 → 添加** → 选择 OpenAI 兼容或内置 LiteRT 本地模型。
+
+### 4. 开启功能（可选）
+**设置 → 助手 → 本地工具** → 按需开启。
+
+### 5. Telegram Bot（可选）
+向 [@BotFather](https://t.me/BotFather) 申请 Token，告诉助手配置即可。
 
 ---
 
@@ -54,32 +111,32 @@ AI 自动操作 WebView — 点击弹窗、填表单、滚动、读取页面。
 
 | | |
 |---|---|
-| 架构 | arm64 或 x86_64 |
-| Android | 8.0+ (API 26) |
-| 语言 | English、简中、繁中、日本語、한국어、Русский |
+| **架构** | arm64 或 x86_64 |
+| **Android** | 8.0+ (API 26) |
+| **存储** | ~80 MB |
 
 ---
 
-## 快速开始
+## 语言支持
 
-1. [Releases](../../releases) 下载 APK
-2. 安装 → 设置 → 提供商 → 添加 LLM
-3. （可选）开启本地工具
+English、简体中文、繁體中文、日本語、한국어、Русский。
 
 ---
 
-## 来源
+## 致谢
 
-| 项目 | 地址 |
-|------|------|
-| 官方 RikkaHub | [rikkahub/rikkahub](https://github.com/rikkahub/rikkahub) |
-| 原版 Fork | [ExTV/rikkahub-agent](https://github.com/ExTV/rikkahub-agent) |
-| 本仓库 | [xiwangone/rikkahub-agents](https://github.com/xiwangone/rikkahub-agents) |
-
-> ⚠️ 非官方发布。代码来自上游，固定签名编译，包名 `excp.rikkahub.agents`。
+- **[RikkaHub（官方）](https://github.com/rikkahub/rikkahub)** — 上游项目
+- **[ExTV/rikkahub-agent（原版 Fork）](https://github.com/ExTV/rikkahub-agent)** — 原版 Fork
 
 ---
 
 ## 许可证
 
-[GNU AGPL-3.0](LICENSE)
+**GNU Affero General Public License v3.0 (AGPL-3.0)**
+
+- ✅ 可以自由使用、修改、分发
+- ✅ 可以用于商业用途
+- ⚠️ 如果通过网络提供服务，必须公开源代码
+- ⚠️ 修改后的版本必须使用相同许可证
+
+完整文本见 [LICENSE](LICENSE)。
