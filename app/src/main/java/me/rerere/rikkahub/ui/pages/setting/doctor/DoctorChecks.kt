@@ -586,7 +586,7 @@ class DoctorChecks(
                     detail = if (assistants.isEmpty())
                         "未配置助手 — 应用将无法发起对话。"
                     else
-                        "\"${defaultAssistant.name.ifBlank { "(unnamed)" }}\" " +
+                        "\"${defaultAssistant.name.ifBlank { "（未命名）" }}\" " +
                         "(id: ${defaultAssistant.id.toString().take(8)}…). " +
                         "用于新对话、定时任务和 Telegram（未设置覆盖时）。",
                     severity = if (assistants.isEmpty()) Severity.WARN else Severity.INFO,
@@ -622,7 +622,7 @@ class DoctorChecks(
                         label = "Telegram 机器人助手覆盖",
                         detail = when {
                             tgAssistant != null ->
-                                "Telegram 入站消息路由至 「${tgAssistant.name.ifBlank { "(unnamed)" }}\" " +
+                                "Telegram 入站消息路由至 「${tgAssistant.name.ifBlank { "（未命名）" }}\" " +
                                 "(id: ${tgAssistant.id.toString().take(8)}…) — overriding the global default."
                             else ->
                                 "Telegram 助手覆盖已设置 (id: ${tg.assistantId.take(8)}…) 但未找到匹配的 " +

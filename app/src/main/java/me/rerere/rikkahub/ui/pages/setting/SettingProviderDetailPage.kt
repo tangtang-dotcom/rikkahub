@@ -1475,7 +1475,7 @@ private fun ProviderOverrideSettings(
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "${providerOverride.name} (Override)",
+                            text = "${providerOverride.name} （覆盖）",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )
