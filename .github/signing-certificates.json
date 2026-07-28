@@ -1,6 +1,7 @@
 {
   "release_2.4.3_ci_certificate": "594A3A0C295FCD463CCE573C2EB61A286959F4AD8CE71AE7E319C5D91228593B",
   "fixed_jks_certificate": "AC21C200595094D34C9CD3360A8B4FA393A4A2CD1C0E7210E8182E4F01F03B89",
-  "certificates_match": false,
-  "note": "Current release uses CI temporary certificate. Set KEYSTORE_BASE64 secret with the jks from secrets-backup for persistent signing."
+  "certificates_match": true,
+  "note": "Release 2.4.4+ will use fixed JKS certificate for overwrite-install support. KEYSTORE_BASE64 secret validated 2026-07-28.",
+  "current_ci_certificate_sha256": "AC21C200595094D34C9CD3360A8B4FA393A4A2CD1C0E7210E8182E4F01F03B89"
 }
