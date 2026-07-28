@@ -47,23 +47,3 @@ jobs:
         with:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
-
-      - name: 导出签名密钥（加密）
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/rikkahub.jks"
-          openssl enc -aes-256-cbc -pbkdf2 -salt \
-            -pass pass:"$KEYSTORE_PASSWORD" \
-            -in "$HOME/rikkahub.jks" \
-            -out "$HOME/rikkahub.jks.enc"
-          mkdir -p keystore-export
-          cp "$HOME/rikkahub.jks.enc" keystore-export/
-
-      - name: 上传加密密钥
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikkahub-keystore-encrypted
-          path: keystore-export/
