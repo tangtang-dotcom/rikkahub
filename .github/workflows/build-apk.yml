@@ -52,17 +52,17 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: 发送微信通知
-        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
+        if: always() && (github.triggering_actor == 'xiwangone')
         env:
           STATUS: ${{ job.status }}
         run: |
           if [ "$STATUS" = "success" ]; then
             TITLE="✅ RikkaHub Agent 手动构建成功"
-            CONTENT="APK 已上传到构建产物。%0A%0A下载：https://github.com/xiwangone/rikkahub-agent/actions/runs/${{ github.run_id }}"
+            CONTENT="APK 已上传到构建产物。%0A%0A下载：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           else
             TITLE="❌ RikkaHub Agent 手动构建失败"
-            CONTENT="编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agent/actions/runs/${{ github.run_id }}"
+            CONTENT="编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
           fi
-          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+          curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=$TITLE" \
             -d "desp=$CONTENT"

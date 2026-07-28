@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_update: ${{ steps.check.outputs.has_update }}
+      has_conflict: ${{ steps.merge.outputs.has_conflict }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,21 +43,22 @@ jobs:
           fi
 
       - name: 合并代码
+        id: merge
         if: steps.check.outputs.has_update == 'true'
         run: |
           git config user.name "Auto Merge Bot"
           git config user.email "bot@rikkahub-agents.local"
-          git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit 2>&1 || true
-          CONFLICTS=$(git diff --name-only --diff-filter=U)
-          if [ -n "$CONFLICTS" ]; then
-            echo "自动解决冲突..."
-            for f in $CONFLICTS; do
-              git checkout --ours "$f" 2>/dev/null || true
-              git add "$f" 2>/dev/null || true
-            done
-            git commit -m "auto-merge: 自动解决合并冲突" --no-edit 2>&1 || true
+          if git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit 2>&1; then
+            echo "has_conflict=false" >> $GITHUB_OUTPUT
+            git push origin master 2>&1
+          else
+            echo "has_conflict=true" >> $GITHUB_OUTPUT
+            CONFLICTS=$(git diff --name-only --diff-filter=U)
+            echo "conflict_files<<EOF" >> $GITHUB_OUTPUT
+            echo "$CONFLICTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            git merge --abort
           fi
-          git push origin master 2>&1
 
       - name: 无更新
         if: steps.check.outputs.has_update != 'true'
@@ -64,7 +66,7 @@ jobs:
 
   build:
     needs: check-and-merge
-    if: ${{ needs.check-and-merge.outputs.has_update == 'true' }}
+    if: ${{ needs.check-and-merge.outputs.has_update == 'true' && needs.check-and-merge.outputs.has_conflict != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,32 +89,47 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
           npm install -g pnpm
 
-      - name: 生成签名并编译
+      - name: 固定签名构建 · Fixed signing build
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           KEYSTORE="$HOME/rikkahub.jks"
-          if [ ! -f "$KEYSTORE" ]; then
-            keytool -genkey -v -keystore "$KEYSTORE" \
-              -alias rikkahub -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android \
-              -dname "CN=RikkaHub, OU=Dev, O=xiwangone, L=Beijing, ST=Beijing, C=CN"
-          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
           echo "storeFile=$KEYSTORE" > local.properties
-          echo "storePassword=android" >> local.properties
-          echo "keyAlias=rikkahub" >> local.properties
-          echo "keyPassword=android" >> local.properties
+          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=$KEY_ALIAS" >> local.properties
+          echo "keyPassword=$KEY_PASSWORD" >> local.properties
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 微信通知
-        if: always() && (github.triggering_actor == 'xiwangone' || github.triggering_actor == 'github-actions')
+      - name: Upload APK (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikkahub-agents-release
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: 微信通知 · 构建结果
+        if: always()
         env:
           STATUS: ${{ job.status }}
+          HAS_CONFLICT: ${{ needs.check-and-merge.outputs.has_conflict }}
+          CONFLICT_FILES: ${{ needs.check-and-merge.outputs.conflict_files }}
         run: |
-          if [ "$STATUS" = "success" ]; then
-            MSG="自动合并成功，新 APK 已发布！下载：https://github.com/xiwangone/rikkahub-agents/releases"
-          else
-            MSG="自动合并或编译失败。请查看：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+          if [ "$HAS_CONFLICT" = "true" ]; then
+            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+              -d "title=⚠️ RikkaHub Agents 合并冲突" \
+              -d "desp=上游有新代码，但合并时发生冲突，需人工处理。%0A%0A冲突文件：%0A$CONFLICT_FILES%0A%0A请手动合并后重新触发构建。"
+            exit 0
           fi
-          curl -s "https://sct.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=🔄 RikkaHub Agents 自动构建 $STATUS" \
-            -d "desp=$MSG"
+          if [ "$STATUS" = "success" ]; then
+            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+              -d "title=🔄 RikkaHub Agents 自动构建成功" \
+              -d "desp=自动合并+编译成功。%0A%0A下载：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+          else
+            curl -s "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+              -d "title=❌ RikkaHub Agents 自动构建失败" \
+              -d "desp=自动合并或编译失败。%0A%0A日志：https://github.com/xiwangone/rikkahub-agents/actions/runs/${{ github.run_id }}"
+          fi
