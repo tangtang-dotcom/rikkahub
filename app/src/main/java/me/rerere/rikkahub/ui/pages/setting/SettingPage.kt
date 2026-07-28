@@ -502,9 +502,9 @@ private data class QQGroup(
 )
 
 private val QQ_GROUPS = listOf(
-    QQGroup("RikkaHub Agents 一群", "4POE46u9e_zoy1TkNfWdCvueR9CKFJdk"),
-    QQGroup("RikkaHub Agents 二群", "Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0"),
-    QQGroup("RikkaHub Agents 三群", "Qc9oP-9tXioZeQEvEvI2_owWtBAIx3lS"),
+    QQGroup("RikkaHub 一群", "4POE46u9e_zoy1TkNfWdCvueR9CKFJdk"),
+    QQGroup("RikkaHub 二群", "Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0"),
+    QQGroup("RikkaHub 三群", "Qc9oP-9tXioZeQEvEvI2_owWtBAIx3lS"),
 )
 
 @Composable
