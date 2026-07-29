@@ -285,6 +285,13 @@
   <string name="chat_page_export_image_expand_reasoning">사고 과정 확장</string>
   <string name="chat_page_export_markdown">Markdown</string>
   <string name="chat_page_export_markdown_desc">대화를 마크다운 파일로 내보내기</string>
+  <string name="chat_page_export_json">JSON으로 내보내기</string>
+  <string name="chat_page_export_json_desc">백업 및 복원을 위한 JSON 파일로 내보내기</string>
+  <string name="chat_page_import">대화 가져오기</string>
+  <string name="chat_page_import_success">대화를 가져왔습니다</string>
+  <string name="chat_page_import_failed">가져오기 실패：%s</string>
+  <string name="browser_address_bar_open_external">브라우저에서 열기</string>
+  <string name="browser_address_bar_share">링크 공유</string>
   <string name="chat_page_export_share_via">공유 방법</string>
   <string name="chat_page_export_success">%1$s(으)로 내보내기 완료</string>
   <string name="chat_page_history">채팅 기록</string>

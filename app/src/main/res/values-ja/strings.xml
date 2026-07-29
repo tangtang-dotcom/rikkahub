@@ -285,6 +285,13 @@
   <string name="chat_page_export_image_expand_reasoning">思考過程を展開</string>
   <string name="chat_page_export_markdown">Markdown</string>
   <string name="chat_page_export_markdown_desc">会話をmarkdownファイルとしてエクスポート</string>
+  <string name="chat_page_export_json">JSONとしてエクスポート</string>
+  <string name="chat_page_export_json_desc">バックアップと復元のためのJSONファイルとしてエクスポート</string>
+  <string name="chat_page_import">会話をインポート</string>
+  <string name="chat_page_import_success">会話をインポートしました</string>
+  <string name="chat_page_import_failed">インポート失敗：%s</string>
+  <string name="browser_address_bar_open_external">ブラウザで開く</string>
+  <string name="browser_address_bar_share">リンクを共有</string>
   <string name="chat_page_export_share_via">共有方法</string>
   <string name="chat_page_export_success">%1$sにエクスポートしました</string>
   <string name="chat_page_history">チャット履歴</string>
