@@ -242,7 +242,6 @@ fun ChatDrawerContent(
                 navController = navController,
                 scope = scope,
                 context = context,
-                toaster = toaster,
                 vm = vm
             )
 
@@ -699,10 +698,10 @@ private fun DrawerActions(
     navController: Navigator,
     scope: CoroutineScope,
     context: android.content.Context,
-    toaster: com.dokar.sonner.Toaster,
     vm: ChatVM
 ) {
     val repo = koinInject<ConversationRepository>()
+    val toaster = LocalToaster.current
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->

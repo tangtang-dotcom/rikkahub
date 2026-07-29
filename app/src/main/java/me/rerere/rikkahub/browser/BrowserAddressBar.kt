@@ -45,8 +45,9 @@ import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Refresh01
-import me.rerere.hugeicons.stroke.Share01
-import me.rerere.hugeicons.stroke.ExternalLink
+import me.rerere.hugeicons.stroke.Share03
+import com.composables.icons.lucide.ExternalLink
+import com.composables.icons.lucide.Lucide
 import me.rerere.rikkahub.R
 
 /**
@@ -182,7 +183,7 @@ fun BrowserAddressBar(
                 ) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.browser_address_bar_open_external)) },
-                        leadingIcon = { Icon(me.rerere.hugeicons.stroke.ExternalLink, null) },
+                        leadingIcon = { Icon(Lucide.ExternalLink, null) },
                         onClick = {
                             menuExpanded = false
                             val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
@@ -191,7 +192,7 @@ fun BrowserAddressBar(
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.browser_address_bar_share)) },
-                        leadingIcon = { Icon(me.rerere.hugeicons.stroke.Share01, null) },
+                        leadingIcon = { Icon(HugeIcons.Share03, null) },
                         onClick = {
                             menuExpanded = false
                             val intent = Intent(Intent.ACTION_SEND).apply {
