@@ -63,6 +63,8 @@ interface SearchService<T : SearchServiceOptions> {
                 is SearchServiceOptions.TinyfishOptions -> TinyfishSearchService
                 is SearchServiceOptions.SerperOptions -> SerperSearchService
                 is SearchServiceOptions.CustomJsOptions -> CustomJsSearchService
+                is SearchServiceOptions.DuckDuckGoOptions -> DuckDuckGoSearchService
+                is SearchServiceOptions.AnySearchOptions -> AnySearchSearchService
             } as SearchService<T>
         }
 
@@ -158,6 +160,8 @@ sealed class SearchServiceOptions {
             TinyfishOptions::class to "Tinyfish",
             SerperOptions::class to "Serper",
             CustomJsOptions::class to "Custom JS",
+            DuckDuckGoOptions::class to "DuckDuckGo",
+            AnySearchOptions::class to "AnySearch",
         )
     }
 
@@ -290,6 +294,19 @@ sealed class SearchServiceOptions {
     @Serializable
     @SerialName("serper")
     data class SerperOptions(
+        override val id: Uuid = Uuid.random(),
+        val apiKey: String = "",
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("duckduckgo")
+    class DuckDuckGoOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("anysearch")
+    data class AnySearchOptions(
         override val id: Uuid = Uuid.random(),
         val apiKey: String = "",
     ) : SearchServiceOptions()
