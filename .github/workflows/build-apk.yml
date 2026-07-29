@@ -1,4 +1,4 @@
-name: 编译 APK · Release 优化版
+name: 编译 APK · Release
 
 on:
   workflow_dispatch:
