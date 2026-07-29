@@ -64,22 +64,28 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: 同步 APK 到 Gitee Release
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
           TAG="2.4.3"
           GITEE_REPO="choosesheng/rikkahub-agents"
           cd app/build/outputs/apk/release
+          # 创建/更新 Gitee Release
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token ${GITEE_TOKEN}" \
+            "https://gitee.com/api/v5/repos/${GITEE_REPO}/releases" \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"RikkaHub Agents ${TAG}\",\"body\":\"自动编译版本\"}" > /dev/null
+          # 获取 Release ID
+          RELEASE_ID=$(curl -s -H "Authorization: token ${GITEE_TOKEN}" \
+            "https://gitee.com/api/v5/repos/${GITEE_REPO}/releases/tags/${TAG}" \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin).get("id",""))')
+          # 上传 APK
           for apk in *.apk; do
-            name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'\"$TAG\"'-/')
-            # 创建/更新 Gitee Release
+            name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'"${TAG}"'-/')
             curl -s -X POST \
-              -H "Content-Type: application/json" \
-              -H "Authorization: token ${{ secrets.GITEE_TOKEN }}" \
-              "https://gitee.com/api/v5/repos/$GITEE_REPO/releases" \
-              -d "{\"tag_name\":\"$TAG\",\"name\":\"RikkaHub Agents $TAG\",\"body\":\"自动编译版本\"}" > /dev/null
-            # 上传 APK
-            curl -s -X POST \
-              -H "Authorization: token ${{ secrets.GITEE_TOKEN }}" \
-              "https://gitee.com/api/v5/repos/$GITEE_REPO/releases/$(curl -s -H \"Authorization: token ${{ secrets.GITEE_TOKEN }}\" \"https://gitee.com/api/v5/repos/$GITEE_REPO/releases/tags/$TAG\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('id',''))\")/attach_files" \
-              -F "file=@$apk" > /dev/null 2>&1
-            echo "Synced $name to Gitee"
+              -H "Authorization: token ${GITEE_TOKEN}" \
+              "https://gitee.com/api/v5/repos/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
+              -F "file=@${apk}" > /dev/null 2>&1
+            echo "Synced ${name} to Gitee"
           done
