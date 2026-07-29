@@ -271,7 +271,8 @@ fun ChatDrawerContent(
                 scope = scope,
                 context = context,
                 vm = vm,
-                importLauncher = importLauncher
+                importLauncher = importLauncher,
+                current = current
             )
 
             FolderBar(
@@ -398,8 +399,38 @@ fun ChatDrawerContent(
                                 navController.navigate(Screen.ImageGen)
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("导出当前会话") },
+                            leadingIcon = { Icon(HugeIcons.Download01, null) },
+                            onClick = {
+                                showMenuPopup = false
+                                exportToJson(context, current)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("复制分享码") },
+                            leadingIcon = { Icon(HugeIcons.Share07, null) },
+                            onClick = {
+                                showMenuPopup = false
+                                scope.launch {
+                                    val code = exportToShareCode(current)
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("share_code", code))
+                                    toaster.show("分享码已复制", type = ToastType.Success)
+                                }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.chat_page_import)) },
+                            leadingIcon = { Icon(HugeIcons.Upload01, null) },
+                            onClick = {
+                                showMenuPopup = false
+                                importLauncher.launch("application/json")
+                            }
+                        )
                     }
                 }
+            }
 
                 DrawerAction(
                     icon = {
@@ -425,13 +456,6 @@ fun ChatDrawerContent(
                     },
                 )
 
-                DrawerAction(
-                    icon = {
-                        Icon(HugeIcons.FolderAdd, null)
-                    },
-                    label = { Text(stringResource(R.string.chat_page_import)) },
-                    onClick = {
-                        importLauncher.launch("application/json")
                     },
                 )
 
@@ -728,7 +752,8 @@ private fun DrawerActions(
     scope: CoroutineScope,
     context: android.content.Context,
     vm: ChatVM,
-    importLauncher: androidx.activity.result.ActivityResultLauncher<String>
+    importLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    current: Conversation
 ) {
     val repo = koinInject<ConversationRepository>()
     Column {
