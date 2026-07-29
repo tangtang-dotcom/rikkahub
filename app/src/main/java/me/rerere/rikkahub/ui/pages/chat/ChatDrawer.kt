@@ -238,11 +238,40 @@ fun ChatDrawerContent(
                 }
             }
 
+            val importLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.GetContent()
+            ) { uri ->
+                uri?.let {
+                    scope.launch {
+                        val inputStream = context.contentResolver.openInputStream(it)
+                        val jsonString = inputStream?.bufferedReader()?.use { reader -> reader.readText() }
+                        if (jsonString != null) {
+                            runCatching {
+                                val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
+                                val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
+                                repo.insertConversation(newConversation)
+                                toaster.show(
+                                    context.getString(R.string.chat_page_import_success),
+                                    type = com.dokar.sonner.ToastType.Success
+                                )
+                                navigateToChatPage(navController, newConversation.id)
+                            }.onFailure { e ->
+                                toaster.show(
+                                    "${context.getString(R.string.chat_page_import_failed)} ${e.message}",
+                                    type = com.dokar.sonner.ToastType.Error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             DrawerActions(
                 navController = navController,
                 scope = scope,
                 context = context,
-                vm = vm
+                vm = vm,
+                importLauncher = importLauncher
             )
 
             FolderBar(
@@ -698,34 +727,10 @@ private fun DrawerActions(
     navController: Navigator,
     scope: CoroutineScope,
     context: android.content.Context,
-    vm: ChatVM
+    vm: ChatVM,
+    importLauncher: androidx.activity.result.ActivityResultLauncher<String>
 ) {
     val repo = koinInject<ConversationRepository>()
-    val toaster = LocalToaster.current
-    val successMsg = context.getString(R.string.chat_page_import_success)
-    val failMsg = context.getString(R.string.chat_page_import_failed)
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val jsonString = inputStream?.bufferedReader()?.use { reader -> reader.readText() }
-                if (jsonString != null) {
-                    runCatching {
-                        val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
-                        val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
-                        repo.insertConversation(newConversation)
-                        toaster.show(successMsg, type = ToastType.Success)
-                        navigateToChatPage(navController, newConversation.id)
-                    }.onFailure { e ->
-                        toaster.show("$failMsg ${e.message}", type = ToastType.Error)
-                    }
-                }
-            }
-        }
-    }
-
     Column {
         // 搜索入口
         Surface(
