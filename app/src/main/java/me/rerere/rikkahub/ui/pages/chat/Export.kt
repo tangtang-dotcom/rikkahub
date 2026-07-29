@@ -101,6 +101,7 @@ import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
+import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.toLocalString
@@ -137,6 +138,31 @@ fun ChatExportSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = stringResource(id = R.string.chat_page_export_format))
+
+                // JSON 导出
+                OutlinedCard(
+                    onClick = {
+                        exportToJson(context, conversation)
+                        toaster.show(
+                            stringResource(id = R.string.chat_page_export_success, "JSON"),
+                            type = ToastType.Success
+                        )
+                        onDismissRequest()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        headlineContent = {
+                            Text(stringResource(id = R.string.chat_page_export_json))
+                        },
+                        supportingContent = {
+                            Text(stringResource(id = R.string.chat_page_export_json_desc))
+                        },
+                        leadingContent = {
+                            Icon(HugeIcons.File02, contentDescription = null)
+                        }
+                    )
+                }
 
                 val markdownSuccessMessage =
                     stringResource(id = R.string.chat_page_export_success, "Markdown")
@@ -784,4 +810,40 @@ private fun shareFile(context: Context, uri: Uri, mimeType: String) {
             context.getString(R.string.chat_page_export_share_via)
         )
     )
+}
+
+/**
+ * 导出会话为 JSON 文件，可用于导入恢复
+ */
+fun exportToJson(
+    context: Context,
+    conversation: Conversation
+) {
+    val filename = "chat-${LocalDateTime.now().toLocalString()}.json"
+
+    try {
+        val jsonString = JsonInstant.encodeToString(Conversation.serializer(), conversation)
+
+        val dir = context.appTempFolder
+        val file = dir.resolve(filename)
+        if (!file.exists()) {
+            file.createNewFile()
+        } else {
+            file.delete()
+            file.createNewFile()
+        }
+        FileOutputStream(file).use {
+            it.write(jsonString.toByteArray())
+        }
+
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        shareFile(context, uri, "application/json")
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_LONG).show()
+    }
 }

@@ -771,6 +771,35 @@ data class DisplaySetting(
     val chatCustomFontName: String = "",
     val enableVolumeKeyScroll: Boolean = false,
     val volumeKeyScrollRatio: Float = 1.0f,
+    val chatInputButtons: ChatInputButtons = ChatInputButtons(),
+)
+
+@Serializable
+enum class InputButtonType {
+    @SerialName("model_selector") MODEL_SELECTOR,
+    @SerialName("search_picker") SEARCH_PICKER,
+    @SerialName("reasoning_button") REASONING_BUTTON,
+    @SerialName("mcp_picker") MCP_PICKER,
+    @SerialName("local_tools_picker") LOCAL_TOOLS_PICKER,
+    @SerialName("translate_picker") TRANSLATE_PICKER,
+}
+
+@Serializable
+data class InputButtonItem(
+    val type: InputButtonType,
+    val enabled: Boolean = true
+)
+
+@Serializable
+data class ChatInputButtons(
+    val buttons: List<InputButtonItem> = listOf(
+        InputButtonItem(InputButtonType.MODEL_SELECTOR, true),
+        InputButtonItem(InputButtonType.SEARCH_PICKER, true),
+        InputButtonItem(InputButtonType.REASONING_BUTTON, true),
+        InputButtonItem(InputButtonType.MCP_PICKER, true),
+        InputButtonItem(InputButtonType.LOCAL_TOOLS_PICKER, true),
+        InputButtonItem(InputButtonType.TRANSLATE_PICKER, true),
+    )
 )
 
 @Serializable

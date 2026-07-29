@@ -89,12 +89,12 @@ private const val TELEGRAM_HEADLESS_CUE =
  *     the [ToolInvocationContext.isHeadless] flag as authoritative — that flag is set by
  *     every flow that wants headless behaviour.
  *
- * Conservative default: foreground. The visible Activity is never wrong; the worst case
- * of a misclassification is the activity briefly appears on the user's screen.
+ * Modified: default to headless so the user stays on the chat page while the AI browses
+ * in the background. Tool results (get_text, screenshot) stream into the chat log.
  */
 @OptIn(ExperimentalUuidApi::class)
 private fun isHeadlessInvocation(ctx: ToolInvocationContext?): Boolean {
-    if (ctx == null) return false
+    if (ctx == null) return true // headless default
     if (ctx.isHeadless) return true
     val convId = ctx.callerConversationId ?: return false
     val asUuid = runCatching { Uuid.parse(convId) }.getOrNull() ?: return false

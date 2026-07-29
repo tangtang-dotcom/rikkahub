@@ -38,11 +38,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import me.rerere.hugeicons.stroke.ArrowLeft01
 import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Refresh01
+import me.rerere.hugeicons.stroke.Share01
+import me.rerere.hugeicons.stroke.ExternalLink
 import me.rerere.rikkahub.R
 
 /**
@@ -78,6 +82,7 @@ fun BrowserAddressBar(
     var hasFocus by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
 
     // Sync external URL updates into the field ONLY while it's not being edited; once the
     // user is typing we don't want a navigation event to clobber their query mid-type.
@@ -175,6 +180,27 @@ fun BrowserAddressBar(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.browser_address_bar_open_external)) },
+                        leadingIcon = { Icon(me.rerere.hugeicons.stroke.ExternalLink, null) },
+                        onClick = {
+                            menuExpanded = false
+                            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                            context.startActivity(intent)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.browser_address_bar_share)) },
+                        leadingIcon = { Icon(me.rerere.hugeicons.stroke.Share01, null) },
+                        onClick = {
+                            menuExpanded = false
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, url)
+                            }
+                            context.startActivity(Intent.createChooser(intent, null))
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.browser_address_bar_stop_ai)) },
                         onClick = {

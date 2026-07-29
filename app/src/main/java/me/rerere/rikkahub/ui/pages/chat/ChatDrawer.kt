@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -68,7 +69,10 @@ import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.TransactionHistory
 import me.rerere.rikkahub.R
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.CoroutineScope
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
@@ -234,7 +238,13 @@ fun ChatDrawerContent(
                 }
             }
 
-            DrawerActions(navController = navController)
+            DrawerActions(
+                navController = navController,
+                scope = scope,
+                context = context,
+                toaster = toaster,
+                vm = vm
+            )
 
             FolderBar(
                 folders = folders,
@@ -384,6 +394,16 @@ fun ChatDrawerContent(
                     },
                     onClick = {
                         navController.navigate(Screen.Stats)
+                    },
+                )
+
+                DrawerAction(
+                    icon = {
+                        Icon(HugeIcons.FolderAdd, null)
+                    },
+                    label = { Text(stringResource(R.string.chat_page_import)) },
+                    onClick = {
+                        importLauncher.launch("application/json")
                     },
                 )
 
@@ -675,7 +695,42 @@ fun ChatDrawerContent(
 }
 
 @Composable
-private fun DrawerActions(navController: Navigator) {
+private fun DrawerActions(
+    navController: Navigator,
+    scope: CoroutineScope,
+    context: android.content.Context,
+    toaster: com.dokar.sonner.Toaster,
+    vm: ChatVM
+) {
+    val repo = koinInject<ConversationRepository>()
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(it)
+                    val jsonString = inputStream?.bufferedReader()?.use { reader -> reader.readText() }
+                    if (jsonString != null) {
+                        val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
+                        val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
+                        repo.insertConversation(newConversation)
+                        toaster.show(
+                            stringResource(R.string.chat_page_import_success),
+                            type = ToastType.Success
+                        )
+                        navigateToChatPage(navController, newConversation.id)
+                    }
+                } catch (e: Exception) {
+                    toaster.show(
+                        stringResource(R.string.chat_page_import_failed, e.message ?: ""),
+                        type = ToastType.Error
+                    )
+                }
+            }
+        }
+    }
+
     Column {
         // 搜索入口
         Surface(

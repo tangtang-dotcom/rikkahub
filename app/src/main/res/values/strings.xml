@@ -285,6 +285,11 @@
   <string name="chat_page_export_image">Export as Image</string>
   <string name="chat_page_export_image_desc">Export conversation as PNG image</string>
   <string name="chat_page_export_image_expand_reasoning">Expand Reasoning</string>
+  <string name="chat_page_export_json">Export as JSON</string>
+  <string name="chat_page_export_json_desc">Export as JSON file for backup and reimport</string>
+  <string name="chat_page_import">Import Conversation</string>
+  <string name="chat_page_import_success">Conversation imported</string>
+  <string name="chat_page_import_failed">Import failed: %s</string>
   <string name="chat_page_export_markdown">Markdown</string>
   <string name="chat_page_export_markdown_desc">Export conversation as a markdown file</string>
   <string name="chat_page_export_share_via">Share via</string>
@@ -1615,6 +1620,8 @@
   <string name="browser_address_bar_refresh">Refresh page</string>
   <string name="browser_address_bar_more">More options</string>
   <string name="browser_address_bar_stop_ai">Stop AI</string>
+  <string name="browser_address_bar_open_external">Open in browser</string>
+  <string name="browser_address_bar_share">Share link</string>
   <string name="browser_address_bar_placeholder">Search or type URL</string>
   <string name="browser_mini_chat_open">Open AI chat</string>
   <string name="browser_mini_chat_close">Close AI chat</string>

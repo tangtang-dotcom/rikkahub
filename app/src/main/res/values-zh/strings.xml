@@ -285,6 +285,11 @@
   <string name="chat_page_export_image">导出为图片</string>
   <string name="chat_page_export_image_desc">将对话导出为PNG图片</string>
   <string name="chat_page_export_image_expand_reasoning">展开思维过程</string>
+  <string name="chat_page_export_json">导出为 JSON</string>
+  <string name="chat_page_export_json_desc">导出为 JSON 文件，可用于导入恢复</string>
+  <string name="chat_page_import">导入会话</string>
+  <string name="chat_page_import_success">会话导入成功</string>
+  <string name="chat_page_import_failed">导入失败：%s</string>
   <string name="chat_page_export_markdown">Markdown</string>
   <string name="chat_page_export_markdown_desc">将对话导出为markdown文件</string>
   <string name="chat_page_export_share_via">分享方式</string>
@@ -1283,6 +1288,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="browser_address_bar_placeholder">搜索或输入网址</string>
   <string name="browser_address_bar_refresh">刷新页面</string>
   <string name="browser_address_bar_stop_ai">停止 AI</string>
+  <string name="browser_address_bar_open_external">在浏览器打开</string>
+  <string name="browser_address_bar_share">分享链接</string>
   <string name="browser_ai_stripe_active">AI：%1$s</string>
   <string name="browser_ai_stripe_collapse">隐藏</string>
   <string name="browser_ai_stripe_expand">显示最近</string>
