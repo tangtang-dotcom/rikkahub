@@ -140,13 +140,11 @@ fun ChatExportSheet(
                 Text(text = stringResource(id = R.string.chat_page_export_format))
 
                 // JSON 导出
+                val jsonSuccessMessage = stringResource(id = R.string.chat_page_export_success, "JSON")
                 OutlinedCard(
                     onClick = {
                         exportToJson(context, conversation)
-                        toaster.show(
-                            stringResource(id = R.string.chat_page_export_success, "JSON"),
-                            type = ToastType.Success
-                        )
+                        toaster.show(jsonSuccessMessage, type = ToastType.Success)
                         onDismissRequest()
                     },
                     modifier = Modifier.fillMaxWidth()
