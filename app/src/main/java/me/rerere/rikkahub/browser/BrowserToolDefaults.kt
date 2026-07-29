@@ -64,7 +64,7 @@ object BrowserToolDefaults {
      * grant write access" rule.
      */
     val DEFAULT_ENABLED: Map<String, Boolean> = buildMap {
-        READ_TOOLS.forEach { put(it, true) }
+        READ_TOOLS.forEach { put(it, it != SCREENSHOT) }
         LOOP_CONTROL_TOOLS.forEach { put(it, true) }
         WRITE_TOOLS.forEach { put(it, false) }
     }
