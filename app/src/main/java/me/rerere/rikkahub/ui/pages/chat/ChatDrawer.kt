@@ -37,7 +37,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -69,10 +68,7 @@ import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.TransactionHistory
 import me.rerere.rikkahub.R
-import androidx.activity.result.contract.ActivityResultContracts
-import kotlinx.coroutines.CoroutineScope
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
@@ -238,42 +234,7 @@ fun ChatDrawerContent(
                 }
             }
 
-            val importLauncher = rememberLauncherForActivityResult(
-                ActivityResultContracts.GetContent()
-            ) { uri ->
-                uri?.let {
-                    scope.launch {
-                        val inputStream = context.contentResolver.openInputStream(it)
-                        val jsonString = inputStream?.bufferedReader()?.use { reader -> reader.readText() }
-                        if (jsonString != null) {
-                            runCatching {
-                                val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
-                                val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
-                                repo.insertConversation(newConversation)
-                                toaster.show(
-                                    context.getString(R.string.chat_page_import_success),
-                                    type = com.dokar.sonner.ToastType.Success
-                                )
-                                navigateToChatPage(navController, newConversation.id)
-                            }.onFailure { e ->
-                                toaster.show(
-                                    "${context.getString(R.string.chat_page_import_failed)} ${e.message}",
-                                    type = com.dokar.sonner.ToastType.Error
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            DrawerActions(
-                navController = navController,
-                scope = scope,
-                context = context,
-                vm = vm,
-                importLauncher = importLauncher,
-                current = current
-            )
+            DrawerActions(navController = navController, scope = scope, context = context, toaster = toaster, current = current)
 
             FolderBar(
                 folders = folders,
@@ -401,7 +362,7 @@ fun ChatDrawerContent(
                         )
                         DropdownMenuItem(
                             text = { Text("导出当前会话") },
-                            leadingIcon = { Icon(HugeIcons.Download01, null) },
+                            leadingIcon = { Icon(HugeIcons.Download04, null) },
                             onClick = {
                                 showMenuPopup = false
                                 exportToJson(context, current)
@@ -409,28 +370,17 @@ fun ChatDrawerContent(
                         )
                         DropdownMenuItem(
                             text = { Text("复制分享码") },
-                            leadingIcon = { Icon(HugeIcons.Share07, null) },
+                            leadingIcon = { Icon(HugeIcons.Share03, null) },
                             onClick = {
                                 showMenuPopup = false
-                                scope.launch {
-                                    val code = exportToShareCode(current)
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("share_code", code))
-                                    toaster.show("分享码已复制", type = ToastType.Success)
-                                }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.chat_page_import)) },
-                            leadingIcon = { Icon(HugeIcons.Upload01, null) },
-                            onClick = {
-                                showMenuPopup = false
-                                importLauncher.launch("application/json")
+                                val code = exportToShareCode(current)
+                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("share_code", code))
+                                toaster.show("分享码已复制", type = com.dokar.sonner.ToastType.Success)
                             }
                         )
                     }
                 }
-            }
 
                 DrawerAction(
                     icon = {
@@ -456,9 +406,6 @@ fun ChatDrawerContent(
                     },
                 )
 
-                    },
-                )
-
                 Spacer(Modifier.weight(1f))
 
                 DrawerAction(
@@ -472,6 +419,7 @@ fun ChatDrawerContent(
                 )
             }
         }
+    }
 
     // 昵称编辑对话框
     nicknameEditState.EditStateContent { nickname, onUpdate ->
@@ -743,17 +691,16 @@ fun ChatDrawerContent(
             }
         }
     }
+}
 
 @Composable
 private fun DrawerActions(
     navController: Navigator,
     scope: CoroutineScope,
     context: android.content.Context,
-    vm: ChatVM,
-    importLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    toaster: com.dokar.sonner.Toaster,
     current: Conversation
 ) {
-    val repo = koinInject<ConversationRepository>()
     Column {
         // 搜索入口
         Surface(
