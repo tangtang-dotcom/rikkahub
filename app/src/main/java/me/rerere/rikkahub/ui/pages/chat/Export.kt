@@ -788,6 +788,42 @@ private fun shareFile(context: Context, uri: Uri, mimeType: String) {
 }
 
 /**
+ * 导出会话为 JSON 文件，可用于导入恢复
+ */
+fun exportToJson(
+    context: Context,
+    conversation: Conversation
+) {
+    val filename = "chat-export-${LocalDateTime.now().toLocalString()}.json"
+
+    try {
+        val jsonString = JsonInstant.encodeToString(Conversation.serializer(), conversation)
+
+        val dir = context.appTempFolder
+        val file = dir.resolve(filename)
+        if (!file.exists()) {
+            file.createNewFile()
+        } else {
+            file.delete()
+            file.createNewFile()
+        }
+        FileOutputStream(file).use {
+            it.write(jsonString.toByteArray())
+        }
+
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        shareFile(context, uri, "application/json")
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+/**
  * 将会话压缩为分享码（GZip + Base64），用于复制粘贴分享
  */
 fun exportToShareCode(conversation: Conversation): String {
