@@ -265,6 +265,7 @@ fun ChatExportSheet(
                 }
 
                 // 导入
+                val importRepo = koinInject<ConversationRepository>()
                 val importLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.GetContent()
                 ) { uri ->
@@ -276,8 +277,7 @@ fun ChatExportSheet(
                                 if (jsonString != null) {
                                     val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
                                     val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
-                                    val repo = koinInject<ConversationRepository>()
-                                    repo.insertConversation(newConversation)
+                                    importRepo.insertConversation(newConversation)
                                     toaster.show("导入成功", type = ToastType.Success)
                                     onDismissRequest()
                                 }
