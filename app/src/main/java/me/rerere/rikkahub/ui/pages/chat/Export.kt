@@ -110,6 +110,14 @@ import java.io.FileOutputStream
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.rememberLauncherForActivityResult
+import me.rerere.rikkahub.data.chat.ConversationRepository
+
+
+
+
 
 @Composable
 fun ChatExportSheet(
@@ -162,6 +170,23 @@ fun ChatExportSheet(
                         leadingContent = {
                             Icon(HugeIcons.File02, contentDescription = null)
                         }
+                    )
+                }
+
+                // JSON 导出
+                val jsonSuccessMessage = stringResource(id = R.string.chat_page_export_success, "JSON")
+                OutlinedCard(
+                    onClick = {
+                        exportToJson(context, conversation)
+                        toaster.show(jsonSuccessMessage, type = ToastType.Success)
+                        onDismissRequest()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        headlineContent = { Text("JSON") },
+                        supportingContent = { Text("将对话导出为 JSON 文件，可用于导入恢复") },
+                        leadingContent = { Icon(HugeIcons.Download01, contentDescription = null) }
                     )
                 }
 
@@ -235,6 +260,42 @@ fun ChatExportSheet(
                             }
                         }
                     }
+                }
+
+                // 导入
+                val importLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.GetContent()
+                ) { uri ->
+                    uri?.let {
+                        scope.launch {
+                            val jsonString = try {
+                                context.contentResolver.openInputStream(it)
+                                    ?.bufferedReader()?.use { it.readText() }
+                            } catch (e: Exception) { null }
+                            if (jsonString != null) {
+                                runCatching {
+                                    val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
+                                    val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
+                                    val repo = koinInject<ConversationRepository>()
+                                    repo.insertConversation(newConversation)
+                                    toaster.show("导入成功", type = ToastType.Success)
+                                    onDismissRequest()
+                                }.onFailure { e ->
+                                    toaster.show("导入失败: ${e.message}", type = ToastType.Error)
+                                }
+                            }
+                        }
+                    }
+                }
+                OutlinedCard(
+                    onClick = { importLauncher.launch("application/json") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        headlineContent = { Text("导入会话") },
+                        supportingContent = { Text("从 JSON 文件导入对话记录") },
+                        leadingContent = { Icon(HugeIcons.FileImport, contentDescription = null) }
+                    )
                 }
             }
         }

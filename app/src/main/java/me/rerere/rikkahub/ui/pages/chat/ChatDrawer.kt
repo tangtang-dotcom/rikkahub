@@ -38,7 +38,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -59,8 +58,6 @@ import me.rerere.hugeicons.stroke.ChartColumn
 import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Folder01
 import me.rerere.hugeicons.stroke.FolderAdd
-import me.rerere.hugeicons.stroke.Download04
-import me.rerere.hugeicons.stroke.Share03
 import me.rerere.hugeicons.stroke.Image02
 import me.rerere.hugeicons.stroke.InLove
 import me.rerere.hugeicons.stroke.LanguageCircle
@@ -237,7 +234,7 @@ fun ChatDrawerContent(
                 }
             }
 
-            DrawerActions(navController = navController, scope = scope, context = context, current = current)
+            DrawerActions(navController = navController)
 
             FolderBar(
                 folders = folders,
@@ -363,26 +360,7 @@ fun ChatDrawerContent(
                                 navController.navigate(Screen.ImageGen)
                             }
                         )
-                        DropdownMenuItem(
-                            text = { Text("导出当前会话") },
-                            leadingIcon = { Icon(HugeIcons.Download04, null) },
-                            onClick = {
-                                showMenuPopup = false
-                                exportToJson(context, current)
-                            }
-                        )
-                        val shareToaster = LocalToaster.current
-                        DropdownMenuItem(
-                            text = { Text("复制分享码") },
-                            leadingIcon = { Icon(HugeIcons.Share03, null) },
-                            onClick = {
-                                showMenuPopup = false
-                                val code = exportToShareCode(current)
-                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("share_code", code))
-                                shareToaster.show("分享码已复制", type = com.dokar.sonner.ToastType.Success)
-                            }
-                        )
+
                     }
                 }
 
@@ -698,12 +676,7 @@ fun ChatDrawerContent(
 }
 
 @Composable
-private fun DrawerActions(
-    navController: Navigator,
-    scope: CoroutineScope,
-    context: android.content.Context,
-    current: Conversation
-) {
+private fun DrawerActions(navController: Navigator) {
     Column {
         // 搜索入口
         Surface(
