@@ -101,7 +101,9 @@ import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
+import me.rerere.hugeicons.stroke.Download01
 import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.hugeicons.stroke.Download01
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.toLocalString
@@ -112,7 +114,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.rememberLauncherForActivityResult
+import androidx.activity.compose.rememberLauncherForActivityResult
 import me.rerere.rikkahub.data.chat.ConversationRepository
 
 
@@ -266,23 +268,21 @@ fun ChatExportSheet(
                 val importLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.GetContent()
                 ) { uri ->
-                    uri?.let {
+                    uri?.let { selectedUri ->
                         scope.launch {
-                            val jsonString = try {
-                                context.contentResolver.openInputStream(it)
+                            try {
+                                val jsonString = context.contentResolver.openInputStream(selectedUri)
                                     ?.bufferedReader()?.use { it.readText() }
-                            } catch (e: Exception) { null }
-                            if (jsonString != null) {
-                                runCatching {
+                                if (jsonString != null) {
                                     val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
                                     val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
                                     val repo = koinInject<ConversationRepository>()
                                     repo.insertConversation(newConversation)
                                     toaster.show("导入成功", type = ToastType.Success)
                                     onDismissRequest()
-                                }.onFailure { e ->
-                                    toaster.show("导入失败: ${e.message}", type = ToastType.Error)
                                 }
+                            } catch (e: Exception) {
+                                toaster.show("导入失败: ${e.message}", type = ToastType.Error)
                             }
                         }
                     }
