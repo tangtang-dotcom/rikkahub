@@ -371,6 +371,7 @@ fun ChatDrawerContent(
                                 exportToJson(context, current)
                             }
                         )
+                        val shareToaster = LocalToaster.current
                         DropdownMenuItem(
                             text = { Text("复制分享码") },
                             leadingIcon = { Icon(HugeIcons.Share03, null) },
@@ -379,7 +380,7 @@ fun ChatDrawerContent(
                                 val code = exportToShareCode(current)
                                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("share_code", code))
-                                LocalToaster.current.show("分享码已复制", type = com.dokar.sonner.ToastType.Success)
+                                shareToaster.show("分享码已复制", type = com.dokar.sonner.ToastType.Success)
                             }
                         )
                     }
