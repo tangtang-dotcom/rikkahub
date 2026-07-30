@@ -472,7 +472,6 @@ fun ChatDrawerContent(
                 )
             }
         }
-    }
 
     // 昵称编辑对话框
     nicknameEditState.EditStateContent { nickname, onUpdate ->
@@ -744,7 +743,6 @@ fun ChatDrawerContent(
             }
         }
     }
-}
 
 @Composable
 private fun DrawerActions(
