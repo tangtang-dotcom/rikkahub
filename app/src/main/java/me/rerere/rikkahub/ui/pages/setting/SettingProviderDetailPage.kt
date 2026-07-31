@@ -44,6 +44,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilledIconButton
@@ -58,8 +59,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedCardDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
@@ -1413,7 +1414,7 @@ private fun ModelCard(
             border = if (selectionMode && selected) {
                 BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
             } else {
-                OutlinedCardDefaults.outlinedCardBorder()
+                CardDefaults.outlinedCardBorder()
             }
         ) {
             Row(
