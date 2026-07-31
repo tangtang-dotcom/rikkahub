@@ -57,6 +57,8 @@ jobs:
       - name: 上传 APK 到 Release
         run: |
           TAG="2.4.5"
+          # Release 不存在则创建（避免 release not found）
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "RikkaHub Agents $TAG" --notes "Fork 构建" || true
           cd app/build/outputs/apk/release
           for apk in *.apk; do
             name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'"$TAG"'-/')
