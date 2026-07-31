@@ -478,7 +478,7 @@ private fun ModelList(
                             }
                         }
                     ) {
-                        Text(stringResource(R.string.setting_provider_page_select_all))
+                        Text(stringResource(R.string.setting_provider_page_multi_select_all))
                     }
                     TextButton(
                         onClick = {

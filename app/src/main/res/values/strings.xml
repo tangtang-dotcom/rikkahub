@@ -972,7 +972,7 @@
   <string name="setting_provider_page_no_models">No models</string>
   <string name="setting_provider_page_multi_select">Multi-select</string>
   <string name="setting_provider_page_selected_count">%1$d selected</string>
-  <string name="setting_provider_page_select_all">Select all</string>
+  <string name="setting_provider_page_multi_select_all">Select all</string>
   <string name="setting_provider_page_delete_selected">Delete (%1$d)</string>
   <string name="setting_provider_page_no_permission">No permission</string>
   <string name="setting_provider_page_no_qr_found">No valid QR code found</string>
