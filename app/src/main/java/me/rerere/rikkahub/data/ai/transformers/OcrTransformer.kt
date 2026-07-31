@@ -1,8 +1,15 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizerOptions
+import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.builtins.serializer
@@ -94,6 +101,20 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             return cachedResult
         }
 
+        // 本地 ML Kit OCR 优先（离线、免费、稳定）
+        val localResult = performLocalOcr(part.url)
+        if (!localResult.isNullOrBlank()) {
+            val ocrResult = """
+                <image_file_ocr>
+                   $localResult
+                </image_file_ocr>
+                * The image_file_ocr tag contains a description of an image that the user uploaded to you, not the user's prompt.
+            """.trimIndent()
+            cache.put(part.url, ocrResult)
+            return ocrResult
+        }
+        Log.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
+
         val settings = get<SettingsStore>().settingsFlow.value
         val model = settings.findModelById(settings.ocrModelId) ?: return "[Image]"
         val providerSetting = model.findProvider(settings.providers) ?: return "[Image]"
@@ -138,5 +159,34 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         // it into a fake OCR-failure string, which would defeat cooperative cancellation.
         if (it is kotlinx.coroutines.CancellationException) throw it
         "[ERROR, OCR failed: $it]"
+    }
+
+    /**
+     * 本地 ML Kit OCR：优先中文字模型（覆盖中日韩），失败回退拉丁模型。
+     * 返回 null 表示无法识别（模型未下载/图片解码失败），由调用方决定回退 AI。
+     */
+    private suspend fun performLocalOcr(url: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val context = get<Context>()
+            val image: InputImage = when {
+                url.startsWith("file://") -> InputImage.fromFilePath(context, Uri.parse(url))
+                else -> return@runCatching null
+            }
+
+            // 中文字模型（涵盖中日韩字符）
+            val chinese = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
+            val chineseResult = runCatching { chinese.process(image).await() }.getOrNull()
+            if (chineseResult != null && chineseResult.text.isNotBlank()) {
+                chinese.close()
+                return@runCatching chineseResult.text.trim()
+            }
+            chinese.close()
+
+            // 拉丁模型兜底（英文等）
+            val latin = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            val latinResult = runCatching { latin.process(image).await() }.getOrNull()
+            latin.close()
+            latinResult?.text?.trim()?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 }
