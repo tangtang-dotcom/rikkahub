@@ -162,7 +162,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
     }
 
     /**
-     * 本地 ML Kit OCR：优先中文字模型（覆盖中日韩），失败回退拉丁模型。
+     * 本地 ML Kit OCR：中文模型 + 拉丁模型都跑，合并去重（覆盖中日韩+英文混排）。
      * 返回 null 表示无法识别（模型未下载/图片解码失败），由调用方决定回退 AI。
      */
     private suspend fun performLocalOcr(url: String): String? = withContext(Dispatchers.IO) {
@@ -173,20 +173,26 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                 else -> return@runCatching null
             }
 
-            // 中文字模型（涵盖中日韩字符）
+            // 中文模型（涵盖中日韩字符）+ 拉丁模型（英文等）同时识别，合并结果
             val chinese = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
-            val chineseResult = runCatching { chinese.process(image).await() }.getOrNull()
-            if (chineseResult != null && chineseResult.text.isNotBlank()) {
-                chinese.close()
-                return@runCatching chineseResult.text.trim()
-            }
-            chinese.close()
-
-            // 拉丁模型兜底（英文等）
             val latin = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-            val latinResult = runCatching { latin.process(image).await() }.getOrNull()
-            latin.close()
-            latinResult?.text?.trim()?.takeIf { it.isNotBlank() }
+            try {
+                val chineseText = runCatching { chinese.process(image).await() }.getOrNull()?.text?.trim()
+                val latinText = runCatching { latin.process(image).await() }.getOrNull()?.text?.trim()
+
+                // 合并去重：保留行级并集，按出现顺序
+                val combined = LinkedHashSet<String>()
+                listOfNotNull(chineseText, latinText).forEach { text ->
+                    text.lines().forEach { line ->
+                        val trimmed = line.trim()
+                        if (trimmed.isNotBlank()) combined.add(trimmed)
+                    }
+                }
+                combined.joinToString("\n").takeIf { it.isNotBlank() }
+            } finally {
+                chinese.close()
+                latin.close()
+            }
         }.getOrNull()
     }
 }
