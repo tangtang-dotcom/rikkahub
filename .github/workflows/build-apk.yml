@@ -8,6 +8,9 @@ on:
       - 'docs/**'
       - '*.md'
       - '.github/workflows/*.yml'
+      - '.github/dependabot.yml'
+      - '.github/scripts/**'
+      - '.github/ISSUE_TEMPLATE/**'
 
 permissions:
   contents: write
