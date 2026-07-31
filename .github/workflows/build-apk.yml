@@ -2,6 +2,8 @@ name: 编译 APK · Release
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
 
 permissions:
   contents: write
@@ -47,7 +49,7 @@ jobs:
 
       - name: 上传 APK 到 Release
         run: |
-          TAG="2.4.3"
+          TAG="2.4.5"
           cd app/build/outputs/apk/release
           for apk in *.apk; do
             name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'"$TAG"'-/')
@@ -63,3 +65,17 @@ jobs:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
 
+      - name: 构建失败通知（Server酱）
+        if: failure()
+        env:
+          SC_KEY: ${{ secrets.SERVERCHAN_KEY }}
+        run: |
+          if [ -z "$SC_KEY" ]; then
+            echo "未配置 SERVERCHAN_KEY，跳过通知"
+            exit 0
+          fi
+          MSG="RikkaHub Agents 构建失败 #${{ github.run_number }}"
+          DESP="commit: ${{ github.sha }}%0A%0A查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://sctapi.ftqq.com/${SC_KEY}.send" \
+            -d "title=${MSG}" -d "desp=${DESP}" | head -c 200
+          echo
