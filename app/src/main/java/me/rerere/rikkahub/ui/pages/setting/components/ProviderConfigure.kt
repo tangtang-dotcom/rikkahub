@@ -158,6 +158,7 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
         ProviderSetting.Google::class -> ProviderSetting.Google().baseUrl
         ProviderSetting.Claude::class -> ProviderSetting.Claude().baseUrl
         ProviderSetting.AICore::class -> ""
+        ProviderSetting.LiteRtLocal::class -> ""
         else -> error("Unsupported provider type: $type")
     }
     val convertedBaseUrl = sourceBaseUrl.convertToTargetBaseUrl(targetDefaultBaseUrl)
@@ -183,6 +184,17 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
         )
 
         ProviderSetting.AICore::class -> ProviderSetting.AICore(
+            id = this.id,
+            enabled = this.enabled,
+            name = this.name,
+            models = this.models,
+            balanceOption = this.balanceOption,
+            builtIn = this.builtIn,
+            description = this.description,
+            shortDescription = this.shortDescription,
+        )
+
+        ProviderSetting.LiteRtLocal::class -> ProviderSetting.LiteRtLocal(
             id = this.id,
             enabled = this.enabled,
             name = this.name,
