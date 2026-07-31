@@ -44,6 +44,7 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.handleMessageChunk
+import me.rerere.ai.ui.limitContext
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.MessageTransformer
@@ -987,6 +988,7 @@ class GenerationHandler(
                 add(UIMessage(role = MessageRole.SYSTEM, parts = systemParts))
             }
             addAll(messages.ageOldToolImages())
+            addAll(messages.limitContext(assistant.contextMessageLimit))
         }.transforms(
             transformers = transformers,
             context = context,

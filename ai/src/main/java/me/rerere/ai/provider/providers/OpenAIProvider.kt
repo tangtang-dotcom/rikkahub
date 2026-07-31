@@ -272,13 +272,13 @@ class OpenAIProvider(
                 put("model", params.model.modelId)
                 put("prompt", params.prompt)
                 put("n", params.numOfImages)
-                put(
-                    "size", when (params.aspectRatio) {
-                        ImageAspectRatio.SQUARE -> "1024x1024"
-                        ImageAspectRatio.LANDSCAPE -> "1536x1024"
-                        ImageAspectRatio.PORTRAIT -> "1024x1536"
-                    }
-                )
+                
+                val isGrok = providerSetting.baseUrl.contains("x.ai", ignoreCase = true) || 
+                    params.model.modelId.contains("grok", ignoreCase = true)
+                
+                if (params.size.isNotBlank() && !isGrok) {
+                    put("size", params.size)
+                }
             }
                 .mergeCustomBody(params.customBody)
         )
