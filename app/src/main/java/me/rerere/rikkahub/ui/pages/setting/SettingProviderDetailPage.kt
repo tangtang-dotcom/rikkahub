@@ -9,8 +9,12 @@ import me.rerere.hugeicons.stroke.Refresh03
 import me.rerere.hugeicons.stroke.Tools
 import me.rerere.hugeicons.stroke.Share01
 import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.DragDropHorizontal
 import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.CheckList
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +44,8 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
@@ -53,6 +59,7 @@ import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedCardDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
@@ -427,12 +434,76 @@ private fun ModelList(
         }
     }
     var expanded by rememberSaveable { mutableStateOf(true) }
+    // 多选删除模式
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by rememberSaveable { mutableStateOf(setOf<Uuid>()) }
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
         onUpdateProvider(providerSetting.moveMove(from.index, to.index))
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // 多选操作栏
+        AnimatedVisibility(
+            visible = selectionMode,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.setting_provider_page_selected_count, selectedIds.size),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                    )
+                    TextButton(
+                        onClick = {
+                            selectedIds = if (selectedIds.size == providerSetting.models.size) {
+                                emptySet()
+                            } else {
+                                providerSetting.models.map { it.id }.toSet()
+                            }
+                        }
+                    ) {
+                        Text(stringResource(R.string.setting_provider_page_select_all))
+                    }
+                    TextButton(
+                        onClick = {
+                            val toDelete = providerSetting.models.filter { it.id in selectedIds }
+                            var updated = providerSetting
+                            toDelete.forEach { updated = updated.delModel(it) }
+                            onUpdateProvider(updated)
+                            selectedIds = emptySet()
+                            selectionMode = false
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.setting_provider_page_delete_selected, selectedIds.size),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    IconButton(onClick = {
+                        selectedIds = emptySet()
+                        selectionMode = false
+                    }) {
+                        Icon(HugeIcons.Cancel01, null)
+                    }
+                }
+            }
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -483,8 +554,35 @@ private fun ModelList(
                                 onUpdateProvider(providerSetting.editModel(editedModel))
                             },
                             parentProvider = providerSetting,
+                            selectionMode = selectionMode,
+                            selected = item.id in selectedIds,
+                            onToggleSelect = {
+                                selectedIds = if (item.id in selectedIds) {
+                                    selectedIds - item.id
+                                } else {
+                                    selectedIds + item.id
+                                }
+                            },
+                            onEnterMultiSelect = {
+                                selectionMode = true
+                                selectedIds = setOf(item.id)
+                            },
                             modifier = Modifier
-                                .longPressDraggableHandle()
+                                .let { mod ->
+                                    if (selectionMode) {
+                                        mod.combinedClickable(
+                                            onClick = {
+                                                selectedIds = if (item.id in selectedIds) {
+                                                    selectedIds - item.id
+                                                } else {
+                                                    selectedIds + item.id
+                                                }
+                                            }
+                                        )
+                                    } else {
+                                        mod.longPressDraggableHandle()
+                                    }
+                                }
                                 .graphicsLayer {
                                     if (isDragging) {
                                         scaleX = 1.05f
@@ -1169,7 +1267,11 @@ private fun ModelCard(
     modifier: Modifier = Modifier,
     onDelete: () -> Unit,
     onEdit: (Model) -> Unit,
-    parentProvider: ProviderSetting
+    parentProvider: ProviderSetting,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
+    onEnterMultiSelect: () -> Unit = {},
 ) {
     val dialogState = useEditState<Model> {
         onEdit(it)
@@ -1259,14 +1361,26 @@ private fun ModelCard(
 
     SwipeToDismissBox(
         state = swipeToDismissBoxState,
-        backgroundContent = {
-            Row(
+        backgroundContent = {            Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                FilledTonalIconButton(
+                    onClick = {
+                        scope.launch {
+                            swipeToDismissBoxState.reset()
+                        }
+                        onEnterMultiSelect()
+                    }
+                ) {
+                    Icon(
+                        HugeIcons.CheckList,
+                        contentDescription = stringResource(R.string.setting_provider_page_multi_select)
+                    )
+                }
                 IconButton(
                     onClick = {
                         scope.launch {
@@ -1292,10 +1406,16 @@ private fun ModelCard(
             }
         },
         enableDismissFromStartToEnd = false,
-        gesturesEnabled = true,
+        gesturesEnabled = !selectionMode,
         modifier = modifier
     ) {
-        OutlinedCard {
+        OutlinedCard(
+            border = if (selectionMode && selected) {
+                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            } else {
+                OutlinedCardDefaults.outlinedCardBorder()
+            }
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1303,6 +1423,16 @@ private fun ModelCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (selectionMode) {
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = { onToggleSelect() },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            checkmarkColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                }
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = MaterialTheme.shapes.small,
@@ -1341,12 +1471,14 @@ private fun ModelCard(
                 }
 
                 // Edit button
-                IconButton(
-                    onClick = {
-                        dialogState.open(model.copy())
+                if (!selectionMode) {
+                    IconButton(
+                        onClick = {
+                            dialogState.open(model.copy())
+                        }
+                    ) {
+                        Icon(HugeIcons.Tools, "Edit")
                     }
-                ) {
-                    Icon(HugeIcons.Tools, "Edit")
                 }
             }
         }

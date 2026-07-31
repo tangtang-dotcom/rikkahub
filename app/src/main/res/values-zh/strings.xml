@@ -950,6 +950,10 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_provider_page_models">模型</string>
   <string name="setting_provider_page_name">名称</string>
   <string name="setting_provider_page_no_models">暂无模型</string>
+  <string name="setting_provider_page_multi_select">多选</string>
+  <string name="setting_provider_page_selected_count">已选 %1$d 项</string>
+  <string name="setting_provider_page_select_all">全选</string>
+  <string name="setting_provider_page_delete_selected">删除 (%1$d)</string>
   <string name="setting_provider_page_no_permission">没有权限</string>
   <string name="setting_provider_page_no_qr_found">未找到有效的二维码</string>
   <string name="setting_provider_page_output_modality">输出模态</string>
