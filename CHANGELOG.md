@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-07-31
+
+### ✨ 新功能
+- **本地 OCR 优先** — OcrTransformer 新增 ML Kit 本地识别（中文+拉丁模型合并去重，覆盖中英日韩），识别为空/失败才回退 AI OCR。解决 AI OCR 模型不支持视觉或网络失败时图片无法识别的问题
+- **MCP Header 密钥显隐** — 新建 MCP 的请求头 Value 输入框支持小眼睛显隐（PasswordVisualTransformation），与预置 Provider 一致
+- **模型多选删除** — Provider 模型列表左滑新增「多选」入口，进入多选模式支持勾选/全选/批量删除，保留长按拖拽排序
+
+### 🐛 Bug 修复
+- 修复 `setting_provider_page_select_all` 字符串重复定义导致编译失败（多选全选改用独立 key `setting_provider_page_multi_select_all`）
+
+### 🌐 本地化
+- 新增多选相关字符串（中/英）：multi_select、selected_count、multi_select_all、delete_selected
+
+---
+
 ## 2026-07-30
 
 ### 🔧 重构
