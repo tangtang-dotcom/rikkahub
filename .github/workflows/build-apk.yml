@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/*.yml'
 
 permissions:
   contents: write
