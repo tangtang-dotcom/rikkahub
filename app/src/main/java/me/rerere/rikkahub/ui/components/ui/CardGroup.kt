@@ -147,7 +147,8 @@ private fun CardGroupListItem(
 fun CardGroup(
     modifier: Modifier = Modifier,
     title: (@Composable () -> Unit)? = null,
-    content: CardGroupScope.() -> Unit,
+    onClick: (() -> Unit)? = null,
+    content: @Composable CardGroupScope.() -> Unit,
 ) {
     // Cache the scope across recompositions instead of allocating a fresh CardGroupScopeImpl
     // + N CardGroupItem records every time the parent recomposes. On dense pages (the
@@ -163,7 +164,13 @@ fun CardGroup(
         if (title != null) {
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
                 ProvideTextStyle(MaterialTheme.typography.titleSmallEmphasized) {
-                    Box(modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
+                            .then(
+                                if (onClick != null) Modifier.clickable { onClick() } else Modifier
+                            )
+                    ) {
                         title()
                     }
                 }
