@@ -2,6 +2,11 @@ name: 编译 APK · Release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '自定义 Release tag（默认取 versionName，如 2.4.5-beta.1）'
+        required: false
+        type: string
   push:
     branches: [master]
     paths-ignore:
@@ -56,19 +61,23 @@ jobs:
 
       - name: 上传 APK 到 Release
         run: |
-          # 动态读取 versionName，避免硬编码错位
-          TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
+          DEFAULT_TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          TAG="${RELEASE_TAG:-$DEFAULT_TAG}"
           echo "Release TAG: $TAG"
           # Release 不存在则创建（避免 release not found）
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "RikkaHub Agents $TAG" --notes "Fork 构建" || true
           cd app/build/outputs/apk/release
           for apk in *.apk; do
-            name=$(echo "$apk" | sed 's/app-/rikkahub-agents-'"$TAG"'-/')
-            gh release upload "$TAG" "$apk" --clobber
-            echo "Uploaded $name"
+            # 资产重命名：app-* → RikkaHub-Agents-*
+            newname=$(echo "$apk" | sed 's/^app-/RikkaHub-Agents-/')
+            mv "$apk" "$newname"
+            gh release upload "$TAG" "$newname" --clobber
+            echo "Uploaded $newname"
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
 
       - name: 上传 APK (artifact)
         uses: actions/upload-artifact@v4
