@@ -91,8 +91,11 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                 promptValue = settings.compressPrompt,
                 onPromptChange = { vm.updateSettings(settings.copy(compressPrompt = it)) },
                 onResetPrompt = { vm.updateSettings(settings.copy(compressPrompt = DEFAULT_COMPRESS_PROMPT)) },
-            ) {
-                // 自动压缩开关 + 阈值
+            )
+        }
+        // 自动压缩开关 + 触发阈值
+        item {
+            CardGroup(title = { Text(stringResource(R.string.setting_model_page_auto_compress)) }) {
                 item(
                     headlineContent = { Text(stringResource(R.string.setting_model_page_auto_compress_desc)) },
                     trailingContent = {
@@ -118,7 +121,11 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                         )
                     }
                 }
-                // 工具输出落盘阈值
+            }
+        }
+        // 工具输出落盘阈值
+        item {
+            CardGroup(title = { Text(stringResource(R.string.setting_model_page_tool_output)) }) {
                 item {
                     OutlinedNumberInput(
                         value = settings.toolOutputMaxChars / 1024,
