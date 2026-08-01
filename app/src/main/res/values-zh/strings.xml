@@ -1151,6 +1151,11 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_model_page_prompt_suggestion">聊天回复建议</string>
   <string name="setting_model_page_prompt_ocr">OCR识别</string>
   <string name="setting_model_page_prompt_compress">上下文压缩</string>
+  <string name="setting_model_page_auto_compress">自动压缩上下文</string>
+  <string name="setting_model_page_auto_compress_desc">长对话接近上下文上限时自动压缩历史</string>
+  <string name="setting_model_page_auto_compress_threshold">触发阈值（上下文百分比，50-95）</string>
+  <string name="setting_model_page_tool_output">工具输出限制</string>
+  <string name="setting_model_page_tool_output_max_chars">工具输出限制（KB，4-16）</string>
   <string name="setting_display_page_bubble_opacity_title">气泡不透明度</string>
   <string name="setting_provider_page_include_history_reasoning">回传历史思考过程</string>
   <string name="setting_model_page_fast_model">快速模型</string>

@@ -1113,6 +1113,11 @@
   <string name="setting_model_page_prompt_suggestion">聊天回覆建議</string>
   <string name="setting_model_page_prompt_ocr">OCR 辨識</string>
   <string name="setting_model_page_prompt_compress">上下文壓縮</string>
+  <string name="setting_model_page_auto_compress">自動壓縮上下文</string>
+  <string name="setting_model_page_auto_compress_desc">長對話接近上下文上限時自動壓縮歷史</string>
+  <string name="setting_model_page_auto_compress_threshold">觸發閾值（上下文百分比，50-95）</string>
+  <string name="setting_model_page_tool_output">工具輸出限制</string>
+  <string name="setting_model_page_tool_output_max_chars">工具輸出限制（KB，4-16）</string>
   <string name="setting_display_page_bubble_opacity_title">氣泡透明度</string>
   <string name="setting_provider_page_include_history_reasoning">回傳歷史思考過程</string>
   <string name="setting_model_page_fast_model">快速模型</string>
