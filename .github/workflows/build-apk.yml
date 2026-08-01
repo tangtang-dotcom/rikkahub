@@ -60,6 +60,8 @@ jobs:
           ./gradlew assembleRelease
 
       - name: 上传 APK 到 Release
+        # 仅 workflow_dispatch（手动填 release_tag）创建/上传 Release；push 只构建验证，防覆盖已有 Release
+        if: github.event_name == 'workflow_dispatch'
         run: |
           # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
           DEFAULT_TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
