@@ -1910,5 +1910,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_files_page_cleaned_toast">已清理文件</string>
   <string name="setting_tts_page_default_playback_speed">默认播放速度</string>
   <string name="setting_tts_page_default_playback_speed_description">本地应用于每个 TTS 提供商，不更改其合成设置。</string>
+  <string name="settings_confirm">确定</string>
+  <string name="settings_cancel">取消</string>
+  <string name="setting_model_page_tool_output_desc">工具输出大小限制</string>
 </resources>
 

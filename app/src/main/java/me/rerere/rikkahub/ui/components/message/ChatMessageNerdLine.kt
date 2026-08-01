@@ -75,11 +75,11 @@ fun ChatMessageNerdLine(
                             )
                         },
                         content = {
-                            Text(text = "${usage.promptTokens.formatNumber()} tokens")
+                            Text(text = "${usage.promptTokens.formatNumber()} 输入")
                             // Cached tokens
                             if (usage.cachedTokens > 0) {
                                 Text(
-                                    text = "(${message.usage?.cachedTokens?.formatNumber() ?: "0"} cached)"
+                                    text = "(${message.usage?.cachedTokens?.formatNumber() ?: "0"} 命中缓存)"
                                 )
                             }
                         }
@@ -94,7 +94,7 @@ fun ChatMessageNerdLine(
                             )
                         },
                         content = {
-                            Text(text = "${usage.completionTokens.formatNumber()} tokens")
+                            Text(text = "${usage.completionTokens.formatNumber()} 输出")
                         }
                     )
                     // Cost (USD) — shown when the provider reports it (e.g. OpenRouter usage.cost)
@@ -149,48 +149,43 @@ fun ChatMessageNerdLine(
                         )
                     }
                     // 一键复制统计信息（与截图格式一致，方便直接粘贴给 AI 分析）
-                    StatsItem(
-                        icon = {
-                            Icon(
-                                imageVector = HugeIcons.Copy01,
-                                contentDescription = "Copy stats",
-                                tint = color,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        },
-                        content = {
-                            var pendingCopyText by remember { mutableStateOf("") }
-                            Box(
-                                modifier = Modifier.clickable(onClick = {
-                                    val statsText = buildString {
-                                        append("↑${usage.promptTokens.formatNumber()} tokens")
-                                        if (usage.cachedTokens > 0) {
-                                            append(" (${usage.cachedTokens.formatNumber()} cached)")
-                                        }
-                                        append(" ↓${usage.completionTokens.formatNumber()} tokens")
-                                        val finish = message.finishedAt
-                                        if (finish != null) {
-                                            val duration = Duration.between(
-                                                message.createdAt.toJavaLocalDateTime(),
-                                                finish.toJavaLocalDateTime()
-                                            )
-                                            val tps = usage.completionTokens.toFloat() / duration.toMillis() * 1000
-                                            val seconds = (duration.toMillis() / 1000f).toFixed(1)
-                                            append(" ⚡${tps.toFixed(1)} tok/s 🕐${seconds}s")
-                                        }
+                    var pendingCopyText by remember { mutableStateOf("") }
+                    Box(
+                        modifier = Modifier
+                            .clickable(onClick = {
+                                val statsText = buildString {
+                                    append("↑${usage.promptTokens.formatNumber()} tokens")
+                                    if (usage.cachedTokens > 0) {
+                                        append(" (${usage.cachedTokens.formatNumber()} cached)")
                                     }
-                                    pendingCopyText = statsText
-                                })
-                            ) {
-                                Text(text = "copy")
-                            }
-                            LaunchedEffect(pendingCopyText) {
-                                if (pendingCopyText.isNotEmpty()) {
-                                    clipboardManager.setText(AnnotatedString(pendingCopyText))
+                                    append(" ↓${usage.completionTokens.formatNumber()} tokens")
+                                    val finish = message.finishedAt
+                                    if (finish != null) {
+                                        val duration = Duration.between(
+                                            message.createdAt.toJavaLocalDateTime(),
+                                            finish.toJavaLocalDateTime()
+                                        )
+                                        val tps = usage.completionTokens.toFloat() / duration.toMillis() * 1000
+                                        val seconds = (duration.toMillis() / 1000f).toFixed(1)
+                                        append(" ⚡${tps.toFixed(1)} tok/s 🕐${seconds}s")
+                                    }
                                 }
-                            }
+                                pendingCopyText = statsText
+                            })
+                            .padding(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = HugeIcons.Copy01,
+                            contentDescription = "复制统计",
+                            tint = color,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    LaunchedEffect(pendingCopyText) {
+                        if (pendingCopyText.isNotEmpty()) {
+                            clipboardManager.setText(AnnotatedString(pendingCopyText))
                         }
-                    )
+                    }
                 }
             }
         }

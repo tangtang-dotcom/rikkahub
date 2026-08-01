@@ -114,6 +114,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
     val currentChatModel by vm.currentChatModel.collectAsStateWithLifecycle()
     val enableWebSearch by vm.enableWebSearch.collectAsStateWithLifecycle()
     val errors by vm.errors.collectAsStateWithLifecycle()
+    val sessionTotals by vm.sessionTotals.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
@@ -331,6 +332,7 @@ private fun ChatPageContent(
                     settings = setting,
                     hazeState = hazeState,
                     completionProviders = completionProviders,
+                    sessionTotals = sessionTotals,
                     onCancelClick = {
                         vm.stopGeneration()
                     },

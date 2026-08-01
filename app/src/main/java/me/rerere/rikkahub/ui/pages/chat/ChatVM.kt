@@ -23,6 +23,7 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -58,6 +59,11 @@ class ChatVM(
 ) : ViewModel() {
     private val _conversationId: Uuid = Uuid.parse(id)
     val conversation: StateFlow<Conversation> = chatService.getConversationFlow(_conversationId)
+
+    // 会话级 token 累计（当前分支所有消息 usage 之和），供聊天底部统计条展示
+    val sessionTotals: StateFlow<TokenBudgetTracker.Totals> =
+        conversation.map { TokenBudgetTracker.aggregate(it) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, TokenBudgetTracker.aggregate(conversation.value))
     var chatListInitialized by mutableStateOf(false) // 聊天列表是否已经滚动到底部
 
     // 聊天输入状态 - 保存在 ViewModel 中避免 TransactionTooLargeException

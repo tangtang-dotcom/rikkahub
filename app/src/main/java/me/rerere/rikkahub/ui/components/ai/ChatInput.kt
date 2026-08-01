@@ -63,11 +63,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,9 +90,11 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
 import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
@@ -111,6 +115,7 @@ import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.SoundEffectPlayer
+import me.rerere.rikkahub.utils.formatNumber
 import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.seconds
 
@@ -131,7 +136,10 @@ fun ChatInput(
     onCancelClick: () -> Unit,
     onSendClick: () -> Unit,
     onLongSendClick: () -> Unit,
+    sessionTotals: TokenBudgetTracker.Totals,
 ) {
+    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+    val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
     val assistant = settings.getCurrentAssistant()
     val hazeTintColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -237,6 +245,42 @@ fun ChatInput(
                         completionProviders = completionProviders,
                         onSendMessage = { sendMessage() }
                     )
+
+                    // 累计 token 统计（会话级累计，仅显示输入/输出/命中缓存）
+                    var pendingCopyText by remember { mutableStateOf("") }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "↑${sessionTotals.inputTokens.toInt().formatNumber()} 输入 (${sessionTotals.cachedTokens.toInt().formatNumber()} 命中缓存) ↓${sessionTotals.outputTokens.toInt().formatNumber()} 输出",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clickable(onClick = {
+                                    pendingCopyText = "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
+                                })
+                                .padding(2.dp)
+                        ) {
+                            Icon(
+                                imageVector = HugeIcons.Copy01,
+                                contentDescription = "复制累计统计",
+                                tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        LaunchedEffect(pendingCopyText) {
+                            if (pendingCopyText.isNotEmpty()) {
+                                clipboardManager.setText(AnnotatedString(pendingCopyText))
+                            }
+                        }
+                    }
 
                     Row(
                         modifier = Modifier
