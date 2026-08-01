@@ -130,18 +130,25 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                 title = { Text(stringResource(R.string.setting_model_page_tool_output)) },
                 onClick = { showToolOutputDialog = true }
             ) {
-                item {
-                    Text(
-                        text = "${settings.toolOutputMaxChars / 1024} KB",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                item {
-                    Text(
-                        text = stringResource(R.string.setting_model_page_tool_output_max_chars),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                item(
+                    headlineContent = { Text(stringResource(R.string.setting_model_page_tool_output_desc)) },
+                    trailingContent = {
+                        Text(
+                            text = if (settings.toolOutputEnabled) "ON" else "OFF",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (settings.toolOutputEnabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                )
+                if (settings.toolOutputEnabled) {
+                    item {
+                        Text(
+                            text = "${settings.toolOutputMaxChars / 1024} KB",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -167,11 +174,15 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
     // 工具输出对话框
     if (showToolOutputDialog) {
         ToolOutputDialog(
+            enabled = settings.toolOutputEnabled,
             maxCharsKB = settings.toolOutputMaxChars / 1024,
             onDismiss = { showToolOutputDialog = false },
-            onConfirm = { maxCharsKB ->
+            onConfirm = { enabled, maxCharsKB ->
                 vm.updateSettings(
-                    settings.copy(toolOutputMaxChars = maxCharsKB * 1024)
+                    settings.copy(
+                        toolOutputEnabled = enabled,
+                        toolOutputMaxChars = maxCharsKB * 1024
+                    )
                 )
             }
         )
