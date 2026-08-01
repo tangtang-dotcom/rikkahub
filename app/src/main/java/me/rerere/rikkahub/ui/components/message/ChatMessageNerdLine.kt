@@ -44,6 +44,8 @@ fun ChatMessageNerdLine(
     color: Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
 ) {
     val settings = LocalSettings.current.displaySetting
+    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+    val clipboardManager = LocalClipboardManager.current
 
     ProvideTextStyle(MaterialTheme.typography.labelSmall.copy(color = color)) {
         CompositionLocalProvider(LocalContentColor provides color) {
@@ -152,8 +154,6 @@ fun ChatMessageNerdLine(
                             Text(
                                 text = "copy",
                                 modifier = Modifier.clickable {
-                                    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
-                                    val clipboard = LocalClipboardManager.current
                                     val statsText = buildString {
                                         append("↑${usage.promptTokens.formatNumber()} tokens")
                                         if (usage.cachedTokens > 0) {
@@ -171,7 +171,7 @@ fun ChatMessageNerdLine(
                                             append(" ⚡${tps.toFixed(1)} tok/s 🕐${seconds}s")
                                         }
                                     }
-                                    clipboard.setText(AnnotatedString(statsText))
+                                    clipboardManager.setText(AnnotatedString(statsText))
                                 }
                             )
                         }

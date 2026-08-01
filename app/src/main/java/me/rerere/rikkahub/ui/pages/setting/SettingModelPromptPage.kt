@@ -108,32 +108,36 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                     },
                 )
                 if (settings.autoCompressEnabled) {
-                    OutlinedNumberInput(
-                        value = settings.autoCompressThreshold,
-                        onValueChange = {
-                            vm.updateSettings(settings.copy(autoCompressThreshold = it.coerceIn(50, 95)))
-                        },
-                        label = stringResource(R.string.setting_model_page_auto_compress_threshold),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
+                    item {
+                        OutlinedNumberInput(
+                            value = settings.autoCompressThreshold,
+                            onValueChange = {
+                                vm.updateSettings(settings.copy(autoCompressThreshold = it.coerceIn(50, 95)))
+                            },
+                            label = stringResource(R.string.setting_model_page_auto_compress_threshold),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
                 }
             }
         }
         // 工具输出落盘阈值
         item {
             CardGroup(title = { Text(stringResource(R.string.setting_model_page_tool_output)) }) {
-                OutlinedNumberInput(
-                    value = settings.toolOutputMaxChars / 1024,
-                    onValueChange = {
-                        vm.updateSettings(settings.copy(toolOutputMaxChars = it.coerceIn(4, 16) * 1024))
-                    },
-                    label = stringResource(R.string.setting_model_page_tool_output_max_chars),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+                item {
+                    OutlinedNumberInput(
+                        value = settings.toolOutputMaxChars / 1024,
+                        onValueChange = {
+                            vm.updateSettings(settings.copy(toolOutputMaxChars = it.coerceIn(4, 16) * 1024))
+                        },
+                        label = stringResource(R.string.setting_model_page_tool_output_max_chars),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
             }
         }
     }
