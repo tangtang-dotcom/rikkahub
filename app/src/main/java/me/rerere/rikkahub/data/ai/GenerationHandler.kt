@@ -68,7 +68,7 @@ import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "GenerationHandler"
-private const val MAX_TOOL_OUTPUT_CHARS = 32 * 1024
+private const val MAX_TOOL_OUTPUT_CHARS = 16 * 1024
 private const val TOOL_OUTPUT_PREVIEW_CHARS = 4 * 1024
 
 /**
