@@ -14,7 +14,14 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+
+
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -151,9 +158,9 @@ fun ChatMessageNerdLine(
                             )
                         },
                         content = {
-                            Text(
-                                text = "copy",
-                                modifier = Modifier.clickable {
+                            var pendingCopyText by remember { mutableStateOf("") }
+                            Box(
+                                modifier = Modifier.clickable(onClick = {
                                     val statsText = buildString {
                                         append("↑${usage.promptTokens.formatNumber()} tokens")
                                         if (usage.cachedTokens > 0) {
@@ -171,9 +178,16 @@ fun ChatMessageNerdLine(
                                             append(" ⚡${tps.toFixed(1)} tok/s 🕐${seconds}s")
                                         }
                                     }
-                                    clipboardManager.setText(AnnotatedString(statsText))
+                                    pendingCopyText = statsText
+                                })
+                            ) {
+                                Text(text = "copy")
+                            }
+                            LaunchedEffect(pendingCopyText) {
+                                if (pendingCopyText.isNotEmpty()) {
+                                    clipboardManager.setText(AnnotatedString(pendingCopyText))
                                 }
-                            )
+                            }
                         }
                     )
                 }
