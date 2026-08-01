@@ -101,7 +101,7 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
         // 自动压缩开关 + 触发阈值
         item {
             CardGroup(
-                title = { Text(stringResource(R.string.setting_model_page_auto_compress)) },
+                title = { Row { Icon(HugeIcons.ArrowDown01, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.setting_model_page_auto_compress)) } },
                 onClick = { showAutoCompressDialog = true }
             ) {
                 item(
@@ -127,7 +127,7 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
         // 工具输出落盘阈值
         item {
             CardGroup(
-                title = { Text(stringResource(R.string.setting_model_page_tool_output)) },
+                title = { Row { Icon(HugeIcons.Tools, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.setting_model_page_tool_output)) } },
                 onClick = { showToolOutputDialog = true }
             ) {
                 item(
