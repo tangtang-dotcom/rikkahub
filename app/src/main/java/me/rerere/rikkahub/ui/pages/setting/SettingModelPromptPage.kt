@@ -34,6 +34,8 @@ import me.rerere.rikkahub.data.ai.prompts.DEFAULT_SUGGESTION_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TITLE_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TRANSLATION_PROMPT
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
+import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
@@ -41,6 +43,9 @@ import me.rerere.rikkahub.utils.plus
 
 @Composable
 internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPadding: PaddingValues) {
+    var showAutoCompressDialog by remember { mutableStateOf(false) }
+    var showToolOutputDialog by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
@@ -95,51 +100,81 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
         }
         // 自动压缩开关 + 触发阈值
         item {
-            CardGroup(title = { Text(stringResource(R.string.setting_model_page_auto_compress)) }) {
+            CardGroup(
+                title = { Text(stringResource(R.string.setting_model_page_auto_compress)) },
+                onClick = { showAutoCompressDialog = true }
+            ) {
                 item(
                     headlineContent = { Text(stringResource(R.string.setting_model_page_auto_compress_desc)) },
                     trailingContent = {
-                        Switch(
-                            checked = settings.autoCompressEnabled,
-                            onCheckedChange = {
-                                vm.updateSettings(settings.copy(autoCompressEnabled = it))
-                            }
+                        Text(
+                            text = if (settings.autoCompressEnabled) "ON" else "OFF",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (settings.autoCompressEnabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                 )
-                if (settings.autoCompressEnabled) {
-                    item {
-                        OutlinedNumberInput(
-                            value = settings.autoCompressThreshold,
-                            onValueChange = {
-                                vm.updateSettings(settings.copy(autoCompressThreshold = it.coerceIn(50, 95)))
-                            },
-                            label = stringResource(R.string.setting_model_page_auto_compress_threshold),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                        )
-                    }
+                item {
+                    Text(
+                        text = stringResource(R.string.setting_model_page_auto_compress_threshold),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
         // 工具输出落盘阈值
         item {
-            CardGroup(title = { Text(stringResource(R.string.setting_model_page_tool_output)) }) {
+            CardGroup(
+                title = { Text(stringResource(R.string.setting_model_page_tool_output)) },
+                onClick = { showToolOutputDialog = true }
+            ) {
                 item {
-                    OutlinedNumberInput(
-                        value = settings.toolOutputMaxChars / 1024,
-                        onValueChange = {
-                            vm.updateSettings(settings.copy(toolOutputMaxChars = it.coerceIn(4, 16) * 1024))
-                        },
-                        label = stringResource(R.string.setting_model_page_tool_output_max_chars),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    Text(
+                        text = "${settings.toolOutputMaxChars / 1024} KB",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                item {
+                    Text(
+                        text = stringResource(R.string.setting_model_page_tool_output_max_chars),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
+    }
+
+    // 自动压缩对话框
+    if (showAutoCompressDialog) {
+        AutoCompressDialog(
+            enabled = settings.autoCompressEnabled,
+            threshold = settings.autoCompressThreshold,
+            onDismiss = { showAutoCompressDialog = false },
+            onConfirm = { enabled, threshold ->
+                vm.updateSettings(
+                    settings.copy(
+                        autoCompressEnabled = enabled,
+                        autoCompressThreshold = threshold
+                    )
+                )
+            }
+        )
+    }
+
+    // 工具输出对话框
+    if (showToolOutputDialog) {
+        ToolOutputDialog(
+            maxCharsKB = settings.toolOutputMaxChars / 1024,
+            onDismiss = { showToolOutputDialog = false },
+            onConfirm = { maxCharsKB ->
+                vm.updateSettings(
+                    settings.copy(toolOutputMaxChars = maxCharsKB * 1024)
+                )
+            }
+        )
     }
 }
 
