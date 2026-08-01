@@ -6,6 +6,14 @@
 
 **🤖 Android 设备端 LLM 智能体 · AI 自动维护 · 固定签名编译**
 
+[![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=最新版本&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
+[![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
+[![Downloads](https://img.shields.io/github/downloads/xiwangone/rikkahub-agents/total?color=blue&label=下载量&logo=download)](https://github.com/xiwangone/rikkahub-agents/releases)
+[![License](https://img.shields.io/github/license/xiwangone/rikkahub-agents?color=ff69b4&label=许可)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/xiwangone/rikkahub-agents?color=yellow&label=最近提交&logo=github)](https://github.com/xiwangone/rikkahub-agents/commits/master)
+
+[![下载最新版](https://img.shields.io/badge/⬇️-下载最新版-2ea44f?style=for-the-badge&logo=android)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
+
 [**English**](README_EN.md) | **简体中文**
 
 </div>
