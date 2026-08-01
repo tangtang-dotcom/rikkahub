@@ -174,7 +174,38 @@ class ChatVM(
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
+        // 自动压缩检查：开关开启且对话接近 context 上限时，先压缩再发送
+        if (answer) {
+            val s = settings.value
+            if (s.autoCompressEnabled) {
+                viewModelScope.launch { maybeAutoCompress(s) }
+            }
+        }
+
         chatService.sendMessage(_conversationId, content, answer)
+    }
+
+    /**
+     * 自动压缩：估算当前对话 token 数，超过 context 阈值时触发压缩。
+     * 估算方式：消息文本字符数 / 4（保守近似，中文 1 字 ≈ 1 token）。
+     */
+    private suspend fun maybeAutoCompress(s: Settings) {
+        val conv = conversation.value
+        val totalChars = conv.currentMessages.sumOf { it.toText().length }
+        val estimatedTokens = totalChars / 4
+        // 模型 context 大小：实测 DeepSeek V4 可承载 439.6K 输入，按 512K 估算
+        val contextLimit = 512 * 1024
+        if (estimatedTokens > contextLimit * s.autoCompressThreshold / 100) {
+            chatService.compressConversation(
+                _conversationId,
+                conv,
+                additionalPrompt = "",
+                targetTokens = 2000,
+                keepRecentMessages = 32
+            ).onFailure {
+                chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
+            }
+        }
     }
 
     fun handleMessageEdit(parts: List<UIMessagePart>, messageId: Uuid) {

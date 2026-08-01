@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TRANSLATION_PROMPT
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
+import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.utils.plus
 
 @Composable
@@ -90,6 +92,49 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                 onPromptChange = { vm.updateSettings(settings.copy(compressPrompt = it)) },
                 onResetPrompt = { vm.updateSettings(settings.copy(compressPrompt = DEFAULT_COMPRESS_PROMPT)) },
             )
+        }
+        // 自动压缩开关 + 触发阈值
+        item {
+            CardGroup(title = { Text(stringResource(R.string.setting_model_page_auto_compress)) }) {
+                item(
+                    headlineContent = { Text(stringResource(R.string.setting_model_page_auto_compress_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = settings.autoCompressEnabled,
+                            onCheckedChange = {
+                                vm.updateSettings(settings.copy(autoCompressEnabled = it))
+                            }
+                        )
+                    },
+                )
+                if (settings.autoCompressEnabled) {
+                    OutlinedNumberInput(
+                        value = settings.autoCompressThreshold,
+                        onValueChange = {
+                            vm.updateSettings(settings.copy(autoCompressThreshold = it.coerceIn(50, 95)))
+                        },
+                        label = stringResource(R.string.setting_model_page_auto_compress_threshold),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+            }
+        }
+        // 工具输出落盘阈值
+        item {
+            CardGroup(title = { Text(stringResource(R.string.setting_model_page_tool_output)) }) {
+                OutlinedNumberInput(
+                    value = settings.toolOutputMaxChars / 1024,
+                    onValueChange = {
+                        vm.updateSettings(settings.copy(toolOutputMaxChars = it.coerceIn(4, 16) * 1024))
+                    },
+                    label = stringResource(R.string.setting_model_page_tool_output_max_chars),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
         }
     }
 }

@@ -134,6 +134,9 @@ class SettingsStore(
         val OCR_PROMPT = stringPreferencesKey("ocr_prompt")
         val COMPRESS_MODEL = stringPreferencesKey("compress_model")
         val COMPRESS_PROMPT = stringPreferencesKey("compress_prompt")
+        val AUTO_COMPRESS_ENABLED = booleanPreferencesKey("auto_compress_enabled")
+        val AUTO_COMPRESS_THRESHOLD = intPreferencesKey("auto_compress_threshold")
+        val TOOL_OUTPUT_MAX_CHARS = intPreferencesKey("tool_output_max_chars")
 
         // 提供商
         val PROVIDERS = stringPreferencesKey("providers")
@@ -226,6 +229,9 @@ class SettingsStore(
                 ocrPrompt = preferences[OCR_PROMPT] ?: DEFAULT_OCR_PROMPT,
                 compressModelId = preferences[COMPRESS_MODEL]?.let { Uuid.parse(it) } ?: DEFAULT_AUTO_MODEL_ID,
                 compressPrompt = preferences[COMPRESS_PROMPT] ?: DEFAULT_COMPRESS_PROMPT,
+                autoCompressEnabled = preferences[AUTO_COMPRESS_ENABLED] ?: false,
+                autoCompressThreshold = preferences[AUTO_COMPRESS_THRESHOLD] ?: 80,
+                toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 4 * 1024,
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
                     ?: DEFAULT_ASSISTANT_ID,
                 assistantTags = preferences[ASSISTANT_TAGS]?.let {
@@ -493,6 +499,9 @@ class SettingsStore(
             preferences[OCR_PROMPT] = settings.ocrPrompt
             preferences[COMPRESS_MODEL] = settings.compressModelId.toString()
             preferences[COMPRESS_PROMPT] = settings.compressPrompt
+            preferences[AUTO_COMPRESS_ENABLED] = settings.autoCompressEnabled
+            preferences[AUTO_COMPRESS_THRESHOLD] = settings.autoCompressThreshold
+            preferences[TOOL_OUTPUT_MAX_CHARS] = settings.toolOutputMaxChars
 
             preferences[PROVIDERS] = JsonInstant.encodeToString(settings.providers)
             preferences[DELETED_BUILTIN_PROVIDER_IDS] = JsonInstant.encodeToString(
@@ -664,6 +673,12 @@ data class Settings(
     val ocrPrompt: String = DEFAULT_OCR_PROMPT,
     val compressModelId: Uuid = Uuid.random(),
     val compressPrompt: String = DEFAULT_COMPRESS_PROMPT,
+    /** 自动压缩开关：长对话接近 context 上限时自动触发压缩（默认关） */
+    val autoCompressEnabled: Boolean = false,
+    /** 自动压缩触发阈值：当前对话估算 token 占模型 context 的百分比 */
+    val autoCompressThreshold: Int = 80,
+    /** 工具输出落盘阈值（字符数）：超过后截断落盘 + 返回预览，范围 4K-16K */
+    val toolOutputMaxChars: Int = 4 * 1024,
     val assistantId: Uuid = DEFAULT_ASSISTANT_ID,
     val providers: List<ProviderSetting> = DEFAULT_PROVIDERS,
     /**

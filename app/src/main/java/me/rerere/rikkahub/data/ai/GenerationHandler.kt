@@ -808,7 +808,12 @@ class GenerationHandler(
                             // the context window.
                             val hasShellAccess = toolsInternal.any { it.name == "workspace_shell" }
                             executedTools += markedTool.copy(
-                                output = maybeTruncateToolOutput(tool.toolCallId, result, hasShellAccess)
+                                output = maybeTruncateToolOutput(
+                                    tool.toolCallId,
+                                    result,
+                                    hasShellAccess,
+                                    settings.toolOutputMaxChars
+                                )
                             )
                         }.onFailure {
                             // Stack trace stays in logcat for debugging; the JSON envelope
@@ -1078,14 +1083,15 @@ class GenerationHandler(
         toolCallId: String,
         output: List<UIMessagePart>,
         hasShellAccess: Boolean,
+        maxChars: Int = MAX_TOOL_OUTPUT_CHARS,
     ): List<UIMessagePart> {
         val textParts = output.filterIsInstance<UIMessagePart.Text>()
         val nonTextParts = output.filter { it !is UIMessagePart.Text }
         val totalChars = textParts.sumOf { it.text.length }
 
-        if (totalChars <= MAX_TOOL_OUTPUT_CHARS || !hasShellAccess) return output
+        if (totalChars <= maxChars || !hasShellAccess) return output
 
-        Log.i(TAG, "maybeTruncateToolOutput: truncating tool $toolCallId output ($totalChars chars)")
+        Log.i(TAG, "maybeTruncateToolOutput: truncating tool $toolCallId output ($totalChars chars, max $maxChars)")
 
         val fullText = textParts.joinToString("\n") { it.text }
         val preview = fullText.take(TOOL_OUTPUT_PREVIEW_CHARS)

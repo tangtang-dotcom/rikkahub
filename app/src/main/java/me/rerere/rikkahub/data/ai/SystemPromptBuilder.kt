@@ -35,6 +35,7 @@ class SystemPromptBuilder {
                 if (isNotEmpty()) appendLine()
                 appendLine("Tool cost guidance: prefer low-cost text tools before expensive visual or broad tools. Use read_window_tree/browser_get_text before screenshots when text is enough, and avoid repeating high-cost tools unless the state likely changed.")
                 appendLine("Context economy: for large tool outputs (API responses, logs, file dumps), save the full result to a file and return only a summary or key lines instead of pasting everything into the conversation. Run searches in small focused batches (2-3 queries at a time) with precise keywords rather than one broad multi-query blast, and wait to see results before issuing the next batch.")
+                appendLine("Token usage: on long conversations, call check_token_usage (when available) to self-monitor token consumption and cached-token ratio; proactively suggest or trigger context compression when nearing the context limit.")
                 toolPrompts.forEachIndexed { index, toolPrompt ->
                     if (index > 0) appendLine()
                     append(toolPrompt)

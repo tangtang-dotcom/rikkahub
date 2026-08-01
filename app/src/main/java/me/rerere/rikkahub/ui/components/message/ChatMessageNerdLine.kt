@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.ui.components.message
 
+import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -15,13 +17,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import androidx.annotation.VisibleForTesting
 import kotlinx.datetime.toJavaLocalDateTime
 import me.rerere.ai.ui.UIMessage
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Clock02
 import me.rerere.hugeicons.stroke.CoinsDollar
+import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.Download04
 import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
@@ -134,6 +138,44 @@ fun ChatMessageNerdLine(
                             }
                         )
                     }
+                    // 一键复制统计信息（与截图格式一致，方便直接粘贴给 AI 分析）
+                    StatsItem(
+                        icon = {
+                            Icon(
+                                imageVector = HugeIcons.Copy01,
+                                contentDescription = "Copy stats",
+                                tint = color,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        },
+                        content = {
+                            Text(
+                                text = "copy",
+                                modifier = Modifier.clickable {
+                                    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+                                    val clipboard = LocalClipboardManager.current
+                                    val statsText = buildString {
+                                        append("↑${usage.promptTokens.formatNumber()} tokens")
+                                        if (usage.cachedTokens > 0) {
+                                            append(" (${usage.cachedTokens.formatNumber()} cached)")
+                                        }
+                                        append(" ↓${usage.completionTokens.formatNumber()} tokens")
+                                        val finish = message.finishedAt
+                                        if (finish != null) {
+                                            val duration = Duration.between(
+                                                message.createdAt.toJavaLocalDateTime(),
+                                                finish.toJavaLocalDateTime()
+                                            )
+                                            val tps = usage.completionTokens.toFloat() / duration.toMillis() * 1000
+                                            val seconds = (duration.toMillis() / 1000f).toFixed(1)
+                                            append(" ⚡${tps.toFixed(1)} tok/s 🕐${seconds}s")
+                                        }
+                                    }
+                                    clipboard.setText(AnnotatedString(statsText))
+                                }
+                            )
+                        }
+                    )
                 }
             }
         }

@@ -1166,6 +1166,10 @@
   <string name="setting_model_page_prompt_suggestion">Chat Reply Suggestions</string>
   <string name="setting_model_page_prompt_ocr">OCR Recognition</string>
   <string name="setting_model_page_prompt_compress">Context Compression</string>
+  <string name="setting_model_page_auto_compress">Auto Compress Context</string>
+  <string name="setting_model_page_auto_compress_desc">Automatically compress long conversations when they approach the context limit</string>
+  <string name="setting_model_page_auto_compress_threshold">Trigger threshold (% of context, 50-95)</string>
+  <string name="setting_model_page_tool_output_max_chars">Tool output limit (KB, 4-16)</string>
   <string name="setting_display_page_bubble_opacity_title">Bubble Opacity</string>
   <string name="setting_provider_page_include_history_reasoning">Include History Reasoning</string>
 

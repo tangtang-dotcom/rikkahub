@@ -23,6 +23,7 @@ object TokenBudgetTracker {
     data class Totals(
         val inputTokens: Long,
         val outputTokens: Long,
+        val cachedTokens: Long,
         val totalTokens: Long,
         val perMessageMax: Long,
         val messageCount: Int,
@@ -45,6 +46,7 @@ object TokenBudgetTracker {
     fun aggregate(conversation: Conversation): Totals {
         var input = 0L
         var output = 0L
+        var cached = 0L
         var total = 0L
         var perMax = 0L
         var count = 0
@@ -53,6 +55,7 @@ object TokenBudgetTracker {
             val usage = msg.usage ?: continue
             input += usage.promptTokens.toLong()
             output += usage.completionTokens.toLong()
+            cached += usage.cachedTokens.toLong()
             val totalThis = (usage.totalTokens.takeIf { it > 0 }
                 ?: (usage.promptTokens + usage.completionTokens)).toLong()
             total += totalThis
@@ -62,6 +65,7 @@ object TokenBudgetTracker {
         return Totals(
             inputTokens = input,
             outputTokens = output,
+            cachedTokens = cached,
             totalTokens = total,
             perMessageMax = perMax,
             messageCount = count,

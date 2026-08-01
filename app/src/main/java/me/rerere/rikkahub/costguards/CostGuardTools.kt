@@ -45,7 +45,7 @@ fun checkTokenUsageTool(
 ): Tool = Tool(
     name = "check_token_usage",
     description = """
-        Read the running input + output token totals for a conversation and compare them
+        Read the running input + output token totals (including cached tokens) for a conversation and compare them
         against the assistant's soft / hard token-budget caps. Use to self-throttle on a
         long-running task: WARN means slow down or wrap up; OVER_HARD means stop and ask
         the user before continuing. Returns NO_BUDGET when no caps are configured (the
@@ -87,6 +87,7 @@ fun checkTokenUsageTool(
             put("conversation_id", conv.id.toString())
             put("input_tokens", snapshot.totals.inputTokens)
             put("output_tokens", snapshot.totals.outputTokens)
+            put("cached_tokens", snapshot.totals.cachedTokens)
             put("total_tokens", snapshot.totals.totalTokens)
             put("per_message_max", snapshot.totals.perMessageMax)
             put("message_count", snapshot.totals.messageCount)
