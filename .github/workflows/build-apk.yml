@@ -70,9 +70,9 @@ jobs:
             --title "🚀 RikkaHub Agents $TAG" \
             --notes "## ✨ v$TAG
 
-### 📦 安装包
-- ARM64 优化包
-- Universal 通用包" || true
+            ### 📦 安装包
+            - ARM64 优化包
+            - Universal 通用包" || true
           cd app/build/outputs/apk/release
           for apk in *.apk; do
             # 资产重命名：app-* → RikkaHub-Agents-*
