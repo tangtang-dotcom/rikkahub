@@ -1286,5 +1286,7 @@
   <string name="settings_confirm">確定</string>
   <string name="settings_cancel">取消</string>
   <string name="setting_model_page_tool_output_desc">工具輸出大小限制</string>
+  <string name="setting_tts_page_default_playback_speed">預設播放速度</string>
+  <string name="setting_tts_page_default_playback_speed_description">本地應用於每個 TTS 提供商，不更改其合成設定。</string>
 </resources>
 

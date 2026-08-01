@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-08-01
+
+### ✨ 新功能
+- **对话底部累计 Token 统计** — 聊天输入栏底部新增会话级累计统计行（↑输入 ↓输出 + 命中缓存），与消息统计条各带复制图标；复制内容保持英文（↑x tokens (x cached)）便于粘贴给 AI 分析
+- **统计条 UI 中文化** — 消息统计条标签改中文（输入/输出/命中缓存），数据项（tok/s、耗时、成本）保留
+
+### 🐛 Bug 修复
+- 修复设置页 Kotlin 编译错误：`SettingModelPromptPage` 缺 `Row`/`Spacer`/`width`/`ArrowDown01`/`Tools`/`CardGroupScope` import；`AutoCompressDialog`/`ToolOutputDialog` 缺 `settings_confirm`/`settings_cancel` 字符串资源
+
+### 🌐 本地化
+- 新增 `settings_confirm` / `settings_cancel` / `setting_model_page_tool_output_desc`（en / zh / zh-rHK 三语）
+- 补 TTS 默认播放速度繁中（`setting_tts_page_default_playback_speed`、`setting_tts_page_default_playback_speed_description`）
+
+### 🔧 CI/CD
+- build-apk workflow 升级：workflow_dispatch 支持 `release_tag` 自定义、push 自动构建、动态 Release tag、Server酱失败通知
+
+---
+
 ## 2026-07-31
 
 ### ✨ 新功能
