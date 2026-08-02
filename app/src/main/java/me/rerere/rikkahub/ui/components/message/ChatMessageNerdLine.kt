@@ -37,6 +37,7 @@ import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.Download04
 import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
+import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.utils.toFixed
@@ -50,6 +51,7 @@ fun ChatMessageNerdLine(
     message: UIMessage,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+    sessionTotals: TokenBudgetTracker.Totals? = null,
 ) {
     val settings = LocalSettings.current.displaySetting
     @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
@@ -184,6 +186,49 @@ fun ChatMessageNerdLine(
                     LaunchedEffect(pendingCopyText) {
                         if (pendingCopyText.isNotEmpty()) {
                             clipboardManager.setText(AnnotatedString(pendingCopyText))
+                        }
+                    }
+                }
+            }
+            if (sessionTotals != null) {
+                var sessionPendingCopy by remember { mutableStateOf("") }
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    StatsItem(
+                        icon = {
+                            Icon(
+                                imageVector = HugeIcons.Upload02,
+                                contentDescription = "Input",
+                                tint = color,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        },
+                        content = {
+                            Text(
+                                text = "↑${sessionTotals.inputTokens.toInt().formatNumber()} 输入 (${sessionTotals.cachedTokens.toInt().formatNumber()} 命中缓存) ↓${sessionTotals.outputTokens.toInt().formatNumber()} 输出"
+                            )
+                        }
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clickable(onClick = {
+                                sessionPendingCopy = "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
+                            })
+                            .padding(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = HugeIcons.Copy01,
+                            contentDescription = "复制累计统计",
+                            tint = color,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    LaunchedEffect(sessionPendingCopy) {
+                        if (sessionPendingCopy.isNotEmpty()) {
+                            clipboardManager.setText(AnnotatedString(sessionPendingCopy))
                         }
                     }
                 }

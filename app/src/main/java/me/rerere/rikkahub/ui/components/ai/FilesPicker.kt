@@ -81,6 +81,11 @@ import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.Tools
+import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
+import androidx.compose.material3.Switch
+import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.workspace.WorkspaceShellStatus
 import org.koin.compose.koinInject
 import kotlin.uuid.Uuid
@@ -98,6 +103,10 @@ internal fun FilesPicker(
     onShowInjectionSheetChange: (Boolean) -> Unit,
     showCompressDialog: Boolean,
     onShowCompressDialogChange: (Boolean) -> Unit,
+    showAutoCompressDialog: Boolean,
+    onShowAutoCompressDialogChange: (Boolean) -> Unit,
+    showToolOutputDialog: Boolean,
+    onShowToolOutputDialogChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onTakePic: () -> Unit,
     onPickImage: () -> Unit,
@@ -237,6 +246,62 @@ internal fun FilesPicker(
                 .clickable {
                     onShowCompressDialogChange(true)
                 },
+        )
+
+        // Auto-compress context
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = HugeIcons.ArrowDown01,
+                    contentDescription = stringResource(R.string.setting_model_page_auto_compress),
+                )
+            },
+            headlineContent = {
+                Text(stringResource(R.string.setting_model_page_auto_compress))
+            },
+            supportingContent = {
+                Text(stringResource(R.string.setting_model_page_auto_compress_desc))
+            },
+            trailingContent = {
+                Switch(
+                    checked = settings.autoCompressEnabled,
+                    onCheckedChange = { onShowAutoCompressDialogChange(true) }
+                )
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ),
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.large)
+                .clickable { onShowAutoCompressDialogChange(true) },
+        )
+
+        // Tool output limit
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = HugeIcons.Tools,
+                    contentDescription = stringResource(R.string.setting_model_page_tool_output),
+                )
+            },
+            headlineContent = {
+                Text(stringResource(R.string.setting_model_page_tool_output))
+            },
+            supportingContent = {
+                Text(stringResource(R.string.setting_model_page_tool_output_desc))
+            },
+            trailingContent = {
+                Switch(
+                    checked = settings.toolOutputEnabled,
+                    onCheckedChange = { onShowToolOutputDialogChange(true) }
+                )
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ),
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.large)
+                .clickable { onShowToolOutputDialogChange(true) },
         )
 
         // Workspace CWD

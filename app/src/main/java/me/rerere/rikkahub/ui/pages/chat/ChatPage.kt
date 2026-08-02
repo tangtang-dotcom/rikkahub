@@ -332,7 +332,6 @@ private fun ChatPageContent(
                     settings = setting,
                     hazeState = hazeState,
                     completionProviders = completionProviders,
-                    sessionTotals = sessionTotals,
                     onCancelClick = {
                         vm.stopGeneration()
                     },
@@ -520,10 +519,14 @@ private fun ChatFilesPickerSheet(
     val filesManager: FilesManager = koinInject()
     var showInjectionSheet by remember { mutableStateOf(false) }
     var showCompressDialog by remember { mutableStateOf(false) }
+    var showAutoCompressDialog by remember { mutableStateOf(false) }
+    var showToolOutputDialog by remember { mutableStateOf(false) }
 
     fun dismissAll() {
         showInjectionSheet = false
         showCompressDialog = false
+        showAutoCompressDialog = false
+        showToolOutputDialog = false
         onDismiss()
     }
 
@@ -701,12 +704,37 @@ private fun ChatFilesPickerSheet(
             onShowInjectionSheetChange = { showInjectionSheet = it },
             showCompressDialog = showCompressDialog,
             onShowCompressDialogChange = { showCompressDialog = it },
+            showAutoCompressDialog = showAutoCompressDialog,
+            onShowAutoCompressDialogChange = { showAutoCompressDialog = it },
+            showToolOutputDialog = showToolOutputDialog,
+            onShowToolOutputDialogChange = { showToolOutputDialog = it },
             onDismiss = { dismissAll() },
             onTakePic = onLaunchCamera,
             onPickImage = { imagePickerLauncher.launch("image/*") },
             onPickVideo = { videoPickerLauncher.launch("video/*") },
             onPickAudio = { audioPickerLauncher.launch("audio/*") },
             onPickFile = { filePickerLauncher.launch(arrayOf("*/*")) },
+        )
+    }
+
+    if (showAutoCompressDialog) {
+        AutoCompressDialog(
+            enabled = setting.autoCompressEnabled,
+            threshold = setting.autoCompressThreshold,
+            onDismiss = { showAutoCompressDialog = false },
+            onConfirm = { enabled, threshold ->
+                vm.updateSettings(setting.copy(autoCompressEnabled = enabled, autoCompressThreshold = threshold))
+            },
+        )
+    }
+    if (showToolOutputDialog) {
+        ToolOutputDialog(
+            enabled = setting.toolOutputEnabled,
+            maxChars = setting.toolOutputMaxChars,
+            onDismiss = { showToolOutputDialog = false },
+            onConfirm = { enabled, maxChars ->
+                vm.updateSettings(setting.copy(toolOutputEnabled = enabled, toolOutputMaxChars = maxChars))
+            },
         )
     }
 }

@@ -136,7 +136,6 @@ fun ChatInput(
     onCancelClick: () -> Unit,
     onSendClick: () -> Unit,
     onLongSendClick: () -> Unit,
-    sessionTotals: TokenBudgetTracker.Totals,
 ) {
     @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
     val clipboardManager = LocalClipboardManager.current
@@ -245,42 +244,6 @@ fun ChatInput(
                         completionProviders = completionProviders,
                         onSendMessage = { sendMessage() }
                     )
-
-                    // 累计 token 统计（会话级累计，仅显示输入/输出/命中缓存）
-                    var pendingCopyText by remember { mutableStateOf("") }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "↑${sessionTotals.inputTokens.toInt().formatNumber()} 输入 (${sessionTotals.cachedTokens.toInt().formatNumber()} 命中缓存) ↓${sessionTotals.outputTokens.toInt().formatNumber()} 输出",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                            modifier = Modifier.weight(1f),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .clickable(onClick = {
-                                    pendingCopyText = "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
-                                })
-                                .padding(2.dp)
-                        ) {
-                            Icon(
-                                imageVector = HugeIcons.Copy01,
-                                contentDescription = "复制累计统计",
-                                tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                        LaunchedEffect(pendingCopyText) {
-                            if (pendingCopyText.isNotEmpty()) {
-                                clipboardManager.setText(AnnotatedString(pendingCopyText))
-                            }
-                        }
-                    }
 
                     Row(
                         modifier = Modifier
