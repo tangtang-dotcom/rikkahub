@@ -732,7 +732,7 @@ private fun ChatFilesPickerSheet(
     if (showToolOutputDialog) {
         ToolOutputDialog(
             enabled = setting.toolOutputEnabled,
-            maxChars = setting.toolOutputMaxChars,
+            maxCharsKB = setting.toolOutputMaxChars,
             onDismiss = { showToolOutputDialog = false },
             onConfirm = { enabled, maxChars ->
                 vm.updateSettings(setting.copy(toolOutputEnabled = enabled, toolOutputMaxChars = maxChars))
