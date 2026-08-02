@@ -26,6 +26,7 @@ concurrency:
 jobs:
   reasonix-review:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,6 +74,7 @@ jobs:
     # 仅手动触发且 fix=true 时执行修复闭环
     if: inputs.fix == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
