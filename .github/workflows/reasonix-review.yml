@@ -1,0 +1,52 @@
+name: Reasonix Review
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reasonix-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 安装 sshpass
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass >/dev/null 2>&1
+
+      - name: SSH 到 ECS 运行 reasonix review
+        env:
+          ECS_HOST: ${{ secrets.ECS_HOST }}
+          ECS_USER: ${{ secrets.ECS_USER }}
+          ECS_PASS: ${{ secrets.ECS_PASS }}
+        run: |
+          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_PASS" ]; then
+            echo "⚠️ 未配置 ECS_HOST/ECS_USER/ECS_PASS Secrets，跳过 review"
+            echo "SKIPPED_NO_SECRETS" > review_result.txt
+            exit 0
+          fi
+          sshpass -p "$ECS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+            $ECS_USER@$ECS_HOST \
+            "cd /root/repo && git fetch origin master && git pull origin master --ff-only && \
+             reasonix review --base HEAD~1 --commit HEAD" > review_result.txt 2>&1 \
+            || echo "REVIEW_FAILED" >> review_result.txt
+          echo "=== review 结果（前 60 行）==="
+          head -60 review_result.txt
+
+      - name: 上传 review 结果
+        uses: actions/upload-artifact@v4
+        with:
+          name: reasonix-review
+          path: review_result.txt
