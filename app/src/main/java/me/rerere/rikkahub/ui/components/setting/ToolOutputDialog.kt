@@ -88,7 +88,7 @@ fun ToolOutputDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(currentEnabled == 1, currentKB.toInt().coerceIn(4, 20))
+                    onConfirm(currentEnabled == 1, currentKB.toInt().coerceIn(1, 20))
                     onDismiss()
                 }
             ) {

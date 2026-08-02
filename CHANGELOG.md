@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-08-02
+
+### 🐛 Bug 修复
+- **工具输出默认值 + 单位修正** — 默认值从 4KB 改为 **5KB**（`PreferencesStore.kt`）；修复 `ChatPage.kt` 中 KB/byte 单位混淆（`maxCharsKB` 传参除以 1024），对话框输回乘回 1024 存 bytes；放宽范围下限至 1KB
+- **累计 Token 统计 UI 收尾** — `sessionTotals` 移至 `ChatPageContent` 确保输入栏可见；`CardGroup` 支持 `onClick`/`content @Composable`
+- **编译错误修复** — 补 `SettingModelPromptPage` 缺的 `Row`/`Spacer`/`width`/`ArrowDown01`/`Tools`/`CardGroupScope` import；`Box`/`AutoCompressDialog`/`ToolOutputDialog` import 校正；删除死 import + 死状态变量
+
+### ✨ 新功能
+- **累计 Token 统计** — 对话消息统计区域新增会话级累计行（↑输入 ↓输出 + 命中缓存），各带复制图标
+- **工具输出限制开关** — 设置页新增 `toolOutputEnabled` 开关，支持 ON/OFF
+- **统计条 UI 中文化** — 消息统计条标签改中文（输入/输出/命中缓存）
+- **自动压缩/工具输出对话框** — 点击弹出设置对话框，新增 `ArrowDown01`/`Tools` 图标
+
+### 🌐 本地化
+- 补 `settings_confirm` / `settings_cancel` / `setting_model_page_tool_output_desc`（en / zh / zh-rHK）
+- 补 TTS 默认播放速度繁中翻译
+- 补充简中 strings（`zh-CN`）
+
+### 🔧 CI/CD
+- push 触发只构建验证，Release 创建/上传仅限 `workflow_dispatch`
+- build-apk workflow 支持 `release_tag` 自定义 + 动态 Release tag + Server酱失败通知
+
+
 ## 2026-08-01
 
 ### ✨ 新功能
