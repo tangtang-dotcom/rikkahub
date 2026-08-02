@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -20,15 +22,18 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -76,6 +81,9 @@ fun SettingFilesPage(
 
     var selectedFolder by remember { mutableStateOf(FileFolders.UPLOAD) }
     var pendingDelete by remember { mutableStateOf<ManagedFileEntity?>(null) }
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf(setOf<Long>()) }
+    var pendingBatchDelete by remember { mutableStateOf(false) }
     val files by filesManager.observe(selectedFolder).collectAsStateWithLifecycle(initialValue = emptyList())
 
     if (pendingDelete != null) {
@@ -109,6 +117,43 @@ fun SettingFilesPage(
         )
     }
 
+    if (pendingBatchDelete) {
+        AlertDialog(
+            onDismissRequest = { pendingBatchDelete = false },
+            title = { Text(stringResource(R.string.setting_files_page_batch_delete)) },
+            text = { Text(stringResource(R.string.setting_files_page_batch_delete_confirm, selectedIds.size)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            var allOk = true
+                            selectedIds.forEach { id ->
+                                if (!filesManager.delete(id, deleteFromDisk = true)) {
+                                    allOk = false
+                                }
+                            }
+                            if (allOk) {
+                                toaster.show(deletedToast)
+                            } else {
+                                toaster.show(deleteFailedToast)
+                            }
+                            selectedIds = emptySet()
+                            selectionMode = false
+                            pendingBatchDelete = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.setting_files_page_delete_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingBatchDelete = false }) {
+                    Text(stringResource(R.string.setting_files_page_cancel_action))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -131,6 +176,48 @@ fun SettingFilesPage(
                     end = innerPadding.calculateEndPadding(layoutDirection),
                 )
         ) {
+            if (files.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (selectionMode) {
+                        Text(stringResource(R.string.setting_files_page_selected_count, selectedIds.size))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (selectedIds.isNotEmpty()) {
+                                TextButton(onClick = { pendingBatchDelete = true }) {
+                                    Text(stringResource(R.string.setting_files_page_batch_delete))
+                                }
+                            }
+                            TextButton(
+                                onClick = {
+                                    selectionMode = false
+                                    selectedIds = emptySet()
+                                }
+                            ) {
+                                Text(stringResource(R.string.setting_files_page_cancel))
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(
+                            onClick = {
+                                selectionMode = true
+                                selectedIds = files.map { it.id }.toSet()
+                            }
+                        ) {
+                            Text(stringResource(R.string.setting_files_page_select_all))
+                        }
+                    }
+                }
+            }
+
             FolderRow(
                 folders = folders,
                 selectedFolder = selectedFolder,
@@ -163,7 +250,13 @@ fun SettingFilesPage(
                         FileItem(
                             file = file,
                             fileOnDisk = filesManager.getFile(file),
-                            onDelete = { pendingDelete = file }
+                            onDelete = { pendingDelete = file },
+                            selectionMode = selectionMode,
+                            selected = file.id in selectedIds,
+                            onToggle = {
+                                selectedIds =
+                                    if (file.id in selectedIds) selectedIds - file.id else selectedIds + file.id
+                            }
                         )
                     }
                 }
@@ -206,9 +299,20 @@ private fun FileItem(
     file: ManagedFileEntity,
     fileOnDisk: File,
     onDelete: () -> Unit,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onToggle: () -> Unit = {},
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (selectionMode) {
+                    Modifier.clickable { onToggle() }
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(containerColor = CustomColors.listItemColors.containerColor)
     ) {
         Column {
@@ -239,14 +343,29 @@ private fun FileItem(
                     }
                 }
 
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.align(Alignment.TopEnd)
-                ) {
-                    Icon(
-                        HugeIcons.Delete01,
-                        contentDescription = stringResource(R.string.setting_files_page_delete_content_description)
-                    )
+                if (selectionMode) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp)
+                    ) {
+                        Checkbox(
+                            checked = selected,
+                            onCheckedChange = { onToggle() }
+                        )
+                    }
+                } else {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            HugeIcons.Delete01,
+                            contentDescription = stringResource(R.string.setting_files_page_delete_content_description)
+                        )
+                    }
                 }
             }
 

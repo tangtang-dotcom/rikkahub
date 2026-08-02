@@ -1911,4 +1911,14 @@
   <string name="settings_confirm">Confirm</string>
   <string name="settings_cancel">Cancel</string>
   <string name="setting_model_page_tool_output_desc">Tool output size limit</string>
+  <string name="aicore_provider_description">Runs Gemini Nano on-device through Android AICore. Off by default — flip the switch to enable. Requires AICore beta on a supported Pixel device.</string>
+  <string name="aicore_provider_short_description">On-device — no API key, no network</string>
+  <string name="litert_provider_description">Runs .litertlm models on-device via LiteRT-LM. Pick a curated model from Settings → Local · LiteRT (Google AI Edge Gallery\'s allowlist) — no API key, no network at inference.</string>
+  <string name="litert_provider_short_description">On-device — LiteRT-LM</string>
+  <string name="setting_provider_page_restore_local_llm">Restore local LLM</string>
+  <string name="setting_files_page_select_all">Select All</string>
+  <string name="setting_files_page_cancel">Cancel</string>
+  <string name="setting_files_page_selected_count">Selected %1$d items</string>
+  <string name="setting_files_page_batch_delete">Batch Delete</string>
+  <string name="setting_files_page_batch_delete_confirm">Delete the %1$d selected files?</string>
 </resources>

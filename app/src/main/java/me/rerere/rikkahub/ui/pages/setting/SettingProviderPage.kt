@@ -11,6 +11,7 @@ import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.Replay
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -71,9 +72,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanQRCode
+import me.rerere.ai.provider.AICORE_PROVIDER_ID
+import me.rerere.ai.provider.LITERT_PROVIDER_ID
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
 import me.rerere.rikkahub.data.datastore.RECOMMENDED_PROVIDERS
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
@@ -147,6 +151,18 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                                 providers = listOf(it) + settings.providers
                             )
                         )
+                    }
+                    RestoreLocalLLMButton {
+                        val localIds = setOf(AICORE_PROVIDER_ID, LITERT_PROVIDER_ID)
+                        val existingIds = settings.providers.map { it.id }.toSet()
+                        val missing = DEFAULT_PROVIDERS.filter { it.id in localIds && it.id !in existingIds }
+                        if (missing.isNotEmpty()) {
+                            vm.updateSettings(
+                                settings.copy(
+                                    providers = missing + settings.providers
+                                )
+                            )
+                        }
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -578,6 +594,16 @@ private fun handleImageQRCode(
     }
 }
 
+
+@Composable
+private fun RestoreLocalLLMButton(onRestore: () -> Unit) {
+    IconButton(onClick = onRestore) {
+        Icon(
+            HugeIcons.Replay,
+            contentDescription = stringResource(R.string.setting_provider_page_restore_local_llm)
+        )
+    }
+}
 
 @Composable
 private fun AddButton(onAdd: (ProviderSetting) -> Unit) {

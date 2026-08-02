@@ -1288,5 +1288,15 @@
   <string name="setting_model_page_tool_output_desc">工具輸出大小限制</string>
   <string name="setting_tts_page_default_playback_speed">預設播放速度</string>
   <string name="setting_tts_page_default_playback_speed_description">本地應用於每個 TTS 提供商，不更改其合成設定。</string>
+  <string name="aicore_provider_description">通過 Android AICore 在裝置上運行 Gemini Nano。預設關閉 — 開啟即可啟用。需要受支援的 Pixel 裝置上的 AICore 測試版。</string>
+  <string name="aicore_provider_short_description">本地運行 — 無需 API 金鑰，無需網路</string>
+  <string name="litert_provider_description">透過 LiteRT-LM 在裝置上運行 .litertlm 模型。從設定 → 本地 · LiteRT（Google AI Edge Gallery 白名單）中選擇精選模型 — 推論時無需 API 金鑰，無需網路。</string>
+  <string name="litert_provider_short_description">本地運行 — LiteRT-LM</string>
+  <string name="setting_provider_page_restore_local_llm">恢復本地 LLM</string>
+  <string name="setting_files_page_select_all">全選</string>
+  <string name="setting_files_page_cancel">取消</string>
+  <string name="setting_files_page_selected_count">已選 %1$d 項</string>
+  <string name="setting_files_page_batch_delete">批量刪除</string>
+  <string name="setting_files_page_batch_delete_confirm">確認刪除所選 %1$d 個檔案？</string>
 </resources>
 
