@@ -338,6 +338,7 @@ private fun ChatPageContent(
                         vm.stopGeneration()
                     },
                     enableSearch = enableWebSearch,
+                    sessionTotals = sessionTotals,
                     onToggleSearch = {
                         val current = setting.getCurrentAssistant()
                         vm.updateSettings(

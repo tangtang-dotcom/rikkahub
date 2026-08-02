@@ -92,7 +92,10 @@ import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
+import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
+import me.rerere.rikkahub.costguards.TokenBudgetTracker
+import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.datastore.Settings
@@ -126,6 +129,7 @@ fun ChatInput(
     settings: Settings,
     hazeState: HazeState,
     enableSearch: Boolean,
+    sessionTotals: TokenBudgetTracker.Totals? = null,
     onToggleSearch: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     completionProviders: List<ChatCompletionProvider> = emptyList(),
@@ -242,6 +246,7 @@ fun ChatInput(
                     TextInputRow(
                         state = state,
                         completionProviders = completionProviders,
+                        sessionTotals = sessionTotals,
                         onSendMessage = { sendMessage() }
                     )
 
@@ -426,6 +431,7 @@ private fun ActionIconButton(
 private fun TextInputRow(
     state: ChatInputState,
     completionProviders: List<ChatCompletionProvider>,
+    sessionTotals: TokenBudgetTracker.Totals? = null,
     onSendMessage: () -> Unit,
 ) {
     val settings = LocalSettings.current
@@ -594,6 +600,29 @@ private fun TextInputRow(
                 }
             } else null,
         )
+        // 显示累计 token 统计（底部输入栏）
+        if (sessionTotals != null && settings.displaySetting.showTokenUsage) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(
+                    imageVector = HugeIcons.Upload02,
+                    contentDescription = "累计输入",
+                    tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "↑${sessionTotals.inputTokens.toInt().formatNumber()} 输入 (${sessionTotals.cachedTokens.toInt().formatNumber()} 命中缓存) ↓${sessionTotals.outputTokens.toInt().formatNumber()} 输出",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                    )
+                )
+            }
+        }
         if (isFullScreen) {
             FullScreenEditor(state = state) {
                 isFullScreen = false
