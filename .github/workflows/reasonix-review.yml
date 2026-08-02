@@ -12,7 +12,7 @@ on:
       fix:
         description: 'true=审查后自动修复（reasonix 改代码 + gradle 编译 + push）'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 permissions:
@@ -71,8 +71,8 @@ jobs:
           path: review_result.txt
 
   reasonix-fix:
-    # 仅手动触发且 fix=true 时执行修复闭环
-    if: inputs.fix == 'true'
+    # 仅手动触发且 fix=true 时执行修复闭环（双保险：inputs 上下文在 job-level if 可能不可用）
+    if: inputs.fix == 'true' || github.event.inputs.fix == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
