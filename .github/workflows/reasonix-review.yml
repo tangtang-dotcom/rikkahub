@@ -109,9 +109,10 @@ jobs:
             # 2. reasonix 按审查结果修复
             reasonix run "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
             # 3. 编译验证（门禁：不通过则退出，不产生提交）
+            # 跳过 web 任务（ECS 无 bun，与本地编译注意事项一致）
             export ANDROID_HOME=/opt/android-sdk
             echo "sdk.dir=/opt/android-sdk" > local.properties
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease --no-daemon -x :web:installWebUiDeps
             # 4. 编译通过 → 提交并推送（走 ECS SSH key）
             git add -A
             git commit -m "fix: Reasonix 审查后自动修复 [skip ci]" || echo "无变更可提交"
