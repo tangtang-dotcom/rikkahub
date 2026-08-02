@@ -8,11 +8,17 @@ on:
       - '*.md'
       - '.github/workflows/*.yml'
   workflow_dispatch:
+    inputs:
+      fix:
+        description: 'true=审查后自动修复（reasonix 改代码 + gradle 编译 + push）'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
-# 并发控制：同一时间仅跑一个 review，新 push 排队等待，避免 ECS /root/repo 互相踩踏
+# 并发控制：同一时间仅跑一个 review/fix，避免 ECS /root/repo 互相踩踏
 concurrency:
   group: reasonix-review
   cancel-in-progress: false
@@ -62,3 +68,58 @@ jobs:
         with:
           name: reasonix-review
           path: review_result.txt
+
+  reasonix-fix:
+    # 仅手动触发且 fix=true 时执行修复闭环
+    if: inputs.fix == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 安装 sshpass
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass >/dev/null 2>&1
+
+      - name: SSH 到 ECS 修复 + 编译 + 提交
+        env:
+          ECS_HOST: ${{ secrets.ECS_HOST }}
+          ECS_USER: ${{ secrets.ECS_USER }}
+          ECS_PASS: ${{ secrets.ECS_PASS }}
+        run: |
+          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_PASS" ]; then
+            echo "::warning::未配置 ECS secrets，跳过修复"
+            exit 0
+          fi
+          sshpass -p "$ECS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+            "$ECS_USER@$ECS_HOST" 'bash -s' << 'REMOTE_EOF'
+            set -e
+            cd /root/repo
+            git fetch origin master
+            git checkout -f -B master origin/master
+            # 1. review 收集问题清单
+            reasonix review --base HEAD~1 --commit HEAD > /tmp/review.txt 2>&1 || true
+            echo "=== 审查结果（前 40 行）==="
+            head -40 /tmp/review.txt
+            # 2. reasonix 按审查结果修复
+            reasonix run "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
+            # 3. 编译验证（门禁：不通过则退出，不产生提交）
+            export ANDROID_HOME=/opt/android-sdk
+            echo "sdk.dir=/opt/android-sdk" > local.properties
+            ./gradlew assembleRelease --no-daemon
+            # 4. 编译通过 → 提交并推送（走 ECS SSH key）
+            git add -A
+            git commit -m "fix: Reasonix 审查后自动修复 [skip ci]" || echo "无变更可提交"
+            git push origin master
+          REMOTE_EOF
+          echo "=== 修复闭环完成 ==="
+
+      - name: 上传修复日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reasonix-fix-log
+          path: /dev/null
