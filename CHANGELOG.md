@@ -1,4 +1,4 @@
-# Changelog — RikkaHub Agents（简版）
+# Changelog — RikkaHub Agents
 
 > 基于 `xiwangone/rikkahub-agents` fork，从 `ExTV/rikkahub-agent` 分叉，随后合入官方 `rikkahub/rikkahub v2.4.3`。
 > 只保留时间线的**功能改动**与**修复成功**记录。~~删除线~~ = 已回退或删除的变更。
