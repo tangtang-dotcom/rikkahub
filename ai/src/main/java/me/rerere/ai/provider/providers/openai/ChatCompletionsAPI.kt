@@ -433,7 +433,8 @@ class ChatCompletionsAPI(
                     }
 
                     "opencode.ai" -> {
-                        if (level != ReasoningLevel.AUTO) {
+                        // reasoning_effort 只接受 low/medium/high；OFF 时不传（上游不接受 "none"）
+                        if (level.isEnabled && level != ReasoningLevel.AUTO) {
                             put("reasoning_effort", level.effort)
                         }
                     }

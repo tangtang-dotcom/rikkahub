@@ -233,7 +233,9 @@ class ResponseAPI(
                     if (capabilities.supportsReasoningSummary) {
                         put("summary", "auto")
                     }
-                    if (level != ReasoningLevel.AUTO) {
+                    // Responses API 的 reasoning.effort 只接受 low/medium/high；
+                    // OFF 时不传（OpenAI 上游不接受 "none"，会 400）
+                    if (level.isEnabled && level != ReasoningLevel.AUTO) {
                         put("effort", level.effort)
                     }
                 })
