@@ -108,7 +108,11 @@ jobs:
             head -40 /tmp/review.txt
             # 2. reasonix 按审查结果修复（acceptEdits：自动批准文件编辑+bash；--continue 复用会话提高缓存命中）
             reasonix run --permission-mode acceptEdits --continue "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
-            # 3. 提交并推送（不带 [skip ci]，push 后由 build-apk 编译验证 + reasonix-review 二轮审查把关）
+            # 3. 编译门禁：修复后的代码先编译验证再 push，坏 commit 不会进 master。
+            #    compileDebugKotlin 无需签名配置，秒级到分钟级；-x buildWebUi 跳过 web 任务（ECS 无 bun）。
+            #    set -e 下编译失败即退出，不会执行后续 push。
+            ./gradlew compileDebugKotlin -x buildWebUi
+            # 4. 提交并推送（不带 [skip ci]，push 后由 build-apk 编译验证 + reasonix-review 二轮审查把关）
             git add -A
             git commit -m "fix: Reasonix 审查后自动修复" || echo "无变更可提交"
             git push origin master
