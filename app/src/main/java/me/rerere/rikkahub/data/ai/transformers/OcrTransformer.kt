@@ -102,7 +102,9 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         }
 
         // 本地 ML Kit OCR 优先（离线、免费、稳定）
-        val localResult = performLocalOcr(part.url)
+        val settings = get<SettingsStore>().settingsFlow.value
+        val localOcrEnabled = settings.ocrLocalEnabled
+        val localResult = if (localOcrEnabled) performLocalOcr(part.url) else null
         if (!localResult.isNullOrBlank()) {
             val ocrResult = """
                 <image_file_ocr>
@@ -115,7 +117,6 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         }
         Log.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
 
-        val settings = get<SettingsStore>().settingsFlow.value
         val model = settings.findModelById(settings.ocrModelId) ?: return "[Image]"
         val providerSetting = model.findProvider(settings.providers) ?: return "[Image]"
         val provider = get<ProviderManager>().getProviderByType(providerSetting)

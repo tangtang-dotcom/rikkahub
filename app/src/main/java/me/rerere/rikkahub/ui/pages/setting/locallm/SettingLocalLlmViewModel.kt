@@ -413,6 +413,34 @@ class SettingLocalLlmViewModel(
     }
 
     /**
+     * Register a locally-imported model file (already copied into the models dir by the
+     * import UI) with the runtime preferences and the LiteRT provider, then refresh the
+     * installed-model list. Mirrors the registration done after a successful download
+     * (see [collectDownloadProgress]).
+     */
+    fun registerImportedModel(fileName: String, absolutePath: String) {
+        viewModelScope.launch {
+            prefs.addInstalledModel(runtime, fileName, absolutePath)
+            val caps = LiteRtModelMetadata.deriveCapabilities(fileName)
+            val model = Model(
+                modelId = fileName,
+                displayName = fileName,
+                inputModalities = caps.inputModalities,
+                abilities = caps.abilities,
+            )
+            updateMyProvider { provider -> provider.addModel(model) }
+            // Enable the provider automatically after a successful import, same as a download.
+            updateMyProvider { provider ->
+                when (provider) {
+                    is ProviderSetting.LiteRtLocal -> provider.copy(enabled = true)
+                    else -> provider
+                }
+            }
+            refreshFromDisk()
+        }
+    }
+
+    /**
      * Delete an installed model file from disk and remove it from the provider's model list.
      * Handles the full three-step cleanup: disk file, LocalRuntimePreferences, provider.models.
      */

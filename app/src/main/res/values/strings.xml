@@ -795,6 +795,8 @@
   <string name="setting_model_page_compress_prompt_vars">Variables: {content}, {target_tokens}, {additional_context}</string>
   <string name="setting_model_page_ocr_model">OCR Model</string>
   <string name="setting_model_page_ocr_model_desc">Model used for optical character recognition on images</string>
+  <string name="setting_model_page_ocr_local">Local OCR</string>
+  <string name="setting_model_page_ocr_local_desc">Use on-device ML Kit first, fall back to AI OCR</string>
   <string name="setting_model_page_ocr_prompt_vars">Variables: Image data: {images}</string>
   <string name="setting_model_page_prompt">Prompt</string>
   <string name="setting_model_page_reset_to_default">Reset to default</string>
@@ -1674,6 +1676,7 @@
   <string name="local_llm_insufficient_memory_format">Need about %1$d MB of free RAM (model is %2$d MB plus runtime headroom) but only %3$d MB is available. Close other apps or pick a smaller model.</string>
   <string name="local_llm_install_url_label">Or paste a HuggingFace URL (/blob/ or /resolve/ both work)</string>
   <string name="local_llm_install_url_action">Install</string>
+  <string name="setting_litert_import_local">Import from local</string>
   <string name="local_llm_tool_calling_litert">Tool calling: prompt-engineered. Accuracy varies per model.</string>
   <string name="local_llm_enable_label">Enable</string>
   <string name="local_llm_install_url_hint">HuggingFace /blob/ or /resolve/ URLs both work.</string>

@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.ui.pages.setting.components
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
@@ -61,6 +65,7 @@ import com.dokar.sonner.ToastType
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.locallm.LocalRuntime
+import me.rerere.locallm.ModelInstall
 import me.rerere.locallm.litert.LiteRtCatalog
 import me.rerere.locallm.litert.LiteRtCatalogEntry
 import me.rerere.rikkahub.R
@@ -71,6 +76,10 @@ import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.setting.locallm.SettingLocalLlmViewModel
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -872,6 +881,48 @@ private fun ColumnScope.ProviderConfigureLiteRT(
     val visionUnavailableSet by vm.visionUnavailableSet.collectAsStateWithLifecycle()
     val perfTelemetry by vm.perfTelemetry.collectAsStateWithLifecycle()
 
+    // 从本地导入 .litertlm 模型文件：验证 magic 后复制进模型目录并注册。
+    val context = LocalContext.current
+    val toaster = LocalToaster.current
+    val scope = rememberCoroutineScope()
+    val importLocalLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            try {
+                val fileName = queryOpenDocumentName(context, uri) ?: "imported.litertlm"
+                val ext = fileName.substringAfterLast('.', "").lowercase()
+                val baseDir = ModelInstall.localModelsDir(context)
+                val target = ModelInstall.targetFile(baseDir, LocalRuntime.LiteRT, fileName)
+                val imported = context.contentResolver.openInputStream(uri)?.use { input ->
+                    // Magic 校验（与下载完成后的完整性检查一致，见 SettingLocalLlmViewModel.refreshFromDisk）
+                    val buf = ByteArray(64)
+                    val n = input.read(buf)
+                    if (n <= 0 || !ModelInstall.isValidMagicForExtension(ext, buf.copyOf(n))) {
+                        false
+                    } else {
+                        target.parentFile?.mkdirs()
+                        FileOutputStream(target).use { output -> input.copyTo(output) }
+                        true
+                    }
+                } ?: false
+                withContext(Dispatchers.Main) {
+                    if (imported) {
+                        vm.registerImportedModel(fileName, target.absolutePath)
+                        toaster.show("Imported $fileName", type = ToastType.Success)
+                    } else {
+                        toaster.show("Invalid model file: magic bytes don't match .litertlm", type = ToastType.Error)
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    toaster.show("Import failed: ${e.message}", type = ToastType.Error)
+                }
+            }
+        }
+    }
+
     provider.description()
 
     // Friendly post-crash banner. Default tone is "we handled it", not "panic".
@@ -943,6 +994,12 @@ private fun ColumnScope.ProviderConfigureLiteRT(
         ) {
             Text(stringResource(R.string.local_llm_download_default))
         }
+    }
+    OutlinedButton(
+        onClick = { importLocalLauncher.launch(arrayOf("*/*")) },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(stringResource(R.string.setting_litert_import_local))
     }
 
     // Manage installed files — rename or delete each downloaded .litertlm.
@@ -1354,3 +1411,13 @@ private fun InstalledModelRow(
         )
     }
 }
+
+/** 从 OpenDocument 返回的 content uri 中解析文件名（DISPLAY_NAME），解析失败返回 null。 */
+private fun queryOpenDocumentName(context: Context, uri: Uri): String? =
+    context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+        ?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) cursor.getString(index) else null
+            } else null
+        }

@@ -781,6 +781,8 @@
   <string name="setting_model_page_compress_prompt_vars">变量：{content}、{target_tokens}、{additional_context}</string>
   <string name="setting_model_page_ocr_model">OCR 模型</string>
   <string name="setting_model_page_ocr_model_desc">用于图像光学字符识别的模型</string>
+  <string name="setting_model_page_ocr_local">本地 OCR</string>
+  <string name="setting_model_page_ocr_local_desc">优先使用设备端 ML Kit 识别，失败时回退 AI OCR</string>
   <string name="setting_model_page_ocr_prompt_vars">变量：图像数据：{images}</string>
   <string name="setting_model_page_prompt">提示词</string>
   <string name="setting_model_page_reset_to_default">重置为默认</string>
@@ -1338,6 +1340,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="local_llm_downloading_format">正在下载… %1$d%%（%2$s / %3$s）</string>
   <string name="local_llm_enable_label">启用</string>
   <string name="local_llm_install_url_action">安装</string>
+  <string name="setting_litert_import_local">从本地导入</string>
   <string name="local_llm_install_url_hint">HuggingFace /blob/ 或 /resolve/ 网址均可。</string>
   <string name="local_llm_install_url_label">或粘贴一个 HuggingFace 网址（/blob/ 或 /resolve/ 均可）</string>
   <string name="local_llm_installed_models_count">已安装 %1$d 个模型。在“模型”标签页中管理它们。</string>

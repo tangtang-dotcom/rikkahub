@@ -434,6 +434,8 @@ private fun TextInputRow(
     onSendMessage: () -> Unit,
 ) {
     val settings = LocalSettings.current
+    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+    val clipboardManager = LocalClipboardManager.current
     val filesManager: FilesManager = koinInject()
     val assistant = settings.getCurrentAssistant()
     val quickMessages = remember(settings.quickMessages, assistant.quickMessageIds) {
@@ -601,6 +603,7 @@ private fun TextInputRow(
         )
         // 显示累计 token 统计（底部输入栏）
         if (sessionTotals != null && settings.displaySetting.showTokenUsage) {
+            var pendingSessionTotalsCopy by remember { mutableStateOf("") }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -620,6 +623,25 @@ private fun TextInputRow(
                         color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
                     )
                 )
+                Box(
+                    modifier = Modifier
+                        .clickable(onClick = {
+                            pendingSessionTotalsCopy = "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
+                        })
+                        .padding(2.dp)
+                ) {
+                    Icon(
+                        imageVector = HugeIcons.Copy01,
+                        contentDescription = "复制累计统计",
+                        tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                LaunchedEffect(pendingSessionTotalsCopy) {
+                    if (pendingSessionTotalsCopy.isNotEmpty()) {
+                        clipboardManager.setText(AnnotatedString(pendingSessionTotalsCopy))
+                    }
+                }
             }
         }
         if (isFullScreen) {
