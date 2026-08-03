@@ -106,13 +106,13 @@ jobs:
             reasonix review --base HEAD~1 --commit HEAD > /tmp/review.txt 2>&1 || true
             echo "=== 审查结果（前 40 行）==="
             head -40 /tmp/review.txt
-            # 2. reasonix 按审查结果修复
-            reasonix run "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
+            # 2. reasonix 按审查结果修复（acceptEdits：自动批准文件编辑，无交互可用）
+            reasonix run --permission-mode acceptEdits "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
             # 3. 编译验证（门禁：不通过则退出，不产生提交）
-            # 跳过 web 任务（ECS 无 bun，与本地编译注意事项一致）
+            # ECS 无 bun/pnpm，跳过 web UI 构建（-x :web:buildWebUi 会连带排除其依赖 installWebUiDeps）
             export ANDROID_HOME=/opt/android-sdk
             echo "sdk.dir=/opt/android-sdk" > local.properties
-            ./gradlew assembleRelease --no-daemon -x :web:installWebUiDeps
+            ./gradlew assembleRelease --no-daemon -x :web:buildWebUi
             # 4. 编译通过 → 提交并推送（走 ECS SSH key）
             git add -A
             git commit -m "fix: Reasonix 审查后自动修复 [skip ci]" || echo "无变更可提交"
