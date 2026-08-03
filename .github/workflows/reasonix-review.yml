@@ -109,7 +109,6 @@ jobs:
             # 2. reasonix 按审查结果修复（acceptEdits：自动批准文件编辑+bash；--continue 复用会话；--effort high 深入分析；--profile delivery 最高质量）
             reasonix run --permission-mode acceptEdits --continue --effort high --max-steps 50 --profile delivery "请根据 /tmp/review.txt 中的审查结论，修复其中所有 Blocking 和 Should-fix 问题。只修改必要的文件，不要改动无关代码。修复完成后停在此处，不要 commit。"
             # 3. 提交并推送（不带 [skip ci]，push 后由 build-apk 编译验证 + reasonix-review 二轮审查把关）
->>>>>>> 81639a28c86f4dd37ff658d37458c2a9a9d6a7e0
             git add -A
             git commit -m "fix: Reasonix 审查后自动修复" || echo "无变更可提交"
             git push origin master
