@@ -171,6 +171,11 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             val context = get<Context>()
             val image: InputImage = when {
                 url.startsWith("file://") -> InputImage.fromFilePath(context, Uri.parse(url))
+                url.startsWith("content://") -> {
+                    val input = context.contentResolver.openInputStream(Uri.parse(url))
+                        ?: return@runCatching null
+                    InputImage.fromInputStream(context, input, 0, 0)
+                }
                 else -> return@runCatching null
             }
 
