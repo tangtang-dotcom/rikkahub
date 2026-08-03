@@ -102,8 +102,8 @@ jobs:
             cd /root/repo
             git fetch origin master
             git checkout -f -B master origin/master
-            # 1. review 收集问题清单
-            reasonix review --base HEAD~1 --commit HEAD > /tmp/review.txt 2>&1 || true
+            # 1. review 收集问题清单（用 run+acceptEdits 替代 review 命令：review 内部调 skill 会被权限阻止）
+            reasonix run --permission-mode acceptEdits --continue --effort high "审查 HEAD~1..HEAD 的改动，输出 Blocking/Should-fix 问题清单，写入 /tmp/review.txt" || true
             echo "=== 审查结果（前 40 行）==="
             head -40 /tmp/review.txt
             # 2. reasonix 按审查结果修复（acceptEdits：自动批准文件编辑+bash；--continue 复用会话；--effort high 深入分析；--profile delivery 最高质量）
