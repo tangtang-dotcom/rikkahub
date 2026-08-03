@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
@@ -174,7 +175,9 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                 url.startsWith("content://") -> {
                     val input = context.contentResolver.openInputStream(Uri.parse(url))
                         ?: return@runCatching null
-                    InputImage.fromInputStream(context, input, 0, 0)
+                    val bitmap = BitmapFactory.decodeStream(input)
+                    if (bitmap == null) return@runCatching null
+                    InputImage.fromBitmap(bitmap)
                 }
                 else -> return@runCatching null
             }
