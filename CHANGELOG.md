@@ -11,6 +11,7 @@
 - **修复** OCR 本地识别支持 `content://` 路径 + Codex OFF 不传 `reasoning_effort=none`（`7d43d0ef`）
 - **修复** OCR content:// 改用 `BitmapFactory` 解码（`fromInputStream` 不存在，`f9bc39ac`）
 - **功能** 累计统计复制按钮 + 本地 OCR 开关（默认开）+ LiteRT 本地导入（`de355aa3`）
+- **功能** 提供商双语描述 + 恢复本地 LLM 按钮 + 移除 LiteRt 添加选项 + 文件管理全选批量删除（`69ca514d`）
 - **修复** 删除 `TokenBudgetTracker` 重复导入，修复 CI 编译错误（`5714ba69`）
 - **修复** 删除误提交的 `review.txt`（reasonix 审查产物，`11b2533e`）
 
