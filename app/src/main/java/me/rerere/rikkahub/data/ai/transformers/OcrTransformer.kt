@@ -75,7 +75,15 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
 
         return withContext(Dispatchers.IO) {
             try {
-                ctx.processingStatus.value = ctx.context.getString(R.string.ocr_status_recognizing)
+                // 仅当存在未被缓存的图片（真正需要 OCR）时才显示提示；历史图片已缓存则跳过，避免每次无图对话都出现"正在识别图片"
+                val needsActualOcr = messages.any { message ->
+                    message.parts.any {
+                        it is UIMessagePart.Image && it.url.startsWith("file:") && cache.get(it.url) == null
+                    }
+                }
+                if (needsActualOcr) {
+                    ctx.processingStatus.value = ctx.context.getString(R.string.ocr_status_recognizing)
+                }
                 messages.map { message ->
                     message.copy(
                         parts = message.parts.map { part ->
