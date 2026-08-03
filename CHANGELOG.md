@@ -7,6 +7,7 @@
 
 ## 2026-08-03
 
+- **修复** OCR 提示仅在真正需要识别（未缓存）时显示，避免历史图片每次触发"正在识别图片"（`e8869ddb`）
 - **修复** OCR 本地识别支持 `content://` 路径 + Codex OFF 不传 `reasoning_effort=none`（`7d43d0ef`）
 - **修复** OCR content:// 改用 `BitmapFactory` 解码（`fromInputStream` 不存在，`f9bc39ac`）
 - **功能** 累计统计复制按钮 + 本地 OCR 开关（默认开）+ LiteRT 本地导入（`de355aa3`）
