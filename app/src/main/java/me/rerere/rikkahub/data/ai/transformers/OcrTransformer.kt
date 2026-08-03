@@ -185,7 +185,9 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                         ?: return@runCatching null
                     val bitmap = BitmapFactory.decodeStream(input)
                     if (bitmap == null) return@runCatching null
-                    InputImage.fromBitmap(bitmap)
+                    // ML Kit 16.x 已移除单参 fromBitmap(Bitmap) 重载；decodeStream 产出的位图
+                    // 未应用 EXIF 旋转，rotationDegrees 传 0 保持原语义
+                    InputImage.fromBitmap(bitmap, 0)
                 }
                 else -> return@runCatching null
             }
