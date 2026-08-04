@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**🤖 Android 设备端 LLM 智能体 · AI 自动维护 · 固定签名编译**
+**🤖 Android 设备端 LLM 智能体 · AI 协助维护 · 固定签名编译**
 
 [![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=最新版本&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
@@ -26,13 +26,13 @@
 |------|------|------|
 | 🔵 **RikkaHub（官方）** | https://github.com/rikkahub/rikkahub | **官方上游项目，本仓库的代码来源** |
 | 🟢 **ExTV/rikkahub-agent（原版）** | https://github.com/ExTV/rikkahub-agent | **原版 Fork，本仓库基于此** |
-| 🟡 **本仓库（AI 维护版）** | https://github.com/xiwangone/rikkahub-agents | **AI 自动合并上游 + 编译** |
+| 🟡 **本仓库（AI 协助维护版）** | https://github.com/xiwangone/rikkahub-agents | **AI 协助合并上游 + 编译** |
 
 > ### ⚠️ 使用须知
 >
 > - **❌ 非官方发布** — 不是 RikkaHub 官方团队发布
 > - **❌ 非原版发布** — 不是 ExTV 原版开发者发布
-> - ✅ 代码来源可信（官方 + 原版），由 AI 自动合并上游代码并使用固定签名编译
+> - ✅ 代码来源可信（官方 + 原版），由 AI 协助合并上游代码并使用固定签名编译
 > - 💡 如遇到问题，建议优先使用 [官方版](https://github.com/rikkahub/rikkahub) 或 [原版 Fork](https://github.com/ExTV/rikkahub-agent)
 
 ---
