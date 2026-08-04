@@ -93,16 +93,6 @@ fun AutoCompressDialog(
                     )
                 }
 
-                // 对话 token 上限：与阈值并列，独立于开关（开关关闭时也可单独设置，开启后生效）
-                OutlinedTextField(
-                    value = currentTokenLimit,
-                    onValueChange = { currentTokenLimit = it.filter { c -> c.isDigit() } },
-                    label = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit)) },
-                    supportingText = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit_desc)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
                 Text(
                     text = "⚠️ 自动压缩将重置当前对话中的历史消息",
                     style = MaterialTheme.typography.bodySmall,
