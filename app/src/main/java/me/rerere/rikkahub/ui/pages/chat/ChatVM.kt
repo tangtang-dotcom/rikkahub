@@ -15,9 +15,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
@@ -221,6 +223,8 @@ class ChatVM(
     /**
      * 自动压缩检查：当前检测值超过会话级触发点（nextTriggerAt）时，
      * 不直接压缩，而是置 [pendingAutoCompressConfirm] 由 ChatPage 弹窗询问用户。
+     * 如果当前正在生成（AI 流式回复中），则等待生成结束后再弹窗，
+     * 避免确认弹窗盖在回复流上。
      */
     private suspend fun maybeAutoCompress(s: Settings) {
         // 模式B：未设置累计上限（0 = 不启用）时不触发
@@ -231,6 +235,10 @@ class ChatVM(
         }
         val current = autoCompressCurrentValue()
         if (current > autoCompressNextTriggerAt!!) {
+            // 生成中不弹窗，延后到生成结束再弹（最多等 5 分钟防死锁）
+            withTimeoutOrNull(300_000L) {
+                conversationJob.first { it == null || !it.isActive }
+            }
             pendingAutoCompressConfirm = true
         }
     }
