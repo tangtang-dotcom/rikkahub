@@ -244,7 +244,13 @@ class SettingsStore(
                 assistantTags = preferences[ASSISTANT_TAGS]?.let {
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
-                providers = decodeProvidersTolerant(preferences[PROVIDERS] ?: "[]"),
+                providers = decodeProvidersTolerant(
+                    preferences[PROVIDERS]?.let { raw ->
+                        // P0 凭证加密：providers 含 apiKey 等，落盘为 AES-GCM 密文。
+                        // 解密失败（旧版明文 / 密钥丢失）回退原文，保证平滑升级。
+                        ProviderCredentialCipher.decrypt(raw) ?: raw
+                    } ?: "[]"
+                ),
                 deletedBuiltInProviderIds = preferences[DELETED_BUILTIN_PROVIDER_IDS]
                     ?.let { raw ->
                         runCatching {
@@ -513,7 +519,11 @@ class SettingsStore(
             preferences[TOOL_OUTPUT_ENABLED] = settings.toolOutputEnabled
             preferences[TOOL_OUTPUT_MAX_CHARS] = settings.toolOutputMaxChars
 
-            preferences[PROVIDERS] = JsonInstant.encodeToString(settings.providers)
+            // P0 凭证加密：providers 含 apiKey / 服务账号私钥等凭证，以 AES-GCM 密文入库，
+            // 明文 JSON 不再落盘（密钥在 AndroidKeyStore，随应用卸载清除）。
+            preferences[PROVIDERS] = ProviderCredentialCipher.encrypt(
+                JsonInstant.encodeToString(settings.providers)
+            )
             preferences[DELETED_BUILTIN_PROVIDER_IDS] = JsonInstant.encodeToString(
                 settings.deletedBuiltInProviderIds.map { it.toString() }.toSet()
             )

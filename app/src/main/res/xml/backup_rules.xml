@@ -9,6 +9,9 @@
    Sensitive paths (Room DBs with SSH credentials, DataStore with tokens,
    `known_hosts`) are excluded as defense-in-depth even though the
    include-only mode already drops them.
+
+   P0 凭证加密后：LLM provider apiKey 等随 `datastore/` 一并排除，且明文已被
+   AES-GCM 密文取代（密钥在 AndroidKeyStore，不随备份迁移）——双保险。
 -->
 <full-backup-content>
   <include

@@ -12,7 +12,8 @@
        under `databases/`. Plaintext today (encrypting at rest is queued).
      - The Telegram bot token lives in `datastore/telegram_bot.preferences_pb`.
      - LLM provider API keys live in the settings DataStore under
-       `datastore/`.
+       `datastore/`.  (P0: 现已 AES-GCM 密文存储，密钥在 AndroidKeyStore 不备份；
+       此处 exclude 仍是必要的纵深防御。)
      - `files/known_hosts` carries SSH host-key trust state — exfilling
        this lets an attacker downgrade-attack you on next connect.
 
