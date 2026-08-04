@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.pebbletemplates.pebble.PebbleEngine
@@ -137,6 +138,7 @@ class SettingsStore(
         val COMPRESS_PROMPT = stringPreferencesKey("compress_prompt")
         val AUTO_COMPRESS_ENABLED = booleanPreferencesKey("auto_compress_enabled")
         val AUTO_COMPRESS_THRESHOLD = intPreferencesKey("auto_compress_threshold")
+        val AUTO_COMPRESS_TOKEN_LIMIT = longPreferencesKey("auto_compress_token_limit")
         val TOOL_OUTPUT_ENABLED = booleanPreferencesKey("tool_output_enabled")
         val TOOL_OUTPUT_MAX_CHARS = intPreferencesKey("tool_output_max_chars")
 
@@ -234,6 +236,7 @@ class SettingsStore(
                 compressPrompt = preferences[COMPRESS_PROMPT] ?: DEFAULT_COMPRESS_PROMPT,
                 autoCompressEnabled = preferences[AUTO_COMPRESS_ENABLED] ?: false,
                 autoCompressThreshold = preferences[AUTO_COMPRESS_THRESHOLD] ?: 80,
+                autoCompressTokenLimit = preferences[AUTO_COMPRESS_TOKEN_LIMIT] ?: 0L,
                 toolOutputEnabled = preferences[TOOL_OUTPUT_ENABLED] ?: false,
                 toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 5 * 1024,
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
@@ -506,6 +509,7 @@ class SettingsStore(
             preferences[COMPRESS_PROMPT] = settings.compressPrompt
             preferences[AUTO_COMPRESS_ENABLED] = settings.autoCompressEnabled
             preferences[AUTO_COMPRESS_THRESHOLD] = settings.autoCompressThreshold
+            preferences[AUTO_COMPRESS_TOKEN_LIMIT] = settings.autoCompressTokenLimit
             preferences[TOOL_OUTPUT_ENABLED] = settings.toolOutputEnabled
             preferences[TOOL_OUTPUT_MAX_CHARS] = settings.toolOutputMaxChars
 
@@ -685,6 +689,8 @@ data class Settings(
     val autoCompressEnabled: Boolean = false,
     /** 自动压缩触发阈值：当前对话估算 token 占模型 context 的百分比 */
     val autoCompressThreshold: Int = 80,
+    /** 对话累计 token 上限：会话累计输入 token 达到该值即自动压缩（0 = 不启用） */
+    val autoCompressTokenLimit: Long = 0L,
     /** 工具输出限制开关：启用后对工具输出进行截断（默认关） */
     val toolOutputEnabled: Boolean = false,
     /** 工具输出落盘阈值（字符数）：超过后截断落盘 + 返回预览，范围 4K-20K */

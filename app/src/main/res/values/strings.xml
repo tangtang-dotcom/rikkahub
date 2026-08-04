@@ -1171,6 +1171,8 @@
   <string name="setting_model_page_auto_compress">Auto Compress Context</string>
   <string name="setting_model_page_auto_compress_desc">Automatically compress long conversations when they approach the context limit</string>
   <string name="setting_model_page_auto_compress_threshold">Trigger threshold (% of context, 50-95)</string>
+  <string name="setting_model_page_auto_compress_token_limit">Conversation token limit</string>
+  <string name="setting_model_page_auto_compress_token_limit_desc">Auto compress when accumulated input tokens exceed this value (0 = disabled)</string>
   <string name="setting_model_page_tool_output">Tool Output Limit</string>
   <string name="setting_model_page_tool_output_max_chars">Tool output limit (KB, 4-20)</string>
   <string name="setting_display_page_bubble_opacity_title">Bubble Opacity</string>

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,11 +30,13 @@ import me.rerere.rikkahub.R
 fun AutoCompressDialog(
     enabled: Boolean,
     threshold: Int,
+    tokenLimit: Long,
     onDismiss: () -> Unit,
-    onConfirm: (enabled: Boolean, threshold: Int) -> Unit
+    onConfirm: (enabled: Boolean, threshold: Int, tokenLimit: Long) -> Unit
 ) {
     var currentEnabled by remember { mutableIntStateOf(if (enabled) 1 else 0) }
     var currentThreshold by remember { mutableFloatStateOf(threshold.toFloat()) }
+    var currentTokenLimit by remember { mutableStateOf(tokenLimit.toString()) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -78,6 +81,15 @@ fun AutoCompressDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+
+                    OutlinedTextField(
+                        value = currentTokenLimit,
+                        onValueChange = { currentTokenLimit = it.filter { c -> c.isDigit() } },
+                        label = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit)) },
+                        supportingText = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit_desc)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
                 }
 
                 Text(
@@ -90,7 +102,11 @@ fun AutoCompressDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(currentEnabled == 1, currentThreshold.toInt().coerceIn(50, 95))
+                    onConfirm(
+                        currentEnabled == 1,
+                        currentThreshold.toInt().coerceIn(50, 95),
+                        currentTokenLimit.toLongOrNull()?.coerceAtLeast(0L) ?: 0L
+                    )
                     onDismiss()
                 }
             ) {

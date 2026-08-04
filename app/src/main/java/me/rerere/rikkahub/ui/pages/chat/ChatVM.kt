@@ -180,10 +180,10 @@ class ChatVM(
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
-        // 自动压缩检查：开关开启且对话接近 context 上限时，先压缩再发送
+        // 自动压缩检查：开关开启或设置了累计 token 上限时，先压缩再发送
         if (answer) {
             val s = settings.value
-            if (s.autoCompressEnabled) {
+            if (s.autoCompressEnabled || s.autoCompressTokenLimit > 0) {
                 viewModelScope.launch { maybeAutoCompress(s) }
             }
         }
@@ -197,6 +197,23 @@ class ChatVM(
      */
     private suspend fun maybeAutoCompress(s: Settings) {
         val conv = conversation.value
+        // 1) 若设置了对话累计 token 上限：用真实累计输入 token（sessionTotals）判断，达到即压缩
+        if (s.autoCompressTokenLimit > 0) {
+            val totalTokens = sessionTotals.value.inputTokens
+            if (totalTokens > s.autoCompressTokenLimit) {
+                chatService.compressConversation(
+                    _conversationId,
+                    conv,
+                    additionalPrompt = "",
+                    targetTokens = 2000,
+                    keepRecentMessages = 32
+                ).onFailure {
+                    chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
+                }
+            }
+            return
+        }
+        // 2) 回退：按 context 阈值百分比触发（开关开启时）
         val totalChars = conv.currentMessages.sumOf { it.toText().length }
         // 估算 token：中文 1 字 ≈ 1 token（英文约 4 字符 ≈ 1 token）。
         // 此前按 /4 估算严重低估中文对话，导致长会话（如累计 4M+ token）永不触发压缩。

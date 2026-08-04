@@ -724,9 +724,16 @@ private fun ChatFilesPickerSheet(
         AutoCompressDialog(
             enabled = setting.autoCompressEnabled,
             threshold = setting.autoCompressThreshold,
+            tokenLimit = setting.autoCompressTokenLimit,
             onDismiss = { showAutoCompressDialog = false },
-            onConfirm = { enabled, threshold ->
-                vm.updateSettings(setting.copy(autoCompressEnabled = enabled, autoCompressThreshold = threshold))
+            onConfirm = { enabled, threshold, tokenLimit ->
+                vm.updateSettings(
+                    setting.copy(
+                        autoCompressEnabled = enabled,
+                        autoCompressThreshold = threshold,
+                        autoCompressTokenLimit = tokenLimit,
+                    )
+                )
             },
         )
     }
