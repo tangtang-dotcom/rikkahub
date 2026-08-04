@@ -48,7 +48,8 @@ fun AutoCompressDialog(
     var currentEnabled by remember { mutableStateOf(enabled) }
     var currentMode by remember { mutableIntStateOf(mode) }
     var currentBase by remember { mutableStateOf(formatMillion(base)) }
-    var currentThreshold by remember { mutableIntStateOf(threshold.coerceIn(50, 95)) }
+    // 以 String 保存输入值，支持自由删除/编辑，避免 5→50→500 追加问题
+    var currentThreshold by remember { mutableStateOf(threshold.toString()) }
     var currentTokenLimit by remember { mutableStateOf(formatMillion(tokenLimit)) }
 
     AlertDialog(
@@ -114,12 +115,8 @@ fun AutoCompressDialog(
                         )
 
                         OutlinedTextField(
-                            value = currentThreshold.toString(),
-                            onValueChange = { value ->
-                                value.toIntOrNull()?.let {
-                                    currentThreshold = it
-                                }
-                            },
+                            value = currentThreshold,
+                            onValueChange = { currentThreshold = it },
                             label = { Text(stringResource(R.string.setting_model_page_auto_compress_threshold)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
@@ -173,7 +170,7 @@ fun AutoCompressDialog(
                         currentEnabled,
                         currentMode,
                         parseMillion(currentBase),
-                        currentThreshold.coerceIn(50, 95),
+                        currentThreshold.toIntOrNull()?.coerceIn(50, 95) ?: 80,
                         parseMillion(currentTokenLimit)
                     )
                     onDismiss()
