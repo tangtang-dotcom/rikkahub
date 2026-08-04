@@ -180,10 +180,10 @@ class ChatVM(
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
-        // 自动压缩检查：开关开启或设置了累计 token 上限时，先压缩再发送
+        // 自动压缩检查：开关开启时，达到阈值或 token 上限（任一）即压缩
         if (answer) {
             val s = settings.value
-            if (s.autoCompressEnabled || s.autoCompressTokenLimit > 0) {
+            if (s.autoCompressEnabled) {
                 viewModelScope.launch { maybeAutoCompress(s) }
             }
         }
@@ -197,31 +197,27 @@ class ChatVM(
      */
     private suspend fun maybeAutoCompress(s: Settings) {
         val conv = conversation.value
-        // 1) 若设置了对话累计 token 上限：用真实累计输入 token（sessionTotals）判断，达到即压缩
+        // 触发条件（任一满足即压缩）：
+        //   a) 设置了对话累计 token 上限，且会话累计输入 token 超过上限
+        //   b) 估算 token 超过模型 context 阈值百分比
+        var shouldCompress = false
         if (s.autoCompressTokenLimit > 0) {
             val totalTokens = sessionTotals.value.inputTokens
             if (totalTokens > s.autoCompressTokenLimit) {
-                chatService.compressConversation(
-                    _conversationId,
-                    conv,
-                    additionalPrompt = "",
-                    targetTokens = 2000,
-                    keepRecentMessages = 32
-                ).onFailure {
-                    chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
-                }
+                shouldCompress = true
             }
-            return
         }
-        // 2) 回退：按 context 阈值百分比触发（开关开启时）
-        val totalChars = conv.currentMessages.sumOf { it.toText().length }
-        // 估算 token：中文 1 字 ≈ 1 token（英文约 4 字符 ≈ 1 token）。
-        // 此前按 /4 估算严重低估中文对话，导致长会话（如累计 4M+ token）永不触发压缩。
-        // 保守按 1:1 估算，宁可略早压缩，不可永不压缩。
-        val estimatedTokens = totalChars
-        // 模型 context 大小：实测 DeepSeek V4 可承载 439.6K 输入，按 512K 估算
-        val contextLimit = 512 * 1024
-        if (estimatedTokens > contextLimit * s.autoCompressThreshold / 100) {
+        if (!shouldCompress) {
+            val totalChars = conv.currentMessages.sumOf { it.toText().length }
+            // 估算 token：中文 1 字 ≈ 1 token（英文约 4 字符 ≈ 1 token）。
+            // 此前按 /4 估算严重低估中文对话，导致长会话（如累计 4M+ token）永不触发压缩。
+            // 保守按 1:1 估算，宁可略早压缩，不可永不压缩。
+            val estimatedTokens = totalChars
+            // 模型 context 大小：实测 DeepSeek V4 可承载 439.6K 输入，按 512K 估算
+            val contextLimit = 512 * 1024
+            shouldCompress = estimatedTokens > contextLimit * s.autoCompressThreshold / 100
+        }
+        if (shouldCompress) {
             chatService.compressConversation(
                 _conversationId,
                 conv,
