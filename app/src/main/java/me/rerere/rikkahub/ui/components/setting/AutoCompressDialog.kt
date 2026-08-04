@@ -81,6 +81,16 @@ fun AutoCompressDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+
+                    // 对话 token 上限：与阈值并列，均在开关内（依赖自动压缩开关，开关关闭时不可设置）
+                    OutlinedTextField(
+                        value = currentTokenLimit,
+                        onValueChange = { currentTokenLimit = it.filter { c -> c.isDigit() } },
+                        label = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit)) },
+                        supportingText = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit_desc)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
                 }
 
                 // 对话 token 上限：与阈值并列，独立于开关（开关关闭时也可单独设置，开启后生效）
