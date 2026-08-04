@@ -242,7 +242,7 @@ class SettingsStore(
                 autoCompressTokenBase = preferences[AUTO_COMPRESS_TOKEN_BASE] ?: 0L,
                 autoCompressMode = preferences[AUTO_COMPRESS_MODE] ?: 0,
                 toolOutputEnabled = preferences[TOOL_OUTPUT_ENABLED] ?: false,
-                toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 5 * 1024,
+                toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 5 * 1000,
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
                     ?: DEFAULT_ASSISTANT_ID,
                 assistantTags = preferences[ASSISTANT_TAGS]?.let {
@@ -714,7 +714,7 @@ data class Settings(
     /** 工具输出限制开关：启用后对工具输出进行截断（默认关） */
     val toolOutputEnabled: Boolean = false,
     /** 工具输出落盘阈值（字符数）：超过后截断落盘 + 返回预览，范围 4K-20K */
-    val toolOutputMaxChars: Int = 5 * 1024,
+    val toolOutputMaxChars: Int = 5 * 1000,
     val assistantId: Uuid = DEFAULT_ASSISTANT_ID,
     val providers: List<ProviderSetting> = DEFAULT_PROVIDERS,
     /**
