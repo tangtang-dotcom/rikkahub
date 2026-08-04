@@ -154,6 +154,18 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
     val toaster = LocalToaster.current
     val context = LocalContext.current
 
+    // 多选删除状态（提升到页面级，供顶栏 actions 使用；与 ModelList 共享）
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by rememberSaveable { mutableStateOf(setOf<Uuid>()) }
+
+    // 切 tab 时自动退出多选，避免状态残留
+    LaunchedEffect(pager.currentPage) {
+        if (selectionMode) {
+            selectionMode = false
+            selectedIds = emptySet()
+        }
+    }
+
     val onEdit = { newProvider: ProviderSetting ->
         val newSettings = settings.copy(
             providers = settings.providers.map {
@@ -192,7 +204,41 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                     }
                 },
                 actions = {
-                    if (provider !is ProviderSetting.Codex && provider !is ProviderSetting.Grok) {
+                    if (selectionMode) {
+                        // 多选模式：全选 / 删除选中 / 关闭
+                        TextButton(
+                            onClick = {
+                                selectedIds = if (selectedIds.size == provider.models.size) {
+                                    emptySet()
+                                } else {
+                                    provider.models.map { it.id }.toSet()
+                                }
+                            }
+                        ) {
+                            Text(stringResource(R.string.setting_provider_page_multi_select_all))
+                        }
+                        TextButton(
+                            onClick = {
+                                val toDelete = provider.models.filter { it.id in selectedIds }
+                                var updated = provider
+                                toDelete.forEach { updated = updated.delModel(it) }
+                                onEdit(updated)
+                                selectedIds = emptySet()
+                                selectionMode = false
+                            }
+                        ) {
+                            Text(
+                                stringResource(R.string.setting_provider_page_delete_selected, selectedIds.size),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(onClick = {
+                            selectedIds = emptySet()
+                            selectionMode = false
+                        }) {
+                            Icon(HugeIcons.Cancel01, null)
+                        }
+                    } else if (provider !is ProviderSetting.Codex && provider !is ProviderSetting.Grok) {
                         val shareSheetState = rememberShareSheetState()
                         ShareSheet(shareSheetState)
                         IconButton(
@@ -259,7 +305,11 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                 1 -> {
                     SettingProviderModelPage(
                         provider = provider,
-                        onEdit = onEdit
+                        onEdit = onEdit,
+                        selectionMode = selectionMode,
+                        selectedIds = selectedIds,
+                        onSelectionModeChange = { selectionMode = it },
+                        onSelectedIdsChange = { selectedIds = it },
                     )
                 }
             }
@@ -398,18 +448,30 @@ private fun SettingProviderConfigPage(
 @Composable
 private fun SettingProviderModelPage(
     provider: ProviderSetting,
-    onEdit: (ProviderSetting) -> Unit
+    onEdit: (ProviderSetting) -> Unit,
+    selectionMode: Boolean,
+    selectedIds: Set<Uuid>,
+    onSelectionModeChange: (Boolean) -> Unit,
+    onSelectedIdsChange: (Set<Uuid>) -> Unit,
 ) {
     ModelList(
         providerSetting = provider,
-        onUpdateProvider = onEdit
+        onUpdateProvider = onEdit,
+        selectionMode = selectionMode,
+        selectedIds = selectedIds,
+        onSelectionModeChange = onSelectionModeChange,
+        onSelectedIdsChange = onSelectedIdsChange,
     )
 }
 
 @Composable
 private fun ModelList(
     providerSetting: ProviderSetting,
-    onUpdateProvider: (ProviderSetting) -> Unit
+    onUpdateProvider: (ProviderSetting) -> Unit,
+    selectionMode: Boolean,
+    selectedIds: Set<Uuid>,
+    onSelectionModeChange: (Boolean) -> Unit,
+    onSelectedIdsChange: (Set<Uuid>) -> Unit,
 ) {
     val providerManager = koinInject<ProviderManager>()
     val toaster = LocalToaster.current
@@ -435,76 +497,12 @@ private fun ModelList(
         }
     }
     var expanded by rememberSaveable { mutableStateOf(true) }
-    // 多选删除模式
-    var selectionMode by rememberSaveable { mutableStateOf(false) }
-    var selectedIds by rememberSaveable { mutableStateOf(setOf<Uuid>()) }
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
         onUpdateProvider(providerSetting.moveMove(from.index, to.index))
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 多选操作栏
-        AnimatedVisibility(
-            visible = selectionMode,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shadowElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.setting_provider_page_selected_count, selectedIds.size),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
-                    )
-                    TextButton(
-                        onClick = {
-                            selectedIds = if (selectedIds.size == providerSetting.models.size) {
-                                emptySet()
-                            } else {
-                                providerSetting.models.map { it.id }.toSet()
-                            }
-                        }
-                    ) {
-                        Text(stringResource(R.string.setting_provider_page_multi_select_all))
-                    }
-                    TextButton(
-                        onClick = {
-                            val toDelete = providerSetting.models.filter { it.id in selectedIds }
-                            var updated = providerSetting
-                            toDelete.forEach { updated = updated.delModel(it) }
-                            onUpdateProvider(updated)
-                            selectedIds = emptySet()
-                            selectionMode = false
-                        }
-                    ) {
-                        Text(
-                            stringResource(R.string.setting_provider_page_delete_selected, selectedIds.size),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    IconButton(onClick = {
-                        selectedIds = emptySet()
-                        selectionMode = false
-                    }) {
-                        Icon(HugeIcons.Cancel01, null)
-                    }
-                }
-            }
-        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -558,26 +556,26 @@ private fun ModelList(
                             selectionMode = selectionMode,
                             selected = item.id in selectedIds,
                             onToggleSelect = {
-                                selectedIds = if (item.id in selectedIds) {
+                                onSelectedIdsChange(if (item.id in selectedIds) {
                                     selectedIds - item.id
                                 } else {
                                     selectedIds + item.id
-                                }
+                                })
                             },
                             onEnterMultiSelect = {
-                                selectionMode = true
-                                selectedIds = setOf(item.id)
+                                onSelectionModeChange(true)
+                                onSelectedIdsChange(setOf(item.id))
                             },
                             modifier = Modifier
                                 .let { mod ->
                                     if (selectionMode) {
                                         mod.combinedClickable(
                                             onClick = {
-                                                selectedIds = if (item.id in selectedIds) {
+                                                onSelectedIdsChange(if (item.id in selectedIds) {
                                                     selectedIds - item.id
                                                 } else {
                                                     selectedIds + item.id
-                                                }
+                                                })
                                             }
                                         )
                                     } else {

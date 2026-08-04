@@ -1708,6 +1708,8 @@
   <string name="local_llm_catalog_tag_speculative">Speculative decoding</string>
   <string name="mcp_error_reconnect_exhausted">Connection lost — maximum reconnect attempts reached</string>
   <string name="ocr_status_recognizing">Recognizing image…</string>
+  <string name="ocr_status_local_recognizing">Recognizing image locally…</string>
+  <string name="ocr_status_ai_recognizing">Recognizing image with AI…</string>
   <string name="share_sheet_title">Share your LLM models</string>
   <string name="setting_provider_page_discount_badge">10% off</string>
   <string name="chat_select_model_first">Please select a model first</string>

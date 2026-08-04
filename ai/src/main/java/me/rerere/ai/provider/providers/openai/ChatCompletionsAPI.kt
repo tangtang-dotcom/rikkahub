@@ -632,21 +632,33 @@ class ChatCompletionsAPI(
                             add(buildJsonObject {
                                 put("role", "user")
                                 putJsonArray("content") {
-                                    add(buildJsonObject {
-                                        put("type", "text")
-                                        put("text", "[Tool ${tool.toolName} produced the image(s) below.]")
-                                    })
-                                    toolImages.forEach { part ->
+                                    if (Modality.IMAGE in supportInputModalities) {
                                         add(buildJsonObject {
-                                            part.encodeBase64().onSuccess { encodedImage ->
-                                                put("type", "image_url")
-                                                put("image_url", buildJsonObject {
-                                                    put("url", encodedImage.base64)
-                                                })
-                                            }.onFailure {
-                                                put("type", "text")
-                                                put("text", "(image encode failed: ${it.message})")
-                                            }
+                                            put("type", "text")
+                                            put("text", "[Tool ${tool.toolName} produced the image(s) below.]")
+                                        })
+                                        toolImages.forEach { part ->
+                                            add(buildJsonObject {
+                                                part.encodeBase64().onSuccess { encodedImage ->
+                                                    put("type", "image_url")
+                                                    put("image_url", buildJsonObject {
+                                                        put("url", encodedImage.base64)
+                                                    })
+                                                }.onFailure {
+                                                    put("type", "text")
+                                                    put("text", "(image encode failed: ${it.message})")
+                                                }
+                                            })
+                                        }
+                                    } else {
+                                        // 模型不支持视觉输入：降级为文本占位，避免上游 400
+                                        // (unknown variant `image_url`, expected `text`)
+                                        add(buildJsonObject {
+                                            put("type", "text")
+                                            put(
+                                                "text",
+                                                "[Tool ${tool.toolName} produced ${toolImages.size} image(s), but the current model does not support image input. Image(s) skipped.]"
+                                            )
                                         })
                                     }
                                 }

@@ -1365,6 +1365,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="local_llm_try_gpu_label">尝试 GPU 加速</string>
   <string name="mcp_error_reconnect_exhausted">连接已断开 — 已达到最大重连次数</string>
   <string name="ocr_status_recognizing">正在识别图片…</string>
+  <string name="ocr_status_local_recognizing">正在本地识别图片…</string>
+  <string name="ocr_status_ai_recognizing">正在用 AI 识别图片…</string>
   <string name="provider_test_no_tool">未调用工具，响应：%1$s</string>
   <string name="provider_test_non_streaming">非流式</string>
   <string name="provider_test_streaming">流式</string>

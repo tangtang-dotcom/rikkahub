@@ -81,15 +81,29 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                         it is UIMessagePart.Image && it.url.startsWith("file:") && cache.get(it.url) == null
                     }
                 }
+                val settings = get<SettingsStore>().settingsFlow.value
+                val localOcrEnabled = settings.ocrLocalEnabled
                 if (needsActualOcr) {
-                    ctx.processingStatus.value = ctx.context.getString(R.string.ocr_status_recognizing)
+                    // 区分提示：本地 OCR 开启时先显示本地识别，回退 AI 时由 performOcr 切换
+                    ctx.processingStatus.value = if (localOcrEnabled) {
+                        ctx.context.getString(R.string.ocr_status_local_recognizing)
+                    } else {
+                        ctx.context.getString(R.string.ocr_status_ai_recognizing)
+                    }
                 }
                 messages.map { message ->
                     message.copy(
                         parts = message.parts.map { part ->
                             when {
                                 part is UIMessagePart.Image && part.url.startsWith("file:") -> {
-                                    UIMessagePart.Text(performOcr(part))
+                                    UIMessagePart.Text(
+                                        performOcr(
+                                            part,
+                                            onFallbackToAi = {
+                                                ctx.processingStatus.value = ctx.context.getString(R.string.ocr_status_ai_recognizing)
+                                            },
+                                        )
+                                    )
                                 }
 
                                 else -> part
@@ -103,7 +117,10 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         }
     }
 
-    suspend fun performOcr(part: UIMessagePart.Image): String = runCatching {
+    suspend fun performOcr(
+        part: UIMessagePart.Image,
+        onFallbackToAi: () -> Unit = {},
+    ): String = runCatching {
         // Check cache first
         cache.get(part.url)?.let { cachedResult ->
             Log.i(TAG, "performOcr: Using cached result for ${part.url}")
@@ -125,6 +142,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             return ocrResult
         }
         Log.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
+        onFallbackToAi()
 
         val model = settings.findModelById(settings.ocrModelId) ?: return "[Image]"
         val providerSetting = model.findProvider(settings.providers) ?: return "[Image]"
