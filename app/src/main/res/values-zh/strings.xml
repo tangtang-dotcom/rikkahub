@@ -1155,11 +1155,19 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_model_page_prompt_compress">上下文压缩</string>
   <string name="setting_model_page_auto_compress">自动压缩上下文</string>
   <string name="setting_model_page_auto_compress_desc">长对话接近上下文上限时自动压缩历史</string>
+  <string name="setting_model_page_auto_compress_enable">启用自动压缩</string>
+  <string name="setting_model_page_auto_compress_mode_percent">百分比模式（基准 × 阈值）</string>
+  <string name="setting_model_page_auto_compress_mode_token">Token 消耗模式</string>
+  <string name="setting_model_page_auto_compress_base">基准（M）</string>
+  <string name="setting_model_page_auto_compress_m_unit">单位 M：1M = 1,000,000 token</string>
   <string name="setting_model_page_auto_compress_threshold">触发阈值（上下文百分比，50-95）</string>
-  <string name="setting_model_page_auto_compress_token_limit">对话 Token 上限</string>
-  <string name="setting_model_page_auto_compress_token_limit_desc">累计输入 Token 超过该值即自动压缩（0 = 不启用）</string>
+  <string name="setting_model_page_auto_compress_token_limit">Token 消耗（M）</string>
+  <string name="setting_model_page_auto_compress_token_limit_desc">累计 Token 消耗超过该值即自动压缩（0 = 不启用）</string>
+  <string name="auto_compress_confirm_title">是否确认压缩？</string>
+  <string name="auto_compress_confirm_desc">压缩将摘要并重置当前对话的历史消息，是否继续？</string>
+  <string name="auto_compress_reset_warning">⚠️ 自动压缩将重置当前对话中的历史消息</string>
   <string name="setting_model_page_tool_output">工具输出限制</string>
-  <string name="setting_model_page_tool_output_max_chars">工具输出限制（KB，4-20）</string>
+  <string name="setting_model_page_tool_output_max_chars">工具输出限制（KB，1-20；如 5 = 5120 字符）</string>
   <string name="setting_display_page_bubble_opacity_title">气泡不透明度</string>
   <string name="setting_provider_page_include_history_reasoning">回传历史思考过程</string>
   <string name="setting_model_page_fast_model">快速模型</string>

@@ -180,7 +180,7 @@ class ChatVM(
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
-        // 自动压缩检查：开关开启时，达到阈值或 token 上限（任一）即压缩
+        // 自动压缩检查：开关开启时，达到触发点（当前模式阈值）即弹窗询问
         if (answer) {
             val s = settings.value
             if (s.autoCompressEnabled) {
@@ -192,42 +192,75 @@ class ChatVM(
     }
 
     /**
-     * 自动压缩：估算当前对话 token 数，超过 context 阈值时触发压缩。
-     * 估算方式：消息文本字符数 / 4（保守近似，中文 1 字 ≈ 1 token）。
+     * 会话级自动压缩触发点（绝对 token 数），null 表示尚未初始化（首次检查时懒初始化）。
+     * 触发后由用户决定：确认压缩 → 回到阈值；取消 → 延后到「当前累计值 + 阈值」。
+     */
+    var autoCompressNextTriggerAt by mutableStateOf<Long?>(null)
+
+    /** 自动压缩触发确认弹窗：达到触发点时置 true，由 ChatPage 弹出「是否确认压缩？」 */
+    var pendingAutoCompressConfirm by mutableStateOf(false)
+
+    /** 百分比模式基准未设置时沿用的默认 context 估算（实测 DeepSeek V4 可承载 439.6K，按 512K 估算） */
+    private val defaultAutoCompressBase: Long = 512 * 1024
+
+    /** 当前模式的触发阈值（绝对 token 数）：模式A = 基准×百分比/100，模式B = token 消耗上限 */
+    private fun autoCompressTriggerPoint(s: Settings): Long = when (s.autoCompressMode) {
+        1 -> s.autoCompressTokenLimit
+        else -> {
+            val base = if (s.autoCompressTokenBase > 0) s.autoCompressTokenBase else defaultAutoCompressBase
+            base * s.autoCompressThreshold.coerceIn(50, 95) / 100
+        }
+    }
+
+    /** 当前模式的累计检测值：模式A = 估算 token（文本字符数 1:1），模式B = 会话累计 totalTokens */
+    private fun autoCompressCurrentValue(): Long = when (settings.value.autoCompressMode) {
+        1 -> sessionTotals.value.totalTokens
+        else -> conversation.value.currentMessages.sumOf { it.toText().length }.toLong()
+    }
+
+    /**
+     * 自动压缩检查：当前检测值超过会话级触发点（nextTriggerAt）时，
+     * 不直接压缩，而是置 [pendingAutoCompressConfirm] 由 ChatPage 弹窗询问用户。
      */
     private suspend fun maybeAutoCompress(s: Settings) {
-        val conv = conversation.value
-        // 触发条件（任一满足即压缩）：
-        //   a) 设置了对话累计 token 上限，且会话累计输入 token 超过上限
-        //   b) 估算 token 超过模型 context 阈值百分比
-        var shouldCompress = false
-        if (s.autoCompressTokenLimit > 0) {
-            val totalTokens = sessionTotals.value.inputTokens
-            if (totalTokens > s.autoCompressTokenLimit) {
-                shouldCompress = true
-            }
+        // 模式B：未设置累计上限（0 = 不启用）时不触发
+        if (s.autoCompressMode == 1 && s.autoCompressTokenLimit <= 0) return
+        // 首次检查：触发点 = 当前模式阈值
+        if (autoCompressNextTriggerAt == null) {
+            autoCompressNextTriggerAt = autoCompressTriggerPoint(s)
         }
-        if (!shouldCompress) {
-            val totalChars = conv.currentMessages.sumOf { it.toText().length }
-            // 估算 token：中文 1 字 ≈ 1 token（英文约 4 字符 ≈ 1 token）。
-            // 此前按 /4 估算严重低估中文对话，导致长会话（如累计 4M+ token）永不触发压缩。
-            // 保守按 1:1 估算，宁可略早压缩，不可永不压缩。
-            val estimatedTokens = totalChars
-            // 模型 context 大小：实测 DeepSeek V4 可承载 439.6K 输入，按 512K 估算
-            val contextLimit = 512 * 1024
-            shouldCompress = estimatedTokens > contextLimit * s.autoCompressThreshold / 100
+        val current = autoCompressCurrentValue()
+        if (current > autoCompressNextTriggerAt!!) {
+            pendingAutoCompressConfirm = true
         }
-        if (shouldCompress) {
+    }
+
+    /** 确认压缩：压缩对话，累计随上下文归零（聚合值自然回落），触发点回到阈值 */
+    fun confirmAutoCompress() {
+        pendingAutoCompressConfirm = false
+        viewModelScope.launch {
             chatService.compressConversation(
                 _conversationId,
-                conv,
+                conversation.value,
                 additionalPrompt = "",
                 targetTokens = 2000,
                 keepRecentMessages = 32
             ).onFailure {
                 chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
             }
+            autoCompressNextTriggerAt = autoCompressTriggerPoint(settings.value)
         }
+    }
+
+    /** 取消压缩：延后触发点 = 当前累计值 + 阈值（累计统计不清零） */
+    fun cancelAutoCompress() {
+        autoCompressNextTriggerAt = autoCompressCurrentValue() + autoCompressTriggerPoint(settings.value)
+        pendingAutoCompressConfirm = false
+    }
+
+    /** 用户重设阈值/模式：触发点 = 当前累计值 + 新阈值 */
+    fun resetAutoCompressTriggerPoint(newSettings: Settings) {
+        autoCompressNextTriggerAt = autoCompressCurrentValue() + autoCompressTriggerPoint(newSettings)
     }
 
     fun handleMessageEdit(parts: List<UIMessagePart>, messageId: Uuid) {
