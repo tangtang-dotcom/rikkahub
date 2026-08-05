@@ -93,12 +93,9 @@ jobs:
             - ARM64 优化包
             - Universal 通用包" || true
           cd app/build/outputs/apk/release
-          for apk in *.apk; do
-            # 资产重命名：app-* → RikkaHub-Agents-*
-            newname=$(echo "$apk" | sed 's/^app-/RikkaHub-Agents-/')
-            mv "$apk" "$newname"
-            gh release upload "$TAG" "$newname" --clobber
-            echo "Uploaded $newname"
+                    for apk in *.apk; do
+            # 文件已在上一步统一重命名（RikkaHub-Agents-*），直接上传
+            gh release upload "$TAG" "$apk" --clobber
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
