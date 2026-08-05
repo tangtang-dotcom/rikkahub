@@ -13,6 +13,9 @@
 [![Last Commit](https://img.shields.io/github/last-commit/xiwangone/rikkahub-agents?color=yellow&label=Last%20Commit&logo=github)](https://github.com/xiwangone/rikkahub-agents/commits/master)
 
 [![Download Latest](https://img.shields.io/badge/⬇️-Download%20Latest-2ea44f?style=for-the-badge&logo=android)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
+[![Reasonix Agents (in development)](https://img.shields.io/badge/🧪-Reasonix%20Agents%20in%20development-8b5cf6?style=for-the-badge)](https://github.com/xiwangone/reasonix-agents)
+
+**🤝 Related project: [Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Native Android client for Reasonix · AI coding assistant (in development)
 
 [**简体中文**](README.md) | **English**
 
@@ -27,6 +30,7 @@
 | 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | **Official upstream, source of this code** |
 | 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | **Original fork this repo is based on** |
 | 🟡 **This Repo (AI-Maintained)** | https://github.com/xiwangone/rikkahub-agents | **AI auto-merges upstream + builds** |
+| 🟣 **Reasonix Agents (sibling project)** | https://github.com/xiwangone/reasonix-agents | **Native Android client for Reasonix (in development)** |
 
 > ### ⚠️ Usage Notice
 >
