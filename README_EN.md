@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**🤖 Android On-Device LLM Agent · AI-Maintained · Fixed-Signature Build**
+**🤖 On-device Agent tool, iteratively maintained by AI** — economical & better cross-session experience via prompt constraints, memory-pointer indexing and workspace file details. More agent modes to explore. (Auto-compact context working, Reasonix collaboration complete, local OCR still in progress...)
 
 [![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=Latest%20Release&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
@@ -17,7 +17,11 @@
 
 **🤝 Related project: [Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Native Android client for Reasonix · AI coding assistant (in development)
 
+> 🔧 **Prerequisite**: Reasonix Agents is a pure client — **self-deploy the Reasonix server** (DeepSeek-Reasonix protocol) locally or on a server; configure address/port/auth to connect. No cloud hosting — bring your own server resources.
+
 [**简体中文**](README.md) | **English**
+
+> <span style="color:red">**❗️❗️❗️ Note: RikkaHub Agents includes 80+ tools — enable on demand, avoid excessive resident resource usage!**</span>
 
 </div>
 

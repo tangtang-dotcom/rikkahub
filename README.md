@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**🤖 Android 设备端 LLM 智能体 · AI 协助维护 · 持续编译**
+**🤖 由 AI 维护迭代的手机端 Agent 工具** —— 通过提示词约束、记忆指针索引、工作区文件详情形成经济及较好的跨会话体验。还有更多 Agent 体验模式待探索。（自动压缩上下文应该能用了，连接 reasonix 协作已完成，本地 OCR 还在修……）
 
 [![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=最新版本&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
@@ -17,7 +17,12 @@
 
 **🤝 相关项目：[Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Reasonix 的 Android 原生客户端 · AI 编码助手（开发中）
 
+> 🔧 **使用前提**：Reasonix Agents 为纯客户端，**需在本地或服务器自部署 Reasonix 服务端**（DeepSeek-Reasonix 协议）——通过配置服务器地址/端口/认证连接使用，不支持云端托管，请自备服务资源。
+
+
 [**English**](README_EN.md) | **简体中文**
+
+> <span style="color:red">**❗️❗️❗️ 注：RikkaHub Agents 包含 80+ 工具，请按需启用，避免常驻过多增加消耗！！！**</span>
 
 </div>
 
