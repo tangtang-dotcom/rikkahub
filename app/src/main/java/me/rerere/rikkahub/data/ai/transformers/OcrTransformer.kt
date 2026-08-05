@@ -205,6 +205,10 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         runCatching {
             val context = get<Context>()
             val image: InputImage = when {
+                // 绝对路径（文件管理器返回 /storage/emulated/0/... 等，无 scheme）
+                url.startsWith("/") || (!url.startsWith("file:") && !url.startsWith("content:") && url.startsWith("file:///") == false && android.net.Uri.parse(url).scheme == null) -> {
+                    InputImage.fromFilePath(context, android.net.Uri.fromFile(java.io.File(url)))
+                }
                 url.startsWith("file://") -> InputImage.fromFilePath(context, Uri.parse(url))
                 url.startsWith("content://") -> {
                     // 采样解码（防高清相册大图 OOM）：先量尺寸，再按需采样（最长边 <= 2048）
