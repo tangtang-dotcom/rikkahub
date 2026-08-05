@@ -12,6 +12,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,8 @@ import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
+import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.UiState
@@ -71,6 +74,9 @@ class ChatVM(
     // 聊天输入状态 - 保存在 ViewModel 中避免 TransactionTooLargeException
     val inputState = ChatInputState()
 
+    // 自动任务调度 Job
+    private var autoTaskJob: Job? = null
+
     // 异步任务 (从ChatService获取，响应式)
     val conversationJob: StateFlow<Job?> =
         chatService
@@ -100,6 +106,7 @@ class ChatVM(
 
     override fun onCleared() {
         super.onCleared()
+        cancelAutoTask()
         // 移除对话引用
         chatService.removeConversationReference(_conversationId)
     }
@@ -454,4 +461,69 @@ class ChatVM(
         }
     }
 
+    /**
+     * 调度自动任务：根据配置的触发模式启动定时器或空闲监听。
+     * 触发后自动清除配置（一次性触发）。
+     */
+    fun scheduleAutoTask(config: AutoTaskConfig) {
+        cancelAutoTask()
+
+        if (config.intervalSeconds <= 0) return
+
+        autoTaskJob = viewModelScope.launch {
+            when (config.mode) {
+                0 -> {
+                    // 固定时间触发：延迟指定秒数后发送
+                    delay(config.intervalSeconds * 1000L)
+                    handleMessageSend(
+                        listOf(UIMessagePart.Text(config.message)),
+                        answer = true
+                    )
+                    writeAutoTaskConfig(context, AutoTaskConfig())
+                }
+
+                1 -> {
+                    // 不定时触发：监听会话空闲状态
+                    while (isActive) {
+                        val job = conversationJob.value
+                        if (job != null && job.isActive) {
+                            try {
+                                withTimeoutOrNull(300_000L) {
+                                    conversationJob.first { it == null || !it.isActive }
+                                }
+                            } catch (_: Exception) { }
+                        }
+
+                        var idleSeconds = 0
+                        while (idleSeconds < config.intervalSeconds && isActive) {
+                            delay(1_000L)
+                            val currentJob = conversationJob.value
+                            if (currentJob != null && currentJob.isActive) {
+                                idleSeconds = 0
+                                break
+                            }
+                            idleSeconds++
+                        }
+
+                        if (idleSeconds >= config.intervalSeconds && isActive) {
+                            handleMessageSend(
+                                listOf(UIMessagePart.Text(config.message)),
+                                answer = true
+                            )
+                            writeAutoTaskConfig(context, AutoTaskConfig())
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 取消当前调度的自动任务。
+     */
+    fun cancelAutoTask() {
+        autoTaskJob?.cancel()
+        autoTaskJob = null
+    }
 }

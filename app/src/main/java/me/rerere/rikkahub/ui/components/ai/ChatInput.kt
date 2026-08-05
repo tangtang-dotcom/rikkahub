@@ -136,6 +136,7 @@ fun ChatInput(
     onUpdateAssistant: (Assistant) -> Unit,
     onUpdateSearchService: (Int) -> Unit,
     onMoreClick: () -> Unit,
+    onAutoClick: () -> Unit = {},
     onCancelClick: () -> Unit,
     onSendClick: () -> Unit,
     onLongSendClick: () -> Unit,
@@ -309,6 +310,15 @@ fun ChatInput(
                                 )
                             }
 
+                        }
+
+                        ActionIconButton(
+                            onClick = onAutoClick
+                        ) {
+                            Icon(
+                                imageVector = HugeIcons.Zap,
+                                contentDescription = "自动任务"
+                            )
                         }
 
                         ActionIconButton(

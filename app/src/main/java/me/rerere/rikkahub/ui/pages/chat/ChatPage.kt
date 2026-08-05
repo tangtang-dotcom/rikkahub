@@ -75,6 +75,10 @@ import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
+import me.rerere.rikkahub.ui.components.ai.AutoTaskDialog
+import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
+import me.rerere.rikkahub.ui.components.ai.readAutoTaskConfig
+import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
@@ -308,6 +312,8 @@ private fun ChatPageContent(
     val hazeState = rememberHazeState()
     val assistant = setting.getCurrentAssistant()
     var showFilesSheet by remember { mutableStateOf(false) }
+    var showAutoTaskDialog by remember { mutableStateOf(false) }
+    var autoTaskConfig by remember { mutableStateOf(readAutoTaskConfig(context)) }
 
     val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
         assistant.workspaceId?.let { workspaceId ->
@@ -434,6 +440,10 @@ private fun ChatPageContent(
                     onMoreClick = {
                         showFilesSheet = true
                     },
+                    onAutoClick = {
+                        autoTaskConfig = readAutoTaskConfig(context)
+                        showAutoTaskDialog = true
+                    },
                 )
             },
             containerColor = Color.Transparent,
@@ -523,6 +533,18 @@ private fun ChatPageContent(
                 assistant = assistant,
                 vm = vm,
                 onDismiss = { showFilesSheet = false },
+            )
+        }
+
+        if (showAutoTaskDialog) {
+            AutoTaskDialog(
+                config = autoTaskConfig,
+                onDismiss = { showAutoTaskDialog = false },
+                onConfirm = { config ->
+                    autoTaskConfig = config
+                    writeAutoTaskConfig(context, config)
+                    vm.scheduleAutoTask(config)
+                },
             )
         }
     }
