@@ -13,8 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,7 +31,8 @@ fun ToolOutputDialog(
     onConfirm: (enabled: Boolean, maxCharsKB: Int) -> Unit
 ) {
     var currentEnabled by remember { mutableIntStateOf(if (enabled) 1 else 0) }
-    var currentKB by remember { mutableFloatStateOf(maxCharsKB.toFloat()) }
+    // 以 String 保存输入值（而非 Float/Int），支持自由删除/编辑，避免 5→50→500 追加问题
+    var currentKB by remember { mutableStateOf(maxCharsKB.toString()) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -66,12 +67,8 @@ fun ToolOutputDialog(
 
                 if (currentEnabled == 1) {
                     OutlinedTextField(
-                        value = currentKB.toString(),
-                        onValueChange = { value ->
-                            value.toIntOrNull()?.let {
-                                currentKB = it.toFloat()
-                            }
-                        },
+                        value = currentKB,
+                        onValueChange = { currentKB = it },
                         label = { Text(stringResource(R.string.setting_model_page_tool_output_max_chars)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -88,7 +85,8 @@ fun ToolOutputDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(currentEnabled == 1, currentKB.toInt().coerceIn(1, 20))
+                    // 空输入/非法输入回退默认 5KB；合法输入钳制在 1-20
+                    onConfirm(currentEnabled == 1, currentKB.toIntOrNull()?.coerceIn(1, 20) ?: 5)
                     onDismiss()
                 }
             ) {

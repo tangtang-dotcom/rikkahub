@@ -68,8 +68,9 @@ import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "GenerationHandler"
-private const val MAX_TOOL_OUTPUT_CHARS = 16 * 1024
-private const val TOOL_OUTPUT_PREVIEW_CHARS = 4 * 1024
+private const val MAX_TOOL_OUTPUT_CHARS = 16 * 1000
+private const val TOOL_OUTPUT_PREVIEW_CHARS = 4 * 1000
+private const val MAX_TOOL_OUTPUT_FILES = 50   // tool_outputs 保留最近 N 个，防止无限累积
 
 /**
  * Keys whose string values are sensitive enough that the raw value MUST NOT land in
@@ -1099,6 +1100,15 @@ class GenerationHandler(
         val fileName = "${toolCallId}.txt"
         val outputDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
         File(outputDir, fileName).writeText(fullText)
+
+        // 清理：保留最近 MAX_TOOL_OUTPUT_FILES 个截断输出，防止 /tool_outputs/ 无限累积
+        outputDir.listFiles()?.let { files ->
+            if (files.size > MAX_TOOL_OUTPUT_FILES) {
+                files.sortedBy { it.lastModified() }
+                    .take(files.size - MAX_TOOL_OUTPUT_FILES)
+                    .forEach { it.delete() }
+            }
+        }
 
         return listOf(
             UIMessagePart.Text(

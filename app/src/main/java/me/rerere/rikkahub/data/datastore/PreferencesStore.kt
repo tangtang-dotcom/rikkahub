@@ -139,6 +139,8 @@ class SettingsStore(
         val AUTO_COMPRESS_ENABLED = booleanPreferencesKey("auto_compress_enabled")
         val AUTO_COMPRESS_THRESHOLD = intPreferencesKey("auto_compress_threshold")
         val AUTO_COMPRESS_TOKEN_LIMIT = longPreferencesKey("auto_compress_token_limit")
+        val AUTO_COMPRESS_TOKEN_BASE = longPreferencesKey("auto_compress_token_base")
+        val AUTO_COMPRESS_MODE = intPreferencesKey("auto_compress_mode")
         val TOOL_OUTPUT_ENABLED = booleanPreferencesKey("tool_output_enabled")
         val TOOL_OUTPUT_MAX_CHARS = intPreferencesKey("tool_output_max_chars")
 
@@ -237,14 +239,22 @@ class SettingsStore(
                 autoCompressEnabled = preferences[AUTO_COMPRESS_ENABLED] ?: false,
                 autoCompressThreshold = preferences[AUTO_COMPRESS_THRESHOLD] ?: 80,
                 autoCompressTokenLimit = preferences[AUTO_COMPRESS_TOKEN_LIMIT] ?: 0L,
+                autoCompressTokenBase = preferences[AUTO_COMPRESS_TOKEN_BASE] ?: 0L,
+                autoCompressMode = preferences[AUTO_COMPRESS_MODE] ?: 0,
                 toolOutputEnabled = preferences[TOOL_OUTPUT_ENABLED] ?: false,
-                toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 5 * 1024,
+                toolOutputMaxChars = preferences[TOOL_OUTPUT_MAX_CHARS] ?: 5 * 1000,
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
                     ?: DEFAULT_ASSISTANT_ID,
                 assistantTags = preferences[ASSISTANT_TAGS]?.let {
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
-                providers = decodeProvidersTolerant(preferences[PROVIDERS] ?: "[]"),
+                providers = decodeProvidersTolerant(
+                    preferences[PROVIDERS]?.let { raw ->
+                        // P0 凭证加密：providers 含 apiKey 等，落盘为 AES-GCM 密文。
+                        // 解密失败（旧版明文 / 密钥丢失）回退原文，保证平滑升级。
+                        ProviderCredentialCipher.decrypt(raw) ?: raw
+                    } ?: "[]"
+                ),
                 deletedBuiltInProviderIds = preferences[DELETED_BUILTIN_PROVIDER_IDS]
                     ?.let { raw ->
                         runCatching {
@@ -510,10 +520,16 @@ class SettingsStore(
             preferences[AUTO_COMPRESS_ENABLED] = settings.autoCompressEnabled
             preferences[AUTO_COMPRESS_THRESHOLD] = settings.autoCompressThreshold
             preferences[AUTO_COMPRESS_TOKEN_LIMIT] = settings.autoCompressTokenLimit
+            preferences[AUTO_COMPRESS_TOKEN_BASE] = settings.autoCompressTokenBase
+            preferences[AUTO_COMPRESS_MODE] = settings.autoCompressMode
             preferences[TOOL_OUTPUT_ENABLED] = settings.toolOutputEnabled
             preferences[TOOL_OUTPUT_MAX_CHARS] = settings.toolOutputMaxChars
 
-            preferences[PROVIDERS] = JsonInstant.encodeToString(settings.providers)
+            // P0 凭证加密：providers 含 apiKey / 服务账号私钥等凭证，以 AES-GCM 密文入库，
+            // 明文 JSON 不再落盘（密钥在 AndroidKeyStore，随应用卸载清除）。
+            preferences[PROVIDERS] = ProviderCredentialCipher.encrypt(
+                JsonInstant.encodeToString(settings.providers)
+            )
             preferences[DELETED_BUILTIN_PROVIDER_IDS] = JsonInstant.encodeToString(
                 settings.deletedBuiltInProviderIds.map { it.toString() }.toSet()
             )
@@ -691,10 +707,14 @@ data class Settings(
     val autoCompressThreshold: Int = 80,
     /** 对话累计 token 上限：会话累计输入 token 达到该值即自动压缩（0 = 不启用） */
     val autoCompressTokenLimit: Long = 0L,
+    /** 自动压缩基准 token 数：百分比模式下模型 context 基准（0 = 沿用默认 512K 估算） */
+    val autoCompressTokenBase: Long = 0L,
+    /** 自动压缩模式：0 = 百分比模式（基准×阈值），1 = token 消耗模式（累计上限） */
+    val autoCompressMode: Int = 0,
     /** 工具输出限制开关：启用后对工具输出进行截断（默认关） */
     val toolOutputEnabled: Boolean = false,
     /** 工具输出落盘阈值（字符数）：超过后截断落盘 + 返回预览，范围 4K-20K */
-    val toolOutputMaxChars: Int = 5 * 1024,
+    val toolOutputMaxChars: Int = 5 * 1000,
     val assistantId: Uuid = DEFAULT_ASSISTANT_ID,
     val providers: List<ProviderSetting> = DEFAULT_PROVIDERS,
     /**

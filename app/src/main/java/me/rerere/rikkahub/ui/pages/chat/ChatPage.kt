@@ -259,6 +259,26 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
             }
         }
     }
+
+    // 自动压缩触发确认弹窗：达到触发点时询问「是否确认压缩？」
+    // 确认 → 压缩；取消 → 延后触发点（当前累计值 + 阈值，累计统计不清零）
+    if (vm.pendingAutoCompressConfirm) {
+        AlertDialog(
+            onDismissRequest = { vm.cancelAutoCompress() },
+            title = { Text(stringResource(R.string.auto_compress_confirm_title)) },
+            text = { Text(stringResource(R.string.auto_compress_confirm_desc)) },
+            confirmButton = {
+                TextButton(onClick = { vm.confirmAutoCompress() }) {
+                    Text(stringResource(R.string.settings_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.cancelAutoCompress() }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -723,27 +743,32 @@ private fun ChatFilesPickerSheet(
     if (showAutoCompressDialog) {
         AutoCompressDialog(
             enabled = setting.autoCompressEnabled,
+            mode = setting.autoCompressMode,
+            base = setting.autoCompressTokenBase,
             threshold = setting.autoCompressThreshold,
             tokenLimit = setting.autoCompressTokenLimit,
             onDismiss = { showAutoCompressDialog = false },
-            onConfirm = { enabled, threshold, tokenLimit ->
-                vm.updateSettings(
-                    setting.copy(
-                        autoCompressEnabled = enabled,
-                        autoCompressThreshold = threshold,
-                        autoCompressTokenLimit = tokenLimit,
-                    )
+            onConfirm = { enabled, mode, base, threshold, tokenLimit ->
+                val newSettings = setting.copy(
+                    autoCompressEnabled = enabled,
+                    autoCompressMode = mode,
+                    autoCompressTokenBase = base,
+                    autoCompressThreshold = threshold,
+                    autoCompressTokenLimit = tokenLimit,
                 )
+                vm.updateSettings(newSettings)
+                // 用户重设阈值/模式 → 触发点 = 当前累计值 + 新阈值
+                vm.resetAutoCompressTriggerPoint(newSettings)
             },
         )
     }
     if (showToolOutputDialog) {
         ToolOutputDialog(
             enabled = setting.toolOutputEnabled,
-            maxCharsKB = setting.toolOutputMaxChars / 1024,
+            maxCharsKB = setting.toolOutputMaxChars / 1000,
             onDismiss = { showToolOutputDialog = false },
             onConfirm = { enabled, maxChars ->
-                vm.updateSettings(setting.copy(toolOutputEnabled = enabled, toolOutputMaxChars = maxChars * 1024))
+                vm.updateSettings(setting.copy(toolOutputEnabled = enabled, toolOutputMaxChars = maxChars * 1000))
             },
         )
     }
