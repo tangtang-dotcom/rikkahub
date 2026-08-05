@@ -68,14 +68,15 @@ private val LocalCardColor = staticCompositionLocalOf { Color.White }
 @Composable
 fun <T> ChainOfThought(
     modifier: Modifier = Modifier,
-    cardColors: CardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ),
+    cardColors: CardColors =
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
     steps: List<T>,
     collapsedVisibleCount: Int = 2,
     collapsedAdaptiveWidth: Boolean = false,
     forceExpanded: Boolean = false,
-    content: @Composable ChainOfThoughtScope.(T) -> Unit
+    content: @Composable ChainOfThoughtScope.(T) -> Unit,
 ) {
     var userExpanded by remember { mutableStateOf(false) }
     // forceExpanded overrides the user's collapse — used when one of the steps
@@ -87,7 +88,7 @@ fun <T> ChainOfThought(
     val shouldFillCollapseControlWidth = expanded || !collapsedAdaptiveWidth
 
     CompositionLocalProvider(
-        LocalCardColor provides cardColors.containerColor
+        LocalCardColor provides cardColors.containerColor,
     ) {
         Card(
             modifier = modifier,
@@ -95,32 +96,34 @@ fun <T> ChainOfThought(
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-                    .animateContentSize(
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
-                    ),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .animateContentSize(
+                            animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        ),
             ) {
-                val visibleSteps = if (expanded || !canCollapse) {
-                    steps
-                } else {
-                    steps.takeLast(collapsedVisibleCount)
-                }
+                val visibleSteps =
+                    if (expanded || !canCollapse) {
+                        steps
+                    } else {
+                        steps.takeLast(collapsedVisibleCount)
+                    }
 
                 // 显示展开/折叠按钮（统一在顶部）
                 if (canCollapse) {
                     Row(
-                        modifier = Modifier
-                            .then(
-                                if (shouldFillCollapseControlWidth) {
-                                    Modifier.fillMaxWidth()
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { userExpanded = !expanded }
-                            .padding(vertical = 4.dp),
+                        modifier =
+                            Modifier
+                                .then(
+                                    if (shouldFillCollapseControlWidth) {
+                                        Modifier.fillMaxWidth()
+                                    } else {
+                                        Modifier
+                                    },
+                                ).clip(MaterialTheme.shapes.small)
+                                .clickable { userExpanded = !expanded }
+                                .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // 左侧：图标区域（24.dp，和步骤图标对齐）
@@ -139,14 +142,15 @@ fun <T> ChainOfThought(
                         // 右侧：文字区域（8.dp 间距后开始，和步骤 label 对齐）
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text = if (expanded) {
-                                stringResource(R.string.chain_of_thought_collapse)
-                            } else {
-                                stringResource(
-                                    R.string.chain_of_thought_show_more_steps,
-                                    steps.size - collapsedVisibleCount
-                                )
-                            },
+                            text =
+                                if (expanded) {
+                                    stringResource(R.string.chain_of_thought_collapse)
+                                } else {
+                                    stringResource(
+                                        R.string.chain_of_thought_show_more_steps,
+                                        steps.size - collapsedVisibleCount,
+                                    )
+                                },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -156,16 +160,17 @@ fun <T> ChainOfThought(
                 val lineColor = MaterialTheme.colorScheme.outlineVariant
                 val scope = remember { ChainOfThoughtScopeImpl() }
                 Box(
-                    modifier = Modifier.drawBehind {
-                        val x = 12.dp.toPx()
-                        val offsetPx = 18.dp.toPx()
-                        drawLine(
-                            color = lineColor,
-                            start = Offset(x, offsetPx),
-                            end = Offset(x, size.height - offsetPx),
-                            strokeWidth = 1.dp.toPx()
-                        )
-                    }
+                    modifier =
+                        Modifier.drawBehind {
+                            val x = 12.dp.toPx()
+                            val offsetPx = 18.dp.toPx()
+                            drawLine(
+                                color = lineColor,
+                                start = Offset(x, offsetPx),
+                                end = Offset(x, size.height - offsetPx),
+                                strokeWidth = 1.dp.toPx(),
+                            )
+                        },
                 ) {
                     Column {
                         visibleSteps.fastForEach { step ->
@@ -242,7 +247,7 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
         extra: @Composable (() -> Unit)?,
         onClick: (() -> Unit)?,
         collapsedAdaptiveWidth: Boolean,
-        content: @Composable (() -> Unit)?
+        content: @Composable (() -> Unit)?,
     ) {
         var expanded by remember { mutableStateOf(false) }
         ChainOfThoughtStepContent(
@@ -268,7 +273,7 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
         onClick: (() -> Unit)?,
         collapsedAdaptiveWidth: Boolean,
         contentVisible: Boolean,
-        content: @Composable (() -> Unit)?
+        content: @Composable (() -> Unit)?,
     ) {
         ChainOfThoughtStepContent(
             icon = icon,
@@ -293,44 +298,44 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
         expanded: Boolean,
         onExpandedChange: (Boolean) -> Unit,
         contentVisible: Boolean,
-        content: @Composable (() -> Unit)?
+        content: @Composable (() -> Unit)?,
     ) {
         val hasContent = content != null
         val shouldFillMaxWidth = !collapsedAdaptiveWidth || contentVisible
 
         Column(
-            modifier = Modifier.then(
-                if (shouldFillMaxWidth) {
-                    Modifier.fillMaxWidth()
-                } else {
-                    Modifier
-                }
-            ),
+            modifier =
+                Modifier.then(
+                    if (shouldFillMaxWidth) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier
+                    },
+                ),
         ) {
             // Label 行：Icon + Label + Extra + 指示器
             Row(
-                modifier = Modifier
-                    .then(
-                        if (shouldFillMaxWidth) {
-                            Modifier.fillMaxWidth()
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .then(
-                        if (onClick != null) {
-                            Modifier
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable { onClick() }
-                        } else if (hasContent) {
-                            Modifier
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable { onExpandedChange(!expanded) }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .padding(vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .then(
+                            if (shouldFillMaxWidth) {
+                                Modifier.fillMaxWidth()
+                            } else {
+                                Modifier
+                            },
+                        ).then(
+                            if (onClick != null) {
+                                Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { onClick() }
+                            } else if (hasContent) {
+                                Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { onExpandedChange(!expanded) }
+                            } else {
+                                Modifier
+                            },
+                        ).padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -340,9 +345,10 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(LocalCardColor.current),
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .background(LocalCardColor.current),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (icon != null) {
@@ -354,10 +360,11 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
                             }
                         } else {
                             Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onSurfaceVariant)
+                                modifier =
+                                    Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.onSurfaceVariant),
                             )
                         }
                     }
@@ -365,13 +372,14 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
 
                 // Label
                 Box(
-                    modifier = Modifier.then(
-                        if (shouldFillMaxWidth) {
-                            Modifier.weight(1f)
-                        } else {
-                            Modifier
-                        }
-                    )
+                    modifier =
+                        Modifier.then(
+                            if (shouldFillMaxWidth) {
+                                Modifier.weight(1f)
+                            } else {
+                                Modifier
+                            },
+                        ),
                 ) {
                     label()
                 }
@@ -402,15 +410,15 @@ private class ChainOfThoughtScopeImpl : ChainOfThoughtScope {
             // 展开内容（缩进对齐 label）
             if (contentVisible && hasContent) {
                 Box(
-                    modifier = Modifier
-                        .then(
-                            if (shouldFillMaxWidth) {
-                                Modifier.fillMaxWidth()
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .padding(start = 32.dp, top = 4.dp, bottom = 8.dp)
+                    modifier =
+                        Modifier
+                            .then(
+                                if (shouldFillMaxWidth) {
+                                    Modifier.fillMaxWidth()
+                                } else {
+                                    Modifier
+                                },
+                            ).padding(start = 32.dp, top = 4.dp, bottom = 8.dp),
                 ) {
                     content()
                 }
@@ -438,9 +446,9 @@ private fun ChainOfThoughtPreview() {
                 TopAppBar(
                     title = {
                         Text("Chain of thought")
-                    }
+                    },
                 )
-            }
+            },
         ) { innerPadding ->
             Column(
                 modifier = Modifier.padding(innerPadding),
@@ -449,77 +457,88 @@ private fun ChainOfThoughtPreview() {
                 var controlledExpanded by remember { mutableStateOf(false) }
 
                 ChainOfThought(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    steps = listOf(
-                        StepData("Searching the web", HugeIcons.Search01, "3 results", hasContent = true),
-                        StepData("Reading documents", HugeIcons.Sparkles, "Completed", hasOnClick = true),
-                        StepData(
-                            "Analyzing results (controlled)",
-                            HugeIcons.Sparkles,
-                            "In progress",
-                            hasContent = true,
-                            controlled = true
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    steps =
+                        listOf(
+                            StepData("Searching the web", HugeIcons.Search01, "3 results", hasContent = true),
+                            StepData("Reading documents", HugeIcons.Sparkles, "Completed", hasOnClick = true),
+                            StepData(
+                                "Analyzing results (controlled)",
+                                HugeIcons.Sparkles,
+                                "In progress",
+                                hasContent = true,
+                                controlled = true,
+                            ),
+                            StepData("Step without icon", null, null),
+                            StepData("Final step", HugeIcons.Sparkles, "Done"),
                         ),
-                        StepData("Step without icon", null, null),
-                        StepData("Final step", HugeIcons.Sparkles, "Done"),
-                    ),
                     collapsedVisibleCount = 2,
                 ) { step ->
-                    val iconComposable: (@Composable () -> Unit)? = step.icon?.let {
-                        {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
+                    val iconComposable: (@Composable () -> Unit)? =
+                        step.icon?.let {
+                            {
+                                Icon(
+                                    imageVector = it,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
-                    }
                     val labelComposable: @Composable () -> Unit = {
                         Text(step.label, style = MaterialTheme.typography.bodyMedium)
                     }
-                    val extraComposable: (@Composable () -> Unit)? = step.status?.let {
-                        {
-                            Text(
-                                it,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    val onClickHandler: (() -> Unit)? = if (step.hasOnClick) {
-                        { /* Open bottom sheet */ }
-                    } else null
-                    val contentComposable: (@Composable () -> Unit)? = if (step.hasContent) {
-                        {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (step.label.contains("Search")) {
-                                    listOf(
-                                        "example.com - Example Domain",
-                                        "docs.example.com - Documentation",
-                                        "blog.example.com - Blog Post"
-                                    ).forEach { result ->
-                                        Text(
-                                            text = "• $result",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                } else {
-                                    Text(
-                                        text = "This is expandable content showing detailed analysis. " +
-                                            "It can contain multiple lines of text, code snippets, " +
-                                            "or any other composable content.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                }
+                    val extraComposable: (@Composable () -> Unit)? =
+                        step.status?.let {
+                            {
+                                Text(
+                                    it,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
-                    } else null
+                    val onClickHandler: (() -> Unit)? =
+                        if (step.hasOnClick) {
+                            { /* Open bottom sheet */ }
+                        } else {
+                            null
+                        }
+                    val contentComposable: (@Composable () -> Unit)? =
+                        if (step.hasContent) {
+                            {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    if (step.label.contains("Search")) {
+                                        listOf(
+                                            "example.com - Example Domain",
+                                            "docs.example.com - Documentation",
+                                            "blog.example.com - Blog Post",
+                                        ).forEach { result ->
+                                            Text(
+                                                text = "• $result",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text =
+                                                "This is expandable content showing detailed analysis. " +
+                                                    "It can contain multiple lines of text, code snippets, " +
+                                                    "or any other composable content.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            null
+                        }
 
                     if (step.controlled) {
                         // 受控版本

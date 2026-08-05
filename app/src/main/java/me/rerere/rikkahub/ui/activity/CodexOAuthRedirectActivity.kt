@@ -12,7 +12,7 @@ class CodexOAuthRedirectActivity : ComponentActivity() {
             Intent(this, RouteActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 putExtra(RouteActivity.EXTRA_OPEN_CODEX_SETTINGS, true)
-            }
+            },
         )
         finish()
     }

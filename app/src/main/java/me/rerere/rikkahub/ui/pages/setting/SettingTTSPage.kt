@@ -1,14 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Tick01
-import me.rerere.hugeicons.stroke.StopCircle
-import me.rerere.hugeicons.stroke.DragDropHorizontal
-import me.rerere.hugeicons.stroke.PencilEdit01
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.Tools
-import me.rerere.hugeicons.stroke.Delete01
-import me.rerere.hugeicons.stroke.VolumeHigh
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -55,6 +46,15 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.DragDropHorizontal
+import me.rerere.hugeicons.stroke.PencilEdit01
+import me.rerere.hugeicons.stroke.StopCircle
+import me.rerere.hugeicons.stroke.Tick01
+import me.rerere.hugeicons.stroke.Tools
+import me.rerere.hugeicons.stroke.VolumeHigh
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_SYSTEM_TTS_ID
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -91,61 +91,68 @@ fun SettingTTSPage(vm: SettingVM = koinViewModel()) {
                     AddTTSProviderButton {
                         vm.updateSettings(
                             settings.copy(
-                                ttsProviders = listOf(it) + settings.ttsProviders
-                            )
+                                ttsProviders = listOf(it) + settings.ttsProviders,
+                            ),
                         )
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         val lazyListState = rememberLazyListState()
-        val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-            val newProviders = settings.ttsProviders.toMutableList().apply {
-                add(to.index, removeAt(from.index))
+        val reorderableState =
+            rememberReorderableLazyListState(lazyListState) { from, to ->
+                val newProviders =
+                    settings.ttsProviders.toMutableList().apply {
+                        add(to.index, removeAt(from.index))
+                    }
+                vm.updateSettings(settings.copy(ttsProviders = newProviders))
             }
-            vm.updateSettings(settings.copy(ttsProviders = newProviders))
-        }
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .imePadding(),
             contentPadding = innerPadding + PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            state = lazyListState
+            state = lazyListState,
         ) {
             items(settings.ttsProviders, key = { it.id }) { provider ->
                 ReorderableItem(
                     state = reorderableState,
-                    key = provider.id
+                    key = provider.id,
                 ) { isDragging ->
                     TTSProviderItem(
-                        modifier = Modifier
-                            .scale(if (isDragging) 0.95f else 1f)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .scale(if (isDragging) 0.95f else 1f)
+                                .fillMaxWidth(),
                         provider = provider,
                         dragHandle = {
                             val haptic = LocalHapticFeedback.current
                             IconButton(
                                 onClick = {},
-                                modifier = Modifier
-                                    .longPressDraggableHandle(
-                                        onDragStarted = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                        },
-                                        onDragStopped = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                        }
-                                    )
+                                modifier =
+                                    Modifier
+                                        .longPressDraggableHandle(
+                                            onDragStarted = {
+                                                haptic.performHapticFeedback(
+                                                    HapticFeedbackType.GestureThresholdActivate,
+                                                )
+                                            },
+                                            onDragStopped = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                            },
+                                        ),
                             ) {
                                 Icon(
                                     imageVector = HugeIcons.DragDropHorizontal,
-                                    contentDescription = null
+                                    contentDescription = null,
                                 )
                             }
                         },
@@ -159,14 +166,20 @@ fun SettingTTSPage(vm: SettingVM = koinViewModel()) {
                         onDelete = {
                             val newProviders = settings.ttsProviders - provider
                             val newSelectedId =
-                                if (settings.selectedTTSProviderId == provider.id) DEFAULT_SYSTEM_TTS_ID else settings.selectedTTSProviderId
+                                if (settings.selectedTTSProviderId ==
+                                    provider.id
+                                ) {
+                                    DEFAULT_SYSTEM_TTS_ID
+                                } else {
+                                    settings.selectedTTSProviderId
+                                }
                             vm.updateSettings(
                                 settings.copy(
                                     ttsProviders = newProviders,
-                                    selectedTTSProviderId = newSelectedId
-                                )
+                                    selectedTTSProviderId = newSelectedId,
+                                ),
                             )
-                        }
+                        },
                     )
                 }
             }
@@ -185,18 +198,19 @@ fun SettingTTSPage(vm: SettingVM = koinViewModel()) {
             sheetState = bottomSheetState,
             dragHandle = {
                 BottomSheetDefaults.DragHandle()
-            }
+            },
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .fillMaxHeight(0.8f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .fillMaxHeight(0.8f),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.setting_tts_page_edit_provider),
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
 
                 TTSProviderConfigure(
@@ -204,31 +218,32 @@ fun SettingTTSPage(vm: SettingVM = koinViewModel()) {
                     onValueChange = { newState ->
                         currentProvider = newState
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     TextButton(
                         onClick = {
                             editingProvider = null
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
 
                     TextButton(
                         onClick = {
-                            val newProviders = settings.ttsProviders.map {
-                                if (it.id == provider.id) currentProvider else it
-                            }
+                            val newProviders =
+                                settings.ttsProviders.map {
+                                    if (it.id == provider.id) currentProvider else it
+                                }
                             vm.updateSettings(settings.copy(ttsProviders = newProviders))
                             editingProvider = null
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.chat_page_save))
                     }
@@ -247,7 +262,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
         onClick = {
             currentProvider = TTSProviderSetting.SystemTTS()
             showBottomSheet = true
-        }
+        },
     ) {
         Icon(HugeIcons.Add01, stringResource(R.string.setting_tts_page_add_provider_content_description))
     }
@@ -261,18 +276,19 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
             sheetState = bottomSheetState,
             dragHandle = {
                 BottomSheetDefaults.DragHandle()
-            }
+            },
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .fillMaxHeight(0.8f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .fillMaxHeight(0.8f),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.setting_tts_page_add_provider),
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
 
                 TTSProviderConfigure(
@@ -280,18 +296,18 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
                     onValueChange = { newState ->
                         currentProvider = newState
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     TextButton(
                         onClick = {
                             showBottomSheet = false
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
@@ -301,7 +317,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
                             onAdd(currentProvider)
                             showBottomSheet = false
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.setting_tts_page_add))
                     }
@@ -319,7 +335,7 @@ private fun TTSProviderItem(
     dragHandle: @Composable () -> Unit,
     onSelect: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     var showDropdownMenu by remember { mutableStateOf(false) }
     val tts = LocalTTSState.current
@@ -328,13 +344,15 @@ private fun TTSProviderItem(
 
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                CustomColors.listItemColors.containerColor
-            }
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        CustomColors.listItemColors.containerColor
+                    },
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -346,44 +364,84 @@ private fun TTSProviderItem(
             ) {
                 AutoAIIcon(
                     name = provider.name.ifEmpty { stringResource(R.string.setting_tts_page_default_name) },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
 
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text(
                         text = provider.name.ifEmpty { stringResource(R.string.setting_tts_page_default_name) },
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                     )
 
                     Text(
-                        text = when (provider) {
-                            is TTSProviderSetting.OpenAI -> stringResource(R.string.setting_tts_page_provider_openai)
-                            is TTSProviderSetting.Gemini -> stringResource(R.string.setting_tts_page_provider_gemini)
-                            is TTSProviderSetting.MiniMax -> "MiniMax"
-                            is TTSProviderSetting.SystemTTS -> stringResource(R.string.setting_tts_page_provider_system)
-                            is TTSProviderSetting.Qwen -> "Qwen"
-                            is TTSProviderSetting.Groq -> "Groq"
-                            is TTSProviderSetting.XAI -> "xAI"
-                            is TTSProviderSetting.MiMo -> "MiMo"
-                            is TTSProviderSetting.ElevenLabs -> "ElevenLabs"
-                            is TTSProviderSetting.Step -> "Step"
-                            is TTSProviderSetting.FishAudio -> "Fish Audio"
-                        },
+                        text =
+                            when (provider) {
+                                is TTSProviderSetting.OpenAI -> {
+                                    stringResource(
+                                        R.string.setting_tts_page_provider_openai,
+                                    )
+                                }
+
+                                is TTSProviderSetting.Gemini -> {
+                                    stringResource(
+                                        R.string.setting_tts_page_provider_gemini,
+                                    )
+                                }
+
+                                is TTSProviderSetting.MiniMax -> {
+                                    "MiniMax"
+                                }
+
+                                is TTSProviderSetting.SystemTTS -> {
+                                    stringResource(
+                                        R.string.setting_tts_page_provider_system,
+                                    )
+                                }
+
+                                is TTSProviderSetting.Qwen -> {
+                                    "Qwen"
+                                }
+
+                                is TTSProviderSetting.Groq -> {
+                                    "Groq"
+                                }
+
+                                is TTSProviderSetting.XAI -> {
+                                    "xAI"
+                                }
+
+                                is TTSProviderSetting.MiMo -> {
+                                    "MiMo"
+                                }
+
+                                is TTSProviderSetting.ElevenLabs -> {
+                                    "ElevenLabs"
+                                }
+
+                                is TTSProviderSetting.Step -> {
+                                    "Step"
+                                }
+
+                                is TTSProviderSetting.FishAudio -> {
+                                    "Fish Audio"
+                                }
+                            },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 RadioButton(
                     selected = isSelected,
-                    onClick = onSelect
+                    onClick = onSelect,
                 )
 
                 dragHandle()
@@ -391,7 +449,7 @@ private fun TTSProviderItem(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 状态标签
                 if (isSelected) {
@@ -412,26 +470,33 @@ private fun TTSProviderItem(
                             } else {
                                 tts.stop()
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             imageVector = if (isSpeaking) HugeIcons.StopCircle else HugeIcons.VolumeHigh,
-                            contentDescription = if (isSpeaking) stringResource(R.string.stop) else stringResource(R.string.test_tts),
-                            tint = if (isSpeaking) MaterialTheme.colorScheme.error else LocalContentColor.current
+                            contentDescription =
+                                if (isSpeaking) {
+                                    stringResource(
+                                        R.string.stop,
+                                    )
+                                } else {
+                                    stringResource(R.string.test_tts)
+                                },
+                            tint = if (isSpeaking) MaterialTheme.colorScheme.error else LocalContentColor.current,
                         )
                     }
                 }
 
                 IconButton(
-                    onClick = { showDropdownMenu = true }
+                    onClick = { showDropdownMenu = true },
                 ) {
                     Icon(
                         imageVector = HugeIcons.Tools,
-                        contentDescription = stringResource(R.string.setting_tts_page_more_options_content_description)
+                        contentDescription = stringResource(R.string.setting_tts_page_more_options_content_description),
                     )
                     DropdownMenu(
                         expanded = showDropdownMenu,
-                        onDismissRequest = { showDropdownMenu = false }
+                        onDismissRequest = { showDropdownMenu = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.edit)) },
@@ -441,7 +506,7 @@ private fun TTSProviderItem(
                             },
                             leadingIcon = {
                                 Icon(HugeIcons.PencilEdit01, contentDescription = null)
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.delete)) },
@@ -452,7 +517,7 @@ private fun TTSProviderItem(
                             leadingIcon = {
                                 Icon(HugeIcons.Delete01, contentDescription = null)
                             },
-                            enabled = provider.id != DEFAULT_SYSTEM_TTS_ID
+                            enabled = provider.id != DEFAULT_SYSTEM_TTS_ID,
                         )
                     }
                 }

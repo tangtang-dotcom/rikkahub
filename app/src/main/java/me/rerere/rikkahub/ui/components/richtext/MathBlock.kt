@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.takeOrElse
 fun MathInline(
     latex: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = TextUnit.Unspecified
+    fontSize: TextUnit = TextUnit.Unspecified,
 ) {
     val proceededLatex = latex
     LatexText(
@@ -33,21 +33,22 @@ fun MathInline(
 fun MathBlock(
     latex: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = TextUnit.Unspecified
+    fontSize: TextUnit = TextUnit.Unspecified,
 ) {
     val proceededLatex = latex
     Box(
-        modifier = modifier.padding(8.dp)
+        modifier = modifier.padding(8.dp),
     ) {
         LatexText(
             latex = proceededLatex,
             color = LocalContentColor.current,
             fontSize = fontSize.takeOrElse { LocalTextStyle.current.fontSize },
-            modifier = Modifier
-                .align(Alignment.Center)
-                .horizontalScroll(
-                    rememberScrollState()
-                ),
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .horizontalScroll(
+                        rememberScrollState(),
+                    ),
         )
     }
 }

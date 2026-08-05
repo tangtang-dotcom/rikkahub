@@ -1,9 +1,6 @@
 package me.rerere.rikkahub.ui.pages.translator
 
 import android.content.ClipData
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Clipboard
-import me.rerere.hugeicons.stroke.LanguageCircle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +51,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ModelType
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Clipboard
+import me.rerere.hugeicons.stroke.LanguageCircle
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -103,7 +103,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                         type = ModelType.CHAT,
                         onlyIcon = true,
                     )
-                }
+                },
             )
         },
         bottomBar = {
@@ -118,17 +118,18 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                 onLanguageSelected = {
                     vm.updateTargetLanguage(it)
                 },
-                targetLanguage = targetLanguage
+                targetLanguage = targetLanguage,
             )
-        }
+        },
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // 输入区域
             Column {
@@ -137,11 +138,12 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                     onValueChange = { vm.updateInputText(it) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(stringResource(R.string.translator_page_input_placeholder)) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent
-                    ),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                        ),
                     maxLines = 10,
                     textStyle = MaterialTheme.typography.headlineSmall,
                 )
@@ -153,7 +155,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                                 vm.updateInputText(it)
                             }
                         }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Clipboard, null)
                     Text(stringResource(R.string.translator_paste_text), modifier = Modifier.padding(start = 4.dp))
@@ -164,9 +166,10 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
             Crossfade(translating) { isTranslating ->
                 if (isTranslating) {
                     LinearWavyProgressIndicator(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
                     )
                 } else {
                     HorizontalDivider()
@@ -176,13 +179,15 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
             // 翻译结果
             SelectionContainer {
                 Text(
-                    text = translatedText.ifEmpty {
-                        stringResource(R.string.translator_page_result_placeholder)
-                    },
+                    text =
+                        translatedText.ifEmpty {
+                            stringResource(R.string.translator_page_result_placeholder)
+                        },
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
                 )
             }
 
@@ -193,12 +198,13 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                             clipboard.setClipEntry(
                                 ClipEntry(
                                     ClipData.newPlainText(
-                                        null, translatedText
-                                    )
-                                )
+                                        null,
+                                        translatedText,
+                                    ),
+                                ),
                             )
                         }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Clipboard, null)
                     Text(stringResource(R.string.translator_copy_result), modifier = Modifier.padding(start = 4.dp))
@@ -221,20 +227,20 @@ private val Locales by lazy {
         Locale.forLanguageTag("es-ES"),
         Locale.forLanguageTag("ar"),
         Locale.forLanguageTag("fa"),
-        Locale.forLanguageTag("ur")
+        Locale.forLanguageTag("ur"),
     )
 }
 
 @Composable
 private fun LanguageSelector(
     targetLanguage: Locale,
-    onLanguageSelected: (Locale) -> Unit
+    onLanguageSelected: (Locale) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     @Composable
-    fun getLanguageDisplayName(locale: Locale): String {
-        return when (locale) {
+    fun getLanguageDisplayName(locale: Locale): String =
+        when (locale) {
             Locale.SIMPLIFIED_CHINESE -> stringResource(R.string.language_simplified_chinese)
             Locale.ENGLISH -> stringResource(R.string.language_english)
             Locale.TRADITIONAL_CHINESE -> stringResource(R.string.language_traditional_chinese)
@@ -249,33 +255,34 @@ private fun LanguageSelector(
             Locale.forLanguageTag("ur") -> stringResource(R.string.language_urdu)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
-    }
 
     Box(
-        modifier = Modifier.padding(horizontal = 4.dp)
+        modifier = Modifier.padding(horizontal = 4.dp),
     ) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = it }
+            onExpandedChange = { expanded = it },
         ) {
             OutlinedTextField(
                 value = getLanguageDisplayName(targetLanguage),
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
-                    .fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    disabledBorderColor = Color.Transparent
-                )
+                modifier =
+                    Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
+                        .fillMaxWidth(),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        disabledBorderColor = Color.Transparent,
+                    ),
             )
 
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
             ) {
                 Locales.forEach { language ->
                     DropdownMenuItem(
@@ -283,7 +290,7 @@ private fun LanguageSelector(
                         onClick = {
                             onLanguageSelected(language)
                             expanded = false
-                        }
+                        },
                     )
                 }
             }
@@ -297,14 +304,14 @@ private fun BottomBar(
     onLanguageSelected: (Locale) -> Unit,
     translating: Boolean,
     onTranslate: () -> Unit,
-    onCancelTranslation: () -> Unit
+    onCancelTranslation: () -> Unit,
 ) {
     BottomAppBar(
         actions = {
             // 目标语言选择
             LanguageSelector(
                 targetLanguage = targetLanguage,
-                onLanguageSelected = { onLanguageSelected(it) }
+                onLanguageSelected = { onLanguageSelected(it) },
             )
         },
         floatingActionButton = {
@@ -317,28 +324,28 @@ private fun BottomBar(
                     }
                 },
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
             ) {
                 if (!translating) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         Icon(
                             HugeIcons.LanguageCircle,
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
                         )
                         Text(
                             stringResource(R.string.translator_page_translate),
-                            modifier = Modifier.padding(start = 4.dp)
+                            modifier = Modifier.padding(start = 4.dp),
                         )
                     }
                 } else {
                     Text(stringResource(R.string.translator_page_cancel))
                 }
             }
-        }
+        },
     )
 }

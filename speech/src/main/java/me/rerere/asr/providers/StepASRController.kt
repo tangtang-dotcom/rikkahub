@@ -33,9 +33,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSource
 import org.json.JSONArray
 import org.json.JSONObject
-import okio.BufferedSource
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.Collections
@@ -65,7 +65,7 @@ private const val MAX_RETRY = 3
 class StepASRController(
     private val context: Context,
     private val httpClient: OkHttpClient,
-    private val provider: ASRProviderSetting.Step
+    private val provider: ASRProviderSetting.Step,
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -88,7 +88,7 @@ class StepASRController(
         if (state.value.isRecording) return
         if (ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.RECORD_AUDIO,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             setError("Microphone permission is required")
@@ -107,7 +107,7 @@ class StepASRController(
         _state.update {
             ASRState(
                 status = ASRStatus.Listening,
-                isAvailable = true
+                isAvailable = true,
             )
         }
         startRecorder()
@@ -143,70 +143,76 @@ class StepASRController(
     @SuppressLint("MissingPermission")
     private fun startRecorder() {
         recorderJob?.cancel()
-        recorderJob = scope.launch(Dispatchers.IO) {
-            val sampleRate = provider.sampleRate
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val bufferSize = minBufferSize
-                .coerceAtLeast(sampleRate / 10 * 2)
-                .coerceAtLeast(4096)
+        recorderJob =
+            scope.launch(Dispatchers.IO) {
+                val sampleRate = provider.sampleRate
+                val minBufferSize =
+                    AudioRecord.getMinBufferSize(
+                        sampleRate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                    )
+                val bufferSize =
+                    minBufferSize
+                        .coerceAtLeast(sampleRate / 10 * 2)
+                        .coerceAtLeast(4096)
 
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize * 2
-            )
-            audioRecord = recorder
+                val recorder =
+                    AudioRecord(
+                        MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                        sampleRate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        bufferSize * 2,
+                    )
+                audioRecord = recorder
 
-            try {
-                recorder.startRecording()
-                val buffer = ByteArray(bufferSize)
-                val segmentMs = provider.segmentDurationSec.coerceAtLeast(0) * 1000L
-                while (isActive) {
-                    val read = recorder.read(buffer, 0, buffer.size)
-                    if (read > 0) {
-                        val amplitude = calculateRmsAmplitude(buffer, read)
-                        _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
+                try {
+                    recorder.startRecording()
+                    val buffer = ByteArray(bufferSize)
+                    val segmentMs = provider.segmentDurationSec.coerceAtLeast(0) * 1000L
+                    while (isActive) {
+                        val read = recorder.read(buffer, 0, buffer.size)
+                        if (read > 0) {
+                            val amplitude = calculateRmsAmplitude(buffer, read)
+                            _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
 
-                        val shouldFlush = synchronized(bufferLock) {
-                            currentBuffer.write(buffer, 0, read)
-                            if (segmentMs <= 0) {
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES
-                            } else {
-                                val elapsed = SystemClock.elapsedRealtime() - segmentStartElapsedMs
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
+                            val shouldFlush =
+                                synchronized(bufferLock) {
+                                    currentBuffer.write(buffer, 0, read)
+                                    if (segmentMs <= 0) {
+                                        currentBuffer.size() >= MAX_SEGMENT_BYTES
+                                    } else {
+                                        val elapsed = SystemClock.elapsedRealtime() - segmentStartElapsedMs
+                                        currentBuffer.size() >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
+                                    }
+                                }
+
+                            if (shouldFlush) {
+                                // 用单独协程异步 flush, 不阻塞录音主循环
+                                triggerFlush()
                             }
+                        } else if (read < 0) {
+                            throw IllegalStateException("AudioRecord read error: $read")
                         }
-
-                        if (shouldFlush) {
-                            // 用单独协程异步 flush, 不阻塞录音主循环
-                            triggerFlush()
-                        }
-                    } else if (read < 0) {
-                        throw IllegalStateException("AudioRecord read error: $read")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Audio recording failed", e)
+                    setError(e.message ?: "Audio recording failed")
+                } finally {
+                    releaseRecorder()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio recording failed", e)
-                setError(e.message ?: "Audio recording failed")
-            } finally {
-                releaseRecorder()
             }
-        }
     }
 
     private fun triggerFlush() {
         // 同一时刻只跑一个 flush, 避免后发先至导致结果乱序
         if (flushJob?.isActive == true) return
-        flushJob = scope.launch(Dispatchers.IO) {
-            runCatching { flushSegment() }
-                .onFailure { Log.e(TAG, "Segment flush failed", it) }
-        }
+        flushJob =
+            scope.launch(Dispatchers.IO) {
+                runCatching { flushSegment() }
+                    .onFailure { Log.e(TAG, "Segment flush failed", it) }
+            }
     }
 
     /**
@@ -216,13 +222,14 @@ class StepASRController(
      * 在 bufferLock 内拷贝出 PCM 并立刻重置缓冲区, 不持有锁等待网络, 避免阻塞录音写。
      */
     private suspend fun flushSegment() {
-        val pcmBytes = synchronized(bufferLock) {
-            if (currentBuffer.size() == 0) return
-            val bytes = currentBuffer.toByteArray()
-            currentBuffer = ByteArrayOutputStream()
-            segmentStartElapsedMs = SystemClock.elapsedRealtime()
-            bytes
-        }
+        val pcmBytes =
+            synchronized(bufferLock) {
+                if (currentBuffer.size() == 0) return
+                val bytes = currentBuffer.toByteArray()
+                currentBuffer = ByteArrayOutputStream()
+                segmentStartElapsedMs = SystemClock.elapsedRealtime()
+                bytes
+            }
 
         // 太短的段直接丢弃, 避免服务端因音频过短返回 400
         // (16kHz/16bit/mono 下 6400 字节 = 200ms, 短于这个长度服务端通常无法识别)
@@ -231,10 +238,11 @@ class StepASRController(
             return
         }
 
-        val transcription = JSONObject()
-            .put("model", provider.model)
-            .put("enable_itn", provider.enableItn)
-            .put("enable_timestamp", provider.enableTimestamp)
+        val transcription =
+            JSONObject()
+                .put("model", provider.model)
+                .put("enable_itn", provider.enableItn)
+                .put("enable_timestamp", provider.enableTimestamp)
         if (provider.language.isNotBlank()) {
             transcription.put("language", provider.language)
         }
@@ -242,34 +250,37 @@ class StepASRController(
             transcription.put("hotwords", JSONArray(provider.hotwords))
         }
 
-        val body = JSONObject()
-            .put(
-                "audio",
-                JSONObject()
-                    .put("data", Base64.encodeToString(pcmBytes, Base64.NO_WRAP))
-                    .put(
-                        "input",
-                        JSONObject()
-                            .put("transcription", transcription)
-                            .put(
-                                "format",
-                                JSONObject()
-                                    .put("type", "pcm")
-                                    .put("codec", "pcm_s16le")
-                                    .put("rate", provider.sampleRate)
-                                    .put("bits", 16)
-                                    .put("channel", 1)
-                            )
-                    )
-            )
+        val body =
+            JSONObject()
+                .put(
+                    "audio",
+                    JSONObject()
+                        .put("data", Base64.encodeToString(pcmBytes, Base64.NO_WRAP))
+                        .put(
+                            "input",
+                            JSONObject()
+                                .put("transcription", transcription)
+                                .put(
+                                    "format",
+                                    JSONObject()
+                                        .put("type", "pcm")
+                                        .put("codec", "pcm_s16le")
+                                        .put("rate", provider.sampleRate)
+                                        .put("bits", 16)
+                                        .put("channel", 1),
+                                ),
+                        ),
+                )
 
-        val request = Request.Builder()
-            .url("${provider.baseUrl.trimEnd('/')}/v1/audio/asr/sse")
-            .addHeader("Authorization", "Bearer ${provider.apiKey}")
-            .addHeader("Accept", "text/event-stream")
-            .addHeader("Content-Type", "application/json")
-            .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
+        val request =
+            Request
+                .Builder()
+                .url("${provider.baseUrl.trimEnd('/')}/v1/audio/asr/sse")
+                .addHeader("Authorization", "Bearer ${provider.apiKey}")
+                .addHeader("Accept", "text/event-stream")
+                .addHeader("Content-Type", "application/json")
+                .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
+                .build()
 
         val text = executeWithRetry(request).trim()
 
@@ -326,11 +337,12 @@ class StepASRController(
 
             val separatorIndex = line.indexOf(':')
             val field = if (separatorIndex == -1) line else line.substring(0, separatorIndex)
-            val value = if (separatorIndex == -1) {
-                ""
-            } else {
-                line.substring(separatorIndex + 1).removePrefix(" ")
-            }
+            val value =
+                if (separatorIndex == -1) {
+                    ""
+                } else {
+                    line.substring(separatorIndex + 1).removePrefix(" ")
+                }
             when (field) {
                 "event" -> eventType = value
                 "data" -> dataLines.add(value)
@@ -343,14 +355,15 @@ class StepASRController(
     private fun handleSseEvent(
         eventType: String?,
         data: String,
-        transcript: StringBuilder
+        transcript: StringBuilder,
     ): Boolean {
         if (data == "[DONE]") return true
 
         val json = runCatching { JSONObject(data) }.getOrNull()
-        val type = eventType
-            ?.takeIf { it.isNotBlank() }
-            ?: json?.optString("type")?.takeIf { it.isNotBlank() }
+        val type =
+            eventType
+                ?.takeIf { it.isNotBlank() }
+                ?: json?.optString("type")?.takeIf { it.isNotBlank() }
 
         return when (type) {
             "transcript.text.delta" -> {
@@ -381,7 +394,10 @@ class StepASRController(
         }
     }
 
-    private fun extractTranscriptText(json: JSONObject?, fallback: String): String {
+    private fun extractTranscriptText(
+        json: JSONObject?,
+        fallback: String,
+    ): String {
         if (json == null) return fallback
         val directKeys = listOf("delta", "text", "content", "transcript")
         for (key in directKeys) {
@@ -404,7 +420,10 @@ class StepASRController(
         return fallback
     }
 
-    private fun extractErrorMessage(json: JSONObject?, fallback: String): String {
+    private fun extractErrorMessage(
+        json: JSONObject?,
+        fallback: String,
+    ): String {
         if (json == null) return fallback
         val error = json.optJSONObject("error")
         if (error != null) {
@@ -415,9 +434,10 @@ class StepASRController(
     }
 
     private fun publishTranscript() {
-        val transcript = completedTranscripts
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
+        val transcript =
+            completedTranscripts
+                .filter { it.isNotBlank() }
+                .joinToString(" ")
         _state.update { it.copy(transcript = transcript, errorMessage = null) }
         scope.launch { onTranscriptChange?.invoke(transcript) }
     }
@@ -426,7 +446,7 @@ class StepASRController(
         _state.update {
             it.copy(
                 status = ASRStatus.Error,
-                errorMessage = message
+                errorMessage = message,
             )
         }
     }

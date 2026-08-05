@@ -134,9 +134,10 @@ fun WorkflowDetailScreen(
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                 ) {
                     Button(onClick = {
                         scope.launch {
@@ -144,20 +145,27 @@ fun WorkflowDetailScreen(
                             history = vm.history(currentLoaded.entity.id)
                             loaded = vm.get(currentLoaded.entity.id)
                             snackbarHostState.showSnackbar(
-                                ctx.getString(R.string.setting_page_workflow_detail_run_now_done, outcome.status.name)
+                                ctx.getString(R.string.setting_page_workflow_detail_run_now_done, outcome.status.name),
                             )
                         }
                     }) {
                         Text(stringResource(R.string.setting_page_workflow_detail_run_now))
                     }
                     TextButton(onClick = {
-                        nav.navigate(Screen.Chat(
-                            id = kotlin.uuid.Uuid.random().toString(),
-                            text = ctx.getString(
-                                R.string.setting_page_workflow_detail_edit_prefill,
-                                currentLoaded.entity.name,
-                            ).base64Encode(),
-                        ))
+                        nav.navigate(
+                            Screen.Chat(
+                                id =
+                                    kotlin.uuid.Uuid
+                                        .random()
+                                        .toString(),
+                                text =
+                                    ctx
+                                        .getString(
+                                            R.string.setting_page_workflow_detail_edit_prefill,
+                                            currentLoaded.entity.name,
+                                        ).base64Encode(),
+                            ),
+                        )
                     }) {
                         Text(stringResource(R.string.setting_page_workflow_detail_edit))
                     }
@@ -229,8 +237,9 @@ fun WorkflowDetailScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         for (r in history) {
                             val ago = formatRelativeAgo(r.firedAtMs, nowMs, rel)
-                            val line = "$ago — ${r.status.name}" +
-                                (r.errorMessage?.let { " — ${it.take(60)}" } ?: "")
+                            val line =
+                                "$ago — ${r.status.name}" +
+                                    (r.errorMessage?.let { " — ${it.take(60)}" } ?: "")
                             Text(line, style = MaterialTheme.typography.bodySmall)
                         }
                     }
@@ -253,16 +262,19 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun ActionRow(index: Int, action: WorkflowAction) {
+private fun ActionRow(
+    index: Int,
+    action: WorkflowAction,
+) {
     var expanded by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(8.dp),
-            )
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    RoundedCornerShape(8.dp),
+                ).padding(8.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("$index. ", style = MaterialTheme.typography.bodyMedium)
@@ -270,15 +282,22 @@ private fun ActionRow(index: Int, action: WorkflowAction) {
                 action.tool,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             )
-            Text(" (${action.timeoutSeconds}s)", style = MaterialTheme.typography.bodySmall,
+            Text(
+                " (${action.timeoutSeconds}s)",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp))
+                modifier = Modifier.padding(start = 4.dp),
+            )
         }
         if (action.args.isNotEmpty()) {
-            TextButton(onClick = { expanded = !expanded },
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
-                Text(if (expanded) "hide args" else "show args",
-                    style = MaterialTheme.typography.bodySmall)
+            TextButton(
+                onClick = { expanded = !expanded },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+            ) {
+                Text(
+                    if (expanded) "hide args" else "show args",
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
             if (expanded) {
                 Text(
@@ -296,19 +315,21 @@ private fun StatsBlock(loaded: Loaded) {
     val rel = relativeStrings()
     val nowMs by rememberTickingNowMs()
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        val lastRunText = loaded.entity.lastRunAtMs?.let {
-            stringResource(R.string.setting_page_workflow_detail_stat_last_run, formatRelativeAgo(it, nowMs, rel))
-        } ?: stringResource(R.string.setting_page_workflow_detail_stat_last_run_never)
+        val lastRunText =
+            loaded.entity.lastRunAtMs?.let {
+                stringResource(R.string.setting_page_workflow_detail_stat_last_run, formatRelativeAgo(it, nowMs, rel))
+            } ?: stringResource(R.string.setting_page_workflow_detail_stat_last_run_never)
         Text(lastRunText, style = MaterialTheme.typography.bodySmall)
         Text(
             stringResource(R.string.setting_page_workflow_detail_stat_runs_today, loaded.entity.runsTodayCount),
             style = MaterialTheme.typography.bodySmall,
         )
         Text(
-            if (loaded.definition.cooldownSeconds == 0)
+            if (loaded.definition.cooldownSeconds == 0) {
                 stringResource(R.string.setting_page_workflow_detail_stat_cooldown_none)
-            else
-                stringResource(R.string.setting_page_workflow_detail_stat_cooldown, loaded.definition.cooldownSeconds),
+            } else {
+                stringResource(R.string.setting_page_workflow_detail_stat_cooldown, loaded.definition.cooldownSeconds)
+            },
             style = MaterialTheme.typography.bodySmall,
         )
         Text(
@@ -321,23 +342,65 @@ private fun StatsBlock(loaded: Loaded) {
 }
 
 private fun conditionLine(c: me.rerere.rikkahub.workflow.model.ConditionSpec): String {
-    val base = when (c) {
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeBetween -> "between ${c.start} and ${c.end}"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeAfterSunset -> "after sunset" +
-            if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeBeforeSunrise -> "before sunrise" +
-            if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.DayOfWeekIn -> "day(s) ${c.days.joinToString(",")}"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.WifiSsidIs -> "WiFi is ${c.ssid}"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.WifiSsidIn -> "WiFi in ${c.ssids.joinToString(",")}"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.BatteryAbove -> "battery > ${c.percent}%"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.BatteryBelow -> "battery < ${c.percent}%"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.IsCharging -> "charging"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.IsNotCharging -> "not charging"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIs -> "foreground app = ${c.packageName}"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIn -> "foreground in ${c.packageNames.size} pkgs"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.ScreenIsOn -> "screen on"
-        is me.rerere.rikkahub.workflow.model.ConditionSpec.ScreenIsOff -> "screen off"
-    }
+    val base =
+        when (c) {
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeBetween -> {
+                "between ${c.start} and ${c.end}"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeAfterSunset -> {
+                "after sunset" +
+                    if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.TimeBeforeSunrise -> {
+                "before sunrise" +
+                    if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.DayOfWeekIn -> {
+                "day(s) ${c.days.joinToString(",")}"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.WifiSsidIs -> {
+                "WiFi is ${c.ssid}"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.WifiSsidIn -> {
+                "WiFi in ${c.ssids.joinToString(",")}"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.BatteryAbove -> {
+                "battery > ${c.percent}%"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.BatteryBelow -> {
+                "battery < ${c.percent}%"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.IsCharging -> {
+                "charging"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.IsNotCharging -> {
+                "not charging"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIs -> {
+                "foreground app = ${c.packageName}"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIn -> {
+                "foreground in ${c.packageNames.size} pkgs"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.ScreenIsOn -> {
+                "screen on"
+            }
+
+            is me.rerere.rikkahub.workflow.model.ConditionSpec.ScreenIsOff -> {
+                "screen off"
+            }
+        }
     return if (c.invert) "NOT ($base)" else base
 }

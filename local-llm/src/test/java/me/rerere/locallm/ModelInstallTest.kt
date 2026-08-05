@@ -7,7 +7,6 @@ import org.junit.Test
 import java.io.File
 
 class ModelInstallTest {
-
     @Test fun `validUrl accepts well-formed https URLs`() {
         assertTrue(ModelInstall.isValidDownloadUrl("https://huggingface.co/foo/bar/resolve/main/model.task"))
         assertTrue(ModelInstall.isValidDownloadUrl("https://example.com/path/to/model.litertlm"))
@@ -42,7 +41,9 @@ class ModelInstallTest {
     @Test fun `extractFileNameFromUrl pulls the last path segment`() {
         assertEquals(
             "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
-            ModelInstall.extractFileNameFromUrl("https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm"),
+            ModelInstall.extractFileNameFromUrl(
+                "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+            ),
         )
     }
 
@@ -89,9 +90,11 @@ class ModelInstallTest {
     @Test fun `isValidDownloadUrl accepts blob-form HF URL (normalised before download)`() {
         // blob URLs are valid https; validation passes, then normalizeHuggingFaceUrl converts
         // /blob/ → /resolve/ before the HTTP call. Test that validation does NOT reject them.
-        assertTrue(ModelInstall.isValidDownloadUrl(
-            "https://huggingface.co/paulsp94/Qwen3.5-2B-LiteRT-LM/blob/main/qwen35_2b_q4.litertlm"
-        ))
+        assertTrue(
+            ModelInstall.isValidDownloadUrl(
+                "https://huggingface.co/paulsp94/Qwen3.5-2B-LiteRT-LM/blob/main/qwen35_2b_q4.litertlm",
+            ),
+        )
     }
 
     // looksLikeHtml ------------------------------------------------------------
@@ -127,11 +130,11 @@ class ModelInstallTest {
     @Test fun `isValidMagicForExtension accepts LITERTLM magic for litertlm`() {
         val bytes = "LITERTLM      ".toByteArray().copyOf(16)
         assertTrue(ModelInstall.isValidMagicForExtension("litertlm", bytes))
-        assertTrue(ModelInstall.isValidMagicForExtension("LITERTLM", bytes))  // case-insensitive
+        assertTrue(ModelInstall.isValidMagicForExtension("LITERTLM", bytes)) // case-insensitive
     }
 
     @Test fun `isValidMagicForExtension rejects all-zero file for litertlm`() {
-        val bytes = ByteArray(16)  // all zeros
+        val bytes = ByteArray(16) // all zeros
         assertFalse(ModelInstall.isValidMagicForExtension("litertlm", bytes))
     }
 

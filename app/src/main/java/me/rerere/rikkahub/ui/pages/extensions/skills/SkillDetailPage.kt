@@ -53,7 +53,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import me.rerere.rikkahub.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronRight
@@ -70,6 +69,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.skills.SkillTestRunner
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
@@ -136,10 +136,11 @@ fun SkillDetailPage(skillName: String) {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(innerPadding + PaddingValues(8.dp)),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(innerPadding + PaddingValues(8.dp)),
         ) {
             FileTree(
                 nodes = tree,
@@ -157,8 +158,11 @@ fun SkillDetailPage(skillName: String) {
             onDismiss = { editingFile = null },
             onConfirm = { content ->
                 vm.saveFile(skillFile.relativePath, content) { error ->
-                    if (error == null) editingFile = null
-                    else toaster.show(error)
+                    if (error == null) {
+                        editingFile = null
+                    } else {
+                        toaster.show(error)
+                    }
                 }
             },
         )
@@ -169,8 +173,11 @@ fun SkillDetailPage(skillName: String) {
             onDismiss = { showAddDialog = false },
             onConfirm = { fileName, content ->
                 vm.saveFile(fileName, content) { error ->
-                    if (error == null) showAddDialog = false
-                    else toaster.show(error)
+                    if (error == null) {
+                        showAddDialog = false
+                    } else {
+                        toaster.show(error)
+                    }
                 }
             },
         )
@@ -204,7 +211,10 @@ fun SkillDetailPage(skillName: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
+private fun SkillTesterSheet(
+    skillName: String,
+    onDismiss: () -> Unit,
+) {
     val runner = koinInject<SkillTestRunner>()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var prompt by rememberSaveable { mutableStateOf("") }
@@ -217,10 +227,11 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.7f)
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -248,9 +259,9 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
             // spawn a second concurrent run before state transitions to Running.
             var isEnqueued by remember { mutableStateOf(false) }
             LaunchedEffect(state) {
-                if (state is SkillTestRunner.TestRunState.Done
-                    || state is SkillTestRunner.TestRunState.Error
-                    || state is SkillTestRunner.TestRunState.Idle
+                if (state is SkillTestRunner.TestRunState.Done ||
+                    state is SkillTestRunner.TestRunState.Error ||
+                    state is SkillTestRunner.TestRunState.Idle
                 ) {
                     isEnqueued = false
                 }
@@ -263,8 +274,9 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
                         runner.runOnce(skillName, current).collect { stateFlow.value = it }
                     }
                 },
-                enabled = prompt.isNotBlank() && !isEnqueued
-                    && state !is SkillTestRunner.TestRunState.Running,
+                enabled =
+                    prompt.isNotBlank() && !isEnqueued &&
+                        state !is SkillTestRunner.TestRunState.Running,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.skill_tester_run))
@@ -272,7 +284,10 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
 
             // Result area — exactly one of these is visible at a time.
             when (val s = state) {
-                is SkillTestRunner.TestRunState.Idle -> Unit
+                is SkillTestRunner.TestRunState.Idle -> {
+                    Unit
+                }
+
                 is SkillTestRunner.TestRunState.Running -> {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -285,11 +300,13 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
                         )
                     }
                 }
+
                 is SkillTestRunner.TestRunState.Done -> {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
@@ -305,12 +322,14 @@ private fun SkillTesterSheet(skillName: String, onDismiss: () -> Unit) {
                         }
                     }
                 }
+
                 is SkillTestRunner.TestRunState.Error -> {
-                    val msg = if (s.error == "tester_timeout") {
-                        stringResource(R.string.skill_tester_timeout_error)
-                    } else {
-                        "${s.error}${s.detail?.let { ": $it" }.orEmpty()}"
-                    }
+                    val msg =
+                        if (s.error == "tester_timeout") {
+                            stringResource(R.string.skill_tester_timeout_error)
+                        } else {
+                            "${s.error}${s.detail?.let { ": $it" }.orEmpty()}"
+                        }
                     Text(
                         text = msg,
                         color = MaterialTheme.colorScheme.error,
@@ -331,19 +350,23 @@ private fun FileTree(
 ) {
     nodes.fastForEach { node ->
         when (node) {
-            is SkillFileNode.FileNode -> FileItem(
-                skillFile = node.skillFile,
-                depth = depth,
-                onEdit = { onEdit(node.skillFile) },
-                onDelete = { onDelete(node.skillFile) },
-            )
+            is SkillFileNode.FileNode -> {
+                FileItem(
+                    skillFile = node.skillFile,
+                    depth = depth,
+                    onEdit = { onEdit(node.skillFile) },
+                    onDelete = { onDelete(node.skillFile) },
+                )
+            }
 
-            is SkillFileNode.DirNode -> DirItem(
-                node = node,
-                depth = depth,
-                onEdit = onEdit,
-                onDelete = onDelete,
-            )
+            is SkillFileNode.DirNode -> {
+                DirItem(
+                    node = node,
+                    depth = depth,
+                    onEdit = onEdit,
+                    onDelete = onDelete,
+                )
+            }
         }
     }
 }
@@ -360,9 +383,10 @@ private fun FileItem(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = (16 + depth * 20).dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = (16 + depth * 20).dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -375,9 +399,10 @@ private fun FileItem(
                 text = skillFile.file.name,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp),
             )
             Text(
                 text = "${skillFile.file.length()} B",
@@ -420,10 +445,11 @@ private fun DirItem(
     ) {
         Column {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded }
-                    .padding(start = (16 + depth * 20).dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded }
+                        .padding(start = (16 + depth * 20).dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -513,10 +539,12 @@ private fun AddFileDialog(
                     label = { Text(stringResource(R.string.skill_detail_page_file_name)) },
                     placeholder = { Text("examples/basic.md", fontFamily = FontFamily.Monospace) },
                     supportingText = {
-                        if (fileNameError) Text(
-                            stringResource(R.string.skill_detail_page_file_name_invalid),
-                            color = MaterialTheme.colorScheme.error,
-                        )
+                        if (fileNameError) {
+                            Text(
+                                stringResource(R.string.skill_detail_page_file_name_invalid),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     },
                     isError = fileNameError,
                     singleLine = true,

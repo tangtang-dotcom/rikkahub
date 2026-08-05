@@ -8,7 +8,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MessageTest {
-
     // ==================== limitContext Tests ====================
 
     @Test
@@ -45,7 +44,7 @@ class MessageTest {
                 val result = all.subList(0, size).limitContext(limit)
                 assertTrue(
                     "limit=$limit size=$size produced ${result.size} messages",
-                    result.size in 1..limit
+                    result.size in 1..limit,
                 )
                 assertEquals(all.subList(size - result.size, size), result)
             }
@@ -70,9 +69,10 @@ class MessageTest {
         val all = createTestMessages(60)
 
         // limit=10 -> stride=5, 消息数 11..14 应共用同一个截断起点
-        val startsWithinStep = (11..14).map { size ->
-            all.subList(0, size).limitContext(10).first()
-        }
+        val startsWithinStep =
+            (11..14).map { size ->
+                all.subList(0, size).limitContext(10).first()
+            }
         assertEquals(1, startsWithinStep.distinct().size)
         assertEquals(all[5], startsWithinStep.first())
 
@@ -89,7 +89,7 @@ class MessageTest {
             val result = all.subList(0, size).limitContext(10)
             assertTrue(
                 "size=$size produced ${result.size} messages",
-                result.size in 5..9
+                result.size in 5..9,
             )
             // 结果必须是原列表的后缀
             assertEquals(all.subList(size - result.size, size), result)
@@ -99,9 +99,11 @@ class MessageTest {
     @Test
     fun `limitContext should only truncate once per step`() {
         val all = createTestMessages(60)
-        val distinctStarts = (11..60).map { size ->
-            all.subList(0, size).limitContext(10).first()
-        }.distinct()
+        val distinctStarts =
+            (11..60)
+                .map { size ->
+                    all.subList(0, size).limitContext(10).first()
+                }.distinct()
 
         // 50 轮里只发生 11 次截断点移动, 而非每轮一次
         assertEquals(11, distinctStarts.size)
@@ -109,30 +111,35 @@ class MessageTest {
 
     @Test
     fun `limitContext with executed tool at start should include corresponding tool call`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("User message"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.Tool(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        input = "{}",
-                        output = emptyList() // Not executed
-                    )
-                )
-            ),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.Tool(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        input = "{}",
-                        output = listOf(UIMessagePart.Text("result")) // Executed
-                    )
-                )
-            ),
-            UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final response")))
-        )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("User message"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                input = "{}",
+                                output = emptyList(), // Not executed
+                            ),
+                        ),
+                ),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                input = "{}",
+                                output = listOf(UIMessagePart.Text("result")), // Executed
+                            ),
+                        ),
+                ),
+                UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final response"))),
+            )
 
         // 截断点会落在已执行的 tool 上, 必须回退到对应的 tool call 及其用户消息
         val result = messages.limitContext(3)
@@ -141,94 +148,107 @@ class MessageTest {
 
     @Test
     fun `limitContext with tool call at start should include corresponding user message`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Old query"))),
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("User query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.Tool(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        input = "{}",
-                        output = emptyList()
-                    )
-                )
-            ),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.Tool(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        input = "{}",
-                        output = listOf(UIMessagePart.Text("result"))
-                    )
-                )
-            ),
-            UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final response")))
-        )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Old query"))),
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("User query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                input = "{}",
+                                output = emptyList(),
+                            ),
+                        ),
+                ),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                input = "{}",
+                                output = listOf(UIMessagePart.Text("result")),
+                            ),
+                        ),
+                ),
+                UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final response"))),
+            )
 
         // limit=4 -> stride=2, 截断点落在未执行的 tool call 上, 必须回退到它对应的用户消息
         val result = messages.limitContext(4)
         assertEquals(messages.subList(1, 5), result)
     }
 
-    private fun createTestMessages(count: Int): List<UIMessage> = List(count) { index ->
-        UIMessage(
-            role = if (index % 2 == 0) MessageRole.USER else MessageRole.ASSISTANT,
-            parts = listOf(UIMessagePart.Text("Message $index"))
-        )
-    }
+    private fun createTestMessages(count: Int): List<UIMessage> =
+        List(count) { index ->
+            UIMessage(
+                role = if (index % 2 == 0) MessageRole.USER else MessageRole.ASSISTANT,
+                parts = listOf(UIMessagePart.Text("Message $index")),
+            )
+        }
 
     // ==================== isValidToUpload Tests ====================
 
     @Test
     fun `isValidToUpload should be true for non-empty reasoning with empty text`() {
-        val message = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "thinking"),
-                UIMessagePart.Text("")
+        val message =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "thinking"),
+                        UIMessagePart.Text(""),
+                    ),
             )
-        )
 
         assertTrue(message.isValidToUpload())
     }
 
     @Test
     fun `isValidToUpload should be false for blank reasoning with empty text`() {
-        val message = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "   "),
-                UIMessagePart.Text("")
+        val message =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "   "),
+                        UIMessagePart.Text(""),
+                    ),
             )
-        )
 
         assertFalse(message.isValidToUpload())
     }
 
     @Test
     fun `isValidToUpload should be true for non-empty text`() {
-        val message = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(UIMessagePart.Text("ok"))
-        )
+        val message =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts = listOf(UIMessagePart.Text("ok")),
+            )
 
         assertTrue(message.isValidToUpload())
     }
 
     @Test
     fun `isValidToUpload should keep tool-only message valid`() {
-        val message = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Tool(
-                    toolCallId = "call-1",
-                    toolName = "search",
-                    input = """{"q":"hello"}"""
-                )
+        val message =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Tool(
+                            toolCallId = "call-1",
+                            toolName = "search",
+                            input = """{"q":"hello"}""",
+                        ),
+                    ),
             )
-        )
 
         assertTrue(message.isValidToUpload())
     }
@@ -238,18 +258,21 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolMessages should convert ToolCall to Tool`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.ToolCall(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        arguments = """{"arg": "value"}"""
-                    )
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolCall(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                arguments = """{"arg": "value"}""",
+                            ),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -268,28 +291,33 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolMessages should merge TOOL message into previous ASSISTANT`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.ToolCall(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        arguments = "{}"
-                    )
-                )
-            ),
-            UIMessage(
-                role = MessageRole.TOOL, parts = listOf(
-                    UIMessagePart.ToolResult(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        content = JsonPrimitive("tool output"),
-                        arguments = JsonPrimitive("{}")
-                    )
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolCall(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                arguments = "{}",
+                            ),
+                        ),
+                ),
+                UIMessage(
+                    role = MessageRole.TOOL,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolResult(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                content = JsonPrimitive("tool output"),
+                                arguments = JsonPrimitive("{}"),
+                            ),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -308,21 +336,26 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolMessages should handle multiple tool calls and results`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.ToolCall("call1", "tool1", "{}"),
-                    UIMessagePart.ToolCall("call2", "tool2", "{}")
-                )
-            ),
-            UIMessage(
-                role = MessageRole.TOOL, parts = listOf(
-                    UIMessagePart.ToolResult("call1", "tool1", JsonPrimitive("result1"), JsonPrimitive("{}")),
-                    UIMessagePart.ToolResult("call2", "tool2", JsonPrimitive("result2"), JsonPrimitive("{}"))
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolCall("call1", "tool1", "{}"),
+                            UIMessagePart.ToolCall("call2", "tool2", "{}"),
+                        ),
+                ),
+                UIMessage(
+                    role = MessageRole.TOOL,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolResult("call1", "tool1", JsonPrimitive("result1"), JsonPrimitive("{}")),
+                            UIMessagePart.ToolResult("call2", "tool2", JsonPrimitive("result2"), JsonPrimitive("{}")),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -334,19 +367,22 @@ class MessageTest {
 
     @Test
     fun `migrateToolMessages should not affect new Tool format`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT, parts = listOf(
-                    UIMessagePart.Tool(
-                        toolCallId = "call1",
-                        toolName = "test_tool",
-                        input = "{}",
-                        output = listOf(UIMessagePart.Text("result"))
-                    )
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool(
+                                toolCallId = "call1",
+                                toolName = "test_tool",
+                                input = "{}",
+                                output = listOf(UIMessagePart.Text("result")),
+                            ),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -361,53 +397,66 @@ class MessageTest {
     private data class TestNode(
         val id: String,
         val messages: List<UIMessage>,
-        val selectIndex: Int = 0
+        val selectIndex: Int = 0,
     )
 
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolNodes should merge TOOL node into previous ASSISTANT node`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(
-                            UIMessagePart.ToolCall("call1", "test_tool", "{}")
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node3",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call1", "test_tool", JsonPrimitive("result"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node4",
-                messages = listOf(
-                    UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final")))
-                )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
+                ),
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolCall("call1", "test_tool", "{}"),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node3",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call1",
+                                            "test_tool",
+                                            JsonPrimitive("result"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node4",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final"))),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         // TOOL node should be removed
         assertEquals(3, result.size)
@@ -425,47 +474,63 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolNodes should handle multiple branches in ASSISTANT node`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    // Branch 1
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(UIMessagePart.ToolCall("call1", "tool1", "{}"))
-                    ),
-                    // Branch 2
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(UIMessagePart.ToolCall("call2", "tool2", "{}"))
-                    )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
                 ),
-                selectIndex = 0
-            ),
-            TestNode(
-                id = "node3",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call1", "tool1", JsonPrimitive("result1"), JsonPrimitive("{}")),
-                            UIMessagePart.ToolResult("call2", "tool2", JsonPrimitive("result2"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            // Branch 1
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts = listOf(UIMessagePart.ToolCall("call1", "tool1", "{}")),
+                            ),
+                            // Branch 2
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts = listOf(UIMessagePart.ToolCall("call2", "tool2", "{}")),
+                            ),
+                        ),
+                    selectIndex = 0,
+                ),
+                TestNode(
+                    id = "node3",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call1",
+                                            "tool1",
+                                            JsonPrimitive("result1"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                        UIMessagePart.ToolResult(
+                                            "call2",
+                                            "tool2",
+                                            JsonPrimitive("result2"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         assertEquals(2, result.size)
 
@@ -486,36 +551,42 @@ class MessageTest {
 
     @Test
     fun `migrateToolNodes should not affect nodes without TOOL role`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(
-                            UIMessagePart.Tool("call1", "tool", "{}", listOf(UIMessagePart.Text("result")))
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node3",
-                messages = listOf(
-                    UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final")))
-                )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
+                ),
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.Tool("call1", "tool", "{}", listOf(UIMessagePart.Text("result"))),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node3",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.ASSISTANT, parts = listOf(UIMessagePart.Text("Final"))),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         assertEquals(3, result.size)
         assertEquals(nodes.map { it.id }, result.map { it.id })
@@ -524,30 +595,40 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolNodes should handle TOOL node without preceding ASSISTANT`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call1", "tool", JsonPrimitive("result"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
+                ),
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call1",
+                                            "tool",
+                                            JsonPrimitive("result"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         // TOOL node should remain since there's no ASSISTANT to merge into
         assertEquals(2, result.size)
@@ -556,53 +637,72 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolNodes should handle consecutive TOOL nodes`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(
-                            UIMessagePart.ToolCall("call1", "tool1", "{}"),
-                            UIMessagePart.ToolCall("call2", "tool2", "{}")
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node3",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call1", "tool1", JsonPrimitive("result1"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node4",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call2", "tool2", JsonPrimitive("result2"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
+                ),
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolCall("call1", "tool1", "{}"),
+                                        UIMessagePart.ToolCall("call2", "tool2", "{}"),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node3",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call1",
+                                            "tool1",
+                                            JsonPrimitive("result1"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node4",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call2",
+                                            "tool2",
+                                            JsonPrimitive("result2"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         // Both TOOL nodes should be merged
         assertEquals(2, result.size)
@@ -619,16 +719,18 @@ class MessageTest {
     @Test
     fun `migrateToolMessages should sort parts by priority - Reasoning before Text`() {
         // Create message with wrong order: Text before Reasoning
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Text("Response text"),
-                    UIMessagePart.Reasoning(reasoning = "Thinking process")
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Response text"),
+                            UIMessagePart.Reasoning(reasoning = "Thinking process"),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -642,17 +744,19 @@ class MessageTest {
 
     @Test
     fun `migrateToolMessages should sort parts with Tool and Reasoning`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Tool("call1", "tool", "{}", listOf(UIMessagePart.Text("result"))),
-                    UIMessagePart.Text("Response"),
-                    UIMessagePart.Reasoning(reasoning = "Thinking")
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Tool("call1", "tool", "{}", listOf(UIMessagePart.Text("result"))),
+                            UIMessagePart.Text("Response"),
+                            UIMessagePart.Reasoning(reasoning = "Thinking"),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -666,23 +770,26 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolMessages should sort parts after merging ToolResult`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Text("Let me think"),
-                    UIMessagePart.Reasoning(reasoning = "Thinking"),
-                    UIMessagePart.ToolCall("call1", "tool", "{}")
-                )
-            ),
-            UIMessage(
-                role = MessageRole.TOOL,
-                parts = listOf(
-                    UIMessagePart.ToolResult("call1", "tool", JsonPrimitive("result"), JsonPrimitive("{}"))
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Let me think"),
+                            UIMessagePart.Reasoning(reasoning = "Thinking"),
+                            UIMessagePart.ToolCall("call1", "tool", "{}"),
+                        ),
+                ),
+                UIMessage(
+                    role = MessageRole.TOOL,
+                    parts =
+                        listOf(
+                            UIMessagePart.ToolResult("call1", "tool", JsonPrimitive("result"), JsonPrimitive("{}")),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 
@@ -696,43 +803,55 @@ class MessageTest {
     @Test
     @Suppress("DEPRECATION")
     fun `migrateToolNodes should sort parts after merging`() {
-        val nodes = listOf(
-            TestNode(
-                id = "node1",
-                messages = listOf(
-                    UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query")))
-                )
-            ),
-            TestNode(
-                id = "node2",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(
-                            UIMessagePart.Text("Response"),
-                            UIMessagePart.Reasoning(reasoning = "Thinking"),
-                            UIMessagePart.ToolCall("call1", "tool", "{}")
-                        )
-                    )
-                )
-            ),
-            TestNode(
-                id = "node3",
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.TOOL,
-                        parts = listOf(
-                            UIMessagePart.ToolResult("call1", "tool", JsonPrimitive("result"), JsonPrimitive("{}"))
-                        )
-                    )
-                )
+        val nodes =
+            listOf(
+                TestNode(
+                    id = "node1",
+                    messages =
+                        listOf(
+                            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                        ),
+                ),
+                TestNode(
+                    id = "node2",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.ASSISTANT,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.Text("Response"),
+                                        UIMessagePart.Reasoning(reasoning = "Thinking"),
+                                        UIMessagePart.ToolCall("call1", "tool", "{}"),
+                                    ),
+                            ),
+                        ),
+                ),
+                TestNode(
+                    id = "node3",
+                    messages =
+                        listOf(
+                            UIMessage(
+                                role = MessageRole.TOOL,
+                                parts =
+                                    listOf(
+                                        UIMessagePart.ToolResult(
+                                            "call1",
+                                            "tool",
+                                            JsonPrimitive("result"),
+                                            JsonPrimitive("{}"),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                ),
             )
-        )
 
-        val result = nodes.migrateToolNodes(
-            getMessages = { it.messages },
-            setMessages = { node, msgs -> node.copy(messages = msgs) }
-        )
+        val result =
+            nodes.migrateToolNodes(
+                getMessages = { it.messages },
+                setMessages = { node, msgs -> node.copy(messages = msgs) },
+            )
 
         assertEquals(2, result.size)
         val assistantParts = result[1].messages[0].parts
@@ -743,17 +862,19 @@ class MessageTest {
 
     @Test
     fun `migrateToolMessages should handle Image parts with correct priority`() {
-        val messages = listOf(
-            UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Image(url = "http://example.com/image.png"),
-                    UIMessagePart.Text("Description"),
-                    UIMessagePart.Reasoning(reasoning = "Thinking")
-                )
+        val messages =
+            listOf(
+                UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text("Query"))),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Image(url = "http://example.com/image.png"),
+                            UIMessagePart.Text("Description"),
+                            UIMessagePart.Reasoning(reasoning = "Thinking"),
+                        ),
+                ),
             )
-        )
 
         val result = messages.migrateToolMessages()
 

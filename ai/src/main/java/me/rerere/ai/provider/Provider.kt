@@ -15,9 +15,7 @@ import me.rerere.ai.ui.UIMessage
 interface Provider<T : ProviderSetting> {
     suspend fun listModels(providerSetting: T): List<Model>
 
-    suspend fun getBalance(providerSetting: T): String {
-        return "TODO"
-    }
+    suspend fun getBalance(providerSetting: T): String = "TODO"
 
     suspend fun generateText(
         providerSetting: T,
@@ -104,11 +102,11 @@ data class EmbeddingGenerationResult(
 @Serializable
 data class CustomHeader(
     val name: String,
-    val value: String
+    val value: String,
 )
 
 @Serializable
 data class CustomBody(
     val key: String,
-    val value: JsonElement
+    val value: JsonElement,
 )

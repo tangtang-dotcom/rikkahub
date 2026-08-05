@@ -36,7 +36,10 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-fun ShareHandlerPage(text: String, image: String?) {
+fun ShareHandlerPage(
+    text: String,
+    image: String?,
+) {
     val vm: ShareHandlerVM = koinViewModel(parameters = { parametersOf(text) })
     val settings by vm.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -46,9 +49,9 @@ fun ShareHandlerPage(text: String, image: String?) {
             TopAppBar(
                 title = {
                     Text(stringResource(R.string.share_handler_page_title))
-                }
+                },
             )
-        }
+        },
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -58,22 +61,23 @@ fun ShareHandlerPage(text: String, image: String?) {
             item {
                 Card {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                     ) {
                         Text(
                             text = vm.shareText,
                             maxLines = 5,
                             overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
                         )
 
                         image?.let {
                             AsyncImage(
                                 model = it,
                                 contentDescription = null,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
@@ -88,20 +92,21 @@ fun ShareHandlerPage(text: String, image: String?) {
                             navigateToChatPage(
                                 navigator = navController,
                                 initText = vm.shareText.base64Encode(),
-                                initFiles = image?.let { listOf(it.toUri()) } ?: emptyList()
+                                initFiles = image?.let { listOf(it.toUri()) } ?: emptyList(),
                             )
                         }
                     },
                     tonalElevation = 4.dp,
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     ListItem(
                         headlineContent = {
                             Text(
-                                text = assistant.name.ifEmpty {
-                                    stringResource(R.string.assistant_page_default_assistant)
-                                },
-                                maxLines = 1
+                                text =
+                                    assistant.name.ifEmpty {
+                                        stringResource(R.string.assistant_page_default_assistant)
+                                    },
+                                maxLines = 1,
                             )
                         },
                     )

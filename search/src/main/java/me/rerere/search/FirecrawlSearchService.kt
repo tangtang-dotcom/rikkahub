@@ -36,7 +36,7 @@ object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOpti
         TextButton(
             onClick = {
                 urlHandler.openUri("https://docs.firecrawl.dev/features/search")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -44,186 +44,233 @@ object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOpti
 
     override fun parameters(options: SearchServiceOptions.FirecrawlOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "Search query string")
-                })
-                put("sources", buildJsonObject {
-                    put("type", "array")
-                    put("description", "Optional list of sources: `web`, `news`, default value is `web`")
-                    put("items", buildJsonObject {
-                        put("type", "string")
-                    })
-                })
-                put("categories", buildJsonObject {
-                    put("type", "array")
+            properties =
+                buildJsonObject {
                     put(
-                        "description",
-                        "Optional list of categories to filter search results by: `github`, `research`, empty value means no filtering, default value is empty"
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "Search query string")
+                        },
                     )
-                    put("items", buildJsonObject {
-                        put("type", "string")
-                    })
-                })
-            },
-            required = listOf("query")
+                    put(
+                        "sources",
+                        buildJsonObject {
+                            put("type", "array")
+                            put("description", "Optional list of sources: `web`, `news`, default value is `web`")
+                            put(
+                                "items",
+                                buildJsonObject {
+                                    put("type", "string")
+                                },
+                            )
+                        },
+                    )
+                    put(
+                        "categories",
+                        buildJsonObject {
+                            put("type", "array")
+                            put(
+                                "description",
+                                "Optional list of categories to filter search results by: `github`, `research`, empty value means no filtering, default value is empty",
+                            )
+                            put(
+                                "items",
+                                buildJsonObject {
+                                    put("type", "string")
+                                },
+                            )
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.FirecrawlOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("url", buildJsonObject {
-                    put("type", "string")
-                    put("description", "URL to scrape")
-                })
-                put("onlyMainContent", buildJsonObject {
-                    put("type", "boolean")
-                    put("description", "Whether to only scrape main content, default is true")
-                })
-            },
-            required = listOf("url")
+            properties =
+                buildJsonObject {
+                    put(
+                        "url",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "URL to scrape")
+                        },
+                    )
+                    put(
+                        "onlyMainContent",
+                        buildJsonObject {
+                            put("type", "boolean")
+                            put("description", "Whether to only scrape main content, default is true")
+                        },
+                    )
+                },
+            required = listOf("url"),
         )
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.FirecrawlOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        serviceOptions: SearchServiceOptions.FirecrawlOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val sources = params["sources"].asStringList()
-            val categories = params["categories"].asStringList()
+                val sources = params["sources"].asStringList()
+                val categories = params["categories"].asStringList()
 
-            val body = buildJsonObject {
-                put("query", query)
-                put("limit", commonOptions.resultSize)
-                sources?.takeIf { it.isNotEmpty() }?.let { list ->
-                    put("sources", buildJsonArray {
-                        list.forEach { add(it) }
-                    })
-                }
-                categories?.takeIf { it.isNotEmpty() }?.let { list ->
-                    put("categories", buildJsonArray {
-                        list.forEach { add(it) }
-                    })
-                }
-            }
-
-            val request = Request.Builder()
-                .url("https://api.firecrawl.dev/v2/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Content-Type", "application/json")
-                .apply {
-                    if (serviceOptions.apiKey.isNotBlank()) {
-                        addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                val body =
+                    buildJsonObject {
+                        put("query", query)
+                        put("limit", commonOptions.resultSize)
+                        sources?.takeIf { it.isNotEmpty() }?.let { list ->
+                            put(
+                                "sources",
+                                buildJsonArray {
+                                    list.forEach { add(it) }
+                                },
+                            )
+                        }
+                        categories?.takeIf { it.isNotEmpty() }?.let { list ->
+                            put(
+                                "categories",
+                                buildJsonArray {
+                                    list.forEach { add(it) }
+                                },
+                            )
+                        }
                     }
-                }
-                .build()
 
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("response failed #${response.code}")
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.firecrawl.dev/v2/search")
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Content-Type", "application/json")
+                        .apply {
+                            if (serviceOptions.apiKey.isNotBlank()) {
+                                addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                            }
+                        }.build()
+
+                val response = httpClient.newCall(request).await()
+                if (!response.isSuccessful) {
+                    error("response failed #${response.code}")
+                }
+
+                val bodyString = response.body.string()
+                val payload = json.parseToJsonElement(bodyString).jsonObject
+                val data = payload["data"]?.jsonObject ?: error("empty response data")
+                val resultData = json.decodeFromJsonElement<FirecrawlSearchResultData>(data)
+                val result =
+                    buildList {
+                        resultData.web?.forEach { item ->
+                            add(SearchResultItem(title = item.title, url = item.url, text = item.description))
+                        }
+
+                        resultData.news?.forEach { item ->
+                            add(
+                                SearchResultItem(
+                                    title = item.title,
+                                    url = item.url,
+                                    text =
+                                        """
+                                        ${item.snippet}
+                                        ${item.date}
+                                        """.trimIndent(),
+                                ),
+                            )
+                        }
+                    }
+                SearchResult(
+                    items = result,
+                )
             }
-
-            val bodyString = response.body.string()
-            val payload = json.parseToJsonElement(bodyString).jsonObject
-            val data = payload["data"]?.jsonObject ?: error("empty response data")
-            val resultData = json.decodeFromJsonElement<FirecrawlSearchResultData>(data)
-            val result = buildList {
-                resultData.web?.forEach { item ->
-                    add(SearchResultItem(title = item.title, url = item.url, text = item.description))
-                }
-
-                resultData.news?.forEach { item ->
-                    add(
-                        SearchResultItem(
-                            title = item.title,
-                            url = item.url,
-                            text = """
-                                ${item.snippet}
-                                ${item.date}
-                            """.trimIndent()
-                        )
-                    )
-                }
-            }
-            SearchResult(
-                items = result
-            )
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.FirecrawlOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
-            val onlyMainContent = params["onlyMainContent"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: true
+        serviceOptions: SearchServiceOptions.FirecrawlOptions,
+    ): Result<ScrapedResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
+                val onlyMainContent = params["onlyMainContent"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: true
 
-            val body = buildJsonObject {
-                put("url", url)
-                put("onlyMainContent", onlyMainContent)
-                put("maxAge", 172800000)
-                put("parsers", buildJsonArray { })
-                put("formats", buildJsonArray {
-                    add("markdown")
-                })
-            }
-
-            val request = Request.Builder()
-                .url("https://api.firecrawl.dev/v2/scrape")
-                .post(body.toString().toRequestBody())
-                .addHeader("Content-Type", "application/json")
-                .apply {
-                    if (serviceOptions.apiKey.isNotBlank()) {
-                        addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                val body =
+                    buildJsonObject {
+                        put("url", url)
+                        put("onlyMainContent", onlyMainContent)
+                        put("maxAge", 172800000)
+                        put("parsers", buildJsonArray { })
+                        put(
+                            "formats",
+                            buildJsonArray {
+                                add("markdown")
+                            },
+                        )
                     }
+
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.firecrawl.dev/v2/scrape")
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Content-Type", "application/json")
+                        .apply {
+                            if (serviceOptions.apiKey.isNotBlank()) {
+                                addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                            }
+                        }.build()
+
+                val response = httpClient.newCall(request).await()
+                if (!response.isSuccessful) {
+                    error("response failed #${response.code}")
                 }
-                .build()
 
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("response failed #${response.code}")
-            }
+                val bodyString = response.body.string()
+                val payload = json.parseToJsonElement(bodyString).jsonObject
 
-            val bodyString = response.body.string()
-            val payload = json.parseToJsonElement(bodyString).jsonObject
+                val success = payload["success"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: false
+                if (!success) {
+                    error("scrape request failed")
+                }
 
-            val success = payload["success"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: false
-            if (!success) {
-                error("scrape request failed")
-            }
+                val data = payload["data"]?.jsonObject ?: error("empty response data")
+                val markdown = data["markdown"]?.jsonPrimitive?.content ?: ""
 
-            val data = payload["data"]?.jsonObject ?: error("empty response data")
-            val markdown = data["markdown"]?.jsonPrimitive?.content ?: ""
-
-            ScrapedResult(
-                urls = listOf(
-                    ScrapedResultUrl(
-                        url = url,
-                        content = markdown
-                    )
+                ScrapedResult(
+                    urls =
+                        listOf(
+                            ScrapedResultUrl(
+                                url = url,
+                                content = markdown,
+                            ),
+                        ),
                 )
-            )
+            }
         }
-    }
 
-    private fun JsonElement?.asStringList(): List<String>? {
-        return when (this) {
-            is JsonArray -> this.mapNotNull { element ->
-                element.jsonPrimitive.contentOrNull?.takeIf { it.isNotBlank() }
+    private fun JsonElement?.asStringList(): List<String>? =
+        when (this) {
+            is JsonArray -> {
+                this.mapNotNull { element ->
+                    element.jsonPrimitive.contentOrNull?.takeIf { it.isNotBlank() }
+                }
             }
 
-            is JsonPrimitive -> this.contentOrNull?.split(',')
-                ?.mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            is JsonPrimitive -> {
+                this.contentOrNull
+                    ?.split(',')
+                    ?.mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            }
 
-            else -> null
+            else -> {
+                null
+            }
         }
-    }
 }
 
 @Serializable
@@ -246,6 +293,3 @@ data class FirecrawlSearchResultData(
     val web: List<FirecrawlSearchResultWebItem>? = emptyList(),
     val news: List<FirecrawlSearchResultNewsItem>? = emptyList(),
 )
-
-
-

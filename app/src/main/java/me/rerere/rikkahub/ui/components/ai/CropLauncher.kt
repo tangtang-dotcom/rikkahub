@@ -26,50 +26,58 @@ internal fun useCropLauncher(
     onCroppedImageReady: (Uri) -> Unit,
     onCleanup: (() -> Unit)? = null,
     aspectRatio: Pair<Float, Float>? = null,
-    freeStyleCropEnabled: Boolean = true
+    freeStyleCropEnabled: Boolean = true,
 ): Pair<ActivityResultLauncher<Intent>, (Uri) -> Unit> {
     val context = LocalContext.current
     val toaster = LocalToaster.current
     var cropOutputUri by remember { mutableStateOf<Uri?>(null) }
 
-    val cropActivityLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        when (result.resultCode) {
-            android.app.Activity.RESULT_OK -> {
-                cropOutputUri?.let { croppedUri ->
-                    onCroppedImageReady(croppedUri)
+    val cropActivityLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            when (result.resultCode) {
+                android.app.Activity.RESULT_OK -> {
+                    cropOutputUri?.let { croppedUri ->
+                        onCroppedImageReady(croppedUri)
+                    }
+                }
+
+                UCrop.RESULT_ERROR -> {
+                    val error = result.data?.let { UCrop.getError(it) }
+                    Logging.log(
+                        "CropLauncher",
+                        "crop failed: ${error?.message} | ${error?.stackTraceToString()}",
+                    )
+                    toaster.show(
+                        "Failed to crop image: ${error?.message ?: "unknown error"}",
+                        type = ToastType.Error,
+                    )
                 }
             }
-
-            UCrop.RESULT_ERROR -> {
-                val error = result.data?.let { UCrop.getError(it) }
-                Logging.log(
-                    "CropLauncher",
-                    "crop failed: ${error?.message} | ${error?.stackTraceToString()}"
-                )
-                toaster.show(
-                    "Failed to crop image: ${error?.message ?: "unknown error"}",
-                    type = ToastType.Error
-                )
-            }
+            cropOutputUri?.toFile()?.delete()
+            cropOutputUri = null
+            onCleanup?.invoke()
         }
-        cropOutputUri?.toFile()?.delete()
-        cropOutputUri = null
-        onCleanup?.invoke()
-    }
 
     val launchCrop: (Uri) -> Unit = { sourceUri ->
         val outputFile = File(context.appTempFolder, "crop_output_${System.currentTimeMillis()}.jpg")
         cropOutputUri = Uri.fromFile(outputFile)
 
-        var crop = UCrop.of(sourceUri, cropOutputUri!!).withOptions(UCrop.Options().apply {
-            setFreeStyleCropEnabled(freeStyleCropEnabled)
-            setAllowedGestures(
-                UCropActivity.SCALE, UCropActivity.ROTATE, UCropActivity.NONE
-            )
-            setCompressionFormat(Bitmap.CompressFormat.PNG)
-        }).withMaxResultSize(4096, 4096)
+        var crop =
+            UCrop
+                .of(sourceUri, cropOutputUri!!)
+                .withOptions(
+                    UCrop.Options().apply {
+                        setFreeStyleCropEnabled(freeStyleCropEnabled)
+                        setAllowedGestures(
+                            UCropActivity.SCALE,
+                            UCropActivity.ROTATE,
+                            UCropActivity.NONE,
+                        )
+                        setCompressionFormat(Bitmap.CompressFormat.PNG)
+                    },
+                ).withMaxResultSize(4096, 4096)
         aspectRatio?.let { (x, y) ->
             crop = crop.withAspectRatio(x, y)
         }

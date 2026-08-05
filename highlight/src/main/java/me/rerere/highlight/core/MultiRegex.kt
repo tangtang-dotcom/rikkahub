@@ -48,7 +48,10 @@ private class MultiRegex(
 
     var lastIndex: Int = 0
 
-    fun addRule(re: String, info: RuleInfo) {
+    fun addRule(
+        re: String,
+        info: RuleInfo,
+    ) {
         info.position = position++
         matchIndexes[matchAt] = info
         regexes += info to re
@@ -57,11 +60,12 @@ private class MultiRegex(
 
     fun compile() {
         if (regexes.isEmpty()) return
-        matcherRe = compilePattern(
-            source = rewriteBackreferences(regexes.map { it.second }, joinWith = "|"),
-            caseInsensitive = caseInsensitive,
-            unicode = unicodeRegex,
-        )
+        matcherRe =
+            compilePattern(
+                source = rewriteBackreferences(regexes.map { it.second }, joinWith = "|"),
+                caseInsensitive = caseInsensitive,
+                unicode = unicodeRegex,
+            )
         lastIndex = 0
     }
 
@@ -111,7 +115,10 @@ internal class ResumableMultiRegex(
     var lastIndex: Int = 0
     var regexIndex: Int = 0
 
-    fun addRule(re: String, info: RuleInfo) {
+    fun addRule(
+        re: String,
+        info: RuleInfo,
+    ) {
         rules += re to info
         if (info.type == MatchType.BEGIN) count++
     }
@@ -122,12 +129,13 @@ internal class ResumableMultiRegex(
 
     private fun resumingScanAtSamePosition(): Boolean = regexIndex != 0
 
-    private fun getMatcher(index: Int): MultiRegex = multiRegexes.getOrPut(index) {
-        MultiRegex(caseInsensitive, unicodeRegex).apply {
-            rules.drop(index).forEach { (re, info) -> addRule(re, info.copy()) }
-            compile()
+    private fun getMatcher(index: Int): MultiRegex =
+        multiRegexes.getOrPut(index) {
+            MultiRegex(caseInsensitive, unicodeRegex).apply {
+                rules.drop(index).forEach { (re, info) -> addRule(re, info.copy()) }
+                compile()
+            }
         }
-    }
 
     fun exec(input: String): MultiMatch? {
         val matcher = getMatcher(regexIndex)

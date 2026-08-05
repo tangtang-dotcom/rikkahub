@@ -45,9 +45,10 @@ fun CustomThemeButtonGroup(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
             themes.fastForEach { theme ->
@@ -66,7 +67,7 @@ private fun CustomThemeButton(
     theme: CustomTheme,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val darkMode = LocalDarkMode.current
     val scheme = theme.generateColorScheme(darkMode)
@@ -74,20 +75,21 @@ private fun CustomThemeButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = LocalIndication.current,
-                onClick = onClick
-            )
-            .padding(8.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(16.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = LocalIndication.current,
+                    onClick = onClick,
+                ).padding(8.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Canvas(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(48.dp)
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .size(48.dp),
             ) {
                 drawRect(color = scheme.primaryContainer, size = size)
                 drawRect(
@@ -103,14 +105,14 @@ private fun CustomThemeButton(
                 drawCircle(
                     color = scheme.primary,
                     radius = if (selected) 12.dp.toPx() else 8.dp.toPx(),
-                    center = Offset(x = size.width / 2, y = size.height / 2)
+                    center = Offset(x = size.width / 2, y = size.height / 2),
                 )
             }
             if (selected) {
                 Icon(
                     HugeIcons.Tick01,
                     contentDescription = null,
-                    tint = scheme.onPrimary
+                    tint = scheme.onPrimary,
                 )
             }
         }

@@ -782,6 +782,8 @@
   <string name="setting_page_config">配置</string>
   <string name="setting_page_config_api_desc">你還沒有配置API和模型，請先配置</string>
   <string name="setting_page_config_api_title">請配置API和模型</string>
+  <string name="setting_page_security_degraded_title">裝置不支援安全加密</string>
+  <string name="setting_page_security_degraded_desc">你的裝置不支援硬件安全加密，憑證以弱加密方式儲存</string>
   <string name="setting_page_data_backup">資料備份</string>
   <string name="setting_page_data_backup_desc">備份和恢復應用資料</string>
   <string name="setting_page_data_settings">資料設定</string>
@@ -1128,6 +1130,7 @@
   <string name="auto_compress_confirm_title">是否確認壓縮？</string>
   <string name="auto_compress_confirm_desc">壓縮會摘要並重設目前對話的歷史訊息，是否繼續？</string>
   <string name="auto_compress_reset_warning">⚠️ 自動壓縮將重設目前對話中的歷史訊息</string>
+  <string name="auto_compress_invalid_input">請輸入有效值</string>
   <string name="setting_model_page_tool_output">工具輸出限制</string>
   <string name="setting_model_page_tool_output_max_chars">工具輸出限制（KB，1-20；如 5 = 5000 字元）</string>
   <string name="setting_display_page_bubble_opacity_title">氣泡透明度</string>

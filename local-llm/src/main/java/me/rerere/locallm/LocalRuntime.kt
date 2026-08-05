@@ -11,6 +11,9 @@ import kotlinx.serialization.Serializable
  * here + a Provider implementation + a tile in Settings, and nothing else has to change.
  */
 @Serializable
-sealed class LocalRuntime(val displayName: String, val fileExtension: String) {
+sealed class LocalRuntime(
+    val displayName: String,
+    val fileExtension: String,
+) {
     @Serializable data object LiteRT : LocalRuntime(displayName = "LiteRT", fileExtension = "litertlm")
 }

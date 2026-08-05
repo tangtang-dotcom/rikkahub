@@ -8,10 +8,10 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import java.util.concurrent.TimeUnit
 import me.rerere.rikkahub.data.telegram.TelegramBotPreferences
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "TelegramBotHealth"
 private const val HEALTH_WORK_NAME = "telegram_bot_health"
@@ -33,8 +33,8 @@ private const val HEALTH_INTERVAL_MIN = 30L
 class TelegramBotHealthWorker(
     appContext: Context,
     params: WorkerParameters,
-) : CoroutineWorker(appContext, params), KoinComponent {
-
+) : CoroutineWorker(appContext, params),
+    KoinComponent {
     private val telegramPrefs: TelegramBotPreferences by inject()
 
     override suspend fun doWork(): Result {
@@ -62,8 +62,9 @@ class TelegramBotHealthWorker(
      */
     @Suppress("DEPRECATION")
     private fun isServiceRunning(): Boolean {
-        val am = applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-            ?: return false
+        val am =
+            applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                ?: return false
         return am.getRunningServices(Int.MAX_VALUE).any {
             it.service.className == TelegramBotService::class.java.name
         }
@@ -76,13 +77,15 @@ class TelegramBotHealthWorker(
          * worker thanks to `ExistingPeriodicWorkPolicy.KEEP`.
          */
         fun schedule(context: Context) {
-            val req = PeriodicWorkRequestBuilder<TelegramBotHealthWorker>(
-                HEALTH_INTERVAL_MIN, TimeUnit.MINUTES
-            ).build()
+            val req =
+                PeriodicWorkRequestBuilder<TelegramBotHealthWorker>(
+                    HEALTH_INTERVAL_MIN,
+                    TimeUnit.MINUTES,
+                ).build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 HEALTH_WORK_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,
-                req
+                req,
             )
         }
 

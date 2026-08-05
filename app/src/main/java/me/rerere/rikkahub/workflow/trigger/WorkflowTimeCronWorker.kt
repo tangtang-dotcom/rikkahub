@@ -18,8 +18,8 @@ import org.koin.java.KoinJavaComponent
 class WorkflowTimeCronWorker(
     appContext: Context,
     params: WorkerParameters,
-) : CoroutineWorker(appContext, params), KoinComponent {
-
+) : CoroutineWorker(appContext, params),
+    KoinComponent {
     private val registry: TriggerRegistry by inject()
 
     override suspend fun doWork(): Result {
@@ -35,8 +35,9 @@ class WorkflowTimeCronWorker(
  * itself so the family can stay free of Koin lookups.
  */
 internal object TimeCronWorkerHelper {
-    suspend fun repositoryLookup(workflowId: String): WorkflowRepository.Loaded? = runCatching {
-        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-        repo.getById(workflowId)
-    }.getOrNull()
+    suspend fun repositoryLookup(workflowId: String): WorkflowRepository.Loaded? =
+        runCatching {
+            val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
+            repo.getById(workflowId)
+        }.getOrNull()
 }

@@ -2,12 +2,6 @@ package me.rerere.rikkahub.ui.pages.setting
 
 import android.content.Intent
 import android.os.Build
-
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.View
-import me.rerere.hugeicons.stroke.ViewOff
-import me.rerere.hugeicons.stroke.Play
-import me.rerere.hugeicons.stroke.StopCircle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,22 +36,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Play
 import me.rerere.hugeicons.stroke.Stop
+import me.rerere.hugeicons.stroke.StopCircle
+import me.rerere.hugeicons.stroke.View
+import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionLocalNetwork
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalSettings
@@ -76,7 +75,8 @@ fun SettingWebPage() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    @Suppress("DEPRECATION")  // LocalClipboard requires a suspend-friendly callsite refactor
+
+    @Suppress("DEPRECATION") // LocalClipboard requires a suspend-friendly callsite refactor
     val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
     val copiedText = stringResource(R.string.copied)
@@ -90,28 +90,31 @@ fun SettingWebPage() {
         mutableStateOf(false)
     }
 
-    val permissionState = rememberPermissionState(
-        permissions = buildSet {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                add(PermissionNotification)
-            }
-            // Android 17 gates LAN sockets behind ACCESS_LOCAL_NETWORK; only
-            // request when the user has chosen non-localhost mode.
-            if (Build.VERSION.SDK_INT >= 37 && !settings.webServerLocalhostOnly) {
-                add(PermissionLocalNetwork)
-            }
-        },
-    )
+    val permissionState =
+        rememberPermissionState(
+            permissions =
+                buildSet {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        add(PermissionNotification)
+                    }
+                    // Android 17 gates LAN sockets behind ACCESS_LOCAL_NETWORK; only
+                    // request when the user has chosen non-localhost mode.
+                    if (Build.VERSION.SDK_INT >= 37 && !settings.webServerLocalhostOnly) {
+                        add(PermissionLocalNetwork)
+                    }
+                },
+        )
     PermissionManager(permissionState = permissionState)
 
     var pendingStart by remember { mutableStateOf(false) }
 
     fun startWebServer() {
-        val intent = Intent(context, WebServerService::class.java).apply {
-            action = WebServerService.ACTION_START
-            putExtra(WebServerService.EXTRA_PORT, settings.webServerPort)
-            putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, settings.webServerLocalhostOnly)
-        }
+        val intent =
+            Intent(context, WebServerService::class.java).apply {
+                action = WebServerService.ACTION_START
+                putExtra(WebServerService.EXTRA_PORT, settings.webServerPort)
+                putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, settings.webServerLocalhostOnly)
+            }
         context.startForegroundService(intent)
         scope.launch {
             settingsStore.update { it.copy(webServerEnabled = true) }
@@ -151,9 +154,10 @@ fun SettingWebPage() {
                             permissionState.requestPermissions()
                         }
                     } else {
-                        val intent = Intent(context, WebServerService::class.java).apply {
-                            action = WebServerService.ACTION_STOP
-                        }
+                        val intent =
+                            Intent(context, WebServerService::class.java).apply {
+                                action = WebServerService.ACTION_STOP
+                            }
                         context.startService(intent)
                         scope.launch {
                             settingsStore.update { it.copy(webServerEnabled = false) }
@@ -179,14 +183,15 @@ fun SettingWebPage() {
                             stringResource(R.string.setting_page_web_server_stop)
                         } else {
                             stringResource(R.string.setting_page_web_server_start)
-                        }
+                        },
                     )
                 },
-                containerColor = if (serverState.isRunning) {
-                    MaterialTheme.colorScheme.errorContainer
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                },
+                containerColor =
+                    if (serverState.isRunning) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -199,9 +204,10 @@ fun SettingWebPage() {
         ) {
             item {
                 CardGroup(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
                 ) {
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server_port)) },
@@ -224,18 +230,23 @@ fun SettingWebPage() {
                                 modifier = Modifier.width(100.dp),
                                 enabled = !serverState.isRunning,
                                 shape = CircleShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    errorIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent
-                                )
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        errorIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         },
                     )
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server_localhost_only)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_localhost_only_desc)) },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_page_web_server_localhost_only_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = settings.webServerLocalhostOnly,
@@ -280,22 +291,23 @@ fun SettingWebPage() {
                                         settingsStore.update {
                                             it.copy(
                                                 webServerAccessPassword = value,
-                                                webServerJwtEnabled = it.webServerJwtEnabled && value.isNotBlank()
+                                                webServerJwtEnabled = it.webServerJwtEnabled && value.isNotBlank(),
                                             )
                                         }
                                     }
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                visualTransformation = if (passwordVisible) {
-                                    VisualTransformation.None
-                                } else {
-                                    PasswordVisualTransformation()
-                                },
+                                visualTransformation =
+                                    if (passwordVisible) {
+                                        VisualTransformation.None
+                                    } else {
+                                        PasswordVisualTransformation()
+                                    },
                                 trailingIcon = {
                                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                         Icon(
                                             imageVector = if (passwordVisible) HugeIcons.ViewOff else HugeIcons.View,
-                                            contentDescription = null
+                                            contentDescription = null,
                                         )
                                     }
                                 },
@@ -303,12 +315,13 @@ fun SettingWebPage() {
                                 isError = settings.webServerJwtEnabled && accessPasswordText.isBlank(),
                                 modifier = Modifier.width(180.dp),
                                 shape = CircleShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    errorIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent
-                                )
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        errorIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         },
                     )
@@ -318,7 +331,11 @@ fun SettingWebPage() {
                             val lanUrl = "http://${serverState.address ?: "localhost"}:$port"
                             item(
                                 onClick = { copyUrl(lanUrl) },
-                                headlineContent = { Text(stringResource(R.string.setting_page_web_server_lan_address)) },
+                                headlineContent = {
+                                    Text(
+                                        stringResource(R.string.setting_page_web_server_lan_address),
+                                    )
+                                },
                                 supportingContent = { Text(lanUrl) },
                             )
 
@@ -326,7 +343,11 @@ fun SettingWebPage() {
                                 val mdnsUrl = "http://${serverState.hostname}:$port"
                                 item(
                                     onClick = { copyUrl(mdnsUrl) },
-                                    headlineContent = { Text(stringResource(R.string.setting_page_web_server_mdns_address)) },
+                                    headlineContent = {
+                                        Text(
+                                            stringResource(R.string.setting_page_web_server_mdns_address),
+                                        )
+                                    },
                                     supportingContent = { Text(mdnsUrl) },
                                 )
                             }
@@ -360,13 +381,13 @@ fun SettingWebPage() {
                             headlineContent = {
                                 Text(
                                     text = stringResource(R.string.setting_page_web_server_error),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
                                 )
                             },
                             supportingContent = {
                                 Text(
                                     text = serverState.error ?: "",
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
                                 )
                             },
                         )

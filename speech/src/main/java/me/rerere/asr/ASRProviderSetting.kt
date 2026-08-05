@@ -32,12 +32,11 @@ sealed class ASRProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): ASRProviderSetting {
-            return this.copy(
+        ): ASRProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -56,12 +55,11 @@ sealed class ASRProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): ASRProviderSetting {
-            return this.copy(
+        ): ASRProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -77,12 +75,11 @@ sealed class ASRProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): ASRProviderSetting {
-            return this.copy(
+        ): ASRProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     /**
@@ -115,12 +112,11 @@ sealed class ASRProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): ASRProviderSetting {
-            return this.copy(
+        ): ASRProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     /**
@@ -161,12 +157,11 @@ sealed class ASRProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): ASRProviderSetting {
-            return this.copy(
+        ): ASRProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     companion object {

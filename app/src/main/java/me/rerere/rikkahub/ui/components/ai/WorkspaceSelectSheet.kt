@@ -44,16 +44,18 @@ internal fun WorkspaceSelectSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-        ),
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
@@ -63,9 +65,10 @@ internal fun WorkspaceSelectSheet(
             )
 
             Column(
-                modifier = Modifier
-                    .heightIn(max = 360.dp)
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier
+                        .heightIn(max = 360.dp)
+                        .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // 不绑定
@@ -102,9 +105,10 @@ internal fun WorkspaceSelectSheet(
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.large)
-                    .clickable { onManage() },
+                modifier =
+                    Modifier
+                        .clip(MaterialTheme.shapes.large)
+                        .clickable { onManage() },
             )
         }
     }
@@ -128,35 +132,42 @@ private fun WorkspaceSelectRow(
                 overflow = TextOverflow.Ellipsis,
             )
         },
-        supportingContent = status?.let {
-            {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
-        trailingContent = if (selected) {
-            {
-                Icon(
-                    imageVector = HugeIcons.Tick02,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        } else null,
-        colors = ListItemDefaults.colors(
-            containerColor = if (selected) {
-                MaterialTheme.colorScheme.surfaceContainerHigh
+        supportingContent =
+            status?.let {
+                {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            },
+        trailingContent =
+            if (selected) {
+                {
+                    Icon(
+                        imageVector = HugeIcons.Tick02,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             } else {
-                Color.Transparent
-            }
-        ),
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.large)
-            .clickable { onClick() },
+                null
+            },
+        colors =
+            ListItemDefaults.colors(
+                containerColor =
+                    if (selected) {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    } else {
+                        Color.Transparent
+                    },
+            ),
+        modifier =
+            Modifier
+                .clip(MaterialTheme.shapes.large)
+                .clickable { onClick() },
     )
 }

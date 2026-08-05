@@ -11,11 +11,11 @@ import kotlinx.serialization.json.JsonPrimitive
 data class ParseResult(
     val success: Boolean,
     val expr: Expr? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 )
 
-fun parseExpression(input: String): ParseResult {
-    return try {
+fun parseExpression(input: String): ParseResult =
+    try {
         val lexer = Lexer(input)
         val parser = Parser(lexer)
         val expr = parser.parse()
@@ -25,7 +25,6 @@ fun parseExpression(input: String): ParseResult {
     } catch (e: Exception) {
         ParseResult(false, null, e.message ?: "Unknown error")
     }
-}
 
 fun isJsonExprValid(input: String): Boolean = parseExpression(input).success
 
@@ -52,7 +51,10 @@ fun isJsonExprValid(input: String): Boolean = parseExpression(input).success
  * @param root 用于解析路径的根[JsonObject]。
  * @return 作为字符串的评估值。
  */
-fun evaluateJsonExpr(input: String, root: JsonObject): String {
+fun evaluateJsonExpr(
+    input: String,
+    root: JsonObject,
+): String {
     val lexer = Lexer(input)
     val parser = Parser(lexer)
     val expr = parser.parse()
@@ -66,15 +68,31 @@ fun evaluateJsonExpr(input: String, root: JsonObject): String {
 // Lexer
 
 private enum class TokenType {
-    IDENT, NUMBER, STRING,
-    DOT, LBRACKET, RBRACKET, LPAREN, RPAREN,
-    PLUS, MINUS, STAR, SLASH, CONCAT,
-    EOF
+    IDENT,
+    NUMBER,
+    STRING,
+    DOT,
+    LBRACKET,
+    RBRACKET,
+    LPAREN,
+    RPAREN,
+    PLUS,
+    MINUS,
+    STAR,
+    SLASH,
+    CONCAT,
+    EOF,
 }
 
-private data class Token(val type: TokenType, val lexeme: String, val position: Int)
+private data class Token(
+    val type: TokenType,
+    val lexeme: String,
+    val position: Int,
+)
 
-private class Lexer(private val src: String) {
+private class Lexer(
+    private val src: String,
+) {
     private var i = 0
 
     fun next(): Token {
@@ -83,20 +101,63 @@ private class Lexer(private val src: String) {
         val start = i
         val c = src[i]
         when (c) {
-            '.' -> { i++; return Token(TokenType.DOT, ".", start) }
-            '[' -> { i++; return Token(TokenType.LBRACKET, "[", start) }
-            ']' -> { i++; return Token(TokenType.RBRACKET, "]", start) }
-            '(' -> { i++; return Token(TokenType.LPAREN, "(", start) }
-            ')' -> { i++; return Token(TokenType.RPAREN, ")", start) }
-            '+' -> {
-                if (peek() == '+') { i += 2; return Token(TokenType.CONCAT, "++", start) }
-                i++; return Token(TokenType.PLUS, "+", start)
+            '.' -> {
+                i++
+                return Token(TokenType.DOT, ".", start)
             }
-            '-' -> { i++; return Token(TokenType.MINUS, "-", start) }
-            '*' -> { i++; return Token(TokenType.STAR, "*", start) }
-            '/' -> { i++; return Token(TokenType.SLASH, "/", start) }
-            'x', 'X' -> { i++; return Token(TokenType.STAR, c.toString(), start) }
-            '"' -> return stringToken()
+
+            '[' -> {
+                i++
+                return Token(TokenType.LBRACKET, "[", start)
+            }
+
+            ']' -> {
+                i++
+                return Token(TokenType.RBRACKET, "]", start)
+            }
+
+            '(' -> {
+                i++
+                return Token(TokenType.LPAREN, "(", start)
+            }
+
+            ')' -> {
+                i++
+                return Token(TokenType.RPAREN, ")", start)
+            }
+
+            '+' -> {
+                if (peek() == '+') {
+                    i += 2
+                    return Token(TokenType.CONCAT, "++", start)
+                }
+                i++
+                return Token(TokenType.PLUS, "+", start)
+            }
+
+            '-' -> {
+                i++
+                return Token(TokenType.MINUS, "-", start)
+            }
+
+            '*' -> {
+                i++
+                return Token(TokenType.STAR, "*", start)
+            }
+
+            '/' -> {
+                i++
+                return Token(TokenType.SLASH, "/", start)
+            }
+
+            'x', 'X' -> {
+                i++
+                return Token(TokenType.STAR, c.toString(), start)
+            }
+
+            '"' -> {
+                return stringToken()
+            }
         }
 
         if (c.isDigit()) return numberToken()
@@ -128,13 +189,18 @@ private class Lexer(private val src: String) {
                 }
                 escaped = false
             } else {
-                if (ch == '\\') escaped = true
-                else if (ch == '"') break
-                else sb.append(ch)
+                if (ch == '\\') {
+                    escaped = true
+                } else if (ch == '"') {
+                    break
+                } else {
+                    sb.append(ch)
+                }
             }
         }
-        if (i > src.length || (i <= src.length && src[i - 1] != '"'))
+        if (i > src.length || (i <= src.length && src[i - 1] != '"')) {
             throw ParseException("Unterminated string starting at $start")
+        }
         return Token(TokenType.STRING, sb.toString(), start)
     }
 
@@ -160,25 +226,54 @@ private class Lexer(private val src: String) {
     private fun peek(): Char? = if (i + 1 < src.length) src[i + 1] else null
 
     private fun isIdentStart(c: Char) = c == '_' || c.isLetter()
+
     private fun isIdentPart(c: Char) = c == '_' || c.isLetterOrDigit()
 }
 
 // Parser
 
-private class ParseException(message: String) : RuntimeException(message)
+private class ParseException(
+    message: String,
+) : RuntimeException(message)
 
 sealed interface Expr
-private data class Binary(val left: Expr, val op: Token, val right: Expr) : Expr
-private data class Unary(val op: Token, val expr: Expr) : Expr
-private data class NumberLiteral(val value: Double) : Expr
-private data class StringLiteral(val value: String) : Expr
-private data class PathExpr(val parts: List<PathPart>) : Expr
+
+private data class Binary(
+    val left: Expr,
+    val op: Token,
+    val right: Expr,
+) : Expr
+
+private data class Unary(
+    val op: Token,
+    val expr: Expr,
+) : Expr
+
+private data class NumberLiteral(
+    val value: Double,
+) : Expr
+
+private data class StringLiteral(
+    val value: String,
+) : Expr
+
+private data class PathExpr(
+    val parts: List<PathPart>,
+) : Expr
 
 private sealed interface PathPart
-private data class Field(val name: String) : PathPart
-private data class Index(val index: Int) : PathPart
 
-private class Parser(private val lexer: Lexer) {
+private data class Field(
+    val name: String,
+) : PathPart
+
+private data class Index(
+    val index: Int,
+) : PathPart
+
+private class Parser(
+    private val lexer: Lexer,
+) {
     private var current: Token = lexer.next()
     private var last: Token = current
 
@@ -227,28 +322,35 @@ private class Parser(private val lexer: Lexer) {
         return parsePrimary()
     }
 
-    private fun parsePrimary(): Expr {
-        return when (current.type) {
+    private fun parsePrimary(): Expr =
+        when (current.type) {
             TokenType.NUMBER -> {
                 val n = current
                 advance()
                 NumberLiteral(n.lexeme.toDouble())
             }
+
             TokenType.STRING -> {
                 val s = current
                 advance()
                 StringLiteral(s.lexeme)
             }
-            TokenType.IDENT -> parsePath()
+
+            TokenType.IDENT -> {
+                parsePath()
+            }
+
             TokenType.LPAREN -> {
                 advance()
                 val e = parseConcat()
                 expect(TokenType.RPAREN)
                 e
             }
-            else -> throw error("Expected primary expression, got ${current.type}")
+
+            else -> {
+                throw error("Expected primary expression, got ${current.type}")
+            }
         }
-    }
 
     private fun parsePath(): Expr {
         val parts = mutableListOf<PathPart>()
@@ -262,20 +364,27 @@ private class Parser(private val lexer: Lexer) {
                     val id = expect(TokenType.IDENT)
                     parts.add(Field(id.lexeme))
                 }
+
                 match(TokenType.LBRACKET) -> {
                     val numTok = expect(TokenType.NUMBER)
                     val idxVal = numTok.lexeme.toDouble().toInt()
                     parts.add(Index(idxVal))
                     expect(TokenType.RBRACKET)
                 }
-                else -> break@loop
+
+                else -> {
+                    break@loop
+                }
             }
         }
         return PathExpr(parts)
     }
 
     private fun match(type: TokenType): Boolean {
-        if (current.type == type) { advance(); return true }
+        if (current.type == type) {
+            advance()
+            return true
+        }
         return false
     }
 
@@ -286,26 +395,39 @@ private class Parser(private val lexer: Lexer) {
         return tok
     }
 
-    private fun advance() { last = current; current = lexer.next() }
+    private fun advance() {
+        last = current
+        current = lexer.next()
+    }
+
     private fun previous(): Token = last
+
     private fun error(msg: String) = ParseException(msg)
 }
 
 // Evaluator
 
 private sealed interface Value {
-    data class Str(val value: String) : Value
-    data class Num(val value: Double) : Value
+    data class Str(
+        val value: String,
+    ) : Value
+
+    data class Num(
+        val value: Double,
+    ) : Value
 }
 
-private class Evaluator(private val root: JsonObject) {
-    fun eval(expr: Expr): Value = when (expr) {
-        is NumberLiteral -> Value.Num(expr.value)
-        is StringLiteral -> Value.Str(expr.value)
-        is Unary -> evalUnary(expr)
-        is Binary -> evalBinary(expr)
-        is PathExpr -> fromJson(resolvePath(expr))
-    }
+private class Evaluator(
+    private val root: JsonObject,
+) {
+    fun eval(expr: Expr): Value =
+        when (expr) {
+            is NumberLiteral -> Value.Num(expr.value)
+            is StringLiteral -> Value.Str(expr.value)
+            is Unary -> evalUnary(expr)
+            is Binary -> evalBinary(expr)
+            is PathExpr -> fromJson(resolvePath(expr))
+        }
 
     private fun evalUnary(expr: Unary): Value {
         val v = eval(expr.expr)
@@ -337,6 +459,7 @@ private class Evaluator(private val root: JsonObject) {
                     val obj = cur as? JsonObject ?: return null
                     cur = obj[part.name] ?: return null
                 }
+
                 is Index -> {
                     val arr = cur as? JsonArray ?: return null
                     val idx = part.index
@@ -352,27 +475,38 @@ private class Evaluator(private val root: JsonObject) {
         if (elem == null || elem is JsonNull) return Value.Str("")
         return when (elem) {
             is JsonPrimitive -> {
-                if (elem.isString) Value.Str(elem.content)
-                else elem.doubleOrNull()?.let { Value.Num("%.2f".format(it).toDouble()) } ?: Value.Str(elem.content)
+                if (elem.isString) {
+                    Value.Str(elem.content)
+                } else {
+                    elem.doubleOrNull()?.let { Value.Num("%.2f".format(it).toDouble()) } ?: Value.Str(elem.content)
+                }
             }
-            is JsonObject, is JsonArray -> Value.Str(elem.toString())
+
+            is JsonObject, is JsonArray -> {
+                Value.Str(elem.toString())
+            }
         }
     }
 
-    private fun toNumber(v: Value): Double = when (v) {
-        is Value.Num -> v.value
-        is Value.Str -> v.value.toDoubleOrNull() ?: 0.0
-    }
+    private fun toNumber(v: Value): Double =
+        when (v) {
+            is Value.Num -> v.value
+            is Value.Str -> v.value.toDoubleOrNull() ?: 0.0
+        }
 
-    private fun toString(v: Value): String = when (v) {
-        is Value.Str -> v.value
-        is Value.Num -> formatNumber(v.value)
-    }
+    private fun toString(v: Value): String =
+        when (v) {
+            is Value.Str -> v.value
+            is Value.Num -> formatNumber(v.value)
+        }
 }
 
-private fun JsonPrimitive.doubleOrNull(): Double? = try {
-    this.content.toDouble()
-} catch (_: Exception) { null }
+private fun JsonPrimitive.doubleOrNull(): Double? =
+    try {
+        this.content.toDouble()
+    } catch (_: Exception) {
+        null
+    }
 
 private fun formatNumber(d: Double): String {
     if (d.isNaN() || d.isInfinite()) return d.toString()

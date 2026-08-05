@@ -32,18 +32,19 @@ private fun AIIcon(
 ) {
     val contentColor = LocalContentColor.current
     val context = LocalContext.current
-    val model = remember(path, contentColor, context) {
-        ImageRequest.Builder(context)
-            .data("file:///android_asset/icons/$path")
-            .css(
-                """
-                svg {
-                  fill: ${contentColor.toCssHex()};
-                }
-            """.trimIndent()
-            )
-            .build()
-    }
+    val model =
+        remember(path, contentColor, context) {
+            ImageRequest
+                .Builder(context)
+                .data("file:///android_asset/icons/$path")
+                .css(
+                    """
+                    svg {
+                      fill: ${contentColor.toCssHex()};
+                    }
+                    """.trimIndent(),
+                ).build()
+        }
     Surface(
         modifier = modifier.size(24.dp),
         shape = rememberAvatarShape(loading),
@@ -52,7 +53,7 @@ private fun AIIcon(
         AsyncImage(
             model = model,
             contentDescription = name,
-            modifier = Modifier.padding(4.dp)
+            modifier = Modifier.padding(4.dp),
         )
     }
 }
@@ -64,10 +65,11 @@ fun AutoAIIcon(
     loading: Boolean = false,
     color: Color = MaterialTheme.colorScheme.secondaryContainer,
 ) {
-    val path = remember(name) { computeAIIconByName(name) } ?: run {
-        TextAvatar(text = name, modifier = modifier, loading = loading, color = color)
-        return
-    }
+    val path =
+        remember(name) { computeAIIconByName(name) } ?: run {
+            TextAvatar(text = name, modifier = modifier, loading = loading, color = color)
+            return
+        }
     AIIcon(
         path = path,
         name = name,

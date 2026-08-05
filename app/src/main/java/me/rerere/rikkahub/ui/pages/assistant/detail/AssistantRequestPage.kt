@@ -29,11 +29,12 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AssistantRequestPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -56,7 +57,7 @@ fun AssistantRequestPage(id: String) {
         AssistantRequestContent(
             innerPadding = innerPadding,
             assistant = assistant,
-            onUpdate = { vm.update(it) }
+            onUpdate = { vm.update(it) },
         )
     }
 }
@@ -65,26 +66,27 @@ fun AssistantRequestPage(id: String) {
 internal fun AssistantRequestContent(
     innerPadding: PaddingValues,
     assistant: Assistant,
-    onUpdate: (Assistant) -> Unit
+    onUpdate: (Assistant) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(innerPadding)
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(innerPadding)
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CustomHeaders(
             headers = assistant.customHeaders,
             onUpdate = {
                 onUpdate(
                     assistant.copy(
-                        customHeaders = it
-                    )
+                        customHeaders = it,
+                    ),
                 )
-            }
+            },
         )
 
         HorizontalDivider()
@@ -94,10 +96,10 @@ internal fun AssistantRequestContent(
             onUpdate = {
                 onUpdate(
                     assistant.copy(
-                        customBodies = it
-                    )
+                        customBodies = it,
+                    ),
                 )
-            }
+            },
         )
     }
 }

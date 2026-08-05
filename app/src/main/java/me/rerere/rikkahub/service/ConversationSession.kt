@@ -40,15 +40,17 @@ class ConversationSession(
     // 空闲检查任务
     private var idleCheckJob: Job? = null
 
-    fun acquire(): Int = refCount.incrementAndGet().also {
-        cancelIdleCheck()
-        Log.d(TAG, "acquire $id (refs=$it)")
-    }
+    fun acquire(): Int =
+        refCount.incrementAndGet().also {
+            cancelIdleCheck()
+            Log.d(TAG, "acquire $id (refs=$it)")
+        }
 
-    fun release(): Int = refCount.decrementAndGet().also {
-        Log.d(TAG, "release $id (refs=$it)")
-        if (it <= 0) scheduleIdleCheck()
-    }
+    fun release(): Int =
+        refCount.decrementAndGet().also {
+            Log.d(TAG, "release $id (refs=$it)")
+            if (it <= 0) scheduleIdleCheck()
+        }
 
     // 作用域 API - 短请求（REST）
     inline fun <T> withRef(block: () -> T): T {
@@ -93,12 +95,13 @@ class ConversationSession(
 
     private fun scheduleIdleCheck() {
         idleCheckJob?.cancel()
-        idleCheckJob = scope.launch {
-            delay(IDLE_TIMEOUT_MS)
-            if (refCount.get() <= 0 && !isGenerating) {
-                onIdle(id)
+        idleCheckJob =
+            scope.launch {
+                delay(IDLE_TIMEOUT_MS)
+                if (refCount.get() <= 0 && !isGenerating) {
+                    onIdle(id)
+                }
             }
-        }
     }
 
     private fun cancelIdleCheck() {

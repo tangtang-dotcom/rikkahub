@@ -34,16 +34,18 @@ fun BackupReminderCard(
     val config = settings.backupReminderConfig
     var dismissed by remember { mutableStateOf(false) }
 
-    val isDue = config.enabled &&
-        (System.currentTimeMillis() - config.lastBackupTime) > config.intervalDays * 24L * 60 * 60 * 1000
+    val isDue =
+        config.enabled &&
+            (System.currentTimeMillis() - config.lastBackupTime) > config.intervalDays * 24L * 60 * 60 * 1000
 
     if (!isDue || dismissed) return
 
     Card(onClick = onClick) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -59,12 +61,13 @@ fun BackupReminderCard(
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                val lastBackupText = if (config.lastBackupTime == 0L) {
-                    stringResource(R.string.backup_page_reminder_never_backed_up)
-                } else {
-                    val days = (System.currentTimeMillis() - config.lastBackupTime) / (24L * 60 * 60 * 1000)
-                    stringResource(R.string.backup_page_reminder_last_days, days)
-                }
+                val lastBackupText =
+                    if (config.lastBackupTime == 0L) {
+                        stringResource(R.string.backup_page_reminder_never_backed_up)
+                    } else {
+                        val days = (System.currentTimeMillis() - config.lastBackupTime) / (24L * 60 * 60 * 1000)
+                        stringResource(R.string.backup_page_reminder_last_days, days)
+                    }
                 Text(
                     text = lastBackupText,
                     style = MaterialTheme.typography.bodySmall,

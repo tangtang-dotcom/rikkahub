@@ -1,10 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.PencilEdit01
-import me.rerere.hugeicons.stroke.Delete01
-import me.rerere.hugeicons.stroke.MoreVertical
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,6 +43,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.MoreVertical
+import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -87,48 +87,53 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                 },
                 actions = {
                     IconButton(
-                        onClick = { showAddDialog = true }
+                        onClick = { showAddDialog = true },
                     ) {
                         Icon(
                             imageVector = HugeIcons.Add01,
-                            contentDescription = stringResource(R.string.setting_page_search_add_provider)
+                            contentDescription = stringResource(R.string.setting_page_search_add_provider),
                         )
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) {
-        val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-            val fromIndex = from.index
-            val toIndex = to.index
+        val reorderableState =
+            rememberReorderableLazyListState(lazyListState) { from, to ->
+                val fromIndex = from.index
+                val toIndex = to.index
 
-            if (fromIndex >= 0 && toIndex >= 0 && fromIndex < settings.searchServices.size && toIndex < settings.searchServices.size) {
-                val newServices = settings.searchServices.toMutableList().apply {
-                    add(toIndex, removeAt(fromIndex))
+                if (fromIndex >= 0 && toIndex >= 0 && fromIndex < settings.searchServices.size &&
+                    toIndex < settings.searchServices.size
+                ) {
+                    val newServices =
+                        settings.searchServices.toMutableList().apply {
+                            add(toIndex, removeAt(fromIndex))
+                        }
+                    vm.updateSettings(
+                        settings.copy(searchServices = newServices),
+                    )
                 }
-                vm.updateSettings(
-                    settings.copy(searchServices = newServices)
-                )
             }
-        }
         val haptic = LocalHapticFeedback.current
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .imePadding(),
             contentPadding = it + PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            state = lazyListState
+            state = lazyListState,
         ) {
             items(settings.searchServices, key = { it.id }) { service ->
                 ReorderableItem(
                     state = reorderableState,
-                    key = service.id
+                    key = service.id,
                 ) { isDragging ->
                     SearchProviderCard(
                         service = service,
@@ -141,22 +146,23 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                                 val newServices = settings.searchServices.toMutableList()
                                 newServices.removeAt(index)
                                 vm.updateSettings(
-                                    settings.copy(searchServices = newServices)
+                                    settings.copy(searchServices = newServices),
                                 )
                             }
                         },
                         canDelete = settings.searchServices.size > 1,
-                        modifier = Modifier
-                            .scale(if (isDragging) 0.95f else 1f)
-                            .animateItem()
-                            .longPressDraggableHandle(
-                                onDragStarted = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                },
-                                onDragStopped = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                }
-                            )
+                        modifier =
+                            Modifier
+                                .scale(if (isDragging) 0.95f else 1f)
+                                .animateItem()
+                                .longPressDraggableHandle(
+                                    onDragStarted = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                    },
+                                    onDragStopped = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                    },
+                                ),
                     )
                 }
             }
@@ -166,9 +172,9 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                     settings = settings,
                     onUpdate = { options ->
                         vm.updateSettings(
-                            settings.copy(searchCommonOptions = options)
+                            settings.copy(searchCommonOptions = options),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -181,13 +187,13 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                 showAddDialog = false
                 vm.updateSettings(
                     settings.copy(
-                        searchServices = listOf(options) + settings.searchServices
-                    )
+                        searchServices = listOf(options) + settings.searchServices,
+                    ),
                 )
                 scope.launch {
                     lazyListState.animateScrollToItem(0)
                 }
-            }
+            },
         )
     }
 }
@@ -195,7 +201,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
 @Composable
 private fun AddProviderDialog(
     onDismiss: () -> Unit,
-    onConfirm: (SearchServiceOptions) -> Unit
+    onConfirm: (SearchServiceOptions) -> Unit,
 ) {
     var selectedType by remember {
         mutableStateOf(SearchServiceOptions.TYPES.keys.first())
@@ -208,40 +214,44 @@ private fun AddProviderDialog(
         },
         text = {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(SearchServiceOptions.TYPES.keys.toList()) { type ->
                     val name = SearchServiceOptions.TYPES[type] ?: "Unknown"
                     val isSelected = selectedType == type
                     Card(
                         onClick = { selectedType = type },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceContainerLow
-                            }
-                        )
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor =
+                                    if (isSelected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerLow
+                                    },
+                            ),
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             AutoAIIcon(
                                 name = name,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(28.dp),
                             )
                             Text(
                                 text = name,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
+                                color =
+                                    if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                         }
                     }
@@ -253,7 +263,7 @@ private fun AddProviderDialog(
                 onClick = {
                     val instance = selectedType.primaryConstructor!!.callBy(mapOf())
                     onConfirm(instance)
-                }
+                },
             ) {
                 Text(stringResource(R.string.confirm))
             }
@@ -262,7 +272,7 @@ private fun AddProviderDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }
 
@@ -278,29 +288,31 @@ private fun SearchProviderCard(
 
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = CustomColors.listItemColors.containerColor
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AutoAIIcon(
                 name = service.displayName,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = service.displayName,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 SearchAbilityTagLine(options = service)
             }
@@ -308,11 +320,11 @@ private fun SearchProviderCard(
             IconButton(onClick = { showMenu = true }) {
                 Icon(
                     imageVector = HugeIcons.MoreVertical,
-                    contentDescription = null
+                    contentDescription = null,
                 )
                 DropdownMenu(
                     expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
+                    onDismissRequest = { showMenu = false },
                 ) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.edit)) },
@@ -322,7 +334,7 @@ private fun SearchProviderCard(
                         },
                         leadingIcon = {
                             Icon(HugeIcons.PencilEdit01, contentDescription = null)
-                        }
+                        },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.delete)) },
@@ -333,11 +345,10 @@ private fun SearchProviderCard(
                         leadingIcon = {
                             Icon(HugeIcons.Delete01, contentDescription = null)
                         },
-                        enabled = canDelete
+                        enabled = canDelete,
                     )
                 }
             }
-
         }
     }
 }
@@ -345,12 +356,12 @@ private fun SearchProviderCard(
 @Composable
 fun SearchAbilityTagLine(
     modifier: Modifier = Modifier,
-    options: SearchServiceOptions
+    options: SearchServiceOptions,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Tag(
             type = TagType.DEFAULT,
@@ -370,31 +381,33 @@ fun SearchAbilityTagLine(
 @Composable
 private fun CommonOptions(
     settings: me.rerere.rikkahub.data.datastore.Settings,
-    onUpdate: (SearchCommonOptions) -> Unit
+    onUpdate: (SearchCommonOptions) -> Unit,
 ) {
     var commonOptions by remember(settings.searchCommonOptions) {
         mutableStateOf(settings.searchCommonOptions)
     }
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = CustomColors.listItemColors.containerColor
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = stringResource(R.string.setting_page_search_common_options),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
             )
 
             FormItem(
                 label = {
                     Text(stringResource(R.string.setting_page_search_result_size))
-                }
+                },
             ) {
                 OutlinedNumberInput(
                     value = commonOptions.resultSize,
@@ -402,7 +415,7 @@ private fun CommonOptions(
                         commonOptions = commonOptions.copy(resultSize = it)
                         onUpdate(commonOptions)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

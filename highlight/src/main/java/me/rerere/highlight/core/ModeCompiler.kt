@@ -9,8 +9,9 @@ import java.util.regex.Pattern
  * from freshly constructed modes. Modes shared between languages are marked with [frozen] and are
  * copied before being touched.
  */
-internal class ModeCompiler(private val language: Language) {
-
+internal class ModeCompiler(
+    private val language: Language,
+) {
     fun compile(): Mode {
         require(language.root.contains.none { it === Mode.SELF }) {
             "contains `self` is not supported at the top-level of a language"
@@ -18,13 +19,17 @@ internal class ModeCompiler(private val language: Language) {
         return compileMode(language.root, parent = null)
     }
 
-    private fun langRe(source: String): Pattern = compilePattern(
-        source = source,
-        caseInsensitive = language.caseInsensitive,
-        unicode = language.unicodeRegex,
-    )
+    private fun langRe(source: String): Pattern =
+        compilePattern(
+            source = source,
+            caseInsensitive = language.caseInsensitive,
+            unicode = language.unicodeRegex,
+        )
 
-    private fun compileMode(mode: Mode, parent: Mode?): Mode {
+    private fun compileMode(
+        mode: Mode,
+        parent: Mode?,
+    ): Mode {
         if (mode.isCompiled) return mode
 
         compileMatch(mode)
@@ -58,9 +63,10 @@ internal class ModeCompiler(private val language: Language) {
         }
         mode.illegal?.let { mode.illegalRe = langRe(it) }
 
-        mode.contains = mode.contains.flatMap { contained ->
-            expandOrCloneMode(if (contained === Mode.SELF) mode else contained)
-        }
+        mode.contains =
+            mode.contains.flatMap { contained ->
+                expandOrCloneMode(if (contained === Mode.SELF) mode else contained)
+            }
         mode.contains.forEach { compileMode(it, mode) }
 
         mode.starts?.let { starts ->
@@ -133,7 +139,10 @@ internal class ModeCompiler(private val language: Language) {
      * `(a)(((b)))(c)` yields five groups, but only groups 1, 2 and 5 are the ones the grammar
      * author labelled.
      */
-    private fun remapScopeNames(scopeNames: Map<Int, String?>, regexes: List<String>): CompiledScope {
+    private fun remapScopeNames(
+        scopeNames: Map<Int, String?>,
+        regexes: List<String>,
+    ): CompiledScope {
         var offset = 0
         val positions = LinkedHashMap<Int, String?>()
         val emit = LinkedHashSet<Int>()
@@ -154,24 +163,29 @@ internal class ModeCompiler(private val language: Language) {
         val beforeMatch = mode.beforeMatch ?: return
         require(mode.starts == null) { "beforeMatch cannot be used with starts" }
 
-        val original = mode.copy().apply {
-            this.beforeMatch = null
-            endsParent = true
-        }
+        val original =
+            mode.copy().apply {
+                this.beforeMatch = null
+                endsParent = true
+            }
         val originalBegin = requireNotNull(original.begin) { "beforeMatch requires a begin" }
 
         mode.resetForRewrite()
         mode.keywords = original.keywords
         mode.begin = concat(beforeMatch, lookahead(originalBegin))
-        mode.starts = mode {
-            relevance = 0.0
-            contains = listOf(original)
-        }
+        mode.starts =
+            mode {
+                relevance = 0.0
+                contains = listOf(original)
+            }
         mode.relevance = 0.0
     }
 
     /** `beginKeywords` is sugar for a `begin` matching any of the listed keywords. */
-    private fun beginKeywordsExt(mode: Mode, parent: Mode?) {
+    private fun beginKeywordsExt(
+        mode: Mode,
+        parent: Mode?,
+    ) {
         if (parent == null) return
         val beginKeywords = mode.beginKeywords ?: return
 
@@ -210,7 +224,10 @@ internal class ModeCompiler(private val language: Language) {
  *
  * Upstream needs this because JavaScript regexes have no negative look-behind support.
  */
-private fun skipIfHasPrecedingDot(match: MatchData, response: CallbackResponse) {
+private fun skipIfHasPrecedingDot(
+    match: MatchData,
+    response: CallbackResponse,
+) {
     if (match.index > 0 && match.input[match.index - 1] == '.') response.ignoreMatch()
 }
 
@@ -228,12 +245,13 @@ private fun dependencyOnParent(mode: Mode?): Boolean {
 private fun expandOrCloneMode(mode: Mode): List<Mode> {
     mode.variants?.let { variants ->
         if (mode.cachedVariants == null) {
-            mode.cachedVariants = variants.map { variant ->
-                mode.copy().apply {
-                    this.variants = null
-                    variant()
+            mode.cachedVariants =
+                variants.map { variant ->
+                    mode.copy().apply {
+                        this.variants = null
+                        variant()
+                    }
                 }
-            }
         }
     }
     mode.cachedVariants?.let { return it }

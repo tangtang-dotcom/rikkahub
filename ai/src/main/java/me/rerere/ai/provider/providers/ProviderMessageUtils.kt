@@ -8,8 +8,13 @@ import me.rerere.ai.ui.UIMessagePart
  * - Tools: 连续的已执行工具
  */
 internal sealed class PartGroup {
-    data class Content(val parts: List<UIMessagePart>) : PartGroup()
-    data class Tools(val tools: List<UIMessagePart.Tool>) : PartGroup()
+    data class Content(
+        val parts: List<UIMessagePart>,
+    ) : PartGroup()
+
+    data class Tools(
+        val tools: List<UIMessagePart.Tool>,
+    ) : PartGroup()
 }
 
 /**

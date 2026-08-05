@@ -30,7 +30,6 @@ import org.junit.Test
  * - function_call_output items for tool results
  */
 class ResponseAPIMessageTest {
-
     private lateinit var api: ResponseAPI
 
     @Before
@@ -39,48 +38,47 @@ class ResponseAPIMessageTest {
     }
 
     // Helper to invoke buildMessages method
-    private fun invokeBuildMessages(messages: List<UIMessage>): JsonArray {
-        return api.buildMessages(messages)
-    }
+    private fun invokeBuildMessages(messages: List<UIMessage>): JsonArray = api.buildMessages(messages)
 
     private fun invokeBuildRequestBody(
         providerSetting: ProviderSetting.OpenAI,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-        stream: Boolean = false
-    ): JsonObject {
-        return api.buildRequestBody(providerSetting, messages, params, stream)
-    }
+        stream: Boolean = false,
+    ): JsonObject = api.buildRequestBody(providerSetting, messages, params, stream)
 
-    private fun createReasoningParams(reasoningLevel: ReasoningLevel = ReasoningLevel.OFF): TextGenerationParams {
-        return TextGenerationParams(
-            model = Model(
-                modelId = "test-model",
-                displayName = "test-model",
-                abilities = listOf(ModelAbility.REASONING)
-            ),
-            reasoningLevel = reasoningLevel
+    private fun createReasoningParams(reasoningLevel: ReasoningLevel = ReasoningLevel.OFF): TextGenerationParams =
+        TextGenerationParams(
+            model =
+                Model(
+                    modelId = "test-model",
+                    displayName = "test-model",
+                    abilities = listOf(ModelAbility.REASONING),
+                ),
+            reasoningLevel = reasoningLevel,
         )
-    }
 
     @Test
     fun `multi-round tool calls should produce correct function_call and function_call_output pairs`() {
         // Scenario: Multiple tool calls in sequence
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Let me search"),
-                createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
-                UIMessagePart.Text("Now calculating"),
-                createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
-                UIMessagePart.Text("The answer is 4")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Let me search"),
+                        createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
+                        UIMessagePart.Text("Now calculating"),
+                        createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
+                        UIMessagePart.Text("The answer is 4"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Calculate something"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Calculate something"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -95,15 +93,17 @@ class ResponseAPIMessageTest {
         // 8. assistant content (final text)
 
         // Collect function_call items
-        val functionCalls = result.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
-        }
+        val functionCalls =
+            result.filter {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
+            }
         assertEquals("Should have 2 function_call items", 2, functionCalls.size)
 
         // Collect function_call_output items
-        val functionOutputs = result.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
-        }
+        val functionOutputs =
+            result.filter {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
+            }
         assertEquals("Should have 2 function_call_output items", 2, functionOutputs.size)
 
         // Verify first function_call
@@ -129,17 +129,20 @@ class ResponseAPIMessageTest {
 
     @Test
     fun `function_call should be immediately followed by function_call_output`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                createExecutedTool("call_abc", "my_tool", """{"x": 1}""", "result")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        createExecutedTool("call_abc", "my_tool", """{"x": 1}""", "result"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Use tool"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Use tool"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -163,31 +166,36 @@ class ResponseAPIMessageTest {
     @Test
     fun `parallel tool calls should produce sequential function_call and output pairs`() {
         // Multiple tools called together
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Running multiple tools"),
-                createExecutedTool("call_1", "tool_a", "{}", "Result A"),
-                createExecutedTool("call_2", "tool_b", "{}", "Result B"),
-                createExecutedTool("call_3", "tool_c", "{}", "Result C"),
-                UIMessagePart.Text("All done")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Running multiple tools"),
+                        createExecutedTool("call_1", "tool_a", "{}", "Result A"),
+                        createExecutedTool("call_2", "tool_b", "{}", "Result B"),
+                        createExecutedTool("call_3", "tool_c", "{}", "Result C"),
+                        UIMessagePart.Text("All done"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Do things"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Do things"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
         // Should have 3 function_calls and 3 function_call_outputs
-        val functionCalls = result.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
-        }
-        val functionOutputs = result.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
-        }
+        val functionCalls =
+            result.filter {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
+            }
+        val functionOutputs =
+            result.filter {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
+            }
 
         assertEquals(3, functionCalls.size)
         assertEquals(3, functionOutputs.size)
@@ -200,93 +208,120 @@ class ResponseAPIMessageTest {
             for (i in result.indices) {
                 val item = result[i].jsonObject
                 if (item["type"]?.jsonPrimitive?.content == "function_call" &&
-                    item["call_id"]?.jsonPrimitive?.content == callId) {
+                    item["call_id"]?.jsonPrimitive?.content == callId
+                ) {
                     callIndex = i
                 }
                 if (item["type"]?.jsonPrimitive?.content == "function_call_output" &&
-                    item["call_id"]?.jsonPrimitive?.content == callId) {
+                    item["call_id"]?.jsonPrimitive?.content == callId
+                ) {
                     outputIndex = i
                 }
             }
             assertTrue("Should find function_call for $callId", callIndex >= 0)
             assertTrue("Should find function_call_output for $callId", outputIndex >= 0)
-            assertEquals("Output should immediately follow call for $callId",
-                callIndex + 1, outputIndex)
+            assertEquals(
+                "Output should immediately follow call for $callId",
+                callIndex + 1,
+                outputIndex,
+            )
         }
     }
 
     @Test
     fun `content with text should be properly formatted`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Hello world"),
-                createExecutedTool("call_1", "test", "{}", "output"),
-                UIMessagePart.Text("Goodbye")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Hello world"),
+                        createExecutedTool("call_1", "test", "{}", "output"),
+                        UIMessagePart.Text("Goodbye"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Hi"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Hi"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
         // Find assistant content messages
-        val assistantContents = result.filter {
-            val obj = it.jsonObject
-            obj["role"]?.jsonPrimitive?.content == "assistant"
-        }
+        val assistantContents =
+            result.filter {
+                val obj = it.jsonObject
+                obj["role"]?.jsonPrimitive?.content == "assistant"
+            }
 
         assertTrue("Should have assistant content messages", assistantContents.isNotEmpty())
 
         // First assistant message should have "Hello world"
         val firstAssistant = assistantContents[0].jsonObject
         val content = firstAssistant["content"]
-        val hasHello = when {
-            content is kotlinx.serialization.json.JsonPrimitive -> content.content.contains("Hello")
-            content is JsonArray -> content.any {
-                it.jsonObject["text"]?.jsonPrimitive?.content?.contains("Hello") == true
+        val hasHello =
+            when {
+                content is kotlinx.serialization.json.JsonPrimitive -> {
+                    content.content.contains("Hello")
+                }
+
+                content is JsonArray -> {
+                    content.any {
+                        it.jsonObject["text"]
+                            ?.jsonPrimitive
+                            ?.content
+                            ?.contains("Hello") == true
+                    }
+                }
+
+                else -> {
+                    false
+                }
             }
-            else -> false
-        }
         assertTrue("First assistant should contain 'Hello'", hasHello)
     }
 
     @Test
     fun `complex multi-round scenario with text and tools interleaved`() {
-        val messages = listOf(
-            UIMessage.user("Execute a complex task"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Text("Starting task"),
-                    createExecutedTool("step1", "init", "{}", "initialized"),
-                    UIMessagePart.Text("Processing..."),
-                    createExecutedTool("step2", "process", """{"data": "test"}""", "processed"),
-                    UIMessagePart.Text("Finalizing..."),
-                    createExecutedTool("step3", "finalize", "{}", "done"),
-                    UIMessagePart.Text("Task completed successfully")
-                )
+        val messages =
+            listOf(
+                UIMessage.user("Execute a complex task"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Starting task"),
+                            createExecutedTool("step1", "init", "{}", "initialized"),
+                            UIMessagePart.Text("Processing..."),
+                            createExecutedTool("step2", "process", """{"data": "test"}""", "processed"),
+                            UIMessagePart.Text("Finalizing..."),
+                            createExecutedTool("step3", "finalize", "{}", "done"),
+                            UIMessagePart.Text("Task completed successfully"),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildMessages(messages)
 
         // Count items
-        val userMessages = result.count {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "user"
-        }
-        val assistantMessages = result.count {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
-        }
-        val functionCalls = result.count {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
-        }
-        val functionOutputs = result.count {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
-        }
+        val userMessages =
+            result.count {
+                it.jsonObject["role"]?.jsonPrimitive?.content == "user"
+            }
+        val assistantMessages =
+            result.count {
+                it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
+            }
+        val functionCalls =
+            result.count {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call"
+            }
+        val functionOutputs =
+            result.count {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "function_call_output"
+            }
 
         assertEquals("Should have 1 user message", 1, userMessages)
         assertEquals("Should have 3 function_calls", 3, functionCalls)
@@ -300,10 +335,15 @@ class ResponseAPIMessageTest {
             if (item["type"]?.jsonPrimitive?.content == "function_call") {
                 assertTrue("function_call should not be last", i < result.size - 1)
                 val next = result[i + 1].jsonObject
-                assertEquals("function_call_output should follow",
-                    "function_call_output", next["type"]?.jsonPrimitive?.content)
-                assertTrue("call_id should match",
-                    item["call_id"]?.jsonPrimitive?.content == next["call_id"]?.jsonPrimitive?.content)
+                assertEquals(
+                    "function_call_output should follow",
+                    "function_call_output",
+                    next["type"]?.jsonPrimitive?.content,
+                )
+                assertTrue(
+                    "call_id should match",
+                    item["call_id"]?.jsonPrimitive?.content == next["call_id"]?.jsonPrimitive?.content,
+                )
                 assertTrue("Order should be maintained", i > lastCallIndex)
                 lastCallIndex = i
             }
@@ -312,14 +352,16 @@ class ResponseAPIMessageTest {
 
     @Test
     fun `volc response api should not include reasoning summary`() {
-        val providerSetting = ProviderSetting.OpenAI(
-            baseUrl = "https://ark.cn-beijing.volces.com/api/v3"
-        )
-        val requestBody = invokeBuildRequestBody(
-            providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
-            params = createReasoningParams()
-        )
+        val providerSetting =
+            ProviderSetting.OpenAI(
+                baseUrl = "https://ark.cn-beijing.volces.com/api/v3",
+            )
+        val requestBody =
+            invokeBuildRequestBody(
+                providerSetting = providerSetting,
+                messages = listOf(UIMessage.user("hello")),
+                params = createReasoningParams(),
+            )
 
         val reasoning = requestBody["reasoning"]?.jsonObject
         assertTrue("reasoning should exist", reasoning != null)
@@ -328,14 +370,16 @@ class ResponseAPIMessageTest {
 
     @Test
     fun `openai response api should include reasoning summary`() {
-        val providerSetting = ProviderSetting.OpenAI(
-            baseUrl = "https://api.openai.com/v1"
-        )
-        val requestBody = invokeBuildRequestBody(
-            providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
-            params = createReasoningParams()
-        )
+        val providerSetting =
+            ProviderSetting.OpenAI(
+                baseUrl = "https://api.openai.com/v1",
+            )
+        val requestBody =
+            invokeBuildRequestBody(
+                providerSetting = providerSetting,
+                messages = listOf(UIMessage.user("hello")),
+                params = createReasoningParams(),
+            )
 
         val reasoning = requestBody["reasoning"]?.jsonObject
         assertTrue("reasoning should exist", reasoning != null)
@@ -344,14 +388,16 @@ class ResponseAPIMessageTest {
 
     @Test
     fun `volc response api should keep reasoning effort when non auto`() {
-        val providerSetting = ProviderSetting.OpenAI(
-            baseUrl = "https://ark.cn-beijing.volces.com/api/v3"
-        )
-        val requestBody = invokeBuildRequestBody(
-            providerSetting = providerSetting,
-            messages = listOf(UIMessage.user("hello")),
-            params = createReasoningParams(reasoningLevel = ReasoningLevel.LOW)
-        )
+        val providerSetting =
+            ProviderSetting.OpenAI(
+                baseUrl = "https://ark.cn-beijing.volces.com/api/v3",
+            )
+        val requestBody =
+            invokeBuildRequestBody(
+                providerSetting = providerSetting,
+                messages = listOf(UIMessage.user("hello")),
+                params = createReasoningParams(reasoningLevel = ReasoningLevel.LOW),
+            )
 
         val reasoning = requestBody["reasoning"]?.jsonObject
         assertTrue("reasoning should exist", reasoning != null)
@@ -361,31 +407,35 @@ class ResponseAPIMessageTest {
     @Test
     fun `system prompt text should be serialized into Response API instructions`() {
         val prompt = "Assistant prompt\n\nTool guidance"
-        val requestBody = invokeBuildRequestBody(
-            providerSetting = ProviderSetting.OpenAI(),
-            messages = listOf(
-                UIMessage.system(prompt),
-                UIMessage.user("hello")
-            ),
-            params = createReasoningParams()
-        )
+        val requestBody =
+            invokeBuildRequestBody(
+                providerSetting = ProviderSetting.OpenAI(),
+                messages =
+                    listOf(
+                        UIMessage.system(prompt),
+                        UIMessage.user("hello"),
+                    ),
+                params = createReasoningParams(),
+            )
 
         assertEquals(prompt, requestBody["instructions"]?.jsonPrimitive?.content)
     }
 
     @Test
     fun `response api should encode image input`() {
-        val result = invokeBuildMessages(
-            listOf(
-                UIMessage(
-                    role = MessageRole.USER,
-                    parts = listOf(
-                        UIMessagePart.Text("Describe this image"),
-                        UIMessagePart.Image("data:image/png;base64,AA=="),
-                    )
-                )
+        val result =
+            invokeBuildMessages(
+                listOf(
+                    UIMessage(
+                        role = MessageRole.USER,
+                        parts =
+                            listOf(
+                                UIMessagePart.Text("Describe this image"),
+                                UIMessagePart.Image("data:image/png;base64,AA=="),
+                            ),
+                    ),
+                ),
             )
-        )
 
         val content = result.single().jsonObject["content"]!!.jsonArray
         val image = content.first { it.jsonObject["type"]?.jsonPrimitive?.content == "input_image" }
@@ -403,15 +453,20 @@ class ResponseAPIMessageTest {
             ReasoningLevel.HIGH to "high",
             ReasoningLevel.XHIGH to "xhigh",
         ).forEach { (level, expected) ->
-            val requestBody = invokeBuildRequestBody(
-                providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
-                messages = emptyList(),
-                params = createReasoningParams(reasoningLevel = level),
-            )
+            val requestBody =
+                invokeBuildRequestBody(
+                    providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1"),
+                    messages = emptyList(),
+                    params = createReasoningParams(reasoningLevel = level),
+                )
 
             assertEquals(
                 expected,
-                requestBody["reasoning"]?.jsonObject?.get("effort")?.jsonPrimitive?.content,
+                requestBody["reasoning"]
+                    ?.jsonObject
+                    ?.get("effort")
+                    ?.jsonPrimitive
+                    ?.content,
             )
         }
     }
@@ -422,13 +477,12 @@ class ResponseAPIMessageTest {
         callId: String,
         name: String,
         input: String,
-        output: String
-    ): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+        output: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = input,
-            output = listOf(UIMessagePart.Text(output))
+            output = listOf(UIMessagePart.Text(output)),
         )
-    }
 }

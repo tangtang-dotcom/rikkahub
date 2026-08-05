@@ -83,9 +83,10 @@ fun WorkflowsScreen(vm: WorkflowsViewModel = koinViewModel()) {
     ) { innerPadding ->
         if (workflows.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -128,29 +129,40 @@ private fun WorkflowRow(
 ) {
     val rel = relativeStrings()
     val nowMs by rememberTickingNowMs()
-    val triggerSummary = remember(loaded.definition) {
-        oneLineTriggerSummary(loaded.definition)
-    }
-    val statusLine: String = when {
-        loaded.entity.lastRunAtMs == null -> stringResource(R.string.setting_page_workflows_subtitle_never_run)
-        else -> {
-            val ago = formatRelativeAgo(loaded.entity.lastRunAtMs, nowMs, rel)
-            when (loaded.entity.lastRunStatus) {
-                WorkflowRunStatus.SUCCESS.name ->
-                    stringResource(R.string.setting_page_workflows_subtitle_ran_success, ago)
-                WorkflowRunStatus.FAILED.name ->
-                    stringResource(R.string.setting_page_workflows_subtitle_ran_failed, ago)
-                else ->
-                    stringResource(R.string.setting_page_workflows_subtitle_ran_skipped, ago)
+    val triggerSummary =
+        remember(loaded.definition) {
+            oneLineTriggerSummary(loaded.definition)
+        }
+    val statusLine: String =
+        when {
+            loaded.entity.lastRunAtMs == null -> {
+                stringResource(R.string.setting_page_workflows_subtitle_never_run)
+            }
+
+            else -> {
+                val ago = formatRelativeAgo(loaded.entity.lastRunAtMs, nowMs, rel)
+                when (loaded.entity.lastRunStatus) {
+                    WorkflowRunStatus.SUCCESS.name -> {
+                        stringResource(R.string.setting_page_workflows_subtitle_ran_success, ago)
+                    }
+
+                    WorkflowRunStatus.FAILED.name -> {
+                        stringResource(R.string.setting_page_workflows_subtitle_ran_failed, ago)
+                    }
+
+                    else -> {
+                        stringResource(R.string.setting_page_workflows_subtitle_ran_skipped, ago)
+                    }
+                }
             }
         }
-    }
 
     ListItem(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onTap() }
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onTap() }
+                .padding(horizontal = 8.dp),
         headlineContent = { Text(loaded.entity.name) },
         supportingContent = {
             Text(
@@ -166,38 +178,98 @@ private fun WorkflowRow(
     HorizontalDivider()
 }
 
-internal fun oneLineTriggerSummary(def: WorkflowDefinition): String = when (val t = def.trigger) {
-    is TriggerSpec.TimeCron ->
-        if (!t.timeOfDay.isNullOrBlank()) "every ${t.timeOfDay}" else "schedule"
-    is TriggerSpec.WifiConnected -> "WiFi connects" + (t.ssid?.let { " to $it" }.orEmpty())
-    is TriggerSpec.WifiDisconnected -> "WiFi disconnects" + (t.ssid?.let { " from $it" }.orEmpty())
-    is TriggerSpec.BluetoothDeviceConnected -> "Bluetooth connects"
-    is TriggerSpec.BluetoothDeviceDisconnected -> "Bluetooth disconnects"
-    is TriggerSpec.HeadphonesPlugged -> "headphones plugged"
-    is TriggerSpec.HeadphonesUnplugged -> "headphones unplugged"
-    is TriggerSpec.PowerConnected -> "power connected"
-    is TriggerSpec.PowerDisconnected -> "power disconnected"
-    is TriggerSpec.BatteryBelow -> "battery < ${t.thresholdPercent}%"
-    is TriggerSpec.BatteryAbove -> "battery > ${t.thresholdPercent}%"
-    is TriggerSpec.GeofenceEnter -> "you arrive at ${t.label ?: "a place"}"
-    is TriggerSpec.GeofenceExit -> "you leave ${t.label ?: "a place"}"
-    is TriggerSpec.AppLaunched -> "${t.packageName} launches"
-    is TriggerSpec.AppClosed -> "${t.packageName} closes"
-    is TriggerSpec.NotificationReceived -> "notification${t.packageName?.let { " from $it" } ?: ""}"
-    is TriggerSpec.BootCompleted -> "device boots"
-    is TriggerSpec.ScreenOn -> "screen on"
-    is TriggerSpec.ScreenOff -> "screen off"
-    is TriggerSpec.Manual -> "manual run only"
-}
+internal fun oneLineTriggerSummary(def: WorkflowDefinition): String =
+    when (val t = def.trigger) {
+        is TriggerSpec.TimeCron -> {
+            if (!t.timeOfDay.isNullOrBlank()) "every ${t.timeOfDay}" else "schedule"
+        }
+
+        is TriggerSpec.WifiConnected -> {
+            "WiFi connects" + (t.ssid?.let { " to $it" }.orEmpty())
+        }
+
+        is TriggerSpec.WifiDisconnected -> {
+            "WiFi disconnects" + (t.ssid?.let { " from $it" }.orEmpty())
+        }
+
+        is TriggerSpec.BluetoothDeviceConnected -> {
+            "Bluetooth connects"
+        }
+
+        is TriggerSpec.BluetoothDeviceDisconnected -> {
+            "Bluetooth disconnects"
+        }
+
+        is TriggerSpec.HeadphonesPlugged -> {
+            "headphones plugged"
+        }
+
+        is TriggerSpec.HeadphonesUnplugged -> {
+            "headphones unplugged"
+        }
+
+        is TriggerSpec.PowerConnected -> {
+            "power connected"
+        }
+
+        is TriggerSpec.PowerDisconnected -> {
+            "power disconnected"
+        }
+
+        is TriggerSpec.BatteryBelow -> {
+            "battery < ${t.thresholdPercent}%"
+        }
+
+        is TriggerSpec.BatteryAbove -> {
+            "battery > ${t.thresholdPercent}%"
+        }
+
+        is TriggerSpec.GeofenceEnter -> {
+            "you arrive at ${t.label ?: "a place"}"
+        }
+
+        is TriggerSpec.GeofenceExit -> {
+            "you leave ${t.label ?: "a place"}"
+        }
+
+        is TriggerSpec.AppLaunched -> {
+            "${t.packageName} launches"
+        }
+
+        is TriggerSpec.AppClosed -> {
+            "${t.packageName} closes"
+        }
+
+        is TriggerSpec.NotificationReceived -> {
+            "notification${t.packageName?.let { " from $it" } ?: ""}"
+        }
+
+        is TriggerSpec.BootCompleted -> {
+            "device boots"
+        }
+
+        is TriggerSpec.ScreenOn -> {
+            "screen on"
+        }
+
+        is TriggerSpec.ScreenOff -> {
+            "screen off"
+        }
+
+        is TriggerSpec.Manual -> {
+            "manual run only"
+        }
+    }
 
 @Composable
-internal fun relativeStrings(): RelativeTimeStrings = RelativeTimeStrings(
-    justNow = stringResource(R.string.relative_time_just_now),
-    secondsAgo = stringResource(R.string.relative_time_seconds_ago),
-    minutesAgo = stringResource(R.string.relative_time_minutes_ago),
-    hoursAgo = stringResource(R.string.relative_time_hours_ago),
-    daysAgo = stringResource(R.string.relative_time_days_ago),
-)
+internal fun relativeStrings(): RelativeTimeStrings =
+    RelativeTimeStrings(
+        justNow = stringResource(R.string.relative_time_just_now),
+        secondsAgo = stringResource(R.string.relative_time_seconds_ago),
+        minutesAgo = stringResource(R.string.relative_time_minutes_ago),
+        hoursAgo = stringResource(R.string.relative_time_hours_ago),
+        daysAgo = stringResource(R.string.relative_time_days_ago),
+    )
 
 /**
  * A [State<Long>] of the current wall-clock millis, refreshed every 30s while the calling

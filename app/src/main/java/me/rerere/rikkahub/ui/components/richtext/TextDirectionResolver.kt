@@ -18,8 +18,14 @@ fun resolveTextDirection(text: String): TextDirection {
     while (i < text.length) {
         val cp = text.codePointAt(i)
         when (strongDirectionOf(cp)) {
-            StrongDirection.RTL -> return TextDirection.Rtl
-            StrongDirection.LTR -> return TextDirection.Ltr
+            StrongDirection.RTL -> {
+                return TextDirection.Rtl
+            }
+
+            StrongDirection.LTR -> {
+                return TextDirection.Ltr
+            }
+
             StrongDirection.NONE -> { /* keep scanning */ }
         }
         i += Character.charCount(cp)
@@ -35,29 +41,57 @@ private enum class StrongDirection { LTR, RTL, NONE }
  * Arabic supplement/extended/presentation blocks (which also cover Persian and
  * Urdu, as they use the Arabic script).
  */
-private fun strongDirectionOf(cp: Int): StrongDirection {
-    return when (cp) {
+private fun strongDirectionOf(cp: Int): StrongDirection =
+    when (cp) {
         // Hebrew
-        in 0x0590..0x05FF -> StrongDirection.RTL
+        in 0x0590..0x05FF -> {
+            StrongDirection.RTL
+        }
+
         // Arabic
-        in 0x0600..0x06FF -> StrongDirection.RTL
+        in 0x0600..0x06FF -> {
+            StrongDirection.RTL
+        }
+
         // Syriac
-        in 0x0700..0x074F -> StrongDirection.RTL
+        in 0x0700..0x074F -> {
+            StrongDirection.RTL
+        }
+
         // Arabic Supplement
-        in 0x0750..0x077F -> StrongDirection.RTL
+        in 0x0750..0x077F -> {
+            StrongDirection.RTL
+        }
+
         // Thaana
-        in 0x0780..0x07BF -> StrongDirection.RTL
+        in 0x0780..0x07BF -> {
+            StrongDirection.RTL
+        }
+
         // Arabic Extended-A
-        in 0x08A0..0x08FF -> StrongDirection.RTL
+        in 0x08A0..0x08FF -> {
+            StrongDirection.RTL
+        }
+
         // Arabic Presentation Forms-A
-        in 0xFB50..0xFDFF -> StrongDirection.RTL
+        in 0xFB50..0xFDFF -> {
+            StrongDirection.RTL
+        }
+
         // Arabic Presentation Forms-B
-        in 0xFE70..0xFEFF -> StrongDirection.RTL
-        else -> when (Character.getDirectionality(cp)) {
-            Character.DIRECTIONALITY_LEFT_TO_RIGHT -> StrongDirection.LTR
-            Character.DIRECTIONALITY_RIGHT_TO_LEFT,
-            Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC -> StrongDirection.RTL
-            else -> StrongDirection.NONE
+        in 0xFE70..0xFEFF -> {
+            StrongDirection.RTL
+        }
+
+        else -> {
+            when (Character.getDirectionality(cp)) {
+                Character.DIRECTIONALITY_LEFT_TO_RIGHT -> StrongDirection.LTR
+
+                Character.DIRECTIONALITY_RIGHT_TO_LEFT,
+                Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC,
+                -> StrongDirection.RTL
+
+                else -> StrongDirection.NONE
+            }
         }
     }
-}

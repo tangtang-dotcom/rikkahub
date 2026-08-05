@@ -14,26 +14,29 @@ import java.io.File
 class ShortcutHandlerActivity : ComponentActivity() {
     private var photoURI: Uri? = null
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            launchCamera()
-        } else {
-            finish()
-        }
-    }
-
-    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            photoURI?.let {
-                val intent = Intent(this, RouteActivity::class.java).apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_STREAM, it.toString())
-                }
-                startActivity(intent)
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                launchCamera()
+            } else {
+                finish()
             }
         }
-        finish()
-    }
+
+    private val takePictureLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                photoURI?.let {
+                    val intent =
+                        Intent(this, RouteActivity::class.java).apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, it.toString())
+                        }
+                    startActivity(intent)
+                }
+            }
+            finish()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -20,54 +20,61 @@ internal fun properties(): Language {
     val delim = "($equalDelim|$wsDelim)"
     val key = """([^\\:= \t\f\n]|\\.)+"""
 
-    val delimAndValue = mode {
-        // Skip the delimiter.
-        end = delim
-        relevance = 0.0
-        starts = mode {
-            // Value: everything until end of line (again, taking backslashes into account).
-            scope = "string"
-            end = "$"
+    val delimAndValue =
+        mode {
+            // Skip the delimiter.
+            end = delim
             relevance = 0.0
-            contains = listOf(
-                mode { begin = """\\\\""" },
-                // A backslash followed by a real newline: the line continuation.
-                mode { begin = "\\\\\n" },
-            )
+            starts =
+                mode {
+                    // Value: everything until end of line (again, taking backslashes into account).
+                    scope = "string"
+                    end = "$"
+                    relevance = 0.0
+                    contains =
+                        listOf(
+                            mode { begin = """\\\\""" },
+                            // A backslash followed by a real newline: the line continuation.
+                            mode { begin = "\\\\\n" },
+                        )
+                }
         }
-    }
 
     return Language(
         name = ".properties",
         aliases = setOf("properties"),
         caseInsensitive = true,
-        root = mode {
-            illegal = """\S"""
-            contains = listOf(
-                comment("""^\s*[!#]""", "$"),
-                // Key: everything until whitespace or `=` or `:` (taking backslashes into
-                // account), for a key-value pair.
-                mode {
-                    returnBegin = true
-                    variants = listOf(
-                        { begin = key + equalDelim },
-                        { begin = key + wsDelim },
-                    )
-                    contains = listOf(
+        root =
+            mode {
+                illegal = """\S"""
+                contains =
+                    listOf(
+                        comment("""^\s*[!#]""", "$"),
+                        // Key: everything until whitespace or `=` or `:` (taking backslashes into
+                        // account), for a key-value pair.
+                        mode {
+                            returnBegin = true
+                            variants =
+                                listOf(
+                                    { begin = key + equalDelim },
+                                    { begin = key + wsDelim },
+                                )
+                            contains =
+                                listOf(
+                                    mode {
+                                        scope = "attr"
+                                        begin = key
+                                        endsParent = true
+                                    },
+                                )
+                            starts = delimAndValue
+                        },
+                        // A key with an empty value.
                         mode {
                             scope = "attr"
-                            begin = key
-                            endsParent = true
+                            begin = key + ws0 + "$"
                         },
                     )
-                    starts = delimAndValue
-                },
-                // A key with an empty value.
-                mode {
-                    scope = "attr"
-                    begin = key + ws0 + "$"
-                },
-            )
-        },
+            },
     )
 }

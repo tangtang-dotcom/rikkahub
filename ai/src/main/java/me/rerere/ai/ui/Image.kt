@@ -14,5 +14,5 @@ data class ImageGenerationItem(
 enum class ImageAspectRatio {
     SQUARE,
     LANDSCAPE,
-    PORTRAIT
+    PORTRAIT,
 }

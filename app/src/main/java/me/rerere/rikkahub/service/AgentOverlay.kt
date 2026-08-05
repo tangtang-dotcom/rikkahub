@@ -28,7 +28,10 @@ object AgentOverlay {
 
     fun canShow(context: Context): Boolean = Settings.canDrawOverlays(context)
 
-    fun show(context: Context, text: String = "The agent is working") {
+    fun show(
+        context: Context,
+        text: String = "The agent is working",
+    ) {
         val app = context.applicationContext
         if (!canShow(app)) {
             Log.d(TAG, "show: SYSTEM_ALERT_WINDOW not granted, no-op")
@@ -43,45 +46,53 @@ object AgentOverlay {
     }
 
     @SuppressLint("RtlHardcoded")
-    private fun showInternal(app: Context, text: String) {
+    private fun showInternal(
+        app: Context,
+        text: String,
+    ) {
         val existing = view
         if (existing != null) {
             existing.text = text
             return
         }
         val wm = app.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
-        val tv = TextView(app).apply {
-            this.text = text
-            setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            val pad = (12 * app.resources.displayMetrics.density).toInt()
-            val padV = (6 * app.resources.displayMetrics.density).toInt()
-            setPadding(pad, padV, pad, padV)
-            background = GradientDrawable().apply {
-                cornerRadius = 100f
-                setColor(0xCC202020.toInt())
+        val tv =
+            TextView(app).apply {
+                this.text = text
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                val pad = (12 * app.resources.displayMetrics.density).toInt()
+                val padV = (6 * app.resources.displayMetrics.density).toInt()
+                setPadding(pad, padV, pad, padV)
+                background =
+                    GradientDrawable().apply {
+                        cornerRadius = 100f
+                        setColor(0xCC202020.toInt())
+                    }
             }
-        }
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            @Suppress("DEPRECATION")
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            type,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            android.graphics.PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            // Far enough below the status bar / camera punch-hole that the pill never
-            // overlaps the system clock or notch on edge-to-edge devices.
-            y = (64 * app.resources.displayMetrics.density).toInt()
-        }
+        val type =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            }
+        val params =
+            WindowManager
+                .LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    type,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                    android.graphics.PixelFormat.TRANSLUCENT,
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    // Far enough below the status bar / camera punch-hole that the pill never
+                    // overlaps the system clock or notch on edge-to-edge devices.
+                    y = (64 * app.resources.displayMetrics.density).toInt()
+                }
         try {
             wm.addView(tv, params)
             view = tv

@@ -17,7 +17,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowLeft01
 import me.rerere.hugeicons.stroke.ArrowRight01
@@ -55,7 +55,7 @@ fun TTSController() {
 
     FloatingWindow(
         tag = "tts_controller",
-        visibility = isVisible
+        visibility = isVisible,
     ) {
         val playbackState by ttsState.playbackState.collectAsStateWithLifecycle()
         var expand by remember { mutableStateOf(false) }
@@ -77,7 +77,7 @@ fun TTSController() {
                     onClick = {
                         ttsState.stop()
                         isVisible = false
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = HugeIcons.Cancel01,
@@ -99,7 +99,7 @@ fun TTSController() {
                 IconButton(
                     onClick = {
                         expand = !expand
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = if (expand) HugeIcons.ArrowLeft01 else HugeIcons.ArrowRight01,
@@ -116,7 +116,7 @@ private fun FastForwardButton(ttsState: CustomTtsState) {
     IconButton(
         onClick = {
             ttsState.fastForward(5000)
-        }
+        },
     ) {
         Icon(
             imageVector = HugeIcons.Forward02,
@@ -128,7 +128,7 @@ private fun FastForwardButton(ttsState: CustomTtsState) {
 @Composable
 private fun PlayPauseButton(
     playbackState: PlaybackState,
-    ttsState: CustomTtsState
+    ttsState: CustomTtsState,
 ) {
     FilledTonalIconButton(
         onClick = {
@@ -142,16 +142,19 @@ private fun PlayPauseButton(
                 }
             }
         },
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-        )
+        colors =
+            IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            ),
     ) {
         Icon(
             imageVector = if (playbackState.status == PlaybackStatus.Playing) HugeIcons.Pause else HugeIcons.Play,
             contentDescription = null,
         )
-        if (playbackState.status == PlaybackStatus.Playing || playbackState.status == PlaybackStatus.Buffering || playbackState.status == PlaybackStatus.Paused) {
+        if (playbackState.status == PlaybackStatus.Playing || playbackState.status == PlaybackStatus.Buffering ||
+            playbackState.status == PlaybackStatus.Paused
+        ) {
             CircularProgressIndicator(
                 progress = {
                     if (playbackState.status == PlaybackStatus.Playing) {
@@ -162,7 +165,7 @@ private fun PlayPauseButton(
                 },
                 color = MaterialTheme.colorScheme.tertiary,
                 strokeWidth = 2.dp,
-                trackColor = Color.Transparent
+                trackColor = Color.Transparent,
             )
             CircularProgressIndicator(
                 progress = {
@@ -175,7 +178,7 @@ private fun PlayPauseButton(
                 color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.padding(2.dp),
                 strokeWidth = 2.dp,
-                trackColor = Color.Transparent
+                trackColor = Color.Transparent,
             )
         }
     }
@@ -184,7 +187,7 @@ private fun PlayPauseButton(
 @Composable
 private fun SpeedButton(
     playbackState: PlaybackState,
-    ttsState: CustomTtsState
+    ttsState: CustomTtsState,
 ) {
     TextButton(
         onClick = {
@@ -209,7 +212,7 @@ private fun SpeedButton(
                     ttsState.setSpeed(1.0f)
                 }
             }
-        }
+        },
     ) {
         Text(text = "x${"%.1f".format(playbackState.speed)}")
     }

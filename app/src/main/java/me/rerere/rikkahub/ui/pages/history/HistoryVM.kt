@@ -22,15 +22,18 @@ class HistoryVM(
     private val conversationRepo: ConversationRepository,
     private val settingsStore: SettingsStore,
 ) : ViewModel() {
-    val assistant = settingsStore.settingsFlow
-        .map { it.getCurrentAssistant() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val assistant =
+        settingsStore.settingsFlow
+            .map { it.getCurrentAssistant() }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val conversations = assistant.flatMapLatest { assistant ->
-        conversationRepo.getConversationsOfAssistant(assistant?.id ?: Uuid.random())
-    }.catch {
-        Log.e(TAG, "Error: ${it.message}")
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val conversations =
+        assistant
+            .flatMapLatest { assistant ->
+                conversationRepo.getConversationsOfAssistant(assistant?.id ?: Uuid.random())
+            }.catch {
+                Log.e(TAG, "Error: ${it.message}")
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun deleteConversation(conversation: Conversation) {
         viewModelScope.launch {
@@ -51,8 +54,7 @@ class HistoryVM(
         }
     }
 
-    fun getPinnedConversations(): Flow<List<Conversation>> =
-        conversationRepo.getPinnedConversations()
+    fun getPinnedConversations(): Flow<List<Conversation>> = conversationRepo.getPinnedConversations()
 
     fun restoreConversation(conversation: Conversation) {
         viewModelScope.launch {
@@ -60,7 +62,6 @@ class HistoryVM(
         }
     }
 
-    suspend fun getFullConversation(conversationId: Uuid): Conversation? {
-        return conversationRepo.getConversationById(conversationId)
-    }
+    suspend fun getFullConversation(conversationId: Uuid): Conversation? =
+        conversationRepo.getConversationById(conversationId)
 }

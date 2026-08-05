@@ -20,8 +20,14 @@ sealed interface ThinkingStep {
  * 消息部分块类型，用于保持渲染顺序
  */
 sealed interface MessagePartBlock {
-    data class ThinkingBlock(val steps: List<ThinkingStep>) : MessagePartBlock
-    data class ContentBlock(val part: UIMessagePart, val index: Int) : MessagePartBlock
+    data class ThinkingBlock(
+        val steps: List<ThinkingStep>,
+    ) : MessagePartBlock
+
+    data class ContentBlock(
+        val part: UIMessagePart,
+        val index: Int,
+    ) : MessagePartBlock
 }
 
 /**

@@ -16,15 +16,16 @@ fun Tooltip(
 ) {
     TooltipBox(
         modifier = modifier,
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-            TooltipAnchorPosition.Above,
-        ),
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(
+                TooltipAnchorPosition.Above,
+            ),
         tooltip = {
             PlainTooltip {
                 tooltip()
             }
         },
-        state = rememberTooltipState()
+        state = rememberTooltipState(),
     ) {
         content()
     }

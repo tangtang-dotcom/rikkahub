@@ -56,9 +56,7 @@ import org.koin.androidx.compose.koinViewModel
  *     #4): values are clamped into a generous-but-bounded range in BrowserPreferences.
  */
 @Composable
-fun SettingBrowserPage(
-    vm: SettingBrowserViewModel = koinViewModel(),
-) {
+fun SettingBrowserPage(vm: SettingBrowserViewModel = koinViewModel()) {
     val ctx = LocalContext.current
     val toaster = LocalToaster.current
     val toolStates by vm.toolStates.collectAsStateWithLifecycle()
@@ -105,11 +103,12 @@ fun SettingBrowserPage(
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Section: Browser
@@ -140,24 +139,30 @@ fun SettingBrowserPage(
 
             ToolCategorySection(
                 heading = stringResource(R.string.setting_browser_category_read),
-                tools = BrowserToolDefaults.READ_TOOLS.toList()
-                    .filter { it in BrowserToolDefaults.ALL_TOOLS }
-                    // Stable display order — preserves the spec's table sequence.
-                    .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
+                tools =
+                    BrowserToolDefaults.READ_TOOLS
+                        .toList()
+                        .filter { it in BrowserToolDefaults.ALL_TOOLS }
+                        // Stable display order — preserves the spec's table sequence.
+                        .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
                 toolStates = toolStates,
                 onToggle = vm::setToolEnabled,
             )
             ToolCategorySection(
                 heading = stringResource(R.string.setting_browser_category_write),
-                tools = BrowserToolDefaults.WRITE_TOOLS.toList()
-                    .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
+                tools =
+                    BrowserToolDefaults.WRITE_TOOLS
+                        .toList()
+                        .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
                 toolStates = toolStates,
                 onToggle = vm::setToolEnabled,
             )
             ToolCategorySection(
                 heading = stringResource(R.string.setting_browser_category_loop_control),
-                tools = BrowserToolDefaults.LOOP_CONTROL_TOOLS.toList()
-                    .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
+                tools =
+                    BrowserToolDefaults.LOOP_CONTROL_TOOLS
+                        .toList()
+                        .sortedBy { BrowserToolDefaults.ALL_TOOLS.indexOf(it) },
                 toolStates = toolStates,
                 onToggle = vm::setToolEnabled,
             )
@@ -224,19 +229,20 @@ private fun TimeoutInput(
         singleLine = true,
         suffix = { Text(unitLabel, style = MaterialTheme.typography.bodySmall) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier
-            .width(132.dp)
-            .onFocusChanged { focus ->
-                if (!focus.isFocused) {
-                    val parsed = text.toLongOrNull()
-                    if (parsed != null && parsed != currentValue) {
-                        onCommit(parsed)
-                    } else {
-                        // Empty / unchanged — restore the canonical display value.
-                        text = currentValue.toString()
+        modifier =
+            Modifier
+                .width(132.dp)
+                .onFocusChanged { focus ->
+                    if (!focus.isFocused) {
+                        val parsed = text.toLongOrNull()
+                        if (parsed != null && parsed != currentValue) {
+                            onCommit(parsed)
+                        } else {
+                            // Empty / unchanged — restore the canonical display value.
+                            text = currentValue.toString()
+                        }
                     }
-                }
-            },
+                },
     )
 }
 
@@ -271,45 +277,47 @@ private fun ToolCategorySection(
 }
 
 @Composable
-private fun toolDisplayTitle(toolName: String): String = when (toolName) {
-    BrowserToolDefaults.OPEN -> stringResource(R.string.setting_browser_tool_open_title)
-    BrowserToolDefaults.CURRENT_URL -> stringResource(R.string.setting_browser_tool_current_url_title)
-    BrowserToolDefaults.SCREENSHOT -> stringResource(R.string.setting_browser_tool_screenshot_title)
-    BrowserToolDefaults.GET_TEXT -> stringResource(R.string.setting_browser_tool_get_text_title)
-    BrowserToolDefaults.GET_DOM -> stringResource(R.string.setting_browser_tool_get_dom_title)
-    BrowserToolDefaults.GET_LINKS -> stringResource(R.string.setting_browser_tool_get_links_title)
-    BrowserToolDefaults.BACK -> stringResource(R.string.setting_browser_tool_back_title)
-    BrowserToolDefaults.FORWARD -> stringResource(R.string.setting_browser_tool_forward_title)
-    BrowserToolDefaults.WAIT_FOR -> stringResource(R.string.setting_browser_tool_wait_for_title)
-    BrowserToolDefaults.CLICK -> stringResource(R.string.setting_browser_tool_click_title)
-    BrowserToolDefaults.TYPE -> stringResource(R.string.setting_browser_tool_type_title)
-    BrowserToolDefaults.SCROLL -> stringResource(R.string.setting_browser_tool_scroll_title)
-    BrowserToolDefaults.SUBMIT -> stringResource(R.string.setting_browser_tool_submit_title)
-    BrowserToolDefaults.SELECT -> stringResource(R.string.setting_browser_tool_select_title)
-    BrowserToolDefaults.PRESS_KEY -> stringResource(R.string.setting_browser_tool_press_key_title)
-    BrowserToolDefaults.EVAL_JS -> stringResource(R.string.setting_browser_tool_eval_js_title)
-    BrowserToolDefaults.DONE -> stringResource(R.string.setting_browser_tool_done_title)
-    else -> toolName
-}
+private fun toolDisplayTitle(toolName: String): String =
+    when (toolName) {
+        BrowserToolDefaults.OPEN -> stringResource(R.string.setting_browser_tool_open_title)
+        BrowserToolDefaults.CURRENT_URL -> stringResource(R.string.setting_browser_tool_current_url_title)
+        BrowserToolDefaults.SCREENSHOT -> stringResource(R.string.setting_browser_tool_screenshot_title)
+        BrowserToolDefaults.GET_TEXT -> stringResource(R.string.setting_browser_tool_get_text_title)
+        BrowserToolDefaults.GET_DOM -> stringResource(R.string.setting_browser_tool_get_dom_title)
+        BrowserToolDefaults.GET_LINKS -> stringResource(R.string.setting_browser_tool_get_links_title)
+        BrowserToolDefaults.BACK -> stringResource(R.string.setting_browser_tool_back_title)
+        BrowserToolDefaults.FORWARD -> stringResource(R.string.setting_browser_tool_forward_title)
+        BrowserToolDefaults.WAIT_FOR -> stringResource(R.string.setting_browser_tool_wait_for_title)
+        BrowserToolDefaults.CLICK -> stringResource(R.string.setting_browser_tool_click_title)
+        BrowserToolDefaults.TYPE -> stringResource(R.string.setting_browser_tool_type_title)
+        BrowserToolDefaults.SCROLL -> stringResource(R.string.setting_browser_tool_scroll_title)
+        BrowserToolDefaults.SUBMIT -> stringResource(R.string.setting_browser_tool_submit_title)
+        BrowserToolDefaults.SELECT -> stringResource(R.string.setting_browser_tool_select_title)
+        BrowserToolDefaults.PRESS_KEY -> stringResource(R.string.setting_browser_tool_press_key_title)
+        BrowserToolDefaults.EVAL_JS -> stringResource(R.string.setting_browser_tool_eval_js_title)
+        BrowserToolDefaults.DONE -> stringResource(R.string.setting_browser_tool_done_title)
+        else -> toolName
+    }
 
 @Composable
-private fun toolDisplayDesc(toolName: String): String = when (toolName) {
-    BrowserToolDefaults.OPEN -> stringResource(R.string.setting_browser_tool_open_desc)
-    BrowserToolDefaults.CURRENT_URL -> stringResource(R.string.setting_browser_tool_current_url_desc)
-    BrowserToolDefaults.SCREENSHOT -> stringResource(R.string.setting_browser_tool_screenshot_desc)
-    BrowserToolDefaults.GET_TEXT -> stringResource(R.string.setting_browser_tool_get_text_desc)
-    BrowserToolDefaults.GET_DOM -> stringResource(R.string.setting_browser_tool_get_dom_desc)
-    BrowserToolDefaults.GET_LINKS -> stringResource(R.string.setting_browser_tool_get_links_desc)
-    BrowserToolDefaults.BACK -> stringResource(R.string.setting_browser_tool_back_desc)
-    BrowserToolDefaults.FORWARD -> stringResource(R.string.setting_browser_tool_forward_desc)
-    BrowserToolDefaults.WAIT_FOR -> stringResource(R.string.setting_browser_tool_wait_for_desc)
-    BrowserToolDefaults.CLICK -> stringResource(R.string.setting_browser_tool_click_desc)
-    BrowserToolDefaults.TYPE -> stringResource(R.string.setting_browser_tool_type_desc)
-    BrowserToolDefaults.SCROLL -> stringResource(R.string.setting_browser_tool_scroll_desc)
-    BrowserToolDefaults.SUBMIT -> stringResource(R.string.setting_browser_tool_submit_desc)
-    BrowserToolDefaults.SELECT -> stringResource(R.string.setting_browser_tool_select_desc)
-    BrowserToolDefaults.PRESS_KEY -> stringResource(R.string.setting_browser_tool_press_key_desc)
-    BrowserToolDefaults.EVAL_JS -> stringResource(R.string.setting_browser_tool_eval_js_desc)
-    BrowserToolDefaults.DONE -> stringResource(R.string.setting_browser_tool_done_desc)
-    else -> ""
-}
+private fun toolDisplayDesc(toolName: String): String =
+    when (toolName) {
+        BrowserToolDefaults.OPEN -> stringResource(R.string.setting_browser_tool_open_desc)
+        BrowserToolDefaults.CURRENT_URL -> stringResource(R.string.setting_browser_tool_current_url_desc)
+        BrowserToolDefaults.SCREENSHOT -> stringResource(R.string.setting_browser_tool_screenshot_desc)
+        BrowserToolDefaults.GET_TEXT -> stringResource(R.string.setting_browser_tool_get_text_desc)
+        BrowserToolDefaults.GET_DOM -> stringResource(R.string.setting_browser_tool_get_dom_desc)
+        BrowserToolDefaults.GET_LINKS -> stringResource(R.string.setting_browser_tool_get_links_desc)
+        BrowserToolDefaults.BACK -> stringResource(R.string.setting_browser_tool_back_desc)
+        BrowserToolDefaults.FORWARD -> stringResource(R.string.setting_browser_tool_forward_desc)
+        BrowserToolDefaults.WAIT_FOR -> stringResource(R.string.setting_browser_tool_wait_for_desc)
+        BrowserToolDefaults.CLICK -> stringResource(R.string.setting_browser_tool_click_desc)
+        BrowserToolDefaults.TYPE -> stringResource(R.string.setting_browser_tool_type_desc)
+        BrowserToolDefaults.SCROLL -> stringResource(R.string.setting_browser_tool_scroll_desc)
+        BrowserToolDefaults.SUBMIT -> stringResource(R.string.setting_browser_tool_submit_desc)
+        BrowserToolDefaults.SELECT -> stringResource(R.string.setting_browser_tool_select_desc)
+        BrowserToolDefaults.PRESS_KEY -> stringResource(R.string.setting_browser_tool_press_key_desc)
+        BrowserToolDefaults.EVAL_JS -> stringResource(R.string.setting_browser_tool_eval_js_desc)
+        BrowserToolDefaults.DONE -> stringResource(R.string.setting_browser_tool_done_desc)
+        else -> ""
+    }

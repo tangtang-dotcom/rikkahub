@@ -28,7 +28,7 @@ fun ToolOutputDialog(
     enabled: Boolean,
     maxCharsKB: Int,
     onDismiss: () -> Unit,
-    onConfirm: (enabled: Boolean, maxCharsKB: Int) -> Unit
+    onConfirm: (enabled: Boolean, maxCharsKB: Int) -> Unit,
 ) {
     var currentEnabled by remember { mutableIntStateOf(if (enabled) 1 else 0) }
     // 以 String 保存输入值（而非 Float/Int），支持自由删除/编辑，避免 5→50→500 追加问题
@@ -42,26 +42,26 @@ fun ToolOutputDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 Text(
                     text = "限制工具输出的最大字符数，防止长输出占用过多上下文",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.setting_model_page_tool_output),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     Switch(
                         checked = currentEnabled == 1,
-                        onCheckedChange = { currentEnabled = if (it) 1 else 0 }
+                        onCheckedChange = { currentEnabled = if (it) 1 else 0 },
                     )
                 }
 
@@ -71,14 +71,14 @@ fun ToolOutputDialog(
                         onValueChange = { currentKB = it },
                         label = { Text(stringResource(R.string.setting_model_page_tool_output_max_chars)) },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
                     )
                 }
 
                 Text(
                     text = "⚠️ 设置过低可能导致工具输出被截断",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         },
@@ -88,7 +88,7 @@ fun ToolOutputDialog(
                     // 空输入/非法输入回退默认 5KB；合法输入钳制在 1-20
                     onConfirm(currentEnabled == 1, currentKB.toIntOrNull()?.coerceIn(1, 20) ?: 5)
                     onDismiss()
-                }
+                },
             ) {
                 Text(stringResource(R.string.settings_confirm))
             }
@@ -97,6 +97,6 @@ fun ToolOutputDialog(
             TextButton(onClick = { onDismiss() }) {
                 Text(stringResource(R.string.settings_cancel))
             }
-        }
+        },
     )
 }

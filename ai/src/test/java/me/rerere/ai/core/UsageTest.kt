@@ -7,9 +7,10 @@ import org.junit.Test
 class UsageTest {
     @Test
     fun `merge carries cost from the incoming chunk`() {
-        val merged = (null as TokenUsage?).merge(
-            TokenUsage(promptTokens = 10, completionTokens = 5, cost = 0.0012)
-        )
+        val merged =
+            (null as TokenUsage?).merge(
+                TokenUsage(promptTokens = 10, completionTokens = 5, cost = 0.0012),
+            )
         assertEquals(0.0012, merged.cost!!, 1e-9)
     }
 

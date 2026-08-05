@@ -57,11 +57,12 @@ import me.rerere.rikkahub.data.model.Tag as DataTag
 
 @Composable
 fun AssistantBasicPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val providers by vm.providers.collectAsStateWithLifecycle()
     val tags by vm.tags.collectAsStateWithLifecycle()
@@ -91,7 +92,7 @@ fun AssistantBasicPage(id: String) {
             tags = tags,
             workspaces = workspaces,
             onUpdate = { vm.update(it) },
-            vm = vm
+            vm = vm,
         )
     }
 }
@@ -104,23 +105,25 @@ internal fun AssistantBasicContent(
     tags: List<DataTag>,
     workspaces: List<WorkspaceEntity>,
     onUpdate: (Assistant) -> Unit,
-    vm: AssistantDetailVM
+    vm: AssistantDetailVM,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(innerPadding)
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(innerPadding)
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             UIAvatar(
                 value = assistant.avatar,
@@ -128,36 +131,36 @@ internal fun AssistantBasicContent(
                 onUpdate = { avatar ->
                     onUpdate(
                         assistant.copy(
-                            avatar = avatar
-                        )
+                            avatar = avatar,
+                        ),
                     )
                 },
-                modifier = Modifier
-                    .size(80.dp)
-                    .heroAnimation("assistant_${assistant.id}")
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .heroAnimation("assistant_${assistant.id}"),
             )
         }
 
         Card(
-            colors = CustomColors.cardColorsOnSurfaceContainer
+            colors = CustomColors.cardColorsOnSurfaceContainer,
         ) {
             FormItem(
                 label = {
                     Text(stringResource(R.string.assistant_page_name))
                 },
                 modifier = Modifier.padding(8.dp),
-
-                ) {
+            ) {
                 OutlinedTextField(
                     value = assistant.name,
                     onValueChange = {
                         onUpdate(
                             assistant.copy(
-                                name = it
-                            )
+                                name = it,
+                            ),
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -196,8 +199,8 @@ internal fun AssistantBasicContent(
                     onOptionSelected = { workspace ->
                         onUpdate(
                             assistant.copy(
-                                workspaceId = workspace?.id?.let { Uuid.parse(it) }
-                            )
+                                workspaceId = workspace?.id?.let { Uuid.parse(it) },
+                            ),
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -223,17 +226,17 @@ internal fun AssistantBasicContent(
                         onCheckedChange = {
                             onUpdate(
                                 assistant.copy(
-                                    useAssistantAvatar = it
-                                )
+                                    useAssistantAvatar = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
         }
 
         Card(
-            colors = CustomColors.cardColorsOnSurfaceContainer
+            colors = CustomColors.cardColorsOnSurfaceContainer,
         ) {
             FormItem(
                 modifier = Modifier.padding(8.dp),
@@ -251,12 +254,12 @@ internal fun AssistantBasicContent(
                         onSelect = {
                             onUpdate(
                                 assistant.copy(
-                                    chatModelId = it.id
-                                )
+                                    chatModelId = it.id,
+                                ),
                             )
                         },
                     )
-                }
+                },
             )
             HorizontalDivider()
             FormItem(
@@ -266,9 +269,10 @@ internal fun AssistantBasicContent(
                 },
                 description = {
                     Text(
-                        text = buildAnnotatedString {
-                            append(stringResource(R.string.assistant_page_temperature_warning))
-                        }
+                        text =
+                            buildAnnotatedString {
+                                append(stringResource(R.string.assistant_page_temperature_warning))
+                            },
                     )
                 },
                 tail = {
@@ -277,12 +281,12 @@ internal fun AssistantBasicContent(
                         onCheckedChange = { enabled ->
                             onUpdate(
                                 assistant.copy(
-                                    temperature = if (enabled) 1.0f else null
-                                )
+                                    temperature = if (enabled) 1.0f else null,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             ) {
                 if (assistant.temperature != null) {
                     var temperatureInput by remember(assistant.id) {
@@ -296,8 +300,8 @@ internal fun AssistantBasicContent(
                             value.toFloatOrNull()?.takeIf { it in 0f..2f }?.let { temperature ->
                                 onUpdate(
                                     assistant.copy(
-                                        temperature = temperature
-                                    )
+                                        temperature = temperature,
+                                    ),
                                 )
                             }
                         },
@@ -307,7 +311,7 @@ internal fun AssistantBasicContent(
                         isError = temperatureValue == null || temperatureValue !in 0f..2f,
                         supportingText = {
                             Text("0 - 2")
-                        }
+                        },
                     )
                 }
             }
@@ -319,9 +323,10 @@ internal fun AssistantBasicContent(
                 },
                 description = {
                     Text(
-                        text = buildAnnotatedString {
-                            append(stringResource(R.string.assistant_page_top_p_warning))
-                        }
+                        text =
+                            buildAnnotatedString {
+                                append(stringResource(R.string.assistant_page_top_p_warning))
+                            },
                     )
                 },
                 tail = {
@@ -330,12 +335,12 @@ internal fun AssistantBasicContent(
                         onCheckedChange = { enabled ->
                             onUpdate(
                                 assistant.copy(
-                                    topP = if (enabled) 1.0f else null
-                                )
+                                    topP = if (enabled) 1.0f else null,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             ) {
                 assistant.topP?.let { topP ->
                     var topPInput by remember(assistant.id) {
@@ -349,8 +354,8 @@ internal fun AssistantBasicContent(
                             value.toFloatOrNull()?.takeIf { it in 0f..1f }?.let { nextTopP ->
                                 onUpdate(
                                     assistant.copy(
-                                        topP = nextTopP
-                                    )
+                                        topP = nextTopP,
+                                    ),
                                 )
                             }
                         },
@@ -360,7 +365,7 @@ internal fun AssistantBasicContent(
                         isError = topPValue == null || topPValue !in 0f..1f,
                         supportingText = {
                             Text("0 - 1")
-                        }
+                        },
                     )
                 }
             }
@@ -374,27 +379,32 @@ internal fun AssistantBasicContent(
                     Text(
                         text = stringResource(R.string.assistant_page_context_message_limit_desc),
                     )
-                }
+                },
             ) {
                 Slider(
                     value = assistant.contextMessageLimit.toFloat(),
                     onValueChange = { value ->
                         onUpdate(
                             assistant.copy(
-                                contextMessageLimit = snapContextMessageLimit(value)
-                            )
+                                contextMessageLimit = snapContextMessageLimit(value),
+                            ),
                         )
                     },
                     valueRange = 0f..512f,
                     steps = 0,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Text(
-                    text = if (assistant.contextMessageLimit > 0) stringResource(
-                        R.string.assistant_page_context_message_limit_count,
-                        assistant.contextMessageLimit
-                    ) else stringResource(R.string.assistant_page_context_message_limit_unlimited),
+                    text =
+                        if (assistant.contextMessageLimit > 0) {
+                            stringResource(
+                                R.string.assistant_page_context_message_limit_count,
+                                assistant.contextMessageLimit,
+                            )
+                        } else {
+                            stringResource(R.string.assistant_page_context_message_limit_unlimited)
+                        },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.75f),
                 )
@@ -422,12 +432,12 @@ internal fun AssistantBasicContent(
                         onCheckedChange = {
                             onUpdate(
                                 assistant.copy(
-                                    streamOutput = it
-                                )
+                                    streamOutput = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
             HorizontalDivider()
             FormItem(
@@ -443,9 +453,9 @@ internal fun AssistantBasicContent(
                         checked = assistant.fastPathRouterEnabled,
                         onCheckedChange = {
                             onUpdate(assistant.copy(fastPathRouterEnabled = it))
-                        }
+                        },
                     )
-                }
+                },
             )
             HorizontalDivider()
             FormItem(
@@ -458,7 +468,7 @@ internal fun AssistantBasicContent(
                     reasoningLevel = assistant.reasoningLevel,
                     onUpdateReasoningLevel = { level ->
                         onUpdate(assistant.copy(reasoningLevel = level))
-                    }
+                    },
                 )
             }
             HorizontalDivider()
@@ -469,20 +479,21 @@ internal fun AssistantBasicContent(
                 },
                 description = {
                     Text(stringResource(R.string.assistant_page_max_tokens_desc))
-                }
+                },
             ) {
                 OutlinedTextField(
                     value = assistant.maxTokens?.toString() ?: "",
                     onValueChange = { text ->
-                        val tokens = if (text.isBlank()) {
-                            null
-                        } else {
-                            text.toIntOrNull()?.takeIf { it > 0 }
-                        }
+                        val tokens =
+                            if (text.isBlank()) {
+                                null
+                            } else {
+                                text.toIntOrNull()?.takeIf { it > 0 }
+                            }
                         onUpdate(
                             assistant.copy(
-                                maxTokens = tokens
-                            )
+                                maxTokens = tokens,
+                            ),
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -495,13 +506,13 @@ internal fun AssistantBasicContent(
                         } else {
                             Text(stringResource(R.string.assistant_page_max_tokens_no_token_limit))
                         }
-                    }
+                    },
                 )
             }
         }
 
         Card(
-            colors = CustomColors.cardColorsOnSurfaceContainer
+            colors = CustomColors.cardColorsOnSurfaceContainer,
         ) {
             FormItem(
                 modifier = Modifier.padding(8.dp),
@@ -517,12 +528,12 @@ internal fun AssistantBasicContent(
                         onCheckedChange = {
                             onUpdate(
                                 assistant.copy(
-                                    useGradientBackground = it
-                                )
+                                    useGradientBackground = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
 
             if (!assistant.useGradientBackground) {
@@ -535,10 +546,10 @@ internal fun AssistantBasicContent(
                     onUpdate = { background ->
                         onUpdate(
                             assistant.copy(
-                                background = background
-                            )
+                                background = background,
+                            ),
                         )
-                    }
+                    },
                 )
             }
 
@@ -552,26 +563,27 @@ internal fun AssistantBasicContent(
                     },
                     description = {
                         Text(stringResource(R.string.assistant_page_background_opacity_desc))
-                    }
+                    },
                 ) {
                     Slider(
                         value = backgroundOpacity,
                         onValueChange = {
                             onUpdate(
                                 assistant.copy(
-                                    backgroundOpacity = it.toFixed(2).toFloatOrNull()?.coerceIn(0f, 1f) ?: 1.0f
-                                )
+                                    backgroundOpacity = it.toFixed(2).toFloatOrNull()?.coerceIn(0f, 1f) ?: 1.0f,
+                                ),
                             )
                         },
                         valueRange = 0f..1f,
                         steps = 19,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
-                        text = stringResource(
-                            R.string.assistant_page_background_opacity_value,
-                            (backgroundOpacity * 100).roundToInt()
-                        ),
+                        text =
+                            stringResource(
+                                R.string.assistant_page_background_opacity_value,
+                                (backgroundOpacity * 100).roundToInt(),
+                            ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.75f),
                     )

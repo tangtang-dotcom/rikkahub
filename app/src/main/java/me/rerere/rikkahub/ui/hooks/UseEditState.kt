@@ -7,9 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 @Composable
-fun <T> useEditState(
-    onUpdate: (T) -> Unit
-): EditState<T> {
+fun <T> useEditState(onUpdate: (T) -> Unit): EditState<T> {
     var isEditing by remember { mutableStateOf(false) }
     var currentState by remember { mutableStateOf<T?>(null) }
 
@@ -58,9 +56,7 @@ interface EditState<T> {
 }
 
 @Composable
-fun <T> EditState<T>.EditStateContent(
-    content: @Composable (value: T, updateValue: (T) -> Unit) -> Unit
-) {
+fun <T> EditState<T>.EditStateContent(content: @Composable (value: T, updateValue: (T) -> Unit) -> Unit) {
     if (this.isEditing) {
         this.currentState?.let {
             content(it) { newState ->

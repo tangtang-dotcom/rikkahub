@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Composable
 fun <T> useDebounce(
     delayMillis: Long = 300,
-    function: (T) -> Unit
+    function: (T) -> Unit,
 ): (T) -> Unit {
     val scope = rememberCoroutineScope()
     val debounceJob = remember { mutableStateOf<Job?>(null) }
@@ -27,10 +27,11 @@ fun <T> useDebounce(
     return remember {
         { param: T ->
             debounceJob.value?.cancel()
-            debounceJob.value = scope.launch {
-                delay(delayMillis)
-                function(param)
-            }
+            debounceJob.value =
+                scope.launch {
+                    delay(delayMillis)
+                    function(param)
+                }
         }
     }
 }
@@ -45,7 +46,7 @@ fun <T> useDebounce(
 @Composable
 fun <T> useThrottle(
     intervalMillis: Long = 300,
-    function: (T) -> Unit
+    function: (T) -> Unit,
 ): (T) -> Unit {
     val scope = rememberCoroutineScope()
     val isThrottling = remember { AtomicBoolean(false) }

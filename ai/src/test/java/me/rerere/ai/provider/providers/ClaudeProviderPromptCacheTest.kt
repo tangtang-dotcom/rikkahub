@@ -14,8 +14,8 @@ import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -32,39 +32,41 @@ class ClaudeProviderPromptCacheTest {
         providerSetting: ProviderSetting.Claude,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-        stream: Boolean = false
+        stream: Boolean = false,
     ): JsonObject {
-        val method = ClaudeProvider::class.java.getDeclaredMethod(
-            "buildMessageRequest",
-            ProviderSetting.Claude::class.java,
-            List::class.java,
-            TextGenerationParams::class.java,
-            Boolean::class.javaPrimitiveType!!
-        )
+        val method =
+            ClaudeProvider::class.java.getDeclaredMethod(
+                "buildMessageRequest",
+                ProviderSetting.Claude::class.java,
+                List::class.java,
+                TextGenerationParams::class.java,
+                Boolean::class.javaPrimitiveType!!,
+            )
         method.isAccessible = true
         return method.invoke(provider, providerSetting, messages, params, stream) as JsonObject
     }
 
-    private fun dummyTool(): Tool {
-        return Tool(
+    private fun dummyTool(): Tool =
+        Tool(
             name = "dummy_tool",
             description = "dummy",
             parameters = { InputSchema.Obj(properties = JsonObject(emptyMap())) },
-            execute = { emptyList() }
+            execute = { emptyList() },
         )
-    }
 
     @Test
     fun `promptCaching=false should not add cache_control anywhere`() {
         val providerSetting = ProviderSetting.Claude(promptCaching = false)
-        val messages = listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("hello")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
-            tools = listOf(dummyTool())
-        )
+        val messages =
+            listOf(
+                UIMessage.system("system prompt"),
+                UIMessage.user("hello"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
+                tools = listOf(dummyTool()),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
 
@@ -93,14 +95,16 @@ class ClaudeProviderPromptCacheTest {
     @Test
     fun `promptCaching=true should add cache_control to last system block and last tool`() {
         val providerSetting = ProviderSetting.Claude(promptCaching = true)
-        val messages = listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("hello")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
-            tools = listOf(dummyTool())
-        )
+        val messages =
+            listOf(
+                UIMessage.system("system prompt"),
+                UIMessage.user("hello"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
+                tools = listOf(dummyTool()),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
 
@@ -121,10 +125,11 @@ class ClaudeProviderPromptCacheTest {
     fun `promptCaching=true without system should add cache_control to last tool`() {
         val providerSetting = ProviderSetting.Claude(promptCaching = true)
         val messages = listOf(UIMessage.user("hello"))
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
-            tools = listOf(dummyTool())
-        )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
+                tools = listOf(dummyTool()),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
 
@@ -138,40 +143,56 @@ class ClaudeProviderPromptCacheTest {
 
     @Test
     fun `promptCaching=true with one hour ttl should add ttl to cache_control`() {
-        val providerSetting = ProviderSetting.Claude(
-            promptCaching = true,
-            promptCacheTtl = ClaudePromptCacheTtl.ONE_HOUR
-        )
-        val messages = listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("first question"),
-            UIMessage.assistant("first answer"),
-            UIMessage.user("second question")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
-            tools = listOf(dummyTool())
-        )
+        val providerSetting =
+            ProviderSetting.Claude(
+                promptCaching = true,
+                promptCacheTtl = ClaudePromptCacheTtl.ONE_HOUR,
+            )
+        val messages =
+            listOf(
+                UIMessage.system("system prompt"),
+                UIMessage.user("first question"),
+                UIMessage.assistant("first answer"),
+                UIMessage.user("second question"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = listOf(ModelAbility.TOOL)),
+                tools = listOf(dummyTool()),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
 
-        val systemCacheControl = request["system"]!!.jsonArray.last().jsonObject["cache_control"]!!.jsonObject
+        val systemCacheControl =
+            request["system"]!!
+                .jsonArray
+                .last()
+                .jsonObject["cache_control"]!!
+                .jsonObject
         assertEquals("ephemeral", systemCacheControl["type"]!!.jsonPrimitive.content)
         assertEquals("1h", systemCacheControl["ttl"]!!.jsonPrimitive.content)
 
-        val toolCacheControl = request["tools"]!!.jsonArray.last().jsonObject["cache_control"]!!.jsonObject
+        val toolCacheControl =
+            request["tools"]!!
+                .jsonArray
+                .last()
+                .jsonObject["cache_control"]!!
+                .jsonObject
         assertEquals("ephemeral", toolCacheControl["type"]!!.jsonPrimitive.content)
         assertEquals("1h", toolCacheControl["ttl"]!!.jsonPrimitive.content)
 
         val messagesJson = request["messages"]!!.jsonArray
-        val firstUserMessage = messagesJson.first { msg ->
-            msg.jsonObject["role"]?.jsonPrimitive?.content == "user"
-        }.jsonObject
-        val messageCacheControl = firstUserMessage["content"]!!
-            .jsonArray
-            .last()
-            .jsonObject["cache_control"]!!
-            .jsonObject
+        val firstUserMessage =
+            messagesJson
+                .first { msg ->
+                    msg.jsonObject["role"]?.jsonPrimitive?.content == "user"
+                }.jsonObject
+        val messageCacheControl =
+            firstUserMessage["content"]!!
+                .jsonArray
+                .last()
+                .jsonObject["cache_control"]!!
+                .jsonObject
         assertEquals("ephemeral", messageCacheControl["type"]!!.jsonPrimitive.content)
         assertEquals("1h", messageCacheControl["ttl"]!!.jsonPrimitive.content)
     }
@@ -179,33 +200,39 @@ class ClaudeProviderPromptCacheTest {
     @Test
     fun `promptCaching=true should add cache_control to second-to-last real user message`() {
         val providerSetting = ProviderSetting.Claude(promptCaching = true)
-        val messages = listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("first question"),
-            UIMessage.assistant("first answer"),
-            UIMessage.user("second question"),
-            UIMessage.assistant("second answer"),
-            UIMessage.user("third question")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = emptyList()),
-            tools = emptyList()
-        )
+        val messages =
+            listOf(
+                UIMessage.system("system prompt"),
+                UIMessage.user("first question"),
+                UIMessage.assistant("first answer"),
+                UIMessage.user("second question"),
+                UIMessage.assistant("second answer"),
+                UIMessage.user("third question"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = emptyList()),
+                tools = emptyList(),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
         val msgs = request["messages"]!!.jsonArray
 
         // Find all real user messages (not tool_result)
-        val userMsgIndices = msgs.mapIndexedNotNull { index, msg ->
-            val obj = msg.jsonObject
-            if (obj["role"]?.jsonPrimitive?.content == "user") {
-                val content = obj["content"]?.jsonArray
-                val isToolResult = content?.any {
-                    it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result"
-                } == true
-                if (!isToolResult) index else null
-            } else null
-        }
+        val userMsgIndices =
+            msgs.mapIndexedNotNull { index, msg ->
+                val obj = msg.jsonObject
+                if (obj["role"]?.jsonPrimitive?.content == "user") {
+                    val content = obj["content"]?.jsonArray
+                    val isToolResult =
+                        content?.any {
+                            it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result"
+                        } == true
+                    if (!isToolResult) index else null
+                } else {
+                    null
+                }
+            }
 
         // Should have 3 real user messages
         assertEquals(3, userMsgIndices.size)
@@ -230,14 +257,16 @@ class ClaudeProviderPromptCacheTest {
     @Test
     fun `promptCaching=true with only one user message should not add cache_control to messages`() {
         val providerSetting = ProviderSetting.Claude(promptCaching = true)
-        val messages = listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("only question")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = emptyList()),
-            tools = emptyList()
-        )
+        val messages =
+            listOf(
+                UIMessage.system("system prompt"),
+                UIMessage.user("only question"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = emptyList()),
+                tools = emptyList(),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
         val msgs = request["messages"]!!.jsonArray
@@ -255,17 +284,25 @@ class ClaudeProviderPromptCacheTest {
     fun `system prompt text should be serialized into Claude system blocks`() {
         val prompt = "Assistant prompt\n\nTool guidance"
         val providerSetting = ProviderSetting.Claude(promptCaching = false)
-        val messages = listOf(
-            UIMessage.system(prompt),
-            UIMessage.user("hello")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "claude-test", abilities = emptyList()),
-            tools = emptyList()
-        )
+        val messages =
+            listOf(
+                UIMessage.system(prompt),
+                UIMessage.user("hello"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "claude-test", abilities = emptyList()),
+                tools = emptyList(),
+            )
 
         val request = buildRequest(providerSetting, messages, params)
         val system = request["system"]!!.jsonArray
-        assertEquals(prompt, system.single().jsonObject["text"]!!.jsonPrimitive.content)
+        assertEquals(
+            prompt,
+            system
+                .single()
+                .jsonObject["text"]!!
+                .jsonPrimitive.content,
+        )
     }
 }

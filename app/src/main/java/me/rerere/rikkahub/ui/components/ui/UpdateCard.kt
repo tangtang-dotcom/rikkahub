@@ -16,8 +16,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,20 +59,21 @@ fun UpdateCard(vm: ChatVM) {
     state.onError {
         Card {
             Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = stringResource(R.string.update_card_check_failed),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
                 Text(
                     text = it.message ?: stringResource(R.string.update_card_unknown_error),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -86,75 +87,83 @@ fun UpdateCard(vm: ChatVM) {
             Card(
                 onClick = {
                     showDetail = true
-                }
+                },
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = stringResource(R.string.update_card_new_version_found, info.version),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         IconButton(onClick = { dismissed = true }) {
                             Icon(
                                 imageVector = HugeIcons.Cancel01,
                                 contentDescription = stringResource(R.string.update_card_close),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                     MarkdownBlock(
                         content = info.changelog,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.heightIn(max = 200.dp)
+                        modifier = Modifier.heightIn(max = 200.dp),
                     )
                 }
             }
         }
         if (showDetail) {
-            val downloadHandler = useThrottle<UpdateDownload>(500) { item ->
-                vm.updateChecker.downloadUpdate(context, item)
-                showDetail = false
-                toaster.show(context.getString(R.string.update_card_downloading), type = ToastType.Info)
-            }
+            val downloadHandler =
+                useThrottle<UpdateDownload>(500) { item ->
+                    vm.updateChecker.downloadUpdate(context, item)
+                    showDetail = false
+                    toaster.show(context.getString(R.string.update_card_downloading), type = ToastType.Info)
+                }
             ModalBottomSheet(
                 onDismissRequest = { showDetail = false },
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+                sheetState =
+                    rememberBottomSheetState(
+                        initialValue = SheetValue.Hidden,
+                        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                    ),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 32.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = info.version,
                         style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text = Instant.parse(info.publishedAt).toJavaInstant().toLocalDateTime(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     MarkdownBlock(
                         content = info.changelog,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp)
-                            .verticalScroll(rememberScrollState()),
-                        style = MaterialTheme.typography.bodyMedium
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .verticalScroll(rememberScrollState()),
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                     info.downloads.fastForEach { downloadItem ->
                         OutlinedCard(
@@ -170,15 +179,15 @@ fun UpdateCard(vm: ChatVM) {
                                 },
                                 supportingContent = {
                                     Text(
-                                        text = downloadItem.size
+                                        text = downloadItem.size,
                                     )
                                 },
                                 leadingContent = {
                                     Icon(
                                         imageVector = HugeIcons.Download01,
-                                        contentDescription = null
+                                        contentDescription = null,
                                     )
-                                }
+                                },
                             )
                         }
                     }

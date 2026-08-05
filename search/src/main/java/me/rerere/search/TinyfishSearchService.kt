@@ -30,7 +30,7 @@ object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOption
         TextButton(
             onClick = {
                 urlHandler.openUri("https://agent.tinyfish.ai/api-keys")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -38,111 +38,133 @@ object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOption
 
     override fun parameters(options: SearchServiceOptions.TinyfishOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.TinyfishOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("url", buildJsonObject {
-                    put("type", "string")
-                    put("description", "url to scrape")
-                })
-            },
-            required = listOf("url")
+            properties =
+                buildJsonObject {
+                    put(
+                        "url",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "url to scrape")
+                        },
+                    )
+                },
+            required = listOf("url"),
         )
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.TinyfishOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://api.search.tinyfish.ai" +
-                    "?query=${java.net.URLEncoder.encode(query, "UTF-8")}"
+        serviceOptions: SearchServiceOptions.TinyfishOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+                val url =
+                    "https://api.search.tinyfish.ai" +
+                        "?query=${java.net.URLEncoder.encode(query, "UTF-8")}"
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("X-API-Key", serviceOptions.apiKey)
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .addHeader("X-API-Key", serviceOptions.apiKey)
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string()
-                val searchResponse = json.decodeFromString<TinyfishSearchResponse>(responseBody)
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    val searchResponse = json.decodeFromString<TinyfishSearchResponse>(responseBody)
 
-                val items = searchResponse.results.map { result ->
-                    SearchResultItem(
-                        title = result.title,
-                        url = result.url,
-                        text = result.snippet
+                    val items =
+                        searchResponse.results.map { result ->
+                            SearchResultItem(
+                                title = result.title,
+                                url = result.url,
+                                text = result.snippet,
+                            )
+                        }
+
+                    return@withContext Result.success(
+                        SearchResult(
+                            answer = null,
+                            items = items,
+                        ),
                     )
+                } else {
+                    error("Tinyfish search failed with code ${response.code}: ${response.message}")
                 }
-
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = null,
-                        items = items
-                    )
-                )
-            } else {
-                error("Tinyfish search failed with code ${response.code}: ${response.message}")
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.TinyfishOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
-            val body = buildJsonObject {
-                put("urls", kotlinx.serialization.json.buildJsonArray {
-                    add(kotlinx.serialization.json.JsonPrimitive(url))
-                })
-                put("format", "markdown")
-            }
+        serviceOptions: SearchServiceOptions.TinyfishOptions,
+    ): Result<ScrapedResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
+                val body =
+                    buildJsonObject {
+                        put(
+                            "urls",
+                            kotlinx.serialization.json.buildJsonArray {
+                                add(kotlinx.serialization.json.JsonPrimitive(url))
+                            },
+                        )
+                        put("format", "markdown")
+                    }
 
-            val request = Request.Builder()
-                .url("https://api.fetch.tinyfish.ai")
-                .post(body.toString().toRequestBody("application/json".toMediaType()))
-                .addHeader("X-API-Key", serviceOptions.apiKey)
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.fetch.tinyfish.ai")
+                        .post(body.toString().toRequestBody("application/json".toMediaType()))
+                        .addHeader("X-API-Key", serviceOptions.apiKey)
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string()
-                val fetchResponse = json.decodeFromString<TinyfishFetchResponse>(responseBody)
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    val fetchResponse = json.decodeFromString<TinyfishFetchResponse>(responseBody)
 
-                return@withContext Result.success(
-                    ScrapedResult(
-                        urls = fetchResponse.results.map {
-                            ScrapedResultUrl(
-                                url = it.url,
-                                content = it.text ?: "",
-                                metadata = ScrapedResultMetadata(
-                                    title = it.title,
-                                    description = it.description,
-                                    language = it.language,
-                                )
-                            )
-                        }
+                    return@withContext Result.success(
+                        ScrapedResult(
+                            urls =
+                                fetchResponse.results.map {
+                                    ScrapedResultUrl(
+                                        url = it.url,
+                                        content = it.text ?: "",
+                                        metadata =
+                                            ScrapedResultMetadata(
+                                                title = it.title,
+                                                description = it.description,
+                                                language = it.language,
+                                            ),
+                                    )
+                                },
+                        ),
                     )
-                )
-            } else {
-                error("Tinyfish fetch failed with code ${response.code}: ${response.message}")
+                } else {
+                    error("Tinyfish fetch failed with code ${response.code}: ${response.message}")
+                }
             }
         }
-    }
 
     @Serializable
     data class TinyfishSearchResponse(

@@ -15,7 +15,8 @@ fun Instant.toLocalDate(): String {
     val zoneId = ZoneId.systemDefault()
     val localDateTime = this.atZone(zoneId).toLocalDateTime()
 
-    return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+    return DateTimeFormatter
+        .ofLocalizedDate(FormatStyle.MEDIUM)
         .withLocale(Locale.getDefault())
         .format(localDateTime)
 }
@@ -24,7 +25,8 @@ fun Instant.toLocalDateTime(): String {
     val zoneId = ZoneId.systemDefault()
     val localDateTime = this.atZone(zoneId).toLocalDateTime()
 
-    return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+    return DateTimeFormatter
+        .ofLocalizedDateTime(FormatStyle.MEDIUM)
         .withLocale(Locale.getDefault())
         .format(localDateTime)
 }
@@ -33,7 +35,8 @@ fun Instant.toLocalTime(): String {
     val zoneId = ZoneId.systemDefault()
     val localDateTime = this.atZone(zoneId).toLocalDateTime()
 
-    return DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
+    return DateTimeFormatter
+        .ofLocalizedTime(FormatStyle.MEDIUM)
         .withLocale(Locale.getDefault())
         .format(localDateTime)
 }
@@ -58,36 +61,38 @@ fun LocalDateTime.toMessageTimeString(): String {
 
 fun LocalDate.toLocalString(includeYear: Boolean): String {
     val locale = Locale.getDefault()
-    val formatter = if (includeYear) {
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
-    } else {
-        if (isMonthFirstLocale(locale)) {
-            // Month-day format (e.g., "Sep 20" for US English)
-            DateTimeFormatterBuilder()
-                .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)
-                .appendLiteral(' ')
-                .appendValue(ChronoField.DAY_OF_MONTH)
-                .toFormatter(locale)
+    val formatter =
+        if (includeYear) {
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
         } else {
-            // Day-month format (e.g., "20 sep" for Swedish)
-            DateTimeFormatterBuilder()
-                .appendValue(ChronoField.DAY_OF_MONTH)
-                .appendLiteral(' ')
-                .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)
-                .toFormatter(locale)
+            if (isMonthFirstLocale(locale)) {
+                // Month-day format (e.g., "Sep 20" for US English)
+                DateTimeFormatterBuilder()
+                    .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)
+                    .appendLiteral(' ')
+                    .appendValue(ChronoField.DAY_OF_MONTH)
+                    .toFormatter(locale)
+            } else {
+                // Day-month format (e.g., "20 sep" for Swedish)
+                DateTimeFormatterBuilder()
+                    .appendValue(ChronoField.DAY_OF_MONTH)
+                    .appendLiteral(' ')
+                    .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT)
+                    .toFormatter(locale)
+            }
         }
-    }
 
     return formatter.format(this)
 }
 
 private fun isMonthFirstLocale(locale: Locale): Boolean {
-    val monthFirstCountries = setOf(
-        "US", // 美国
-        "PH", // 菲律宾
-        "CA", // 加拿大(虽然魁北克可能使用日-月格式)
-        "CN", // 中国
-    )
+    val monthFirstCountries =
+        setOf(
+            "US", // 美国
+            "PH", // 菲律宾
+            "CA", // 加拿大(虽然魁北克可能使用日-月格式)
+            "CN", // 中国
+        )
     return monthFirstCountries.contains(locale.country)
 }
 
@@ -108,7 +113,11 @@ data class RelativeTimeStrings(
     val daysAgo: String,
 )
 
-fun formatRelativeAgo(thenMs: Long, nowMs: Long, strings: RelativeTimeStrings): String {
+fun formatRelativeAgo(
+    thenMs: Long,
+    nowMs: Long,
+    strings: RelativeTimeStrings,
+): String {
     val deltaSec = ((nowMs - thenMs) / 1000L).coerceAtLeast(0)
     return when {
         deltaSec < 60 -> if (deltaSec < 5) strings.justNow else String.format(strings.secondsAgo, deltaSec)

@@ -25,7 +25,7 @@ import me.rerere.rikkahub.data.export.ExporterState
 fun <T> ExportDialog(
     exporter: ExporterState<T>,
     title: String? = null,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -37,25 +37,26 @@ fun <T> ExportDialog(
                         exporter.exportToFile()
                         onDismiss()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
                         Icon(HugeIcons.File01, null)
                         Column {
                             Text(
                                 text = stringResource(R.string.export_to_file),
-                                style = MaterialTheme.typography.titleSmall
+                                style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
                                 text = stringResource(R.string.export_to_file_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -65,25 +66,26 @@ fun <T> ExportDialog(
                         exporter.exportAndShare()
                         onDismiss()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
                         Icon(HugeIcons.Share01, null)
                         Column {
                             Text(
                                 text = stringResource(R.string.export_share),
-                                style = MaterialTheme.typography.titleSmall
+                                style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
                                 text = stringResource(R.string.export_share_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -94,6 +96,6 @@ fun <T> ExportDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.export_cancel))
             }
-        }
+        },
     )
 }

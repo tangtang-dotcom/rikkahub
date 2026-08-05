@@ -16,14 +16,14 @@ import org.junit.Test
  * is still `true` at the moment of the doomed first load).
  */
 class LiteRtProviderTest {
-
     @Test
     fun `forwards images when vision is live post-load`() {
-        val d = decideImageForwarding(
-            modelImageCapable = true,
-            visionEnabledPostLoad = true,
-            userSentImages = true,
-        )
+        val d =
+            decideImageForwarding(
+                modelImageCapable = true,
+                visionEnabledPostLoad = true,
+                userSentImages = true,
+            )
         assertTrue("vision live -> forward", d.forwardImages)
         assertFalse("nothing dropped when we forward", d.noteImagesDropped)
     }
@@ -32,22 +32,24 @@ class LiteRtProviderTest {
     fun `does NOT forward images when vision fell back to text-only (the crash case)`() {
         // Vision-capable model, but the GPU vision executor failed and the engine loaded
         // text-only. Forwarding here is the SIGSEGV. Drop the images, and flag a user note.
-        val d = decideImageForwarding(
-            modelImageCapable = true,
-            visionEnabledPostLoad = false,
-            userSentImages = true,
-        )
+        val d =
+            decideImageForwarding(
+                modelImageCapable = true,
+                visionEnabledPostLoad = false,
+                userSentImages = true,
+            )
         assertFalse("vision not live -> never forward", d.forwardImages)
         assertTrue("user attached images that were dropped -> note them", d.noteImagesDropped)
     }
 
     @Test
     fun `no note when vision fell back but the user attached no images`() {
-        val d = decideImageForwarding(
-            modelImageCapable = true,
-            visionEnabledPostLoad = false,
-            userSentImages = false,
-        )
+        val d =
+            decideImageForwarding(
+                modelImageCapable = true,
+                visionEnabledPostLoad = false,
+                userSentImages = false,
+            )
         assertFalse(d.forwardImages)
         assertFalse("nothing to note when no images were attached", d.noteImagesDropped)
     }
@@ -57,22 +59,24 @@ class LiteRtProviderTest {
         // The user picked a model that never supported vision. Preserve the prior silent-drop
         // behaviour: no "vision unavailable on this device" note, because the device's vision
         // capability was never the issue here.
-        val d = decideImageForwarding(
-            modelImageCapable = false,
-            visionEnabledPostLoad = false,
-            userSentImages = true,
-        )
+        val d =
+            decideImageForwarding(
+                modelImageCapable = false,
+                visionEnabledPostLoad = false,
+                userSentImages = true,
+            )
         assertFalse(d.forwardImages)
         assertFalse("text-only model is not a device-vision failure", d.noteImagesDropped)
     }
 
     @Test
     fun `no images with vision live is a no-op`() {
-        val d = decideImageForwarding(
-            modelImageCapable = true,
-            visionEnabledPostLoad = true,
-            userSentImages = false,
-        )
+        val d =
+            decideImageForwarding(
+                modelImageCapable = true,
+                visionEnabledPostLoad = true,
+                userSentImages = false,
+            )
         assertTrue(d.forwardImages)
         assertFalse(d.noteImagesDropped)
     }

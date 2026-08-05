@@ -27,17 +27,28 @@ private const val TAG = "ModelInstall"
  * Files land under `${context.filesDir}/local-models/litert/<basename>`.
  */
 object ModelInstall {
-
     private const val LOCAL_MODELS_DIRNAME = "local-models"
 
     /**
      * Progress events emitted by [download]. Terminal events are [Done] and [Failed].
      */
     sealed class Progress {
-        data class Started(val totalBytes: Long?) : Progress()
-        data class Tick(val bytesRead: Long, val totalBytes: Long?) : Progress()
-        data class Done(val file: File) : Progress()
-        data class Failed(val cause: Throwable) : Progress()
+        data class Started(
+            val totalBytes: Long?,
+        ) : Progress()
+
+        data class Tick(
+            val bytesRead: Long,
+            val totalBytes: Long?,
+        ) : Progress()
+
+        data class Done(
+            val file: File,
+        ) : Progress()
+
+        data class Failed(
+            val cause: Throwable,
+        ) : Progress()
     }
 
     /**
@@ -69,39 +80,48 @@ object ModelInstall {
         }.getOrDefault(false)
     }
 
-    fun runtimeForExtension(extension: String): LocalRuntime? = when (extension.lowercase()) {
-        "litertlm" -> LocalRuntime.LiteRT
-        else -> null
-    }
+    fun runtimeForExtension(extension: String): LocalRuntime? =
+        when (extension.lowercase()) {
+            "litertlm" -> LocalRuntime.LiteRT
+            else -> null
+        }
 
     fun extractFileNameFromUrl(url: String): String {
         val withoutQuery = url.substringBefore('?')
         return withoutQuery.substringAfterLast('/')
     }
 
-    fun targetFile(baseDir: File, runtime: LocalRuntime, fileName: String): File {
-        val sub = when (runtime) {
-            LocalRuntime.LiteRT -> "litert"
-        }
+    fun targetFile(
+        baseDir: File,
+        runtime: LocalRuntime,
+        fileName: String,
+    ): File {
+        val sub =
+            when (runtime) {
+                LocalRuntime.LiteRT -> "litert"
+            }
         return File(File(baseDir, sub), fileName)
     }
 
-    fun localModelsDir(context: Context): File =
-        File(context.filesDir, LOCAL_MODELS_DIRNAME).apply { mkdirs() }
+    fun localModelsDir(context: Context): File = File(context.filesDir, LOCAL_MODELS_DIRNAME).apply { mkdirs() }
 
     /**
      * Returns true if the first [count] bytes of [buf] look like an HTML document.
      * Used to abort downloads that succeeded HTTP-wise but returned an error page.
      */
-    fun looksLikeHtml(buf: ByteArray, count: Int): Boolean {
-        val sample = String(buf, 0, count.coerceAtMost(256), Charsets.UTF_8)
-            .trimStart()
-            .lowercase()
+    fun looksLikeHtml(
+        buf: ByteArray,
+        count: Int,
+    ): Boolean {
+        val sample =
+            String(buf, 0, count.coerceAtMost(256), Charsets.UTF_8)
+                .trimStart()
+                .lowercase()
         return sample.startsWith("<!doctype") ||
-               sample.startsWith("<html") ||
-               sample.startsWith("<head") ||
-               sample.startsWith("<body") ||
-               sample.startsWith("<?xml")
+            sample.startsWith("<html") ||
+            sample.startsWith("<head") ||
+            sample.startsWith("<body") ||
+            sample.startsWith("<?xml")
     }
 
     /**
@@ -110,7 +130,10 @@ object ModelInstall {
      * downloaded successfully but whose contents are wrong (sparse-fill, server
      * misroute, partial corruption, etc.).
      */
-    fun isValidMagicForExtension(extension: String, firstBytes: ByteArray): Boolean {
+    fun isValidMagicForExtension(
+        extension: String,
+        firstBytes: ByteArray,
+    ): Boolean {
         if (firstBytes.size < 4) return false
         return when (extension.lowercase()) {
             "litertlm", "tflite", "task" -> {
@@ -120,16 +143,19 @@ object ModelInstall {
                 // FlatBuffer header (offset 0..3 is the size prefix). The simplest check: first
                 // 8 bytes are "LITERTLM" OR bytes 4..7 are "TFL3". Reject all-zero, all-FF,
                 // or HTML-like first bytes.
-                val isLitertlm = firstBytes.size >= 8 &&
-                    firstBytes[0] == 0x4c.toByte() && firstBytes[1] == 0x49.toByte() &&
-                    firstBytes[2] == 0x54.toByte() && firstBytes[3] == 0x45.toByte() &&
-                    firstBytes[4] == 0x52.toByte() && firstBytes[5] == 0x54.toByte() &&
-                    firstBytes[6] == 0x4c.toByte() && firstBytes[7] == 0x4d.toByte()
-                val isTflite = firstBytes.size >= 8 &&
-                    firstBytes[4] == 0x54.toByte() && firstBytes[5] == 0x46.toByte() &&
-                    firstBytes[6] == 0x4c.toByte() && firstBytes[7] == 0x33.toByte()
+                val isLitertlm =
+                    firstBytes.size >= 8 &&
+                        firstBytes[0] == 0x4c.toByte() && firstBytes[1] == 0x49.toByte() &&
+                        firstBytes[2] == 0x54.toByte() && firstBytes[3] == 0x45.toByte() &&
+                        firstBytes[4] == 0x52.toByte() && firstBytes[5] == 0x54.toByte() &&
+                        firstBytes[6] == 0x4c.toByte() && firstBytes[7] == 0x4d.toByte()
+                val isTflite =
+                    firstBytes.size >= 8 &&
+                        firstBytes[4] == 0x54.toByte() && firstBytes[5] == 0x46.toByte() &&
+                        firstBytes[6] == 0x4c.toByte() && firstBytes[7] == 0x33.toByte()
                 isLitertlm || isTflite
             }
+
             else -> {
                 // Unknown extension — accept by default but reject obvious zeros / HTML.
                 !looksLikeHtml(firstBytes, firstBytes.size) && firstBytes.any { it != 0x00.toByte() }
@@ -158,181 +184,209 @@ object ModelInstall {
         client: OkHttpClient,
         url: String,
         target: File,
-    ): Flow<Progress> = flow {
-        target.parentFile?.mkdirs()
-        val partial = File(target.absolutePath + ".partial")
-        // Resume support: if a `.partial` survives from a prior interrupted attempt, ask
-        // the server for `Range: bytes=<existing-size>-`. HuggingFace's `/resolve/` URLs
-        // serve immutable per-commit files so the partial bytes are guaranteed to match
-        // the rest of the response. If the server returns 206 we append; if it returns
-        // 200 (Range not honored) we silently overwrite the partial; if 416 (partial >=
-        // server's file size, e.g. server file shrank or partial corrupt-trailing) we
-        // delete + restart from zero. Without this, leaving the Settings page mid-
-        // download cancelled the coroutine and the next tap re-downloaded the entire
-        // multi-GB file from scratch.
-        val resumeFrom = if (partial.exists() && partial.length() > 0) partial.length() else 0L
+    ): Flow<Progress> =
+        flow {
+            target.parentFile?.mkdirs()
+            val partial = File(target.absolutePath + ".partial")
+            // Resume support: if a `.partial` survives from a prior interrupted attempt, ask
+            // the server for `Range: bytes=<existing-size>-`. HuggingFace's `/resolve/` URLs
+            // serve immutable per-commit files so the partial bytes are guaranteed to match
+            // the rest of the response. If the server returns 206 we append; if it returns
+            // 200 (Range not honored) we silently overwrite the partial; if 416 (partial >=
+            // server's file size, e.g. server file shrank or partial corrupt-trailing) we
+            // delete + restart from zero. Without this, leaving the Settings page mid-
+            // download cancelled the coroutine and the next tap re-downloaded the entire
+            // multi-GB file from scratch.
+            val resumeFrom = if (partial.exists() && partial.length() > 0) partial.length() else 0L
 
-        val normalized = normalizeHuggingFaceUrl(url)
-        val requestBuilder = Request.Builder().url(normalized)
-        if (resumeFrom > 0) {
-            requestBuilder.header("Range", "bytes=$resumeFrom-")
-        }
-        val request = requestBuilder.build()
-
-        client.newCall(request).execute().use { response ->
-            // 416 Range Not Satisfiable — partial bigger than server file (corruption or
-            // server-side replacement). Restart fresh.
-            if (response.code == 416 && resumeFrom > 0) {
-                Log.w(TAG, "Server returned 416 (Range Not Satisfiable) — partial=$resumeFrom; restarting from 0")
-                runCatching { partial.delete() }
-                // Fall through to a clean retry by emitting Failed + letting the caller retry.
-                emit(Progress.Failed(IllegalStateException(
-                    "Existing partial file no longer matches server. Tap Install again to restart."
-                )))
-                return@flow
+            val normalized = normalizeHuggingFaceUrl(url)
+            val requestBuilder = Request.Builder().url(normalized)
+            if (resumeFrom > 0) {
+                requestBuilder.header("Range", "bytes=$resumeFrom-")
             }
-            if (!response.isSuccessful) {
-                Log.w(TAG, "Download failed: HTTP ${response.code} for $normalized")
-                emit(Progress.Failed(IllegalStateException("HTTP ${response.code}")))
-                return@flow
-            }
+            val request = requestBuilder.build()
 
-            // Reject HTML responses immediately — a 200 OK from HuggingFace viewer pages,
-            // Cloudflare error pages, etc. would otherwise land silently as an HTML file.
-            val contentType = response.header("Content-Type").orEmpty()
-            if (contentType.startsWith("text/html") || contentType.startsWith("application/xhtml")) {
-                Log.w(TAG, "Download rejected: HTML content-type '$contentType' for $normalized")
-                emit(Progress.Failed(IllegalStateException(
-                    "Server returned an HTML page, not a model file. " +
-                    "Use a /resolve/ URL — for HuggingFace, /blob/ paths auto-rewrite to /resolve/."
-                )))
-                return@flow
-            }
+            client.newCall(request).execute().use { response ->
+                // 416 Range Not Satisfiable — partial bigger than server file (corruption or
+                // server-side replacement). Restart fresh.
+                if (response.code == 416 && resumeFrom > 0) {
+                    Log.w(TAG, "Server returned 416 (Range Not Satisfiable) — partial=$resumeFrom; restarting from 0")
+                    runCatching { partial.delete() }
+                    // Fall through to a clean retry by emitting Failed + letting the caller retry.
+                    emit(
+                        Progress.Failed(
+                            IllegalStateException(
+                                "Existing partial file no longer matches server. Tap Install again to restart.",
+                            ),
+                        ),
+                    )
+                    return@flow
+                }
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "Download failed: HTTP ${response.code} for $normalized")
+                    emit(Progress.Failed(IllegalStateException("HTTP ${response.code}")))
+                    return@flow
+                }
 
-            // 206 Partial Content means the server honoured our Range header → append to
-            // the existing partial. 200 OK means the server ignored the Range header (or
-            // we didn't send one) → overwrite the partial from byte 0. Total file size
-            // comes from Content-Range when resuming (`bytes 1024-4095/4096`); from
-            // Content-Length when fresh.
-            val isResume = response.code == 206 && resumeFrom > 0
-            val total: Long? = if (isResume) {
-                response.header("Content-Range")?.substringAfterLast('/')?.toLongOrNull()
-            } else {
-                response.header("Content-Length")?.toLongOrNull()
-            }
-            emit(Progress.Started(total))
+                // Reject HTML responses immediately — a 200 OK from HuggingFace viewer pages,
+                // Cloudflare error pages, etc. would otherwise land silently as an HTML file.
+                val contentType = response.header("Content-Type").orEmpty()
+                if (contentType.startsWith("text/html") || contentType.startsWith("application/xhtml")) {
+                    Log.w(TAG, "Download rejected: HTML content-type '$contentType' for $normalized")
+                    emit(
+                        Progress.Failed(
+                            IllegalStateException(
+                                "Server returned an HTML page, not a model file. " +
+                                    "Use a /resolve/ URL — for HuggingFace, /blob/ paths auto-rewrite to /resolve/.",
+                            ),
+                        ),
+                    )
+                    return@flow
+                }
 
-            val effectiveResumeFrom = if (isResume) resumeFrom else 0L
-            if (effectiveResumeFrom > 0) {
-                // Surface the current bytes-on-disk so the UI's first tick shows the
-                // right starting percentage instead of jumping from 0% to the resumed
-                // figure on the next data chunk.
-                emit(Progress.Tick(effectiveResumeFrom, total))
-            } else if (resumeFrom > 0) {
-                // We sent Range but server returned 200 — clear the partial so we don't
-                // double-write its old contents.
-                Log.w(TAG, "Server returned 200 (Range not honoured); restarting partial from 0")
-                runCatching { partial.delete() }
-            }
+                // 206 Partial Content means the server honoured our Range header → append to
+                // the existing partial. 200 OK means the server ignored the Range header (or
+                // we didn't send one) → overwrite the partial from byte 0. Total file size
+                // comes from Content-Range when resuming (`bytes 1024-4095/4096`); from
+                // Content-Length when fresh.
+                val isResume = response.code == 206 && resumeFrom > 0
+                val total: Long? =
+                    if (isResume) {
+                        response.header("Content-Range")?.substringAfterLast('/')?.toLongOrNull()
+                    } else {
+                        response.header("Content-Length")?.toLongOrNull()
+                    }
+                emit(Progress.Started(total))
 
-            val body = response.body
+                val effectiveResumeFrom = if (isResume) resumeFrom else 0L
+                if (effectiveResumeFrom > 0) {
+                    // Surface the current bytes-on-disk so the UI's first tick shows the
+                    // right starting percentage instead of jumping from 0% to the resumed
+                    // figure on the next data chunk.
+                    emit(Progress.Tick(effectiveResumeFrom, total))
+                } else if (resumeFrom > 0) {
+                    // We sent Range but server returned 200 — clear the partial so we don't
+                    // double-write its old contents.
+                    Log.w(TAG, "Server returned 200 (Range not honoured); restarting partial from 0")
+                    runCatching { partial.delete() }
+                }
 
-            // Skip the HTML magic-byte sniff when resuming — those bytes are already on
-            // disk from the prior attempt, and the body now starts mid-file. A false
-            // positive would otherwise nuke valid partials.
-            var sniffed = isResume
-            var bailed = false
-            // FileOutputStream(file, append=true) when resuming so we extend rather than
-            // truncate. partial.outputStream() truncates implicitly.
-            val out = if (isResume) {
-                java.io.FileOutputStream(partial, /* append = */ true)
-            } else {
-                partial.outputStream()
-            }
-            // Wrap the read loop. SocketException ("Software caused connection abort"),
-            // SSL handshake errors, and IOException all happen mid-stream when the OS
-            // tears down the socket — user backgrounded the app, WiFi flipped, server
-            // closed the connection, etc. Without this catch the throw propagates up
-            // through .collect{}, lands on whatever dispatcher the collector runs on
-            // (Main, in our case), and crashes the process. The partial bytes already
-            // on disk are intact and resumable on the next Install tap because of the
-            // Range-resume logic above.
-            val ioFailure: Throwable? = try {
-                out.use { sink ->
-                    body.byteStream().use { input ->
-                        val buf = ByteArray(64 * 1024)
-                        var totalRead = effectiveResumeFrom
-                        while (true) {
-                            val n = input.read(buf)
-                            if (n <= 0) break
-                            if (!sniffed) {
-                                sniffed = true
-                                if (looksLikeHtml(buf, n)) {
-                                    bailed = true
-                                    break
+                val body = response.body
+
+                // Skip the HTML magic-byte sniff when resuming — those bytes are already on
+                // disk from the prior attempt, and the body now starts mid-file. A false
+                // positive would otherwise nuke valid partials.
+                var sniffed = isResume
+                var bailed = false
+                // FileOutputStream(file, append=true) when resuming so we extend rather than
+                // truncate. partial.outputStream() truncates implicitly.
+                val out =
+                    if (isResume) {
+                        java.io.FileOutputStream(partial, /* append = */ true)
+                    } else {
+                        partial.outputStream()
+                    }
+                // Wrap the read loop. SocketException ("Software caused connection abort"),
+                // SSL handshake errors, and IOException all happen mid-stream when the OS
+                // tears down the socket — user backgrounded the app, WiFi flipped, server
+                // closed the connection, etc. Without this catch the throw propagates up
+                // through .collect{}, lands on whatever dispatcher the collector runs on
+                // (Main, in our case), and crashes the process. The partial bytes already
+                // on disk are intact and resumable on the next Install tap because of the
+                // Range-resume logic above.
+                val ioFailure: Throwable? =
+                    try {
+                        out.use { sink ->
+                            body.byteStream().use { input ->
+                                val buf = ByteArray(64 * 1024)
+                                var totalRead = effectiveResumeFrom
+                                while (true) {
+                                    val n = input.read(buf)
+                                    if (n <= 0) break
+                                    if (!sniffed) {
+                                        sniffed = true
+                                        if (looksLikeHtml(buf, n)) {
+                                            bailed = true
+                                            break
+                                        }
+                                    }
+                                    sink.write(buf, 0, n)
+                                    totalRead += n
+                                    emit(Progress.Tick(totalRead, total))
                                 }
                             }
-                            sink.write(buf, 0, n)
-                            totalRead += n
-                            emit(Progress.Tick(totalRead, total))
                         }
+                        null
+                    } catch (e: java.io.IOException) {
+                        e
                     }
+                if (ioFailure != null) {
+                    Log.w(TAG, "Download read interrupted: ${ioFailure::class.simpleName}: ${ioFailure.message}")
+                    emit(
+                        Progress.Failed(
+                            java.io.IOException(
+                                "Download interrupted (${ioFailure::class.simpleName}: ${ioFailure.message}). " +
+                                    "Tap Install again to resume from where it stopped.",
+                                ioFailure,
+                            ),
+                        ),
+                    )
+                    return@flow
                 }
-                null
-            } catch (e: java.io.IOException) {
-                e
-            }
-            if (ioFailure != null) {
-                Log.w(TAG, "Download read interrupted: ${ioFailure::class.simpleName}: ${ioFailure.message}")
-                emit(Progress.Failed(java.io.IOException(
-                    "Download interrupted (${ioFailure::class.simpleName}: ${ioFailure.message}). " +
-                    "Tap Install again to resume from where it stopped.",
-                    ioFailure,
-                )))
-                return@flow
-            }
 
-            if (bailed) {
-                runCatching { partial.delete() }
-                Log.w(TAG, "Download aborted: HTML magic bytes detected in response body for $normalized")
-                emit(Progress.Failed(IllegalStateException(
-                    "Server returned an HTML page (magic-byte check failed). Check the URL."
-                )))
-                return@flow
-            }
+                if (bailed) {
+                    runCatching { partial.delete() }
+                    Log.w(TAG, "Download aborted: HTML magic bytes detected in response body for $normalized")
+                    emit(
+                        Progress.Failed(
+                            IllegalStateException(
+                                "Server returned an HTML page (magic-byte check failed). Check the URL.",
+                            ),
+                        ),
+                    )
+                    return@flow
+                }
 
-            // Post-download magic-byte validation: ensure the file we just wrote is
-            // actually a valid model file. Catches sparse-file / partial-write
-            // corruption, server misroutes, and other ways the bytes can go wrong.
-            val ext = target.name.substringAfterLast('.', "").lowercase()
-            val firstBytes = ByteArray(16)
-            val bytesRead = partial.inputStream().use { it.read(firstBytes) }
-            if (bytesRead > 0 && !isValidMagicForExtension(ext, firstBytes.copyOf(bytesRead))) {
-                val hexDump = firstBytes.take(8).joinToString(" ") { "%02x".format(it.toInt() and 0xff) }
-                Log.w(TAG, "Magic-byte check failed for .$ext — first bytes: $hexDump ($normalized)")
-                runCatching { partial.delete() }
-                emit(Progress.Failed(IllegalStateException(
-                    "Downloaded file does not have the expected magic bytes for .$ext " +
-                    "(starts with: $hexDump). " +
-                    "The server may have served the wrong content, or the download was corrupted."
-                )))
-                return@flow
-            }
+                // Post-download magic-byte validation: ensure the file we just wrote is
+                // actually a valid model file. Catches sparse-file / partial-write
+                // corruption, server misroutes, and other ways the bytes can go wrong.
+                val ext = target.name.substringAfterLast('.', "").lowercase()
+                val firstBytes = ByteArray(16)
+                val bytesRead = partial.inputStream().use { it.read(firstBytes) }
+                if (bytesRead > 0 && !isValidMagicForExtension(ext, firstBytes.copyOf(bytesRead))) {
+                    val hexDump = firstBytes.take(8).joinToString(" ") { "%02x".format(it.toInt() and 0xff) }
+                    Log.w(TAG, "Magic-byte check failed for .$ext — first bytes: $hexDump ($normalized)")
+                    runCatching { partial.delete() }
+                    emit(
+                        Progress.Failed(
+                            IllegalStateException(
+                                "Downloaded file does not have the expected magic bytes for .$ext " +
+                                    "(starts with: $hexDump). " +
+                                    "The server may have served the wrong content, or the download was corrupted.",
+                            ),
+                        ),
+                    )
+                    return@flow
+                }
 
-            if (target.exists()) target.delete()
-            val renamed = partial.renameTo(target)
-            if (!renamed) {
-                // renameTo() returns false silently on cross-partition moves or permission errors.
-                Log.e(TAG, "Rename failed: ${partial.absolutePath} -> ${target.absolutePath}")
-                runCatching { partial.delete() }
-                emit(Progress.Failed(IllegalStateException(
-                    "Failed to move downloaded file to its final location: ${target.absolutePath}. " +
-                    "Check available storage and permissions."
-                )))
-                return@flow
+                if (target.exists()) target.delete()
+                val renamed = partial.renameTo(target)
+                if (!renamed) {
+                    // renameTo() returns false silently on cross-partition moves or permission errors.
+                    Log.e(TAG, "Rename failed: ${partial.absolutePath} -> ${target.absolutePath}")
+                    runCatching { partial.delete() }
+                    emit(
+                        Progress.Failed(
+                            IllegalStateException(
+                                "Failed to move downloaded file to its final location: ${target.absolutePath}. " +
+                                    "Check available storage and permissions.",
+                            ),
+                        ),
+                    )
+                    return@flow
+                }
+                Log.i(TAG, "Download complete: ${target.absolutePath}")
+                emit(Progress.Done(target))
             }
-            Log.i(TAG, "Download complete: ${target.absolutePath}")
-            emit(Progress.Done(target))
-        }
-    }.flowOn(Dispatchers.IO)
+        }.flowOn(Dispatchers.IO)
 }

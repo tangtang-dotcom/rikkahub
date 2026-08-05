@@ -9,13 +9,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class JsonTest {
-
     @Test
     fun `mergeCustomBody with empty list should return original object`() {
-        val originalJson = buildJsonObject {
-            put("key1", "value1")
-            put("key2", 2)
-        }
+        val originalJson =
+            buildJsonObject {
+                put("key1", "value1")
+                put("key2", 2)
+            }
 
         val result = originalJson.mergeCustomBody(emptyList())
 
@@ -24,14 +24,16 @@ class JsonTest {
 
     @Test
     fun `mergeCustomBody with simple keys should merge correctly`() {
-        val originalJson = buildJsonObject {
-            put("existingKey", "existingValue")
-        }
+        val originalJson =
+            buildJsonObject {
+                put("existingKey", "existingValue")
+            }
 
-        val customBodies = listOf(
-            CustomBody("newKey", JsonPrimitive("newValue")),
-            CustomBody("numberKey", JsonPrimitive(42))
-        )
+        val customBodies =
+            listOf(
+                CustomBody("newKey", JsonPrimitive("newValue")),
+                CustomBody("numberKey", JsonPrimitive(42)),
+            )
 
         val result = originalJson.mergeCustomBody(customBodies)
 
@@ -42,13 +44,15 @@ class JsonTest {
 
     @Test
     fun `mergeCustomBody should override existing simple keys`() {
-        val originalJson = buildJsonObject {
-            put("key1", "oldValue")
-        }
+        val originalJson =
+            buildJsonObject {
+                put("key1", "oldValue")
+            }
 
-        val customBodies = listOf(
-            CustomBody("key1", JsonPrimitive("newValue"))
-        )
+        val customBodies =
+            listOf(
+                CustomBody("key1", JsonPrimitive("newValue")),
+            )
 
         val result = originalJson.mergeCustomBody(customBodies)
 
@@ -57,22 +61,28 @@ class JsonTest {
 
     @Test
     fun `mergeCustomBody should merge nested JsonObjects`() {
-        val originalJson = buildJsonObject {
-            put("config", buildJsonObject {
-                put("setting1", "value1")
-                put("setting2", "value2")
-            })
-            put("simpleKey", "simpleValue")
-        }
+        val originalJson =
+            buildJsonObject {
+                put(
+                    "config",
+                    buildJsonObject {
+                        put("setting1", "value1")
+                        put("setting2", "value2")
+                    },
+                )
+                put("simpleKey", "simpleValue")
+            }
 
-        val nestedJsonValue = buildJsonObject {
-            put("setting2", "updatedValue")
-            put("setting3", "newValue")
-        }
+        val nestedJsonValue =
+            buildJsonObject {
+                put("setting2", "updatedValue")
+                put("setting3", "newValue")
+            }
 
-        val customBodies = listOf(
-            CustomBody("config", nestedJsonValue)
-        )
+        val customBodies =
+            listOf(
+                CustomBody("config", nestedJsonValue),
+            )
 
         val result = originalJson.mergeCustomBody(customBodies)
 
@@ -85,24 +95,36 @@ class JsonTest {
 
     @Test
     fun `mergeCustomBody should handle deeply nested JsonObjects`() {
-        val originalJson = buildJsonObject {
-            put("level1", buildJsonObject {
-                put("level2", buildJsonObject {
-                    put("setting1", "original")
-                })
-            })
-        }
+        val originalJson =
+            buildJsonObject {
+                put(
+                    "level1",
+                    buildJsonObject {
+                        put(
+                            "level2",
+                            buildJsonObject {
+                                put("setting1", "original")
+                            },
+                        )
+                    },
+                )
+            }
 
-        val nestedValue = buildJsonObject {
-            put("level2", buildJsonObject {
-                put("setting1", "updated")
-                put("setting2", "new")
-            })
-        }
+        val nestedValue =
+            buildJsonObject {
+                put(
+                    "level2",
+                    buildJsonObject {
+                        put("setting1", "updated")
+                        put("setting2", "new")
+                    },
+                )
+            }
 
-        val customBodies = listOf(
-            CustomBody("level1", nestedValue)
-        )
+        val customBodies =
+            listOf(
+                CustomBody("level1", nestedValue),
+            )
 
         val result = originalJson.mergeCustomBody(customBodies)
 
@@ -115,14 +137,16 @@ class JsonTest {
 
     @Test
     fun `mergeCustomBody should ignore empty keys`() {
-        val originalJson = buildJsonObject {
-            put("key1", "value1")
-        }
+        val originalJson =
+            buildJsonObject {
+                put("key1", "value1")
+            }
 
-        val customBodies = listOf(
-            CustomBody("", JsonPrimitive("ignored")),
-            CustomBody("key2", JsonPrimitive("value2"))
-        )
+        val customBodies =
+            listOf(
+                CustomBody("", JsonPrimitive("ignored")),
+                CustomBody("key2", JsonPrimitive("value2")),
+            )
 
         val result = originalJson.mergeCustomBody(customBodies)
 

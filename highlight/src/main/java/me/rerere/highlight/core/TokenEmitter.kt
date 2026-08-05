@@ -42,22 +42,29 @@ internal class TokenEmitter {
 
     fun build(): List<HighlightToken> = tokens.toList()
 
-    private fun append(content: String, scope: String?) {
+    private fun append(
+        content: String,
+        scope: String?,
+    ) {
         if (content.isEmpty()) return
 
         val previous = tokens.lastOrNull()
         when {
-            scope == null && previous is HighlightToken.Plain ->
+            scope == null && previous is HighlightToken.Plain -> {
                 tokens[tokens.lastIndex] = HighlightToken.Plain(previous.content + content)
+            }
 
-            scope == null ->
+            scope == null -> {
                 tokens += HighlightToken.Plain(content)
+            }
 
-            previous is HighlightToken.Styled && previous.type == scope ->
+            previous is HighlightToken.Styled && previous.type == scope -> {
                 tokens[tokens.lastIndex] = HighlightToken.Styled(previous.content + content, scope)
+            }
 
-            else ->
+            else -> {
                 tokens += HighlightToken.Styled(content, scope)
+            }
         }
     }
 }

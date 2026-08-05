@@ -16,7 +16,7 @@ sealed class LogEntry {
         override val id: Uuid = Uuid.random(),
         override val timestamp: Long = System.currentTimeMillis(),
         override val tag: String,
-        val message: String
+        val message: String,
     ) : LogEntry()
 
     @Serializable
@@ -31,16 +31,20 @@ sealed class LogEntry {
         val responseCode: Int? = null,
         val responseHeaders: Map<String, String> = emptyMap(),
         val durationMs: Long? = null,
-        val error: String? = null
+        val error: String? = null,
     ) : LogEntry()
 }
 
 object Logging {
     private val recentLogs = arrayListOf<LogEntry>()
+
     @Volatile
     private var requestLoggingEnabled = false
 
-    fun log(tag: String, message: String) {
+    fun log(
+        tag: String,
+        message: String,
+    ) {
         addLog(LogEntry.TextLog(tag = tag, message = message))
     }
 

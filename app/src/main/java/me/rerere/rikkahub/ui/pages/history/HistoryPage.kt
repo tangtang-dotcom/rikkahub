@@ -1,10 +1,5 @@
-package me.rerere.rikkahub.ui.pages.history;
+package me.rerere.rikkahub.ui.pages.history
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Pin
-import me.rerere.hugeicons.stroke.PinOff
-import me.rerere.hugeicons.stroke.GlobalSearch
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +43,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.GlobalSearch
+import me.rerere.hugeicons.stroke.Pin
+import me.rerere.hugeicons.stroke.PinOff
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.model.Conversation
@@ -80,26 +80,26 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                     IconButton(
                         onClick = {
                             navController.navigate(Screen.MessageSearch)
-                        }
+                        },
                     ) {
                         Icon(
                             HugeIcons.GlobalSearch,
-                            contentDescription = stringResource(R.string.history_page_search_messages)
+                            contentDescription = stringResource(R.string.history_page_search_messages),
                         )
                     }
                     IconButton(
                         onClick = {
                             showDeleteAllDialog = true
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.Delete01, contentDescription = stringResource(R.string.history_page_delete_all))
                     }
-                }
+                },
             )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
-        }
+        },
     ) { contentPadding ->
         val snackMessageDeleted = stringResource(R.string.history_page_conversation_deleted)
         val snackMessageUndo = stringResource(R.string.history_page_undo)
@@ -118,20 +118,22 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                             // 先获取完整的对话数据（包含 messageNodes），用于撤销恢复
                             val fullConversation = vm.getFullConversation(conversation.id) ?: conversation
                             vm.deleteConversation(conversation)
-                            val result = snackbarHostState.showSnackbar(
-                                message = snackMessageDeleted,
-                                actionLabel = snackMessageUndo,
-                                withDismissAction = true,
-                            )
+                            val result =
+                                snackbarHostState.showSnackbar(
+                                    message = snackMessageDeleted,
+                                    actionLabel = snackMessageUndo,
+                                    withDismissAction = true,
+                                )
                             if (result == SnackbarResult.ActionPerformed) {
                                 vm.restoreConversation(fullConversation)
                             }
                         }
                     },
                     onTogglePin = { vm.togglePinStatus(conversation.id) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateItem()
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .animateItem(),
                 )
             }
         }
@@ -147,18 +149,18 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                     onClick = {
                         vm.deleteAllConversations()
                         showDeleteAllDialog = false
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.history_page_delete))
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDeleteAllDialog = false }
+                    onClick = { showDeleteAllDialog = false },
                 ) {
                     Text(stringResource(R.string.history_page_cancel))
                 }
-            }
+            },
         )
     }
 }
@@ -172,12 +174,13 @@ private fun SwipeableConversationItem(
     onClick: () -> Unit = {},
 ) {
     val positionThreshold = SwipeToDismissBoxDefaults.positionalThreshold
-    val dismissState = remember {
-        SwipeToDismissBoxState(
-            initialValue = SwipeToDismissBoxValue.Settled,
-            positionalThreshold = positionThreshold,
-        )
-    }
+    val dismissState =
+        remember {
+            SwipeToDismissBoxState(
+                initialValue = SwipeToDismissBoxValue.Settled,
+                positionalThreshold = positionThreshold,
+            )
+        }
 
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
@@ -193,29 +196,29 @@ private fun SwipeableConversationItem(
         state = dismissState,
         backgroundContent = {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.errorContainer,
-                        RoundedCornerShape(25)
-                    )
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            RoundedCornerShape(25),
+                        ).padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd,
             ) {
                 Icon(
                     imageVector = HugeIcons.Delete01,
                     contentDescription = stringResource(R.string.history_page_delete),
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
         },
         enableDismissFromStartToEnd = false,
-        modifier = modifier
+        modifier = modifier,
     ) {
         ConversationItem(
             conversation = conversation,
             onTogglePin = onTogglePin,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 }
@@ -231,7 +234,7 @@ private fun ConversationItem(
         onClick = onClick,
         tonalElevation = 2.dp,
         shape = RoundedCornerShape(25),
-        modifier = modifier
+        modifier = modifier,
     ) {
         ListItem(
             headlineContent = {
@@ -248,8 +251,10 @@ private fun ConversationItem(
                         )
                     }
                     Text(
-                        text = conversation.title.ifBlank { stringResource(R.string.history_page_new_conversation) }
-                            .trim(),
+                        text =
+                            conversation.title
+                                .ifBlank { stringResource(R.string.history_page_new_conversation) }
+                                .trim(),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
@@ -261,16 +266,21 @@ private fun ConversationItem(
             },
             trailingContent = {
                 IconButton(
-                    onClick = onTogglePin
+                    onClick = onTogglePin,
                 ) {
                     Icon(
                         if (conversation.isPinned) HugeIcons.PinOff else HugeIcons.Pin,
-                        contentDescription = if (conversation.isPinned) stringResource(R.string.history_page_unpin) else stringResource(
-                            R.string.history_page_pin
-                        )
+                        contentDescription =
+                            if (conversation.isPinned) {
+                                stringResource(R.string.history_page_unpin)
+                            } else {
+                                stringResource(
+                                    R.string.history_page_pin,
+                                )
+                            },
                     )
                 }
-            }
+            },
         )
     }
 }

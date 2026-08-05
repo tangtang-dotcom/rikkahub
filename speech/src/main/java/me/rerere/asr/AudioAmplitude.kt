@@ -7,10 +7,15 @@ import kotlin.math.sqrt
 
 private const val MAX_AMPLITUDES = 32
 
-fun calculateRmsAmplitude(buffer: ByteArray, readBytes: Int): Float {
-    val shorts = ByteBuffer.wrap(buffer, 0, readBytes)
-        .order(ByteOrder.LITTLE_ENDIAN)
-        .asShortBuffer()
+fun calculateRmsAmplitude(
+    buffer: ByteArray,
+    readBytes: Int,
+): Float {
+    val shorts =
+        ByteBuffer
+            .wrap(buffer, 0, readBytes)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .asShortBuffer()
     var sum = 0.0
     val count = shorts.remaining()
     if (count == 0) return 0f

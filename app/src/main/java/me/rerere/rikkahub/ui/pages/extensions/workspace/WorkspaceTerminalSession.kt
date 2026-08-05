@@ -35,43 +35,46 @@ internal fun createWorkspaceTerminalSession(
     val proot = File(nativeLibraryDir, "libproot_exec.so")
     val loader = File(nativeLibraryDir, "libproot_loader.so")
 
-    val args = mutableListOf(
-        "--root-id",
-        "--link2symlink",
-        "--kill-on-exit",
-        "-r",
-        linuxDir.absolutePath,
-        "-w",
-        WORKSPACE_DIR,
-        "-b",
-        "${filesDir.absolutePath}:$WORKSPACE_DIR",
-        "-b",
-        "${skillsDir.absolutePath}:$SKILLS_DIR",
-    )
+    val args =
+        mutableListOf(
+            "--root-id",
+            "--link2symlink",
+            "--kill-on-exit",
+            "-r",
+            linuxDir.absolutePath,
+            "-w",
+            WORKSPACE_DIR,
+            "-b",
+            "${filesDir.absolutePath}:$WORKSPACE_DIR",
+            "-b",
+            "${skillsDir.absolutePath}:$SKILLS_DIR",
+        )
     listOf("/dev", "/proc", "/sys").forEach { path ->
         if (File(path).exists()) {
             args += "-b"
             args += path
         }
     }
-    args += listOf(
-        "/usr/bin/env",
-        "-i",
-        "HOME=/root",
-        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        "TERM=xterm-256color",
-        "LANG=C.UTF-8",
-        "LC_ALL=C.UTF-8",
-        "USER=root",
-        "SHELL=/bin/bash",
-        "/bin/bash",
-    )
+    args +=
+        listOf(
+            "/usr/bin/env",
+            "-i",
+            "HOME=/root",
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "TERM=xterm-256color",
+            "LANG=C.UTF-8",
+            "LC_ALL=C.UTF-8",
+            "USER=root",
+            "SHELL=/bin/bash",
+            "/bin/bash",
+        )
 
-    val env = arrayOf(
-        "PROOT_LOADER=${loader.absolutePath}",
-        "PROOT_TMP_DIR=${tempDir.absolutePath}",
-        "TMPDIR=${tempDir.absolutePath}",
-    )
+    val env =
+        arrayOf(
+            "PROOT_LOADER=${loader.absolutePath}",
+            "PROOT_TMP_DIR=${tempDir.absolutePath}",
+            "TMPDIR=${tempDir.absolutePath}",
+        )
 
     return TerminalSession(
         proot.absolutePath,
@@ -85,7 +88,10 @@ internal fun createWorkspaceTerminalSession(
     }
 }
 
-internal fun prepareWorkspaceTerminalSession(context: Context, root: String) {
+internal fun prepareWorkspaceTerminalSession(
+    context: Context,
+    root: String,
+) {
     val appContext = context.applicationContext
     val workspaceDir = File(File(appContext.filesDir, "workspaces"), root)
     val linuxDir = File(workspaceDir, "linux")
@@ -94,11 +100,14 @@ internal fun prepareWorkspaceTerminalSession(context: Context, root: String) {
     File(appContext.filesDir, FileFolders.SKILLS).mkdirs()
     RootfsPatcher().patch(
         linuxDir,
-        RootfsPatchOptions(nameservers = appContext.activeDnsServers())
+        RootfsPatchOptions(nameservers = appContext.activeDnsServers()),
     )
 }
 
-internal fun workspaceRootfsReady(context: Context, root: String): Boolean {
+internal fun workspaceRootfsReady(
+    context: Context,
+    root: String,
+): Boolean {
     val linuxDir = File(File(File(context.applicationContext.filesDir, "workspaces"), root), "linux")
     return linuxDir.isDirectory && File(linuxDir, "bin/sh").isFile
 }
@@ -120,19 +129,23 @@ internal class WorkspaceTerminalSessionClient(
         onFinished()
     }
 
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
+    override fun onCopyTextToClipboard(
+        session: TerminalSession,
+        text: String,
+    ) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("terminal", text))
     }
 
     override fun onPasteTextFromClipboard(session: TerminalSession) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val text = clipboard.primaryClip
-            ?.takeIf { it.itemCount > 0 }
-            ?.getItemAt(0)
-            ?.coerceToText(context)
-            ?.toString()
-            ?: return
+        val text =
+            clipboard.primaryClip
+                ?.takeIf { it.itemCount > 0 }
+                ?.getItemAt(0)
+                ?.coerceToText(context)
+                ?.toString()
+                ?: return
         val bytes = text.toByteArray()
         session.write(bytes, 0, bytes.size)
     }
@@ -147,34 +160,55 @@ internal class WorkspaceTerminalSessionClient(
         terminalView?.invalidate()
     }
 
-    override fun getTerminalCursorStyle(): Int =
-        TerminalEmulator.DEFAULT_TERMINAL_CURSOR_STYLE
+    override fun getTerminalCursorStyle(): Int = TerminalEmulator.DEFAULT_TERMINAL_CURSOR_STYLE
 
-    override fun logError(tag: String, message: String) {
+    override fun logError(
+        tag: String,
+        message: String,
+    ) {
         Log.e(tag, message)
     }
 
-    override fun logWarn(tag: String, message: String) {
+    override fun logWarn(
+        tag: String,
+        message: String,
+    ) {
         Log.w(tag, message)
     }
 
-    override fun logInfo(tag: String, message: String) {
+    override fun logInfo(
+        tag: String,
+        message: String,
+    ) {
         Log.i(tag, message)
     }
 
-    override fun logDebug(tag: String, message: String) {
+    override fun logDebug(
+        tag: String,
+        message: String,
+    ) {
         Log.d(tag, message)
     }
 
-    override fun logVerbose(tag: String, message: String) {
+    override fun logVerbose(
+        tag: String,
+        message: String,
+    ) {
         Log.v(tag, message)
     }
 
-    override fun logStackTraceWithMessage(tag: String, message: String, e: Exception) {
+    override fun logStackTraceWithMessage(
+        tag: String,
+        message: String,
+        e: Exception,
+    ) {
         Log.e(tag, message, e)
     }
 
-    override fun logStackTrace(tag: String, e: Exception) {
+    override fun logStackTrace(
+        tag: String,
+        e: Exception,
+    ) {
         Log.e(tag, "Terminal error", e)
     }
 }
@@ -237,8 +271,9 @@ internal class WorkspaceTerminalViewClient(
         val match = URL_REGEX.findAll(line).firstOrNull { tapIndex in it.range } ?: return false
         val url = match.value.trimEnd(*URL_TRAILING_TRIM)
         return runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val intent =
+                Intent(Intent.ACTION_VIEW, url.toUri())
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
             true
         }.getOrElse {
@@ -266,9 +301,16 @@ internal class WorkspaceTerminalViewClient(
 
     override fun copyModeChanged(copyMode: Boolean) = Unit
 
-    override fun onKeyDown(keyCode: Int, e: KeyEvent, session: TerminalSession): Boolean = false
+    override fun onKeyDown(
+        keyCode: Int,
+        e: KeyEvent,
+        session: TerminalSession,
+    ): Boolean = false
 
-    override fun onKeyUp(keyCode: Int, e: KeyEvent): Boolean = false
+    override fun onKeyUp(
+        keyCode: Int,
+        e: KeyEvent,
+    ): Boolean = false
 
     override fun onLongPress(event: MotionEvent): Boolean = false
 
@@ -280,35 +322,61 @@ internal class WorkspaceTerminalViewClient(
 
     override fun readFnKey(): Boolean = false
 
-    override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession): Boolean = false
+    override fun onCodePoint(
+        codePoint: Int,
+        ctrlDown: Boolean,
+        session: TerminalSession,
+    ): Boolean = false
 
     override fun onEmulatorSet() = Unit
 
-    override fun logError(tag: String, message: String) {
+    override fun logError(
+        tag: String,
+        message: String,
+    ) {
         Log.e(tag, message)
     }
 
-    override fun logWarn(tag: String, message: String) {
+    override fun logWarn(
+        tag: String,
+        message: String,
+    ) {
         Log.w(tag, message)
     }
 
-    override fun logInfo(tag: String, message: String) {
+    override fun logInfo(
+        tag: String,
+        message: String,
+    ) {
         Log.i(tag, message)
     }
 
-    override fun logDebug(tag: String, message: String) {
+    override fun logDebug(
+        tag: String,
+        message: String,
+    ) {
         Log.d(tag, message)
     }
 
-    override fun logVerbose(tag: String, message: String) {
+    override fun logVerbose(
+        tag: String,
+        message: String,
+    ) {
         Log.v(tag, message)
     }
 
-    override fun logStackTraceWithMessage(tag: String, message: String, e: Exception) {
+    override fun logStackTraceWithMessage(
+        tag: String,
+        message: String,
+        e: Exception,
+    ) {
         Log.e(tag, message, e)
     }
 
-    override fun logStackTrace(tag: String, e: Exception) {
+    override fun logStackTrace(
+        tag: String,
+        e: Exception,
+    ) {
         Log.e(tag, "Terminal view error", e)
     }
 }
@@ -329,7 +397,8 @@ private fun Context.activeDnsServers(): List<String> {
     val connectivityManager =
         getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return emptyList()
     val network = connectivityManager.activeNetwork ?: return emptyList()
-    return connectivityManager.getLinkProperties(network)
+    return connectivityManager
+        .getLinkProperties(network)
         ?.dnsServers
         ?.mapNotNull { it.hostAddress }
         .orEmpty()

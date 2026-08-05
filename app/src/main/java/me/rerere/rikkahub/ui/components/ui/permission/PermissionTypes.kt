@@ -18,7 +18,7 @@ data class PermissionInfo(
     val permission: String,
     val displayName: @Composable () -> Unit,
     val usage: @Composable () -> Unit,
-    val required: Boolean = false
+    val required: Boolean = false,
 )
 
 /**
@@ -27,12 +27,15 @@ data class PermissionInfo(
 enum class PermissionStatus {
     /** 未请求 */
     NotRequested,
+
     /** 已授权 */
     Granted,
+
     /** 被拒绝但可以再次请求 */
     Denied,
+
     /** 被拒绝且用户选择"不再询问" */
-    DeniedPermanently
+    DeniedPermanently,
 }
 
 /**
@@ -41,7 +44,7 @@ enum class PermissionStatus {
 data class PermissionResult(
     val permission: String,
     val status: PermissionStatus,
-    val isGranted: Boolean = status == PermissionStatus.Granted
+    val isGranted: Boolean = status == PermissionStatus.Granted,
 )
 
 /**
@@ -50,35 +53,39 @@ data class PermissionResult(
 data class MultiplePermissionResult(
     val results: Map<String, PermissionResult>,
     val allGranted: Boolean = results.values.all { it.isGranted },
-    val allRequiredGranted: Boolean
+    val allRequiredGranted: Boolean,
 )
 
-val PermissionCamera = PermissionInfo(
-    permission = Manifest.permission.CAMERA,
-    displayName = { Text(stringResource(R.string.permission_camera)) },
-    usage = { Text(stringResource(R.string.permission_camera_desc)) },
-    required = true
-)
+val PermissionCamera =
+    PermissionInfo(
+        permission = Manifest.permission.CAMERA,
+        displayName = { Text(stringResource(R.string.permission_camera)) },
+        usage = { Text(stringResource(R.string.permission_camera_desc)) },
+        required = true,
+    )
 
-val PermissionRecordAudio = PermissionInfo(
-    permission = Manifest.permission.RECORD_AUDIO,
-    displayName = { Text(stringResource(R.string.permission_microphone)) },
-    usage = { Text(stringResource(R.string.permission_microphone_desc)) },
-    required = true
-)
+val PermissionRecordAudio =
+    PermissionInfo(
+        permission = Manifest.permission.RECORD_AUDIO,
+        displayName = { Text(stringResource(R.string.permission_microphone)) },
+        usage = { Text(stringResource(R.string.permission_microphone_desc)) },
+        required = true,
+    )
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-val PermissionNotification = PermissionInfo(
-    permission = Manifest.permission.POST_NOTIFICATIONS,
-    displayName = { Text(stringResource(R.string.permission_notification)) },
-    usage = { Text(stringResource(R.string.permission_notification_desc)) },
-    required = true
-)
+val PermissionNotification =
+    PermissionInfo(
+        permission = Manifest.permission.POST_NOTIFICATIONS,
+        displayName = { Text(stringResource(R.string.permission_notification)) },
+        usage = { Text(stringResource(R.string.permission_notification_desc)) },
+        required = true,
+    )
 
 @RequiresApi(37)
-val PermissionLocalNetwork = PermissionInfo(
-    permission = Manifest.permission.ACCESS_LOCAL_NETWORK,
-    displayName = { Text(stringResource(R.string.permission_local_network)) },
-    usage = { Text(stringResource(R.string.permission_local_network_desc)) },
-    required = true
-)
+val PermissionLocalNetwork =
+    PermissionInfo(
+        permission = Manifest.permission.ACCESS_LOCAL_NETWORK,
+        displayName = { Text(stringResource(R.string.permission_local_network)) },
+        usage = { Text(stringResource(R.string.permission_local_network_desc)) },
+        required = true,
+    )

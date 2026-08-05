@@ -15,7 +15,10 @@ package me.rerere.rikkahub.service
  * Internal so the unit test in `:app`'s test source set can exercise it directly
  * — the production caller is `TelegramBotService.chunk`, which is a thin wrapper.
  */
-internal fun chunkForTelegram(s: String, n: Int): List<String> {
+internal fun chunkForTelegram(
+    s: String,
+    n: Int,
+): List<String> {
     if (s.length <= n) return listOf(s)
     val out = mutableListOf<String>()
     var rem = s
@@ -23,11 +26,12 @@ internal fun chunkForTelegram(s: String, n: Int): List<String> {
         val window = n / 2
         val paraCut = rem.lastIndexOf("\n\n", n).let { if (it > window) it + 2 else -1 }
         val nlCut = if (paraCut < 0) rem.lastIndexOf('\n', n).let { if (it > window) it else -1 } else -1
-        var cut = when {
-            paraCut > 0 -> paraCut
-            nlCut > 0 -> nlCut
-            else -> n
-        }
+        var cut =
+            when {
+                paraCut > 0 -> paraCut
+                nlCut > 0 -> nlCut
+                else -> n
+            }
         if (cut in 1 until rem.length &&
             rem[cut - 1].isHighSurrogate() &&
             rem[cut].isLowSurrogate()

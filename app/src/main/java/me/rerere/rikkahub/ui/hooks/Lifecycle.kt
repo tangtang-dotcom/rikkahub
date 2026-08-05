@@ -33,11 +33,12 @@ fun rememberAppLifecycleState(): State<Lifecycle.State> {
     DisposableEffect(lifecycleOwner.lifecycle) {
         // 创建一个 LifecycleEventObserver。
         // 当任何生命周期事件发生时，onStateChanged 会被调用。
-        val observer = LifecycleEventObserver { _, _ ->
-            // 在生命周期事件发生后，更新 lifecycleState 的值到当前的生命周期状态。
-            // 这会触发使用 lifecycleState 的 Composable 进行重组。
-            lifecycleState.value = lifecycleOwner.lifecycle.currentState
-        }
+        val observer =
+            LifecycleEventObserver { _, _ ->
+                // 在生命周期事件发生后，更新 lifecycleState 的值到当前的生命周期状态。
+                // 这会触发使用 lifecycleState 的 Composable 进行重组。
+                lifecycleState.value = lifecycleOwner.lifecycle.currentState
+            }
         // 将观察者添加到生命周期。
         lifecycleOwner.lifecycle.addObserver(observer)
         // onDispose 块会在 Composable 离开组合时被调用，用于清理资源。

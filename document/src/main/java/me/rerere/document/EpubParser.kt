@@ -9,19 +9,21 @@ import java.util.zip.ZipFile
 private data class ManifestItem(
     val id: String,
     val href: String,
-    val mediaType: String
+    val mediaType: String,
 )
 
 object EpubParser {
     fun parse(file: File): String {
         return try {
             ZipFile(file).use { zip ->
-                val opfPath = findOpfPath(zip)
-                    ?: return "Unable to find OPF file in EPUB"
+                val opfPath =
+                    findOpfPath(zip)
+                        ?: return "Unable to find OPF file in EPUB"
                 val opfDir = opfPath.substringBeforeLast('/', "")
 
-                val opfEntry = zip.getEntry(opfPath)
-                    ?: return "Unable to read OPF file in EPUB"
+                val opfEntry =
+                    zip.getEntry(opfPath)
+                        ?: return "Unable to read OPF file in EPUB"
                 val (manifest, spine) = zip.getInputStream(opfEntry).use { parseOpf(it) }
 
                 val result = StringBuilder()
@@ -98,8 +100,8 @@ object EpubParser {
         return manifest to spine
     }
 
-    private fun parseXhtml(inputStream: InputStream): String {
-        return try {
+    private fun parseXhtml(inputStream: InputStream): String =
+        try {
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = false
             val parser = factory.newPullParser()
@@ -118,8 +120,14 @@ object EpubParser {
                         tagStack.addLast(tag)
 
                         when (tag) {
-                            "body" -> inBody = true
-                            "ol" -> listCounter = 0
+                            "body" -> {
+                                inBody = true
+                            }
+
+                            "ol" -> {
+                                listCounter = 0
+                            }
+
                             "li" -> {
                                 val parentTag = tagStack.dropLast(1).lastOrNull()
                                 if (parentTag == "ol") {
@@ -130,7 +138,10 @@ object EpubParser {
                                 }
                             }
 
-                            "br" -> result.append("\n")
+                            "br" -> {
+                                result.append("\n")
+                            }
+
                             "img" -> {
                                 if (inBody) {
                                     val alt = parser.getAttributeValue(null, "alt")
@@ -167,10 +178,11 @@ object EpubParser {
 
                     XmlPullParser.TEXT -> {
                         if (inBody) {
-                            val text = parser.text
-                                ?.replace('\n', ' ')
-                                ?.replace('\r', ' ')
-                                ?.replace("\\s+".toRegex(), " ")
+                            val text =
+                                parser.text
+                                    ?.replace('\n', ' ')
+                                    ?.replace('\r', ' ')
+                                    ?.replace("\\s+".toRegex(), " ")
                             if (!text.isNullOrBlank()) {
                                 result.append(text)
                             }
@@ -182,7 +194,10 @@ object EpubParser {
                         if (tagStack.isNotEmpty()) tagStack.removeLast()
 
                         when (tag) {
-                            "body" -> inBody = false
+                            "body" -> {
+                                inBody = false
+                            }
+
                             "p", "div" -> {
                                 if (inBody) result.append("\n\n")
                             }
@@ -200,6 +215,7 @@ object EpubParser {
                             }
 
                             "br" -> {}
+
                             "strong", "b" -> {
                                 if (inBody) result.append("**")
                             }
@@ -221,11 +237,11 @@ object EpubParser {
                 }
             }
 
-            result.toString()
+            result
+                .toString()
                 .replace(Regex("\n{3,}"), "\n\n")
                 .trim()
         } catch (e: Exception) {
             ""
         }
-    }
 }

@@ -14,7 +14,6 @@ import java.time.ZoneId
  * Lives outside CronBootReceiver so it can be unit-tested without WorkManager.
  */
 object CatchupPlanner {
-
     private const val FIRE_ALL_CAP = 20
     private const val FIRE_ALL_STAGGER_MS = 2_000L
 
@@ -25,20 +24,26 @@ object CatchupPlanner {
         val skippedCatchupCount: Int,
     )
 
-    fun plan(job: ScheduledJobEntity, lastRunMs: Long?, nowMs: Long): CatchupPlan {
-        return when (job.scheduleType) {
+    fun plan(
+        job: ScheduledJobEntity,
+        lastRunMs: Long?,
+        nowMs: Long,
+    ): CatchupPlan =
+        when (job.scheduleType) {
             "once" -> planOnce(job, nowMs)
             "cron" -> planCron(job, lastRunMs, nowMs)
-            else   -> CatchupPlan(emptyList(), 0)
+            else -> CatchupPlan(emptyList(), 0)
         }
-    }
 
     /**
      * once-mode catchup: if the target time has passed and the job has never fired,
      * enqueue it immediately (delay 0). No skipped rows — the fire actually happens,
      * just late. If it already fired (lastRunAtMs != null), nothing to do.
      */
-    private fun planOnce(job: ScheduledJobEntity, nowMs: Long): CatchupPlan {
+    private fun planOnce(
+        job: ScheduledJobEntity,
+        nowMs: Long,
+    ): CatchupPlan {
         val at = job.atUnixMs ?: return CatchupPlan(emptyList(), 0)
         val alreadyFired = job.lastRunAtMs != null
         if (alreadyFired) return CatchupPlan(emptyList(), 0)
@@ -53,7 +58,11 @@ object CatchupPlanner {
         }
     }
 
-    private fun planCron(job: ScheduledJobEntity, lastRunMs: Long?, nowMs: Long): CatchupPlan {
+    private fun planCron(
+        job: ScheduledJobEntity,
+        lastRunMs: Long?,
+        nowMs: Long,
+    ): CatchupPlan {
         val expr = job.cronExpression ?: return CatchupPlan(emptyList(), 0)
         val cron = CronExpressionParser.parse(expr).getOrNull() ?: return CatchupPlan(emptyList(), 0)
         val zone = job.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
@@ -63,16 +72,28 @@ object CatchupPlanner {
         val missedCount = countMatchesBetween(et, zone, fromMsExclusive = from, toMsInclusive = nowMs)
 
         return when (job.catchup) {
-            "skip"      -> CatchupPlan(emptyList(), missedCount)
-            "fire_once" -> if (missedCount == 0) CatchupPlan(emptyList(), 0)
-                           else CatchupPlan(listOf(0L), missedCount - 1)
-            "fire_all"  -> {
+            "skip" -> {
+                CatchupPlan(emptyList(), missedCount)
+            }
+
+            "fire_once" -> {
+                if (missedCount == 0) {
+                    CatchupPlan(emptyList(), 0)
+                } else {
+                    CatchupPlan(listOf(0L), missedCount - 1)
+                }
+            }
+
+            "fire_all" -> {
                 val capped = missedCount.coerceAtMost(FIRE_ALL_CAP)
                 val delays = (0 until capped).map { it * FIRE_ALL_STAGGER_MS }
                 val skipped = (missedCount - capped).coerceAtLeast(0)
                 CatchupPlan(delays, skipped)
             }
-            else -> CatchupPlan(emptyList(), 0)
+
+            else -> {
+                CatchupPlan(emptyList(), 0)
+            }
         }
     }
 

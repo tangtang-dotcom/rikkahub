@@ -20,9 +20,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,8 +41,8 @@ import me.rerere.ai.provider.BuiltInTools
 import me.rerere.ai.provider.Model
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.GlobalSearch
 import me.rerere.hugeicons.stroke.AiSearch02
+import me.rerere.hugeicons.stroke.GlobalSearch
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.rikkahub.R
@@ -74,17 +74,18 @@ fun SearchPickerButton(
         checked = enableSearch || model?.tools?.contains(BuiltInTools.Search) == true,
         onClick = {
             showSearchPicker = true
-        }
+        },
     ) {
         Row(
-            modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 8.dp),
+            modifier =
+                Modifier
+                    .padding(vertical = 8.dp, horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier.size(24.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 if (model?.tools?.contains(BuiltInTools.Search) == true) {
                     Icon(
@@ -94,7 +95,7 @@ fun SearchPickerButton(
                 } else if (enableSearch && currentService != null) {
                     AutoAIIcon(
                         name = currentService.displayName,
-                        color = Color.Transparent
+                        color = Color.Transparent,
                     )
                 } else {
                     Icon(
@@ -109,21 +110,27 @@ fun SearchPickerButton(
     if (showSearchPicker) {
         ModalBottomSheet(
             onDismissRequest = { showSearchPicker = false },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.7f)
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.7f)
+                        .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.search_picker_title),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
 
                 SearchPicker(
@@ -133,13 +140,14 @@ fun SearchPickerButton(
                     onUpdateSearchService = { index ->
                         onUpdateSearchService(index)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                     model = model,
                     onDismiss = {
                         showSearchPicker = false
-                    }
+                    },
                 )
             }
         }
@@ -154,13 +162,14 @@ private fun SearchPicker(
     modifier: Modifier = Modifier,
     onToggleSearch: (Boolean) -> Unit,
     onUpdateSearchService: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val navBackStack = LocalNavController.current
 
     // 模型是否支持内置搜索
-    val supportsBuiltInSearch = model != null &&
-        (ModelRegistry.GEMINI_SERIES.match(model.modelId) || model.modelId.contains("gpt-"))
+    val supportsBuiltInSearch =
+        model != null &&
+            (ModelRegistry.GEMINI_SERIES.match(model.modelId) || model.modelId.contains("gpt-"))
     // 模型是否已开启内置搜索（可能是不支持的模型残留的孤儿状态）
     val hasBuiltInSearchEnabled = model?.tools?.contains(BuiltInTools.Search) == true
 
@@ -178,7 +187,7 @@ private fun SearchPicker(
             onToggleSearch = onToggleSearch,
             modifier = modifier,
             settings = settings,
-            onUpdateSearchService = onUpdateSearchService
+            onUpdateSearchService = onUpdateSearchService,
         )
     }
 }
@@ -191,46 +200,48 @@ private fun AppSearchSettings(
     onToggleSearch: (Boolean) -> Unit,
     modifier: Modifier,
     settings: Settings,
-    onUpdateSearchService: (Int) -> Unit
+    onUpdateSearchService: (Int) -> Unit,
 ) {
     Card {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(HugeIcons.GlobalSearch, null)
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = stringResource(R.string.use_web_search),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = if (enableSearch) {
-                        stringResource(R.string.web_search_enabled)
-                    } else {
-                        stringResource(R.string.web_search_disabled)
-                    },
+                    text =
+                        if (enableSearch) {
+                            stringResource(R.string.web_search_enabled)
+                        } else {
+                            stringResource(R.string.web_search_disabled)
+                        },
                     style = MaterialTheme.typography.bodySmall,
-                    color = LocalContentColor.current.copy(alpha = 0.8f)
+                    color = LocalContentColor.current.copy(alpha = 0.8f),
                 )
             }
             IconButton(
                 onClick = {
                     onDismiss()
                     navBackStack.navigate(Screen.SettingSearch)
-                }
+                },
             ) {
                 Icon(HugeIcons.Settings03, null)
             }
             Switch(
                 checked = enableSearch,
-                onCheckedChange = onToggleSearch
+                onCheckedChange = onToggleSearch,
             )
         }
     }
@@ -242,40 +253,44 @@ private fun AppSearchSettings(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         itemsIndexed(settings.searchServices, key = { _, service -> service.id }) { index, service ->
-            val containerColor = animateColorAsState(
-                if (settings.searchServiceSelected == index) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
-            )
-            val textColor = animateColorAsState(
-                if (settings.searchServiceSelected == index) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
-            )
+            val containerColor =
+                animateColorAsState(
+                    if (settings.searchServiceSelected == index) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+                )
+            val textColor =
+                animateColorAsState(
+                    if (settings.searchServiceSelected == index) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = containerColor.value,
-                    contentColor = textColor.value,
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = containerColor.value,
+                        contentColor = textColor.value,
+                    ),
                 onClick = {
                     onUpdateSearchService(index)
                 },
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
             ) {
                 Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     AutoAIIcon(
                         name = service.displayName,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
                     Column(
                         modifier = Modifier.weight(1f),
@@ -286,7 +301,7 @@ private fun AppSearchSettings(
                         )
                         SearchAbilityTagLine(
                             options = service,
-                            modifier = Modifier
+                            modifier = Modifier,
                         )
                     }
                 }
@@ -301,16 +316,17 @@ private fun BuiltInSearchSetting(model: Model) {
     val scope = rememberCoroutineScope()
     Card {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(HugeIcons.GlobalSearch, null)
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = stringResource(R.string.built_in_search_title),
@@ -319,7 +335,7 @@ private fun BuiltInSearchSetting(model: Model) {
                 Text(
                     text = stringResource(R.string.built_in_search_description),
                     style = MaterialTheme.typography.bodySmall,
-                    color = LocalContentColor.current.copy(alpha = 0.8f)
+                    color = LocalContentColor.current.copy(alpha = 0.8f),
                 )
             }
 
@@ -330,17 +346,24 @@ private fun BuiltInSearchSetting(model: Model) {
                     scope.launch {
                         settingsStore.update(
                             settings.copy(
-                                providers = settings.providers.map { providerSetting ->
-                                    providerSetting.editModel(
-                                        model.copy(
-                                            tools = if (checked) model.tools + BuiltInTools.Search else model.tools - BuiltInTools.Search
+                                providers =
+                                    settings.providers.map { providerSetting ->
+                                        providerSetting.editModel(
+                                            model.copy(
+                                                tools =
+                                                    if (checked) {
+                                                        model.tools + BuiltInTools.Search
+                                                    } else {
+                                                        model.tools -
+                                                            BuiltInTools.Search
+                                                    },
+                                            ),
                                         )
-                                    )
-                                }
-                            )
+                                    },
+                            ),
                         )
                     }
-                }
+                },
             )
         }
     }

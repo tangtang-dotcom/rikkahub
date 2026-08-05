@@ -10,19 +10,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import me.rerere.tts.model.PlaybackState
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getSelectedTTSProvider
 import me.rerere.rikkahub.utils.stripMarkdown
+import me.rerere.tts.controller.TtsController
+import me.rerere.tts.model.PlaybackState
 import me.rerere.tts.model.TTSResponse
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.TTSProviderSetting
-import me.rerere.tts.controller.TtsController
 import org.koin.compose.koinInject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -40,12 +40,13 @@ fun rememberCustomTtsState(): CustomTtsState {
     val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
 
     // Remember the CustomTtsState instance across recompositions
-    val ttsState = remember {
-        CustomTtsStateImpl(
-            context = context.applicationContext,
-            settingsStore = settingsStore
-        )
-    }
+    val ttsState =
+        remember {
+            CustomTtsStateImpl(
+                context = context.applicationContext,
+                settingsStore = settingsStore,
+            )
+        }
 
     // Update the provider when settings change
     DisposableEffect(
@@ -94,7 +95,10 @@ interface CustomTtsState {
      * Speaks the given text using the selected TTS provider.
      * Long texts will be automatically chunked and queued.
      */
-    fun speak(text: String, flushCalled: Boolean = true)
+    fun speak(
+        text: String,
+        flushCalled: Boolean = true,
+    )
 
     /** Stops the current speech and clears the queue. */
     fun stop()
@@ -123,11 +127,14 @@ interface CustomTtsState {
  */
 private class CustomTtsStateImpl(
     private val context: Context,
-    private val settingsStore: SettingsStore
-) : CustomTtsState, KoinComponent {
-
+    private val settingsStore: SettingsStore,
+) : CustomTtsState,
+    KoinComponent {
     private val ttsManager by inject<TTSManager>()
-    private val controller by lazy { me.rerere.tts.controller.TtsController(context, ttsManager) }
+    private val controller by lazy {
+        me.rerere.tts.controller
+            .TtsController(context, ttsManager)
+    }
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var currentJob: Job? = null
@@ -143,7 +150,10 @@ private class CustomTtsStateImpl(
         controller.setProvider(provider)
     }
 
-    override fun speak(text: String, flushCalled: Boolean) {
+    override fun speak(
+        text: String,
+        flushCalled: Boolean,
+    ) {
         val processed = text.stripMarkdown()
         controller.speak(processed, flushCalled)
     }

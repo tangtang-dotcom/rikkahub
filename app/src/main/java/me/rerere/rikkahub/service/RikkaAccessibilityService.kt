@@ -32,10 +32,10 @@ data class ActionLogEntry(
 )
 
 class RikkaAccessibilityService : AccessibilityService() {
-
-    private val gestureExecutor = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "RikkaAcc-Gesture").apply { isDaemon = true }
-    }
+    private val gestureExecutor =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "RikkaAcc-Gesture").apply { isDaemon = true }
+        }
     private val gestureHandlerThread = HandlerThread("RikkaAcc-Callback").apply { start() }
     private val gestureHandler = Handler(gestureHandlerThread.looper)
 
@@ -84,7 +84,8 @@ class RikkaAccessibilityService : AccessibilityService() {
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val pkg = event.packageName?.toString()
             if (!pkg.isNullOrBlank()) {
-                me.rerere.rikkahub.workflow.trigger.AppForegroundDispatcher.onForegroundChange(pkg)
+                me.rerere.rikkahub.workflow.trigger.AppForegroundDispatcher
+                    .onForegroundChange(pkg)
             }
         }
     }
@@ -115,32 +116,44 @@ class RikkaAccessibilityService : AccessibilityService() {
                 currentCoroutineContext().ensureActive()
                 kotlinx.coroutines.delay(10)
             }
-            val ok = withTimeoutOrNull(GESTURE_TIMEOUT_MS) {
-                suspendCancellableCoroutine<Boolean> { cont ->
-                    val callback = object : GestureResultCallback() {
-                        override fun onCompleted(d: GestureDescription) {
-                            if (cont.isActive) cont.resume(true)
-                        }
-                        override fun onCancelled(d: GestureDescription) {
-                            if (cont.isActive) cont.resume(false)
-                        }
+            val ok =
+                withTimeoutOrNull(GESTURE_TIMEOUT_MS) {
+                    suspendCancellableCoroutine<Boolean> { cont ->
+                        val callback =
+                            object : GestureResultCallback() {
+                                override fun onCompleted(d: GestureDescription) {
+                                    if (cont.isActive) cont.resume(true)
+                                }
+
+                                override fun onCancelled(d: GestureDescription) {
+                                    if (cont.isActive) cont.resume(false)
+                                }
+                            }
+                        val dispatched = dispatchGesture(gesture, callback, gestureHandler)
+                        if (!dispatched && cont.isActive) cont.resume(false)
                     }
-                    val dispatched = dispatchGesture(gesture, callback, gestureHandler)
-                    if (!dispatched && cont.isActive) cont.resume(false)
-                }
-            } ?: false
+                } ?: false
             return ok
         } finally {
             gateCurrent.set(gate)
         }
     }
 
-    fun buildTapPath(x: Float, y: Float): Path = Path().apply { moveTo(x, y) }
+    fun buildTapPath(
+        x: Float,
+        y: Float,
+    ): Path = Path().apply { moveTo(x, y) }
 
-    fun buildSwipePath(sx: Float, sy: Float, ex: Float, ey: Float): Path = Path().apply {
-        moveTo(sx, sy)
-        lineTo(ex, ey)
-    }
+    fun buildSwipePath(
+        sx: Float,
+        sy: Float,
+        ex: Float,
+        ey: Float,
+    ): Path =
+        Path().apply {
+            moveTo(sx, sy)
+            lineTo(ex, ey)
+        }
 
     /**
      * Walk the active window's node tree depth-first. `filter` decides whether to emit a node;
@@ -155,7 +168,11 @@ class RikkaAccessibilityService : AccessibilityService() {
         var emitted = 0
         var seen = 0
         var truncated = false
-        fun walk(n: AccessibilityNodeInfo, depth: Int) {
+
+        fun walk(
+            n: AccessibilityNodeInfo,
+            depth: Int,
+        ) {
             if (truncated) return
             seen++
             if (filter(n, depth)) {
@@ -206,16 +223,21 @@ class RikkaAccessibilityService : AccessibilityService() {
                 object : TakeScreenshotCallback {
                     override fun onSuccess(result: ScreenshotResult) {
                         try {
-                            val bmp = try {
-                                Bitmap.wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
-                                    ?.copy(Bitmap.Config.ARGB_8888, false)
-                            } finally {
-                                result.hardwareBuffer.close()
-                            }
+                            val bmp =
+                                try {
+                                    Bitmap
+                                        .wrapHardwareBuffer(result.hardwareBuffer, result.colorSpace)
+                                        ?.copy(Bitmap.Config.ARGB_8888, false)
+                                } finally {
+                                    result.hardwareBuffer.close()
+                                }
                             if (cont.isActive) {
                                 cont.resume(
-                                    if (bmp != null) ScreenshotOutcome.Success(bmp)
-                                    else ScreenshotOutcome.Failure("bitmap_decode_failed")
+                                    if (bmp != null) {
+                                        ScreenshotOutcome.Success(bmp)
+                                    } else {
+                                        ScreenshotOutcome.Failure("bitmap_decode_failed")
+                                    },
                                 )
                             }
                         } catch (t: Throwable) {
@@ -224,22 +246,28 @@ class RikkaAccessibilityService : AccessibilityService() {
                     }
 
                     override fun onFailure(errorCode: Int) {
-                        val reason = when (errorCode) {
-                            ERROR_TAKE_SCREENSHOT_INTERVAL_TIME_SHORT -> "rate_limited"
-                            ERROR_TAKE_SCREENSHOT_NO_ACCESSIBILITY_ACCESS -> "no_access"
-                            ERROR_TAKE_SCREENSHOT_INTERNAL_ERROR -> "internal_error"
-                            else -> "error_code_$errorCode"
-                        }
+                        val reason =
+                            when (errorCode) {
+                                ERROR_TAKE_SCREENSHOT_INTERVAL_TIME_SHORT -> "rate_limited"
+                                ERROR_TAKE_SCREENSHOT_NO_ACCESSIBILITY_ACCESS -> "no_access"
+                                ERROR_TAKE_SCREENSHOT_INTERNAL_ERROR -> "internal_error"
+                                else -> "error_code_$errorCode"
+                            }
                         if (cont.isActive) cont.resume(ScreenshotOutcome.Failure(reason))
                     }
-                }
+                },
             )
         }
     }
 
     sealed class ScreenshotOutcome {
-        data class Success(val bitmap: Bitmap) : ScreenshotOutcome()
-        data class Failure(val reason: String) : ScreenshotOutcome()
+        data class Success(
+            val bitmap: Bitmap,
+        ) : ScreenshotOutcome()
+
+        data class Failure(
+            val reason: String,
+        ) : ScreenshotOutcome()
     }
 
     companion object {

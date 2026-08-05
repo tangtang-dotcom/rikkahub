@@ -36,11 +36,12 @@ class ChatInputState {
 
     fun setContents(contents: List<UIMessagePart>) {
         val lastTextIndex = contents.indexOfLast { it is UIMessagePart.Text }
-        val text = if (lastTextIndex >= 0) {
-            (contents[lastTextIndex] as UIMessagePart.Text).text
-        } else {
-            ""
-        }
+        val text =
+            if (lastTextIndex >= 0) {
+                (contents[lastTextIndex] as UIMessagePart.Text).text
+            } else {
+                ""
+            }
         textContent.setTextAndPlaceCursorAtEnd(text)
         messageContent = contents.filter { it !is UIMessagePart.Text }
         editingParts = contents
@@ -83,9 +84,7 @@ class ChatInputState {
         return listOf(UIMessagePart.Text(text)) + messageContent
     }
 
-    fun isEmpty(): Boolean {
-        return textContent.text.isEmpty() && messageContent.isEmpty()
-    }
+    fun isEmpty(): Boolean = textContent.text.isEmpty() && messageContent.isEmpty()
 
     fun addImages(uris: List<Uri>) {
         val newMessage = messageContent.toMutableList()
@@ -129,13 +128,12 @@ class ChatInputState {
         return !isEditing() || url !in editingAttachmentUrls
     }
 
-    private fun UIMessagePart.attachmentUrlOrNull(): String? {
-        return when (this) {
+    private fun UIMessagePart.attachmentUrlOrNull(): String? =
+        when (this) {
             is UIMessagePart.Image -> this.url
             is UIMessagePart.Video -> this.url
             is UIMessagePart.Audio -> this.url
             is UIMessagePart.Document -> this.url
             else -> null
         }
-    }
 }

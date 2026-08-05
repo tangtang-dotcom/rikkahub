@@ -24,48 +24,78 @@ import me.rerere.rikkahub.data.ai.tools.HardlineCommandGuard
 class DirectModeActionRunner(
     private val json: Json,
 ) {
-
     @Serializable
-    data class Action(val tool: String, val args: JsonObject)
+    data class Action(
+        val tool: String,
+        val args: JsonObject,
+    )
 
     /** Thrown by parse() when the actions JSON is structurally invalid. */
-    class ParseError(val code: String, msg: String) : Exception(msg)
+    class ParseError(
+        val code: String,
+        msg: String,
+    ) : Exception(msg)
 
     /** Outcome of running a single action. */
     sealed class StepResult {
-        data class Success(val output: List<UIMessagePart>) : StepResult()
-        data class Failed(val errorMessage: String) : StepResult()
+        data class Success(
+            val output: List<UIMessagePart>,
+        ) : StepResult()
+
+        data class Failed(
+            val errorMessage: String,
+        ) : StepResult()
+
         data object TimedOut : StepResult()
-        data class HardlineBlocked(val reason: String) : StepResult()
+
+        data class HardlineBlocked(
+            val reason: String,
+        ) : StepResult()
+
         /** The action's tool is not in the available-tools list at fire time (never
          *  registered, or the assistant disabled it after the job was created). */
-        data class UnknownTool(val toolName: String) : StepResult()
+        data class UnknownTool(
+            val toolName: String,
+        ) : StepResult()
     }
 
     /** Outcome of running the whole sequence. */
     data class SequenceResult(
-        val finalOutcome: String,        // success|failed|timed_out
+        val finalOutcome: String, // success|failed|timed_out
         val errorMessage: String?,
     )
 
     /**
      * Execute each action sequentially. Aborts on first non-success result.
      */
-    suspend fun run(actions: List<Action>, availableTools: List<Tool>): SequenceResult {
+    suspend fun run(
+        actions: List<Action>,
+        availableTools: List<Tool>,
+    ): SequenceResult {
         for ((idx, action) in actions.withIndex()) {
             val result = runOne(idx, action, availableTools)
             when (result) {
-                is StepResult.Success        -> continue
-                is StepResult.Failed         -> return SequenceResult("failed", "action $idx: ${result.errorMessage}")
-                is StepResult.TimedOut       -> return SequenceResult("timed_out", "action $idx: ${action.tool} exceeded 60s")
-                is StepResult.HardlineBlocked-> return SequenceResult("failed", "action $idx: hardline:${result.reason}")
+                is StepResult.Success -> continue
+
+                is StepResult.Failed -> return SequenceResult("failed", "action $idx: ${result.errorMessage}")
+
+                is StepResult.TimedOut -> return SequenceResult("timed_out", "action $idx: ${action.tool} exceeded 60s")
+
+                is StepResult.HardlineBlocked -> return SequenceResult(
+                    "failed",
+                    "action $idx: hardline:${result.reason}",
+                )
+
                 // A direct-mode job validates its tool list at creation time, but the
                 // assistant's enabled-tools set can change afterwards. If a tool the job
                 // references is no longer in `availableTools` when the job fires, surface
                 // it as a NAMED failure ("tool_unavailable: <toolName>") so the failed
                 // run-history row tells the user exactly which tool to re-enable — rather
                 // than the job appearing to fail for an opaque reason.
-                is StepResult.UnknownTool    -> return SequenceResult("failed", "action $idx: tool_unavailable: ${result.toolName}")
+                is StepResult.UnknownTool -> return SequenceResult(
+                    "failed",
+                    "action $idx: tool_unavailable: ${result.toolName}",
+                )
             }
         }
         return SequenceResult("success", null)
@@ -81,8 +111,9 @@ class DirectModeActionRunner(
             Log.w(TAG, "direct-mode hardline-blocked action $idx tool=${action.tool}: $hardlineReason")
             return StepResult.HardlineBlocked(hardlineReason)
         }
-        val tool = availableTools.find { it.name == action.tool }
-            ?: return StepResult.UnknownTool(action.tool)
+        val tool =
+            availableTools.find { it.name == action.tool }
+                ?: return StepResult.UnknownTool(action.tool)
         return try {
             val out = withTimeoutOrNull(60_000L) { tool.execute(action.args) }
             if (out == null) StepResult.TimedOut else StepResult.Success(out)
@@ -101,11 +132,12 @@ class DirectModeActionRunner(
          * Called as a static companion so tests don't need a Json instance.
          */
         fun parse(actionsJson: String): Result<List<Action>> {
-            val element: JsonElement = runCatching {
-                Json.parseToJsonElement(actionsJson)
-            }.getOrElse {
-                return Result.failure(ParseError("invalid_json", it.message ?: "JSON parse failed"))
-            }
+            val element: JsonElement =
+                runCatching {
+                    Json.parseToJsonElement(actionsJson)
+                }.getOrElse {
+                    return Result.failure(ParseError("invalid_json", it.message ?: "JSON parse failed"))
+                }
             if (element !is JsonArray) {
                 return Result.failure(ParseError("not_an_array", "actions must be a JSON array"))
             }
@@ -114,11 +146,17 @@ class DirectModeActionRunner(
             }
             val parsed = ArrayList<Action>(element.size)
             for ((idx, el) in element.withIndex()) {
-                if (el !is JsonObject) return Result.failure(ParseError("bad_action_shape", "action $idx is not an object"))
-                val tool = (el["tool"] as? JsonPrimitive)?.contentOrNull
-                    ?: return Result.failure(ParseError("missing_tool", "action $idx missing 'tool' field"))
-                val args = el["args"] as? JsonObject
-                    ?: return Result.failure(ParseError("missing_args", "action $idx missing 'args' object"))
+                if (el !is JsonObject) {
+                    return Result.failure(
+                        ParseError("bad_action_shape", "action $idx is not an object"),
+                    )
+                }
+                val tool =
+                    (el["tool"] as? JsonPrimitive)?.contentOrNull
+                        ?: return Result.failure(ParseError("missing_tool", "action $idx missing 'tool' field"))
+                val args =
+                    el["args"] as? JsonObject
+                        ?: return Result.failure(ParseError("missing_args", "action $idx missing 'args' object"))
                 parsed += Action(tool, args)
             }
             return Result.success(parsed)

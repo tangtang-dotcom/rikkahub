@@ -21,7 +21,6 @@ import org.junit.Test
  * - K2.6 kept-thinking via thinking.keep = "all" (#1586)
  */
 class ChatCompletionsAPIMoonshotTest {
-
     private lateinit var api: ChatCompletionsAPI
 
     @Before
@@ -34,29 +33,32 @@ class ChatCompletionsAPIMoonshotTest {
         modelId: String,
         reasoningLevel: ReasoningLevel,
     ): JsonObject {
-        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
-            "buildChatCompletionRequest",
-            List::class.java,
-            TextGenerationParams::class.java,
-            ProviderSetting.OpenAI::class.java,
-            Boolean::class.javaPrimitiveType
-        )
+        val method =
+            ChatCompletionsAPI::class.java.getDeclaredMethod(
+                "buildChatCompletionRequest",
+                List::class.java,
+                TextGenerationParams::class.java,
+                ProviderSetting.OpenAI::class.java,
+                Boolean::class.javaPrimitiveType,
+            )
         method.isAccessible = true
-        val model = Model(
-            modelId = modelId,
-            abilities = listOf(ModelAbility.REASONING)
-        )
-        val params = TextGenerationParams(
-            model = model,
-            reasoningLevel = reasoningLevel,
-        )
+        val model =
+            Model(
+                modelId = modelId,
+                abilities = listOf(ModelAbility.REASONING),
+            )
+        val params =
+            TextGenerationParams(
+                model = model,
+                reasoningLevel = reasoningLevel,
+            )
         val providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.moonshot.cn/v1")
         return method.invoke(
             api,
             listOf(UIMessage.user("hi")),
             params,
             providerSetting,
-            true
+            true,
         ) as JsonObject
     }
 

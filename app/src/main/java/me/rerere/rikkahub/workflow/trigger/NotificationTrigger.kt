@@ -26,15 +26,18 @@ import me.rerere.rikkahub.workflow.model.WorkflowDefinition
 internal class NotificationTriggerFamily(
     private val scope: CoroutineScope,
 ) : WorkflowTriggerFamily {
-
     override val name = "notification"
 
     @Volatile private var matching: List<WorkflowDefinition> = emptyList()
+
     @Volatile private var fireCallback: TriggerFireCallback? = null
 
     override fun handles(spec: TriggerSpec): Boolean = spec is TriggerSpec.NotificationReceived
 
-    override suspend fun sync(matching: List<WorkflowDefinition>, callback: TriggerFireCallback) {
+    override suspend fun sync(
+        matching: List<WorkflowDefinition>,
+        callback: TriggerFireCallback,
+    ) {
         this.matching = matching
         this.fireCallback = callback
         NotificationTriggerDispatcher.bind(this)
@@ -49,7 +52,11 @@ internal class NotificationTriggerFamily(
      * Called by [NotificationTriggerDispatcher.onPosted] from the existing notification
      * listener service. All three fields are nullable / sanitised on the listener side.
      */
-    fun onPosted(packageName: String?, title: String?, text: String?) {
+    fun onPosted(
+        packageName: String?,
+        title: String?,
+        text: String?,
+    ) {
         val cb = fireCallback ?: return
         val snap = matching
         if (snap.isEmpty()) return
@@ -68,7 +75,12 @@ internal class NotificationTriggerFamily(
         }
     }
 
-    private fun matches(t: TriggerSpec.NotificationReceived, pkg: String?, title: String?, text: String?): Boolean {
+    private fun matches(
+        t: TriggerSpec.NotificationReceived,
+        pkg: String?,
+        title: String?,
+        text: String?,
+    ): Boolean {
         if (!t.packageName.isNullOrBlank() && !t.packageName.equals(pkg, ignoreCase = false)) return false
         if (!t.titleContains.isNullOrBlank()) {
             if (title.isNullOrBlank()) return false
@@ -99,17 +111,32 @@ internal class NotificationTriggerFamily(
          * rejects uncompilable patterns at authoring time via WorkflowJson.isValidRegex;
          * this guard only covers stored rows authored before validation tightened.)
          */
-        internal fun regexFind(pattern: String, input: String): Boolean =
-            runCatching { java.util.regex.Pattern.compile(pattern).matcher(input).find() }
-                .getOrDefault(false)
+        internal fun regexFind(
+            pattern: String,
+            input: String,
+        ): Boolean =
+            runCatching {
+                java.util.regex.Pattern
+                    .compile(pattern)
+                    .matcher(input)
+                    .find()
+            }.getOrDefault(false)
     }
 }
 
 /** Bridge from RikkaNotificationListenerService.onNotificationPosted to the family. */
 object NotificationTriggerDispatcher {
     @Volatile private var family: NotificationTriggerFamily? = null
-    internal fun bind(f: NotificationTriggerFamily) { family = f }
-    fun onPosted(packageName: String?, title: String?, text: String?) {
+
+    internal fun bind(f: NotificationTriggerFamily) {
+        family = f
+    }
+
+    fun onPosted(
+        packageName: String?,
+        title: String?,
+        text: String?,
+    ) {
         family?.onPosted(packageName, title, text)
     }
 }

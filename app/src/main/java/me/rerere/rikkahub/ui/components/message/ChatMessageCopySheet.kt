@@ -16,9 +16,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,19 +39,24 @@ import me.rerere.rikkahub.utils.copyMessageToClipboard
 @Composable
 fun ChatMessageCopySheet(
     message: UIMessage,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     val context = LocalContext.current
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
         sheetGesturesEnabled = false,
         dragHandle = null,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Header
@@ -63,7 +68,7 @@ fun ChatMessageCopySheet(
                 IconButton(
                     onClick = {
                         onDismissRequest()
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Cancel01, null)
                 }
@@ -77,12 +82,12 @@ fun ChatMessageCopySheet(
                     onClick = {
                         context.copyMessageToClipboard(message)
                         onDismissRequest()
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = HugeIcons.Copy01,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.copy_all))
@@ -96,26 +101,28 @@ fun ChatMessageCopySheet(
             if (textParts.isEmpty()) {
                 // No text content available
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = stringResource(R.string.no_text_content_to_copy),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             } else {
                 SelectionContainer {
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
                     ) {
                         textParts.fastForEach { textPart ->
                             Text(

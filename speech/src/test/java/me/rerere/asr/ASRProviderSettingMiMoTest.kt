@@ -25,14 +25,15 @@ class ASRProviderSettingMiMoTest {
 
     @Test
     fun mimo_copy_provider_preserves_extra_fields() {
-        val original = ASRProviderSetting.MiMo(
-            apiKey = "sk-test",
-            baseUrl = "https://example.com/v1",
-            model = "mimo-v2.5-asr",
-            language = "zh",
-            sampleRate = 8000,
-            segmentDurationSec = 60,
-        )
+        val original =
+            ASRProviderSetting.MiMo(
+                apiKey = "sk-test",
+                baseUrl = "https://example.com/v1",
+                model = "mimo-v2.5-asr",
+                language = "zh",
+                sampleRate = 8000,
+                segmentDurationSec = 60,
+            )
         val copied = original.copyProvider(id = original.id, name = "renamed")
 
         assertTrue(copied is ASRProviderSetting.MiMo)

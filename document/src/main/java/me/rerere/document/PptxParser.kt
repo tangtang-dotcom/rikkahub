@@ -10,7 +10,7 @@ import java.util.zip.ZipFile
 private data class SlideContent(
     val slideNumber: Int,
     val content: String,
-    val notes: String = ""
+    val notes: String = "",
 )
 
 object PptxParser {
@@ -20,11 +20,17 @@ object PptxParser {
                 val slides = mutableListOf<SlideContent>()
 
                 // Find all slide XML files and sort them by number
-                val slideEntries = zipFile.entries().toList()
-                    .filter { it.name.matches(Regex("ppt/slides/slide\\d+\\.xml")) }
-                    .sortedBy { entry ->
-                        entry.name.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0
-                    }
+                val slideEntries =
+                    zipFile
+                        .entries()
+                        .toList()
+                        .filter { it.name.matches(Regex("ppt/slides/slide\\d+\\.xml")) }
+                        .sortedBy { entry ->
+                            entry.name
+                                .substringAfter("slide")
+                                .substringBefore(".xml")
+                                .toIntOrNull() ?: 0
+                        }
 
                 if (slideEntries.isEmpty()) {
                     return "No slides found in PPTX file"
@@ -33,17 +39,21 @@ object PptxParser {
                 // Parse each slide
                 slideEntries.forEachIndexed { index, entry ->
                     val slideNumber = index + 1
-                    val slideContent = zipFile.getInputStream(entry).use { stream ->
-                        parseSlideXml(stream)
-                    }
+                    val slideContent =
+                        zipFile.getInputStream(entry).use { stream ->
+                            parseSlideXml(stream)
+                        }
 
                     // Try to get notes for this slide
-                    val notesEntry = zipFile.getEntry("ppt/notesSlides/notesSlide${slideNumber}.xml")
-                    val notes = if (notesEntry != null) {
-                        zipFile.getInputStream(notesEntry).use { stream ->
-                            parseNotesXml(stream)
+                    val notesEntry = zipFile.getEntry("ppt/notesSlides/notesSlide$slideNumber.xml")
+                    val notes =
+                        if (notesEntry != null) {
+                            zipFile.getInputStream(notesEntry).use { stream ->
+                                parseNotesXml(stream)
+                            }
+                        } else {
+                            ""
                         }
-                    } else ""
 
                     slides.add(SlideContent(slideNumber, slideContent, notes))
                 }
@@ -74,8 +84,8 @@ object PptxParser {
         return result.toString().trim()
     }
 
-    private fun parseSlideXml(inputStream: InputStream): String {
-        return try {
+    private fun parseSlideXml(inputStream: InputStream): String =
+        try {
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = true
             val parser = factory.newPullParser()
@@ -87,8 +97,10 @@ object PptxParser {
                 when (parser.eventType) {
                     XmlPullParser.START_TAG -> {
                         when (parser.name) {
-                            "sp" -> processShape(parser, result)  // Text box/shape
-                            "graphicFrame" -> processGraphicFrame(parser, result)  // Table
+                            "sp" -> processShape(parser, result)
+
+                            // Text box/shape
+                            "graphicFrame" -> processGraphicFrame(parser, result) // Table
                         }
                     }
                 }
@@ -99,9 +111,11 @@ object PptxParser {
         } catch (e: Exception) {
             "Error parsing slide XML: ${e.message}\n"
         }
-    }
 
-    private fun processShape(parser: XmlPullParser, result: StringBuilder) {
+    private fun processShape(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val shapeStartDepth = parser.depth
         val textContent = StringBuilder()
         var hasBullet = false
@@ -137,7 +151,10 @@ object PptxParser {
         }
     }
 
-    private fun processParagraph(parser: XmlPullParser, result: StringBuilder): Triple<Boolean, Int, Boolean> {
+    private fun processParagraph(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ): Triple<Boolean, Int, Boolean> {
         val paragraphStartDepth = parser.depth
         val paragraphText = StringBuilder()
         var hasBullet = false
@@ -224,7 +241,10 @@ object PptxParser {
         return Triple(hasBullet, level, isNumbered)
     }
 
-    private fun extractTextRun(parser: XmlPullParser, result: StringBuilder) {
+    private fun extractTextRun(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val runStartDepth = parser.depth
 
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
@@ -247,7 +267,10 @@ object PptxParser {
         }
     }
 
-    private fun processGraphicFrame(parser: XmlPullParser, result: StringBuilder) {
+    private fun processGraphicFrame(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val frameStartDepth = parser.depth
 
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
@@ -267,7 +290,10 @@ object PptxParser {
         }
     }
 
-    private fun processTable(parser: XmlPullParser, result: StringBuilder) {
+    private fun processTable(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val tableStartDepth = parser.depth
         val rows = mutableListOf<List<String>>()
 
@@ -368,8 +394,8 @@ object PptxParser {
         return result.toString().trim()
     }
 
-    private fun parseNotesXml(inputStream: InputStream): String {
-        return try {
+    private fun parseNotesXml(inputStream: InputStream): String =
+        try {
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = true
             val parser = factory.newPullParser()
@@ -399,7 +425,6 @@ object PptxParser {
         } catch (e: Exception) {
             ""
         }
-    }
 
     private fun isNotesTextShape(parser: XmlPullParser): Boolean {
         // Notes text typically has ph type="body"
@@ -425,7 +450,10 @@ object PptxParser {
         return false
     }
 
-    private fun extractShapeText(parser: XmlPullParser, result: StringBuilder) {
+    private fun extractShapeText(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val shapeStartDepth = parser.depth
 
         while (parser.next() != XmlPullParser.END_DOCUMENT) {

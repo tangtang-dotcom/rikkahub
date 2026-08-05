@@ -28,25 +28,24 @@ class WorkspaceCompletionProvider(
         val absoluteQuery = mention.query.isWorkspaceAbsoluteQuery()
         val entries = loadEntries()
 
-        val items = entries
-            .asSequence()
-            .mapNotNull { entry ->
-                val score = entry.matchScore(query, absoluteQuery) ?: return@mapNotNull null
-                val path = entry.workspacePath()
-                ChatCompletionItem(
-                    label = path,
-                    insertText = if (entry.isDirectory) "@$path/" else "@$path ",
-                    icon = if (entry.isDirectory) HugeIcons.Folder01 else HugeIcons.File02,
-                    sortScore = score,
-                )
-            }
-            .sortedWith(
-                compareByDescending<ChatCompletionItem> { it.sortScore }
-                    .thenBy { it.label.length }
-                    .thenBy { it.label.lowercase() }
-            )
-            .take(MAX_COMPLETION_ITEMS)
-            .toList()
+        val items =
+            entries
+                .asSequence()
+                .mapNotNull { entry ->
+                    val score = entry.matchScore(query, absoluteQuery) ?: return@mapNotNull null
+                    val path = entry.workspacePath()
+                    ChatCompletionItem(
+                        label = path,
+                        insertText = if (entry.isDirectory) "@$path/" else "@$path ",
+                        icon = if (entry.isDirectory) HugeIcons.Folder01 else HugeIcons.File02,
+                        sortScore = score,
+                    )
+                }.sortedWith(
+                    compareByDescending<ChatCompletionItem> { it.sortScore }
+                        .thenBy { it.label.length }
+                        .thenBy { it.label.lowercase() },
+                ).take(MAX_COMPLETION_ITEMS)
+                .toList()
 
         if (items.isEmpty()) return null
         return ChatCompletionList(
@@ -79,17 +78,18 @@ class WorkspaceCompletionProvider(
             val path = queue.removeFirst()
             visitedDirs++
             val ignoreMatcher = matcherForDirectory(path, matcherCache)
-            val entries = try {
-                repository.listFiles(
-                    id = workspaceId ?: return emptyList(),
-                    area = WorkspaceStorageArea.FILES,
-                    path = path,
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                emptyList()
-            }
+            val entries =
+                try {
+                    repository.listFiles(
+                        id = workspaceId ?: return emptyList(),
+                        area = WorkspaceStorageArea.FILES,
+                        path = path,
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    emptyList()
+                }
             entries.forEach { entry ->
                 if (result.size >= MAX_INDEXED_ENTRIES) return@forEach
                 if (ignoreMatcher.isIgnored(entry.path, entry.isDirectory)) return@forEach
@@ -155,18 +155,22 @@ class WorkspaceCompletionProvider(
 
     private fun WorkspaceFileEntry.workspacePath(): String = "/workspace/$path"
 
-    private fun WorkspaceFileEntry.matchScore(query: String, absoluteQuery: Boolean): Int? {
+    private fun WorkspaceFileEntry.matchScore(
+        query: String,
+        absoluteQuery: Boolean,
+    ): Int? {
         val normalizedPath = path.lowercase()
         val normalizedName = name.lowercase()
         val normalizedQuery = query.lowercase()
-        val globalScore = if (normalizedQuery.isBlank()) {
-            1
-        } else {
-            max(
-                normalizedPath.fuzzyScore(normalizedQuery) ?: -1,
-                normalizedName.fuzzyScore(normalizedQuery) ?: -1,
-            ).takeIf { it >= 0 } ?: return null
-        }
+        val globalScore =
+            if (normalizedQuery.isBlank()) {
+                1
+            } else {
+                max(
+                    normalizedPath.fuzzyScore(normalizedQuery) ?: -1,
+                    normalizedName.fuzzyScore(normalizedQuery) ?: -1,
+                ).takeIf { it >= 0 } ?: return null
+            }
 
         val cwdScore = if (!absoluteQuery) matchCwdScore(normalizedQuery) else null
         val score = max(globalScore, cwdScore ?: -1)
@@ -175,14 +179,15 @@ class WorkspaceCompletionProvider(
 
     private fun WorkspaceFileEntry.matchCwdScore(query: String): Int? {
         val cwdPath = path.relativeToCwdOrNull()?.lowercase() ?: return null
-        val score = if (query.isBlank()) {
-            1
-        } else {
-            max(
-                cwdPath.fuzzyScore(query) ?: -1,
-                name.lowercase().fuzzyScore(query) ?: -1,
-            ).takeIf { it >= 0 } ?: return null
-        }
+        val score =
+            if (query.isBlank()) {
+                1
+            } else {
+                max(
+                    cwdPath.fuzzyScore(query) ?: -1,
+                    name.lowercase().fuzzyScore(query) ?: -1,
+                ).takeIf { it >= 0 } ?: return null
+            }
         return score + CWD_SCORE_BONUS
     }
 
@@ -234,21 +239,23 @@ class WorkspaceCompletionProvider(
         return normalized.startsWith("/") || normalized == "workspace" || normalized.startsWith("workspace/")
     }
 
-    private fun String.removeWorkspacePrefix(): String {
-        return when {
+    private fun String.removeWorkspacePrefix(): String =
+        when {
             this == "/workspace" || this == "workspace" -> ""
             startsWith("/workspace/") -> removePrefix("/workspace/")
             startsWith("workspace/") -> removePrefix("workspace/")
             else -> this
         }
-    }
 
     private data class WorkspaceMention(
         val query: String,
         val range: TextRange,
     )
 
-    private fun findWorkspaceMention(text: String, cursor: Int): WorkspaceMention? {
+    private fun findWorkspaceMention(
+        text: String,
+        cursor: Int,
+    ): WorkspaceMention? {
         if (cursor < 0 || cursor > text.length) return null
         val prefix = text.substring(0, cursor)
         val start = prefix.lastIndexOf('@')
@@ -263,8 +270,7 @@ class WorkspaceCompletionProvider(
         )
     }
 
-    private fun Char.isMentionBoundary(): Boolean =
-        isWhitespace() || this in "([{<\"'"
+    private fun Char.isMentionBoundary(): Boolean = isWhitespace() || this in "([{<\"'"
 
     companion object {
         private const val MAX_COMPLETION_ITEMS = 8

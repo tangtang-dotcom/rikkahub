@@ -18,8 +18,9 @@ internal object HljsFixtures {
     private val engine by lazy { HighlightEngine(builtinLanguages()) }
 
     private val root: File by lazy {
-        val fromResources = HljsFixtures::class.java.getResource("/hljs")
-            ?: error("fixture root /hljs is missing from the test resources")
+        val fromResources =
+            HljsFixtures::class.java.getResource("/hljs")
+                ?: error("fixture root /hljs is missing from the test resources")
         File(fromResources.toURI())
     }
 
@@ -38,9 +39,11 @@ internal object HljsFixtures {
         val directory = File(root, language)
         assertTrue("no fixtures for language '$language'", directory.isDirectory)
 
-        val sources = directory.listFiles { file -> file.extension == "txt" }
-            ?.sortedBy { it.name }
-            .orEmpty()
+        val sources =
+            directory
+                .listFiles { file -> file.extension == "txt" }
+                ?.sortedBy { it.name }
+                .orEmpty()
         assertTrue("no fixtures for language '$language'", sources.isNotEmpty())
 
         sources.forEach { source ->
@@ -48,8 +51,9 @@ internal object HljsFixtures {
             assertTrue("missing golden tokens for ${source.name}", expectedFile.isFile)
 
             val code = source.readText()
-            val actual = engine.highlight(code, language)
-                ?: error("language '$language' is not registered with the engine")
+            val actual =
+                engine.highlight(code, language)
+                    ?: error("language '$language' is not registered with the engine")
 
             assertEquals(
                 "source text must survive highlighting of ${source.name}",
@@ -65,15 +69,17 @@ internal object HljsFixtures {
     }
 
     private fun HighlightToken.encode(): String {
-        val scope = when (this) {
-            is HighlightToken.Plain -> ""
-            is HighlightToken.Styled -> type
-        }
-        val text = content
-            .replace("\\", "\\\\")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
+        val scope =
+            when (this) {
+                is HighlightToken.Plain -> ""
+                is HighlightToken.Styled -> type
+            }
+        val text =
+            content
+                .replace("\\", "\\\\")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
         return "$scope\t$text"
     }
 }

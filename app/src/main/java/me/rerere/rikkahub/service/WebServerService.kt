@@ -25,7 +25,6 @@ import org.koin.android.ext.android.inject
 private const val TAG = "WebServerService"
 
 class WebServerService : Service() {
-
     companion object {
         const val ACTION_START = "me.rerere.rikkahub.action.WEB_SERVER_START"
         const val ACTION_STOP = "me.rerere.rikkahub.action.WEB_SERVER_STOP"
@@ -42,7 +41,11 @@ class WebServerService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         when (intent?.action) {
             ACTION_START -> {
                 val port = intent.getIntExtra(EXTRA_PORT, 8080)
@@ -75,7 +78,7 @@ class WebServerService : Service() {
                         startObservingState()
                         webServerManager.start(
                             port = settings.webServerPort,
-                            localhostOnly = settings.webServerLocalhostOnly
+                            localhostOnly = settings.webServerLocalhostOnly,
                         )
                     } else {
                         stopSelf()
@@ -91,14 +94,14 @@ class WebServerService : Service() {
         serviceScope.cancel()
     }
 
-    private fun startForegroundCompat(): Boolean {
-        return try {
+    private fun startForegroundCompat(): Boolean =
+        try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceCompat.startForeground(
                     this,
                     NOTIFICATION_ID,
                     buildStartingNotification(),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
                 )
             } else {
                 startForeground(NOTIFICATION_ID, buildStartingNotification())
@@ -111,7 +114,6 @@ class WebServerService : Service() {
             webServerManager.reportError("Failed to start foreground service: ${e.message}")
             false
         }
-    }
 
     private fun startObservingState() {
         // Check `isActive`, not just non-null: after a previous observer finishes (server
@@ -120,24 +122,25 @@ class WebServerService : Service() {
         // instance never re-observed. Tied to onDestroy cancelling the scope, this was
         // safe in practice but the check should match what we actually mean.
         if (stateObserverJob?.isActive == true) return
-        stateObserverJob = serviceScope.launch {
-            var wasRunning = false
-            webServerManager.state.collect { state ->
-                when {
-                    state.isRunning -> {
-                        wasRunning = true
-                        val host = if (state.localhostOnly) "localhost" else (state.address ?: "localhost")
-                        val url = "http://$host:${state.port}"
-                        updateNotification(buildRunningNotification(url))
-                    }
+        stateObserverJob =
+            serviceScope.launch {
+                var wasRunning = false
+                webServerManager.state.collect { state ->
+                    when {
+                        state.isRunning -> {
+                            wasRunning = true
+                            val host = if (state.localhostOnly) "localhost" else (state.address ?: "localhost")
+                            val url = "http://$host:${state.port}"
+                            updateNotification(buildRunningNotification(url))
+                        }
 
-                    wasRunning && !state.isRunning && !state.isLoading -> {
-                        stopForeground(STOP_FOREGROUND_REMOVE)
-                        stopSelf()
+                        wasRunning && !state.isRunning && !state.isLoading -> {
+                            stopForeground(STOP_FOREGROUND_REMOVE)
+                            stopSelf()
+                        }
                     }
                 }
             }
-        }
     }
 
     private fun updateNotification(notification: android.app.Notification) {
@@ -146,33 +149,39 @@ class WebServerService : Service() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun buildLaunchPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        packageManager.getLaunchIntentForPackage(packageName),
-        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-    )
-
-    private fun buildStartingNotification() = NotificationCompat.Builder(this, WEB_SERVER_NOTIFICATION_CHANNEL_ID)
-        .setSmallIcon(R.drawable.small_icon)
-        .setContentTitle(getString(R.string.notification_channel_web_server))
-        .setContentText(getString(R.string.notification_web_server_starting))
-        .setContentIntent(buildLaunchPendingIntent())
-        .setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .build()
-
-    private fun buildRunningNotification(url: String): android.app.Notification {
-        val stopIntent = Intent(this, WebServerService::class.java).apply {
-            action = ACTION_STOP
-        }
-        val stopPendingIntent = PendingIntent.getService(
+    private fun buildLaunchPendingIntent() =
+        PendingIntent.getActivity(
             this,
             0,
-            stopIntent,
-            PendingIntent.FLAG_IMMUTABLE
+            packageManager.getLaunchIntentForPackage(packageName),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        return NotificationCompat.Builder(this, WEB_SERVER_NOTIFICATION_CHANNEL_ID)
+
+    private fun buildStartingNotification() =
+        NotificationCompat
+            .Builder(this, WEB_SERVER_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.small_icon)
+            .setContentTitle(getString(R.string.notification_channel_web_server))
+            .setContentText(getString(R.string.notification_web_server_starting))
+            .setContentIntent(buildLaunchPendingIntent())
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .build()
+
+    private fun buildRunningNotification(url: String): android.app.Notification {
+        val stopIntent =
+            Intent(this, WebServerService::class.java).apply {
+                action = ACTION_STOP
+            }
+        val stopPendingIntent =
+            PendingIntent.getService(
+                this,
+                0,
+                stopIntent,
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+        return NotificationCompat
+            .Builder(this, WEB_SERVER_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.small_icon)
             .setContentTitle(getString(R.string.notification_web_server_running))
             .setContentText(url)

@@ -26,44 +26,62 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 private const val TAG = "WebView"
 
-internal class MyWebChromeClient(private val state: WebViewState) : WebChromeClient() {
-    override fun onProgressChanged(view: WebView?, newProgress: Int) {
+internal class MyWebChromeClient(
+    private val state: WebViewState,
+) : WebChromeClient() {
+    override fun onProgressChanged(
+        view: WebView?,
+        newProgress: Int,
+    ) {
         state.loadingProgress = newProgress / 100f
     }
 
-    override fun onReceivedTitle(view: WebView?, title: String?) {
+    override fun onReceivedTitle(
+        view: WebView?,
+        title: String?,
+    ) {
         super.onReceivedTitle(view, title)
         state.pageTitle = title
     }
 
     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
         state.pushConsoleMessage(consoleMessage)
-        if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR || consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
+        if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR ||
+            consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING
+        ) {
             Log.e(
                 TAG,
-                "onConsoleMessage:  ${consoleMessage.message()}  ${consoleMessage.lineNumber()}  ${consoleMessage.sourceId()}"
+                "onConsoleMessage:  ${consoleMessage.message()}  ${consoleMessage.lineNumber()}  ${consoleMessage.sourceId()}",
             )
         }
-        return super.onConsoleMessage(consoleMessage);
+        return super.onConsoleMessage(consoleMessage)
     }
 }
 
-internal class MyWebViewClient(private val state: WebViewState) : WebViewClient() {
+internal class MyWebViewClient(
+    private val state: WebViewState,
+) : WebViewClient() {
     override fun shouldInterceptRequest(
         view: WebView,
-        request: WebResourceRequest
-    ): WebResourceResponse? {
-        return WebViewLocalAssets.intercept(view.context.applicationContext, request.url)
+        request: WebResourceRequest,
+    ): WebResourceResponse? =
+        WebViewLocalAssets.intercept(view.context.applicationContext, request.url)
             ?: super.shouldInterceptRequest(view, request)
-    }
 
-    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+    override fun onPageStarted(
+        view: WebView?,
+        url: String?,
+        favicon: Bitmap?,
+    ) {
         super.onPageStarted(view, url, favicon)
         state.isLoading = true
         state.currentUrl = url // Update current URL
     }
 
-    override fun onPageFinished(view: WebView?, url: String?) {
+    override fun onPageFinished(
+        view: WebView?,
+        url: String?,
+    ) {
         super.onPageFinished(view, url)
         state.isLoading = false
         state.loadingProgress = 0f // Reset progress when finished
@@ -100,15 +118,16 @@ fun WebView(
     val webViewClient = remember { MyWebViewClient(state) }
 
     Box(
-        modifier = modifier
+        modifier = modifier,
     ) {
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
-                    layoutParams = LayoutParams(
-                        LayoutParams.MATCH_PARENT,
-                        LayoutParams.MATCH_PARENT
-                    )
+                    layoutParams =
+                        LayoutParams(
+                            LayoutParams.MATCH_PARENT,
+                            LayoutParams.MATCH_PARENT,
+                        )
 
                     state.webView = this // Assign the WebView instance to the state
 
@@ -159,7 +178,9 @@ fun WebView(
                         // Only load new URL if it's different from the current one or if the state forces reload
                         // Also check if the webView's url is null or blank, which might happen initially
                         val currentWebViewUrl = webView.url
-                        if (url.isNotEmpty() && (currentWebViewUrl.isNullOrBlank() || url != currentWebViewUrl || state.forceReload)) {
+                        if (url.isNotEmpty() &&
+                            (currentWebViewUrl.isNullOrBlank() || url != currentWebViewUrl || state.forceReload)
+                        ) {
                             webView.loadUrl(content.url, content.additionalHttpHeaders)
                             state.forceReload = false // Reset force reload flag
                         }
@@ -172,7 +193,7 @@ fun WebView(
                                 content.data,
                                 content.mimeType,
                                 content.encoding,
-                                content.historyUrl
+                                content.historyUrl,
                             )
                             state.lastLoadedData = content
                             state.forceReload = false
@@ -184,14 +205,14 @@ fun WebView(
                     }
                 }
                 onUpdated(webView)
-            }
+            },
         )
 
         // Loading Progress Indicator
         if (state.isLoading) {
             LinearProgressIndicator(
                 progress = { state.loadingProgress },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -202,7 +223,7 @@ sealed class WebContent {
     data class Url(
         val url: String,
         val additionalHttpHeaders: Map<String, String> = emptyMap(),
-        val clearHistory: Boolean = false
+        val clearHistory: Boolean = false,
     ) : WebContent()
 
     data class Data(
@@ -210,7 +231,7 @@ sealed class WebContent {
         val baseUrl: String? = null,
         val encoding: String = "utf-8",
         val mimeType: String? = null,
-        val historyUrl: String? = null
+        val historyUrl: String? = null,
     ) : WebContent()
 
     data object NavigatorOnly : WebContent()
@@ -220,7 +241,7 @@ sealed class WebContent {
 class WebViewState(
     initialContent: WebContent = WebContent.NavigatorOnly,
     val interfaces: Map<String, Any> = emptyMap(),
-    val settings: WebSettings.() -> Unit = {}
+    val settings: WebSettings.() -> Unit = {},
 ) {
     // --- Content State ---
     var content: WebContent by mutableStateOf(initialContent)
@@ -261,7 +282,7 @@ class WebViewState(
 
     fun loadUrl(
         url: String,
-        additionalHttpHeaders: Map<String, String> = emptyMap()
+        additionalHttpHeaders: Map<String, String> = emptyMap(),
     ) {
         // Determine if reload is needed: same URL or explicit force flag set elsewhere
         forceReload =
@@ -274,7 +295,7 @@ class WebViewState(
         baseUrl: String? = null,
         encoding: String = "utf-8",
         mimeType: String? = null,
-        historyUrl: String? = null
+        historyUrl: String? = null,
     ) {
         content = WebContent.Data(data, baseUrl, encoding, mimeType, historyUrl)
     }
@@ -324,11 +345,12 @@ fun rememberWebViewState(
     additionalHttpHeaders: Map<String, String> = emptyMap(),
     interfaces: Map<String, Any> = emptyMap(),
     settings: WebSettings.() -> Unit = {},
-) = remember(url, additionalHttpHeaders) { // Use keys for better recomposition control
+) = remember(url, additionalHttpHeaders) {
+    // Use keys for better recomposition control
     WebViewState(
         initialContent = WebContent.Url(url, additionalHttpHeaders),
         interfaces = interfaces,
-        settings = settings
+        settings = settings,
     )
 }
 
@@ -341,10 +363,11 @@ fun rememberWebViewState(
     historyUrl: String? = null,
     interfaces: Map<String, Any> = emptyMap(),
     settings: WebSettings.() -> Unit = {},
-) = remember(data, baseUrl, encoding, mimeType, historyUrl) { // Use keys
+) = remember(data, baseUrl, encoding, mimeType, historyUrl) {
+    // Use keys
     WebViewState(
         initialContent = WebContent.Data(data, baseUrl, encoding, mimeType, historyUrl),
         interfaces = interfaces,
-        settings = settings
+        settings = settings,
     )
 }

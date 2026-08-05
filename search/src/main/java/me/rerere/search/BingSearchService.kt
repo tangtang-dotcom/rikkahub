@@ -25,13 +25,17 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
 
     override fun parameters(options: SearchServiceOptions.BingLocalOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.BingLocalOptions): InputSchema? = null
@@ -39,53 +43,55 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BingLocalOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://www.bing.com/search?q=" + URLEncoder.encode(query, "UTF-8")
-            val locale = Locale.getDefault()
-            val acceptLanguage = "${locale.language}-${locale.country},${locale.language}"
-            val doc = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-                .header(
-                    "Accept",
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-                )
-                .header("Accept-Language", acceptLanguage)
-                .header("Accept-Encoding", "gzip, deflate, sdch")
-                .header("Accept-Charset", "utf-8")
-                .header("Connection", "keep-alive")
-                .referrer("https://www.bing.com/")
-                .cookie("SRCHHPGUSR", "ULSR=1")
-                .timeout(5000)
-                .get()
+        serviceOptions: SearchServiceOptions.BingLocalOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+                val url = "https://www.bing.com/search?q=" + URLEncoder.encode(query, "UTF-8")
+                val locale = Locale.getDefault()
+                val acceptLanguage = "${locale.language}-${locale.country},${locale.language}"
+                val doc =
+                    Jsoup
+                        .connect(url)
+                        .userAgent(
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                        ).header(
+                            "Accept",
+                            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                        ).header("Accept-Language", acceptLanguage)
+                        .header("Accept-Encoding", "gzip, deflate, sdch")
+                        .header("Accept-Charset", "utf-8")
+                        .header("Connection", "keep-alive")
+                        .referrer("https://www.bing.com/")
+                        .cookie("SRCHHPGUSR", "ULSR=1")
+                        .timeout(5000)
+                        .get()
 
-            // 解析搜索结果
-            val results = doc.select("li.b_algo").map { element ->
-                val title = element.select("h2").text()
-                val link = element.select("h2 > a").attr("href")
-                val snippet = element.select(".b_caption p").text()
-                SearchResultItem(
-                    title = title,
-                    url = link,
-                    text = snippet
-                )
+                // 解析搜索结果
+                val results =
+                    doc.select("li.b_algo").map { element ->
+                        val title = element.select("h2").text()
+                        val link = element.select("h2 > a").attr("href")
+                        val snippet = element.select(".b_caption p").text()
+                        SearchResultItem(
+                            title = title,
+                            url = link,
+                            text = snippet,
+                        )
+                    }
+
+                require(results.isNotEmpty()) {
+                    "Search failed: no results found"
+                }
+
+                SearchResult(items = results)
             }
-
-            require(results.isNotEmpty()) {
-                "Search failed: no results found"
-            }
-
-            SearchResult(items = results)
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BingLocalOptions
-    ): Result<ScrapedResult> {
-        return Result.failure(Exception("Scraping is not supported for Bing"))
-    }
+        serviceOptions: SearchServiceOptions.BingLocalOptions,
+    ): Result<ScrapedResult> = Result.failure(Exception("Scraping is not supported for Bing"))
 }

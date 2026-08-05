@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap
  * at a time, so a process-singleton snapshot is sufficient.
  */
 object LiteRtToolBridgeRegistry {
-
     private val tools = ConcurrentHashMap<String, Tool>()
 
     /** Replace the current snapshot with [newTools]. Idempotent. */

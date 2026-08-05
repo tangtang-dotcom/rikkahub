@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TTSRequest(
-    val text: String
+    val text: String,
 )
 
 @Serializable
@@ -14,5 +14,5 @@ enum class AudioFormat {
     OGG,
     AAC,
     OPUS,
-    PCM
+    PCM,
 }

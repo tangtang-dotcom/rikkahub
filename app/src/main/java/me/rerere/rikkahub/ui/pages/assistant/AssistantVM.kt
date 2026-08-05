@@ -21,8 +21,9 @@ class AssistantVM(
     private val conversationRepo: ConversationRepository,
     private val filesManager: FilesManager,
 ) : ViewModel() {
-    val settings: StateFlow<Settings> = settingsStore.settingsFlow
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
+    val settings: StateFlow<Settings> =
+        settingsStore.settingsFlow
+            .stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
 
     fun updateSettings(settings: Settings) {
         viewModelScope.launch {
@@ -35,8 +36,8 @@ class AssistantVM(
             val settings = settings.value
             settingsStore.update(
                 settings.copy(
-                    assistants = settings.assistants.plus(assistant)
-                )
+                    assistants = settings.assistants.plus(assistant),
+                ),
             )
         }
     }
@@ -48,8 +49,8 @@ class AssistantVM(
             val settings = settings.value
             settingsStore.update(
                 settings.copy(
-                    assistants = settings.assistants.filter { it.id != assistant.id }
-                )
+                    assistants = settings.assistants.filter { it.id != assistant.id },
+                ),
             )
             memoryRepository.deleteMemoriesOfAssistant(assistant.id.toString())
             conversationRepo.deleteConversationOfAssistant(assistant.id)
@@ -57,10 +58,11 @@ class AssistantVM(
     }
 
     private fun cleanupAssistantFiles(assistant: Assistant) {
-        val uris = buildList {
-            (assistant.avatar as? Avatar.Image)?.let { add(it.url.toUri()) }
-            assistant.background?.let { add(it.toUri()) }
-        }
+        val uris =
+            buildList {
+                (assistant.avatar as? Avatar.Image)?.let { add(it.url.toUri()) }
+                assistant.background?.let { add(it.toUri()) }
+            }
 
         if (uris.isNotEmpty()) {
             filesManager.deleteChatFiles(uris)
@@ -70,15 +72,16 @@ class AssistantVM(
     fun copyAssistant(assistant: Assistant) {
         viewModelScope.launch {
             val settings = settings.value
-            val copiedAssistant = assistant.copy(
-                id = kotlin.uuid.Uuid.random(),
-                name = "${assistant.name} (Clone)",
-                avatar = if(assistant.avatar is Avatar.Image) Avatar.Dummy else assistant.avatar,
-            )
+            val copiedAssistant =
+                assistant.copy(
+                    id = kotlin.uuid.Uuid.random(),
+                    name = "${assistant.name} (Clone)",
+                    avatar = if (assistant.avatar is Avatar.Image) Avatar.Dummy else assistant.avatar,
+                )
             settingsStore.update(
                 settings.copy(
-                    assistants = settings.assistants.plus(copiedAssistant)
-                )
+                    assistants = settings.assistants.plus(copiedAssistant),
+                ),
             )
         }
     }

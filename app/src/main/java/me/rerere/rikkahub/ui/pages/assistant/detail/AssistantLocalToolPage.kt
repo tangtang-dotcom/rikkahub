@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import kotlinx.coroutines.launch
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -40,6 +39,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
+import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.tools.LocalToolOption
 import me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
@@ -57,11 +57,12 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AssistantLocalToolPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -102,14 +103,21 @@ private fun AssistantLocalToolContent(
     onUpdate: (Assistant) -> Unit,
     onUpdateAssistant: ((Assistant) -> Assistant) -> Unit,
 ) {
-    fun toggleLocalTool(option: LocalToolOption, enabled: Boolean) {
+    fun toggleLocalTool(
+        option: LocalToolOption,
+        enabled: Boolean,
+    ) {
         // Use the transform path so rapid taps (especially through a permission-grant
         // round-trip to system Settings) all serialise against the actual current state
         // instead of whatever stale snapshot the recomposition was holding.
         onUpdateAssistant { current ->
             current.copy(
-                localTools = if (enabled) current.localTools + option
-                else current.localTools - option,
+                localTools =
+                    if (enabled) {
+                        current.localTools + option
+                    } else {
+                        current.localTools - option
+                    },
             )
         }
     }
@@ -127,9 +135,10 @@ private fun AssistantLocalToolContent(
     // Hardware-availability gate for the NFC toggle: a device with no NFC chip can never
     // run the nfc tools, so the toggle is shown disabled with a "no NFC hardware" subtitle
     // rather than letting the user enable a tool that would only ever error.
-    val hasNfc = remember {
-        ctx.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_NFC)
-    }
+    val hasNfc =
+        remember {
+            ctx.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_NFC)
+        }
 
     var showTermuxPostGrantDialog by remember { mutableStateOf(false) }
     var showTelegramNoTokenDialog by remember { mutableStateOf(false) }
@@ -158,9 +167,10 @@ private fun AssistantLocalToolContent(
                     ) {
                         Text(
                             text = termuxCommand,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                            ),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                ),
                             modifier = Modifier.padding(8.dp),
                         )
                     }
@@ -223,18 +233,19 @@ private fun AssistantLocalToolContent(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Built-in tools section
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_existing),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -247,9 +258,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     Switch(
                         checked = assistant.localTools.contains(LocalToolOption.JavascriptEngine),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.JavascriptEngine, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.JavascriptEngine, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -261,9 +272,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     Switch(
                         checked = assistant.localTools.contains(LocalToolOption.TimeInfo),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.TimeInfo, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.TimeInfo, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -275,9 +286,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     Switch(
                         checked = assistant.localTools.contains(LocalToolOption.Clipboard),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Clipboard, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Clipboard, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -289,9 +300,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     Switch(
                         checked = assistant.localTools.contains(LocalToolOption.Tts),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Tts, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Tts, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -303,9 +314,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     Switch(
                         checked = assistant.localTools.contains(LocalToolOption.AskUser),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.AskUser, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.AskUser, it) },
                     )
-                }
+                },
             )
         }
 
@@ -313,7 +324,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_device_info),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -326,9 +337,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Battery),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Battery, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Battery, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -340,9 +351,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.AudioInfo),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.AudioInfo, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.AudioInfo, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -357,7 +368,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.TelephonyInfo, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.READ_PHONE_STATE),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -370,12 +381,13 @@ private fun AssistantLocalToolContent(
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.WifiInfo),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.WifiInfo, it) },
-                        requiredRuntimePerms = listOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION,
-                        ),
+                        requiredRuntimePerms =
+                            listOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                            ),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -387,9 +399,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Sensors),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Sensors, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Sensors, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -401,9 +413,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.StorageInfo),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.StorageInfo, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.StorageInfo, it) },
                     )
-                }
+                },
             )
         }
 
@@ -411,7 +423,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_output),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -424,9 +436,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Toast),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Toast, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Toast, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -441,7 +453,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Notification, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.POST_NOTIFICATIONS),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -453,9 +465,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Share),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Share, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Share, it) },
                     )
-                }
+                },
             )
         }
 
@@ -463,7 +475,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_hardware),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -476,9 +488,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Torch),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Torch, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Torch, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -490,9 +502,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Vibrate),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Vibrate, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Vibrate, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -507,7 +519,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Brightness, it) },
                         requiresWriteSettings = true,
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -522,7 +534,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Volume, it) },
                         requiresDndAccess = true,
                     )
-                }
+                },
             )
         }
 
@@ -530,7 +542,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_personal_data),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -544,12 +556,13 @@ private fun AssistantLocalToolContent(
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Location),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Location, it) },
-                        requiredRuntimePerms = listOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION,
-                        ),
+                        requiredRuntimePerms =
+                            listOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                            ),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -564,7 +577,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Contacts, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.READ_CONTACTS),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -579,7 +592,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.CallLog, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.READ_CALL_LOG),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -594,7 +607,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.SmsInbox, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.READ_SMS),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -609,7 +622,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.CameraPhoto, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.CAMERA),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -624,7 +637,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.MicRecorder, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.RECORD_AUDIO),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -639,7 +652,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.SpeechToText, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.RECORD_AUDIO),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -654,7 +667,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Fingerprint, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.USE_BIOMETRIC),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -669,7 +682,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.NotificationListener, it) },
                         requiresNotificationListener = true,
                     )
-                }
+                },
             )
         }
 
@@ -677,7 +690,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_media),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -690,9 +703,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.MediaPlayer),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.MediaPlayer, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.MediaPlayer, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -704,9 +717,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.MediaScanner),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.MediaScanner, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.MediaScanner, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -718,16 +731,16 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Download),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Download, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Download, it) },
                     )
-                }
+                },
             )
         }
 
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_automation),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -746,16 +759,16 @@ private fun AssistantLocalToolContent(
                                 cronToastShownThisVisit = true
                                 toaster.show(cronHintText)
                             }
-                        }
+                        },
                     )
-                }
+                },
             )
         }
 
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_files),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -774,14 +787,14 @@ private fun AssistantLocalToolContent(
                         // and the app's own creations — every pre-existing file is hidden.
                         requiresAllFilesAccess = true,
                     )
-                }
+                },
             )
         }
 
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_network),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -801,11 +814,14 @@ private fun AssistantLocalToolContent(
                         // levels the permission doesn't exist; the request silently
                         // no-ops since the manifest-declared permission isn't
                         // dangerous-protection there.
-                        requiredRuntimePerms = if (Build.VERSION.SDK_INT >= 37) {
-                            listOf(android.Manifest.permission.ACCESS_LOCAL_NETWORK)
-                        } else emptyList(),
+                        requiredRuntimePerms =
+                            if (Build.VERSION.SDK_INT >= 37) {
+                                listOf(android.Manifest.permission.ACCESS_LOCAL_NETWORK)
+                            } else {
+                                emptyList()
+                            },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -827,9 +843,9 @@ private fun AssistantLocalToolContent(
                                     }
                                 }
                             }
-                        }
+                        },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -841,9 +857,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.McpControl),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.McpControl, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.McpControl, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -855,9 +871,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.ExternalAutomation),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.ExternalAutomation, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.ExternalAutomation, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -869,9 +885,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.Reliability),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.Reliability, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Reliability, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -883,9 +899,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.SubAgents),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.SubAgents, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.SubAgents, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -897,9 +913,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.CostGuards),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.CostGuards, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.CostGuards, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -923,9 +939,9 @@ private fun AssistantLocalToolContent(
                                 workflowsDialogShownThisVisit = true
                                 showWorkflowsHintDialog = true
                             }
-                        }
+                        },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -937,9 +953,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.SkillImport),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.SkillImport, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.SkillImport, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -951,9 +967,9 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.JsSkills),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.JsSkills, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.JsSkills, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -965,16 +981,16 @@ private fun AssistantLocalToolContent(
                 trailingContent = {
                     PermissionedSwitch(
                         checked = assistant.localTools.contains(LocalToolOption.SystemIntents),
-                        onCheckedChange = { toggleLocalTool(LocalToolOption.SystemIntents, it) }
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.SystemIntents, it) },
                     )
-                }
+                },
             )
         }
 
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_browser),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -989,7 +1005,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.Browser),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Browser, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1003,7 +1019,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.WebFetch),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.WebFetch, it) },
                     )
-                }
+                },
             )
         }
 
@@ -1011,7 +1027,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_privileged),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -1027,7 +1043,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.SmsSend, it) },
                         requiredRuntimePerms = listOf(Manifest.permission.SEND_SMS),
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1041,7 +1057,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.Wallpaper),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Wallpaper, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1055,7 +1071,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.Keystore),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Keystore, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1063,8 +1079,11 @@ private fun AssistantLocalToolContent(
                 },
                 supportingContent = {
                     Text(
-                        if (hasNfc) stringResource(R.string.assistant_page_local_tools_nfc_desc)
-                        else stringResource(R.string.assistant_page_local_tools_nfc_unavailable)
+                        if (hasNfc) {
+                            stringResource(R.string.assistant_page_local_tools_nfc_desc)
+                        } else {
+                            stringResource(R.string.assistant_page_local_tools_nfc_unavailable)
+                        },
                     )
                 },
                 trailingContent = {
@@ -1075,7 +1094,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { if (hasNfc) toggleLocalTool(LocalToolOption.Nfc, it) },
                         enabled = hasNfc,
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1089,7 +1108,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.ExternalStorage),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.ExternalStorage, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1103,14 +1122,14 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.Archive),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.Archive, it) },
                     )
-                }
+                },
             )
         }
 
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_screen_automation),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -1126,7 +1145,7 @@ private fun AssistantLocalToolContent(
                         onCheckedChange = { toggleLocalTool(LocalToolOption.ScreenAutomation, it) },
                         requiresAccessibilityService = true,
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1140,7 +1159,7 @@ private fun AssistantLocalToolContent(
                         checked = assistant.localTools.contains(LocalToolOption.AppLauncher),
                         onCheckedChange = { toggleLocalTool(LocalToolOption.AppLauncher, it) },
                     )
-                }
+                },
             )
             item(
                 headlineContent = {
@@ -1159,8 +1178,10 @@ private fun AssistantLocalToolContent(
                             if (newValue && !termuxDialogShownThisVisit) {
                                 // Skip the dialog if a recent successful verify proves the
                                 // property file is already in place — nothing new to teach.
-                                val recentlyVerified = TermuxIntegration.lastVerifiedOkAtMs > 0 &&
-                                    (System.currentTimeMillis() - TermuxIntegration.lastVerifiedOkAtMs) < 24L * 60 * 60 * 1000
+                                val recentlyVerified =
+                                    TermuxIntegration.lastVerifiedOkAtMs > 0 &&
+                                        (System.currentTimeMillis() - TermuxIntegration.lastVerifiedOkAtMs) <
+                                        24L * 60 * 60 * 1000
                                 if (!recentlyVerified) {
                                     termuxDialogShownThisVisit = true
                                     showTermuxPostGrantDialog = true
@@ -1173,7 +1194,7 @@ private fun AssistantLocalToolContent(
                         // grant. If Termux is not installed the request silently no-ops.
                         requiredRuntimePerms = listOf("com.termux.permission.RUN_COMMAND"),
                     )
-                }
+                },
             )
         }
 
@@ -1183,7 +1204,7 @@ private fun AssistantLocalToolContent(
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_keyboard),
             style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
         CardGroup {
             item(
@@ -1206,7 +1227,7 @@ private fun AssistantLocalToolContent(
                             }
                         },
                     )
-                }
+                },
             )
         }
     }
@@ -1225,36 +1246,53 @@ private fun KeyboardStatusRowSubtitle() {
     var resumeTick by remember { mutableStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val obs = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumeTick++
-        }
+        val obs =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) resumeTick++
+            }
         lifecycleOwner.lifecycle.addObserver(obs)
         onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
     }
 
-    val installed = remember(resumeTick) {
-        runCatching {
-            ctx.packageManager.getPackageInfo(KEYBOARD_PACKAGE, 0)
-            true
-        }.getOrDefault(false)
-    }
-    val isActiveIme = remember(resumeTick) {
-        installed && runCatching {
-            android.provider.Settings.Secure.getString(
-                ctx.contentResolver,
-                android.provider.Settings.Secure.DEFAULT_INPUT_METHOD,
-            )?.startsWith("$KEYBOARD_PACKAGE/") == true
-        }.getOrDefault(false)
-    }
+    val installed =
+        remember(resumeTick) {
+            runCatching {
+                ctx.packageManager.getPackageInfo(KEYBOARD_PACKAGE, 0)
+                true
+            }.getOrDefault(false)
+        }
+    val isActiveIme =
+        remember(resumeTick) {
+            installed &&
+                runCatching {
+                    android.provider.Settings.Secure
+                        .getString(
+                            ctx.contentResolver,
+                            android.provider.Settings.Secure.DEFAULT_INPUT_METHOD,
+                        )?.startsWith("$KEYBOARD_PACKAGE/") == true
+                }.getOrDefault(false)
+        }
 
-    val (dotColor, label) = when {
-        !installed -> androidx.compose.ui.graphics.Color(0xFFEF4444) to
-            stringResource(R.string.assistant_page_local_tools_keyboard_status_not_installed)
-        !isActiveIme -> androidx.compose.ui.graphics.Color(0xFFF59E0B) to
-            stringResource(R.string.assistant_page_local_tools_keyboard_status_installed)
-        else -> androidx.compose.ui.graphics.Color(0xFF22C55E) to
-            stringResource(R.string.assistant_page_local_tools_keyboard_desc)
-    }
+    val (dotColor, label) =
+        when {
+            !installed -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFEF4444) to
+                    stringResource(R.string.assistant_page_local_tools_keyboard_status_not_installed)
+            }
+
+            !isActiveIme -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFF59E0B) to
+                    stringResource(R.string.assistant_page_local_tools_keyboard_status_installed)
+            }
+
+            else -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFF22C55E) to
+                    stringResource(R.string.assistant_page_local_tools_keyboard_desc)
+            }
+        }
 
     androidx.compose.foundation.layout.Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1295,26 +1333,28 @@ private fun PermissionedSwitch(
     var resumeTrigger by remember { mutableStateOf(0) }
 
     // Runtime permission launcher
-    val runtimePermLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        val denied = results.filter { !it.value }.keys
-        if (denied.isEmpty()) {
-            onCheckedChange(true)
-        } else {
-            toaster.show(
-                message = String.format(deniedToastFmt, denied.joinToString(", ")),
-                type = ToastType.Error,
-            )
+    val runtimePermLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { results ->
+            val denied = results.filter { !it.value }.keys
+            if (denied.isEmpty()) {
+                onCheckedChange(true)
+            } else {
+                toaster.show(
+                    message = String.format(deniedToastFmt, denied.joinToString(", ")),
+                    type = ToastType.Error,
+                )
+            }
         }
-    }
 
     // Special permission settings launcher
-    val specialPermLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        // result is ignored — actual check happens on ON_RESUME
-    }
+    val specialPermLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) {
+            // result is ignored — actual check happens on ON_RESUME
+        }
 
     // Lifecycle observer: handles both special-perm resume and re-evaluating
     // the permissionMissing hint when the user returns from settings.
@@ -1323,38 +1363,41 @@ private fun PermissionedSwitch(
     // ~30 PermissionedSwitch instances rendered on this screen).
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                resumeTrigger++
-                if (pendingSpecialResume) {
-                    val granted = when {
-                        requiresWriteSettings -> PermissionHelper.hasWriteSettings(ctx)
-                        requiresDndAccess -> PermissionHelper.hasDndAccess(ctx)
-                        requiresAccessibilityService -> PermissionHelper.hasAccessibilityService(ctx)
-                        requiresNotificationListener -> PermissionHelper.hasNotificationListener(ctx)
-                        requiresAllFilesAccess -> PermissionHelper.hasAllFilesAccess(ctx)
-                        else -> false
-                    }
-                    pendingSpecialResume = false
-                    if (granted) {
-                        onCheckedChange(true)
-                    } else {
-                        val name = when {
-                            requiresWriteSettings -> "WRITE_SETTINGS"
-                            requiresDndAccess -> "DND access"
-                            requiresAccessibilityService -> "Accessibility service"
-                            requiresNotificationListener -> "Notification access"
-                            requiresAllFilesAccess -> "All files access"
-                            else -> ""
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    resumeTrigger++
+                    if (pendingSpecialResume) {
+                        val granted =
+                            when {
+                                requiresWriteSettings -> PermissionHelper.hasWriteSettings(ctx)
+                                requiresDndAccess -> PermissionHelper.hasDndAccess(ctx)
+                                requiresAccessibilityService -> PermissionHelper.hasAccessibilityService(ctx)
+                                requiresNotificationListener -> PermissionHelper.hasNotificationListener(ctx)
+                                requiresAllFilesAccess -> PermissionHelper.hasAllFilesAccess(ctx)
+                                else -> false
+                            }
+                        pendingSpecialResume = false
+                        if (granted) {
+                            onCheckedChange(true)
+                        } else {
+                            val name =
+                                when {
+                                    requiresWriteSettings -> "WRITE_SETTINGS"
+                                    requiresDndAccess -> "DND access"
+                                    requiresAccessibilityService -> "Accessibility service"
+                                    requiresNotificationListener -> "Notification access"
+                                    requiresAllFilesAccess -> "All files access"
+                                    else -> ""
+                                }
+                            toaster.show(
+                                message = String.format(deniedToastFmt, name),
+                                type = ToastType.Error,
+                            )
                         }
-                        toaster.show(
-                            message = String.format(deniedToastFmt, name),
-                            type = ToastType.Error,
-                        )
                     }
                 }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -1411,7 +1454,9 @@ private fun PermissionedSwitch(
                 }
             }
 
-            else -> onCheckedChange(true)
+            else -> {
+                onCheckedChange(true)
+            }
         }
     }
 
@@ -1421,17 +1466,28 @@ private fun PermissionedSwitch(
     // raw List<String> for structural equality across recomps, so passing the list
     // directly invalidated this remember on every parent recomp.
     val permsKey = remember(requiredRuntimePerms) { requiredRuntimePerms.joinToString(",") }
-    val permissionMissing = remember(checked, resumeTrigger, permsKey, requiresWriteSettings, requiresDndAccess, requiresAccessibilityService, requiresNotificationListener, requiresAllFilesAccess) {
-        checked && when {
-            requiredRuntimePerms.isNotEmpty() -> !PermissionHelper.hasRuntime(ctx, requiredRuntimePerms)
-            requiresWriteSettings -> !PermissionHelper.hasWriteSettings(ctx)
-            requiresDndAccess -> !PermissionHelper.hasDndAccess(ctx)
-            requiresAccessibilityService -> !PermissionHelper.hasAccessibilityService(ctx)
-            requiresNotificationListener -> !PermissionHelper.hasNotificationListener(ctx)
-            requiresAllFilesAccess -> !PermissionHelper.hasAllFilesAccess(ctx)
-            else -> false
+    val permissionMissing =
+        remember(
+            checked,
+            resumeTrigger,
+            permsKey,
+            requiresWriteSettings,
+            requiresDndAccess,
+            requiresAccessibilityService,
+            requiresNotificationListener,
+            requiresAllFilesAccess,
+        ) {
+            checked &&
+                when {
+                    requiredRuntimePerms.isNotEmpty() -> !PermissionHelper.hasRuntime(ctx, requiredRuntimePerms)
+                    requiresWriteSettings -> !PermissionHelper.hasWriteSettings(ctx)
+                    requiresDndAccess -> !PermissionHelper.hasDndAccess(ctx)
+                    requiresAccessibilityService -> !PermissionHelper.hasAccessibilityService(ctx)
+                    requiresNotificationListener -> !PermissionHelper.hasNotificationListener(ctx)
+                    requiresAllFilesAccess -> !PermissionHelper.hasAllFilesAccess(ctx)
+                    else -> false
+                }
         }
-    }
 
     if (showDialog) {
         AlertDialog(
@@ -1445,14 +1501,15 @@ private fun PermissionedSwitch(
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
-                    val intent = when {
-                        requiresWriteSettings -> PermissionHelper.writeSettingsIntent(ctx)
-                        requiresDndAccess -> PermissionHelper.dndAccessIntent(ctx)
-                        requiresAccessibilityService -> PermissionHelper.accessibilitySettingsIntent()
-                        requiresNotificationListener -> PermissionHelper.notificationListenerSettingsIntent()
-                        requiresAllFilesAccess -> PermissionHelper.allFilesAccessIntent(ctx)
-                        else -> null
-                    }
+                    val intent =
+                        when {
+                            requiresWriteSettings -> PermissionHelper.writeSettingsIntent(ctx)
+                            requiresDndAccess -> PermissionHelper.dndAccessIntent(ctx)
+                            requiresAccessibilityService -> PermissionHelper.accessibilitySettingsIntent()
+                            requiresNotificationListener -> PermissionHelper.notificationListenerSettingsIntent()
+                            requiresAllFilesAccess -> PermissionHelper.allFilesAccessIntent(ctx)
+                            else -> null
+                        }
                     if (intent != null) {
                         pendingSpecialResume = true
                         specialPermLauncher.launch(intent)
@@ -1465,7 +1522,7 @@ private fun PermissionedSwitch(
                 TextButton(onClick = { showDialog = false }) {
                     Text(stringResource(android.R.string.cancel))
                 }
-            }
+            },
         )
     }
 
@@ -1480,7 +1537,7 @@ private fun PermissionedSwitch(
                 }
                 // Turning ON
                 requestPermission()
-            }
+            },
         )
         if (permissionMissing) {
             Text(
@@ -1510,9 +1567,10 @@ private fun TermuxStatusRowSubtitle(enabled: Boolean) {
     var resumeTick by remember { mutableStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val obs = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumeTick++
-        }
+        val obs =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) resumeTick++
+            }
         lifecycleOwner.lifecycle.addObserver(obs)
         onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
     }
@@ -1525,21 +1583,41 @@ private fun TermuxStatusRowSubtitle(enabled: Boolean) {
     // earlier in this session keeps the dot green even after the user navigates off the
     // page and returns. resumeTick triggers a recompute on every onResume.
     val lastVerifiedOkAt = remember(resumeTick) { TermuxIntegration.lastVerifiedOkAtMs }
-    val verifiedRecently = lastVerifiedOkAt > 0 &&
-        (System.currentTimeMillis() - lastVerifiedOkAt) < 60L * 60 * 1000
+    val verifiedRecently =
+        lastVerifiedOkAt > 0 &&
+            (System.currentTimeMillis() - lastVerifiedOkAt) < 60L * 60 * 1000
 
-    val (dotColor, label) = when {
-        staticState == TermuxIntegration.State.NOT_INSTALLED ->
-            androidx.compose.ui.graphics.Color(0xFFEF4444) to stringResource(R.string.assistant_page_local_tools_termux_status_not_installed)
-        staticState == TermuxIntegration.State.NO_PERMISSION ->
-            androidx.compose.ui.graphics.Color(0xFFF59E0B) to stringResource(R.string.assistant_page_local_tools_termux_status_no_permission)
-        verifiedRecently ->
-            androidx.compose.ui.graphics.Color(0xFF22C55E) to stringResource(R.string.assistant_page_local_tools_termux_status_ok)
-        lastVerifyError != null ->
-            androidx.compose.ui.graphics.Color(0xFFEF4444) to (lastVerifyError ?: "")
-        else ->
-            androidx.compose.ui.graphics.Color(0xFFEAB308) to stringResource(R.string.assistant_page_local_tools_termux_status_untested)
-    }
+    val (dotColor, label) =
+        when {
+            staticState == TermuxIntegration.State.NOT_INSTALLED -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFEF4444) to
+                    stringResource(R.string.assistant_page_local_tools_termux_status_not_installed)
+            }
+
+            staticState == TermuxIntegration.State.NO_PERMISSION -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFF59E0B) to
+                    stringResource(R.string.assistant_page_local_tools_termux_status_no_permission)
+            }
+
+            verifiedRecently -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFF22C55E) to
+                    stringResource(R.string.assistant_page_local_tools_termux_status_ok)
+            }
+
+            lastVerifyError != null -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFEF4444) to (lastVerifyError ?: "")
+            }
+
+            else -> {
+                androidx.compose.ui.graphics
+                    .Color(0xFFEAB308) to
+                    stringResource(R.string.assistant_page_local_tools_termux_status_untested)
+            }
+        }
 
     val verifyHint = stringResource(R.string.assistant_page_local_tools_termux_verify)
     val verifyingHint = stringResource(R.string.assistant_page_local_tools_termux_verifying)
@@ -1549,62 +1627,94 @@ private fun TermuxStatusRowSubtitle(enabled: Boolean) {
     androidx.compose.foundation.layout.Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .let { if (canVerify) it.clickable {
-                if (verifying) return@clickable
-                verifying = true
-                lastVerifyError = null
-                scope.launch {
-                    val result = TermuxIntegration.verify(ctx)
-                    verifying = false
-                    when (result) {
-                        TermuxIntegration.VerifyResult.Ok -> {
-                            TermuxIntegration.markVerifiedOk()
-                            resumeTick++  // force recompose so verifiedRecently flips
-                            toaster.show(ctx.getString(R.string.assistant_page_local_tools_termux_verify_ok))
+        modifier =
+            Modifier
+                .let {
+                    if (canVerify) {
+                        it.clickable {
+                            if (verifying) return@clickable
+                            verifying = true
+                            lastVerifyError = null
+                            scope.launch {
+                                val result = TermuxIntegration.verify(ctx)
+                                verifying = false
+                                when (result) {
+                                    TermuxIntegration.VerifyResult.Ok -> {
+                                        TermuxIntegration.markVerifiedOk()
+                                        resumeTick++ // force recompose so verifiedRecently flips
+                                        toaster.show(
+                                            ctx.getString(R.string.assistant_page_local_tools_termux_verify_ok),
+                                        )
+                                    }
+
+                                    TermuxIntegration.VerifyResult.AllowExternalAppsMissing -> {
+                                        TermuxIntegration.clearVerified()
+                                        resumeTick++
+                                        lastVerifyError =
+                                            ctx.getString(
+                                                R.string.assistant_page_local_tools_termux_verify_props_missing,
+                                            )
+                                        toaster.show(lastVerifyError ?: "", type = ToastType.Error)
+                                    }
+
+                                    TermuxIntegration.VerifyResult.NoPermission -> {
+                                        TermuxIntegration.clearVerified()
+                                        resumeTick++
+                                        lastVerifyError =
+                                            ctx.getString(
+                                                R.string.assistant_page_local_tools_termux_verify_no_permission,
+                                            )
+                                        toaster.show(lastVerifyError ?: "", type = ToastType.Error)
+                                    }
+
+                                    TermuxIntegration.VerifyResult.NotInstalled -> {
+                                        TermuxIntegration.clearVerified()
+                                        resumeTick++
+                                        lastVerifyError =
+                                            ctx.getString(
+                                                R.string.assistant_page_local_tools_termux_status_not_installed,
+                                            )
+                                    }
+
+                                    is TermuxIntegration.VerifyResult.UnexpectedOutput -> {
+                                        TermuxIntegration.clearVerified()
+                                        resumeTick++
+                                        lastVerifyError =
+                                            ctx.getString(
+                                                R.string.assistant_page_local_tools_termux_verify_unexpected,
+                                                result.stdout.take(60),
+                                            )
+                                        toaster.show(lastVerifyError ?: "", type = ToastType.Error)
+                                    }
+
+                                    is TermuxIntegration.VerifyResult.OtherError -> {
+                                        TermuxIntegration.clearVerified()
+                                        resumeTick++
+                                        lastVerifyError = result.message
+                                        toaster.show(result.message, type = ToastType.Error)
+                                    }
+                                }
+                            }
                         }
-                        TermuxIntegration.VerifyResult.AllowExternalAppsMissing -> {
-                            TermuxIntegration.clearVerified()
-                            resumeTick++
-                            lastVerifyError = ctx.getString(R.string.assistant_page_local_tools_termux_verify_props_missing)
-                            toaster.show(lastVerifyError ?: "", type = ToastType.Error)
-                        }
-                        TermuxIntegration.VerifyResult.NoPermission -> {
-                            TermuxIntegration.clearVerified()
-                            resumeTick++
-                            lastVerifyError = ctx.getString(R.string.assistant_page_local_tools_termux_verify_no_permission)
-                            toaster.show(lastVerifyError ?: "", type = ToastType.Error)
-                        }
-                        TermuxIntegration.VerifyResult.NotInstalled -> {
-                            TermuxIntegration.clearVerified()
-                            resumeTick++
-                            lastVerifyError = ctx.getString(R.string.assistant_page_local_tools_termux_status_not_installed)
-                        }
-                        is TermuxIntegration.VerifyResult.UnexpectedOutput -> {
-                            TermuxIntegration.clearVerified()
-                            resumeTick++
-                            lastVerifyError = ctx.getString(R.string.assistant_page_local_tools_termux_verify_unexpected, result.stdout.take(60))
-                            toaster.show(lastVerifyError ?: "", type = ToastType.Error)
-                        }
-                        is TermuxIntegration.VerifyResult.OtherError -> {
-                            TermuxIntegration.clearVerified()
-                            resumeTick++
-                            lastVerifyError = result.message
-                            toaster.show(result.message, type = ToastType.Error)
-                        }
+                    } else {
+                        it
                     }
-                }
-            } else it }
+                },
     ) {
         androidx.compose.foundation.Canvas(
-            modifier = Modifier.size(10.dp)
+            modifier = Modifier.size(10.dp),
         ) {
             drawCircle(color = dotColor)
         }
         Text(
-            text = if (verifying) verifyingHint
-                   else if (canVerify && !verifiedRecently) "$label · $verifyHint"
-                   else label,
+            text =
+                if (verifying) {
+                    verifyingHint
+                } else if (canVerify && !verifiedRecently) {
+                    "$label · $verifyHint"
+                } else {
+                    label
+                },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

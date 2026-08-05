@@ -27,10 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.dokar.sonner.ToastType
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -80,10 +82,8 @@ import me.rerere.rikkahub.ui.components.ui.Greeting
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.components.ui.UpdateCard
-import androidx.compose.ui.draw.clip
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
-import com.dokar.sonner.ToastType
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
@@ -114,17 +114,17 @@ fun ChatDrawerContent(
     val conversations = drawerVm.conversations.collectAsLazyPagingItems()
     val folders by drawerVm.folders.collectAsStateWithLifecycle()
     val selectedFolderId by drawerVm.selectedFolderId.collectAsStateWithLifecycle()
-    val conversationListState = rememberLazyListState(
-        initialFirstVisibleItemIndex = drawerVm.scrollIndex,
-        initialFirstVisibleItemScrollOffset = drawerVm.scrollOffset,
-    )
+    val conversationListState =
+        rememberLazyListState(
+            initialFirstVisibleItemIndex = drawerVm.scrollIndex,
+            initialFirstVisibleItemScrollOffset = drawerVm.scrollOffset,
+        )
 
     LaunchedEffect(conversationListState) {
         snapshotFlow {
             conversationListState.firstVisibleItemIndex to
                 conversationListState.firstVisibleItemScrollOffset
-        }
-            .distinctUntilChanged()
+        }.distinctUntilChanged()
             .collectLatest { (index, offset) ->
                 drawerVm.saveScrollPosition(index, offset)
             }
@@ -135,15 +135,17 @@ fun ChatDrawerContent(
     )
 
     // 昵称编辑状态
-    val nicknameEditState = useEditState<String> { newNickname ->
-        vm.updateSettings(
-            settings.copy(
-                displaySetting = settings.displaySetting.copy(
-                    userNickname = newNickname
-                )
+    val nicknameEditState =
+        useEditState<String> { newNickname ->
+            vm.updateSettings(
+                settings.copy(
+                    displaySetting =
+                        settings.displaySetting.copy(
+                            userNickname = newNickname,
+                        ),
+                ),
             )
-        )
-    }
+        }
 
     // 移动对话状态
     var showMoveToAssistantSheet by remember { mutableStateOf(false) }
@@ -162,7 +164,7 @@ fun ChatDrawerContent(
     var showMenuPopup by remember { mutableStateOf(false) }
 
     ModalDrawerSheet(
-        modifier = Modifier.width(300.dp)
+        modifier = Modifier.width(300.dp),
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -179,9 +181,10 @@ fun ChatDrawerContent(
 
             // 用户头像和昵称自定义区域
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -191,10 +194,11 @@ fun ChatDrawerContent(
                     onUpdate = { newAvatar ->
                         vm.updateSettings(
                             settings.copy(
-                                displaySetting = settings.displaySetting.copy(
-                                    userAvatar = newAvatar
-                                )
-                            )
+                                displaySetting =
+                                    settings.displaySetting.copy(
+                                        userAvatar = newAvatar,
+                                    ),
+                            ),
                         )
                     },
                     modifier = Modifier.size(50.dp),
@@ -209,23 +213,29 @@ fun ChatDrawerContent(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = settings.displaySetting.userNickname.ifBlank { stringResource(R.string.user_default_name) },
+                            text =
+                                settings.displaySetting.userNickname.ifBlank {
+                                    stringResource(
+                                        R.string.user_default_name,
+                                    )
+                                },
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.clickable {
-                                nicknameEditState.open(settings.displaySetting.userNickname)
-                            }
+                            modifier =
+                                Modifier.clickable {
+                                    nicknameEditState.open(settings.displaySetting.userNickname)
+                                },
                         )
 
                         Icon(
                             imageVector = HugeIcons.PencilEdit01,
                             contentDescription = "Edit",
-                            modifier = Modifier
-                                .onClick {
-                                    nicknameEditState.open(settings.displaySetting.userNickname)
-                                }
-                                .size(LocalTextStyle.current.fontSize.toDp())
+                            modifier =
+                                Modifier
+                                    .onClick {
+                                        nicknameEditState.open(settings.displaySetting.userNickname)
+                                    }.size(LocalTextStyle.current.fontSize.toDp()),
                         )
                     }
                     Greeting(
@@ -250,9 +260,10 @@ fun ChatDrawerContent(
                 conversations = conversations,
                 conversationJobs = conversationJobs.keys,
                 listState = conversationListState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 onClick = {
                     navigateToChatPage(navController, it.id)
                 },
@@ -278,7 +289,7 @@ fun ChatDrawerContent(
                 onMoveToFolder = {
                     conversationToMoveFolder = it
                     showMoveToFolderSheet = true
-                }
+                },
             )
 
             // 助手选择器
@@ -288,14 +299,16 @@ fun ChatDrawerContent(
                     val updateJob = vm.updateSettings(it)
                     scope.launch {
                         updateJob.join()
-                        val id = if (context.readBooleanPreference("create_new_conversation_on_start", true)) {
-                            Uuid.random()
-                        } else {
-                            repo.getConversationsOfAssistant(it.assistantId)
-                                .first()
-                                .firstOrNull()
-                                ?.id ?: Uuid.random()
-                        }
+                        val id =
+                            if (context.readBooleanPreference("create_new_conversation_on_start", true)) {
+                                Uuid.random()
+                            } else {
+                                repo
+                                    .getConversationsOfAssistant(it.assistantId)
+                                    .first()
+                                    .firstOrNull()
+                                    ?.id ?: Uuid.random()
+                            }
                         navigateToChatPage(navigator = navController, chatId = id)
                     }
                 },
@@ -303,21 +316,22 @@ fun ChatDrawerContent(
                 onClickSetting = {
                     val currentAssistantId = settings.assistantId
                     navController.navigate(Screen.AssistantDetail(id = currentAssistantId.toString()))
-                }
+                },
             )
 
             Row(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
             ) {
                 DrawerAction(
                     icon = {
                         Icon(
                             imageVector = HugeIcons.LookTop,
-                            contentDescription = stringResource(R.string.assistant_page_title)
+                            contentDescription = stringResource(R.string.assistant_page_title),
                         )
                     },
                     label = {
@@ -342,7 +356,7 @@ fun ChatDrawerContent(
                     )
                     DropdownMenu(
                         expanded = showMenuPopup,
-                        onDismissRequest = { showMenuPopup = false }
+                        onDismissRequest = { showMenuPopup = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.chat_page_menu_ai_translator)) },
@@ -350,7 +364,7 @@ fun ChatDrawerContent(
                             onClick = {
                                 showMenuPopup = false
                                 navController.navigate(Screen.Translator)
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.chat_page_menu_image_generation)) },
@@ -358,9 +372,8 @@ fun ChatDrawerContent(
                             onClick = {
                                 showMenuPopup = false
                                 navController.navigate(Screen.ImageGen)
-                            }
+                            },
                         )
-
                     }
                 }
 
@@ -418,14 +431,14 @@ fun ChatDrawerContent(
                     onValueChange = onUpdate,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text(stringResource(R.string.chat_page_nickname_placeholder)) }
+                    placeholder = { Text(stringResource(R.string.chat_page_nickname_placeholder)) },
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         nicknameEditState.confirm()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.chat_page_save))
                 }
@@ -434,11 +447,11 @@ fun ChatDrawerContent(
                 TextButton(
                     onClick = {
                         nicknameEditState.dismiss()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.chat_page_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -460,19 +473,20 @@ fun ChatDrawerContent(
                 showMoveToFolderSheet = false
                 conversationToMoveFolder = null
             },
-            sheetState = folderSheetState
+            sheetState = folderSheetState,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = stringResource(R.string.chat_page_move_to_folder),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
 
                 // 移出文件夹（未归类）
@@ -480,18 +494,20 @@ fun ChatDrawerContent(
                     onClick = { doMove(null) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    color = if (conversationToMoveFolder?.folderId == null) {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
+                    color =
+                        if (conversationToMoveFolder?.folderId == null) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(HugeIcons.Folder01, null)
                         Text(
@@ -510,19 +526,21 @@ fun ChatDrawerContent(
                             onClick = { doMove(folder.id) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.medium,
-                            color = if (isCurrent) {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            },
-                            tonalElevation = if (isCurrent) 2.dp else 0.dp
+                            color =
+                                if (isCurrent) {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.surface
+                                },
+                            tonalElevation = if (isCurrent) 2.dp else 0.dp,
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Icon(HugeIcons.Folder01, null)
                                 Text(
@@ -551,7 +569,7 @@ fun ChatDrawerContent(
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text(stringResource(R.string.chat_page_folder_name)) }
+                    placeholder = { Text(stringResource(R.string.chat_page_folder_name)) },
                 )
             },
             confirmButton = {
@@ -560,14 +578,14 @@ fun ChatDrawerContent(
                         drawerVm.createFolder(name)
                         showCreateFolderDialog = false
                     },
-                    enabled = name.isNotBlank()
+                    enabled = name.isNotBlank(),
                 ) { Text(stringResource(R.string.chat_page_save)) }
             },
             dismissButton = {
                 TextButton(onClick = { showCreateFolderDialog = false }) {
                     Text(stringResource(R.string.chat_page_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -591,14 +609,14 @@ fun ChatDrawerContent(
                         drawerVm.renameFolder(folder.id, name)
                         folderToRename = null
                     },
-                    enabled = name.isNotBlank()
+                    enabled = name.isNotBlank(),
                 ) { Text(stringResource(R.string.chat_page_save)) }
             },
             dismissButton = {
                 TextButton(onClick = { folderToRename = null }) {
                     Text(stringResource(R.string.chat_page_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -615,16 +633,19 @@ fun ChatDrawerContent(
                             folderToDelete = null
                             conversations.refresh()
                         } else {
-                            toaster.show(context.getString(R.string.chat_page_delete_folder_generating), type = ToastType.Warning)
+                            toaster.show(
+                                context.getString(R.string.chat_page_delete_folder_generating),
+                                type = ToastType.Warning,
+                            )
                         }
-                    }
+                    },
                 ) { Text(stringResource(R.string.chat_page_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { folderToDelete = null }) {
                     Text(stringResource(R.string.chat_page_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -635,19 +656,20 @@ fun ChatDrawerContent(
                 showMoveToAssistantSheet = false
                 conversationToMove = null
             },
-            sheetState = bottomSheetState
+            sheetState = bottomSheetState,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = stringResource(R.string.chat_page_move_to_assistant),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
 
                 LazyColumn(
@@ -666,7 +688,7 @@ fun ChatDrawerContent(
                                         conversationToMove = null
                                     }
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -681,16 +703,18 @@ private fun DrawerActions(navController: Navigator) {
         // 搜索入口
         Surface(
             onClick = { navController.navigate(Screen.MessageSearch) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -711,16 +735,18 @@ private fun DrawerActions(navController: Navigator) {
         // 历史记录入口
         Surface(
             onClick = { navController.navigate(Screen.History) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -757,12 +783,13 @@ private fun DrawerAction(
         Tooltip(
             tooltip = {
                 label()
-            }
+            },
         ) {
             Box(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .size(20.dp),
+                modifier =
+                    Modifier
+                        .padding(10.dp)
+                        .size(20.dp),
             ) {
                 icon()
             }
@@ -780,9 +807,10 @@ private fun FolderBar(
     onDelete: (Folder) -> Unit,
 ) {
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -814,7 +842,7 @@ private fun FolderBar(
                         onClick = {
                             onRename(folder)
                             menuExpanded = false
-                        }
+                        },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.chat_page_delete)) },
@@ -822,7 +850,7 @@ private fun FolderBar(
                         onClick = {
                             onDelete(folder)
                             menuExpanded = false
-                        }
+                        },
                     )
                 }
             }
@@ -849,22 +877,24 @@ private fun FolderChip(
 ) {
     Surface(
         shape = CircleShape,
-        color = if (selected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
-        },
-        modifier = Modifier
-            .clip(CircleShape)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
+        modifier =
+            Modifier
+                .clip(CircleShape)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (icon != null) {
                 Icon(icon, null, modifier = Modifier.size(14.dp))
@@ -883,25 +913,27 @@ private fun FolderChip(
 private fun AssistantItem(
     assistant: Assistant,
     isCurrentAssistant: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = if (isCurrentAssistant) {
-            MaterialTheme.colorScheme.surfaceVariant
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        tonalElevation = if (isCurrentAssistant) 2.dp else 0.dp
+        color =
+            if (isCurrentAssistant) {
+                MaterialTheme.colorScheme.surfaceVariant
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        tonalElevation = if (isCurrentAssistant) 2.dp else 0.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             UIAvatar(
                 name = assistant.name,
@@ -910,19 +942,19 @@ private fun AssistantItem(
                 modifier = Modifier.size(40.dp),
             )
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (isCurrentAssistant) {
                     Text(
                         text = stringResource(R.string.assistant_page_current_assistant),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

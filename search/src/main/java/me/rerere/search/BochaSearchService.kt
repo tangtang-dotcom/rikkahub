@@ -31,7 +31,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://open.bochaai.com/")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -39,13 +39,17 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
 
     override fun parameters(options: SearchServiceOptions.BochaOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.BochaOptions): InputSchema? = null
@@ -53,64 +57,68 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BochaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        serviceOptions: SearchServiceOptions.BochaOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val body = buildJsonObject {
-                put("query", JsonPrimitive(query))
-                put("summary", JsonPrimitive(serviceOptions.summary))
-                put("count", JsonPrimitive(commonOptions.resultSize))
-            }
+                val body =
+                    buildJsonObject {
+                        put("query", JsonPrimitive(query))
+                        put("summary", JsonPrimitive(serviceOptions.summary))
+                        put("count", JsonPrimitive(commonOptions.resultSize))
+                    }
 
-            val request = Request.Builder()
-                .url("https://api.bochaai.com/v1/web-search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.bochaai.com/v1/web-search")
+                        .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
+                        .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                        .addHeader("Content-Type", "application/json")
+                        .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
-                val bochaResponse = runCatching {
-                    json.decodeFromString<BochaResponse>(bodyRaw)
-                }.onFailure {
-                    it.printStackTrace()
-                    println(bodyRaw)
-                    error("Failed to decode response: $bodyRaw")
-                }.getOrThrow()
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val bodyRaw = response.body.string()
+                    val bochaResponse =
+                        runCatching {
+                            json.decodeFromString<BochaResponse>(bodyRaw)
+                        }.onFailure {
+                            it.printStackTrace()
+                            println(bodyRaw)
+                            error("Failed to decode response: $bodyRaw")
+                        }.getOrThrow()
 
-                if (bochaResponse.code != 200) {
-                    error("Bocha API error: ${bochaResponse.msg ?: "Unknown error"}")
-                }
+                    if (bochaResponse.code != 200) {
+                        error("Bocha API error: ${bochaResponse.msg ?: "Unknown error"}")
+                    }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = bochaResponse.data?.webPages?.value?.map {
-                            SearchResultItem(
-                                title = it.name,
-                                url = it.url,
-                                text = it.summary ?: it.snippet,
-                            )
-                        } ?: emptyList()
+                    return@withContext Result.success(
+                        SearchResult(
+                            items =
+                                bochaResponse.data?.webPages?.value?.map {
+                                    SearchResultItem(
+                                        title = it.name,
+                                        url = it.url,
+                                        text = it.summary ?: it.snippet,
+                                    )
+                                } ?: emptyList(),
+                        ),
                     )
-                )
-            } else {
-                println(response.body.string())
-                error("response failed #${response.code}")
+                } else {
+                    println(response.body.string())
+                    error("response failed #${response.code}")
+                }
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BochaOptions
-    ): Result<ScrapedResult> {
-        return Result.failure(Exception("Scraping is not supported for Bocha"))
-    }
+        serviceOptions: SearchServiceOptions.BochaOptions,
+    ): Result<ScrapedResult> = Result.failure(Exception("Scraping is not supported for Bocha"))
 
     @Serializable
     data class BochaResponse(
@@ -121,7 +129,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
         @SerialName("msg")
         val msg: String? = null,
         @SerialName("data")
-        val data: BochaData? = null
+        val data: BochaData? = null,
     )
 
     @Serializable
@@ -137,7 +145,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
     @Serializable
     data class BochaQueryContext(
         @SerialName("originalQuery")
-        val originalQuery: String
+        val originalQuery: String,
     )
 
     @Serializable
@@ -149,7 +157,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
         @SerialName("value")
         val value: List<BochaWebPage> = emptyList(),
         @SerialName("someResultsRemoved")
-        val someResultsRemoved: Boolean? = null
+        val someResultsRemoved: Boolean? = null,
     )
 
     @Serializable
@@ -179,6 +187,6 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
         @SerialName("isFamilyFriendly")
         val isFamilyFriendly: Boolean? = null,
         @SerialName("isNavigational")
-        val isNavigational: Boolean? = null
+        val isNavigational: Boolean? = null,
     )
 }

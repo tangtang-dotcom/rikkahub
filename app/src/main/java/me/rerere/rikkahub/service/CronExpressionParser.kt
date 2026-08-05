@@ -32,33 +32,52 @@ import java.util.LinkedHashMap
  * which is the entire reason we don't hand-roll this.
  */
 object CronExpressionParser {
-
-    private val parser: CronParser = run {
-        val def = CronDefinitionBuilder.defineCron()
-            .withMinutes().withValidRange(0, 59).and()
-            .withHours().withValidRange(0, 23).and()
-            .withDayOfMonth().withValidRange(1, 31)
-                .supportsL().supportsW().supportsLW().supportsQuestionMark().and()
-            .withMonth().withValidRange(1, 12).and()
-            .withDayOfWeek().withValidRange(0, 7).withMondayDoWValue(1)
-                .supportsHash().supportsL().supportsQuestionMark().and()
-            .withSupportedNicknameYearly()
-            .withSupportedNicknameAnnually()
-            .withSupportedNicknameMonthly()
-            .withSupportedNicknameWeekly()
-            .withSupportedNicknameDaily()
-            .withSupportedNicknameMidnight()
-            .withSupportedNicknameHourly()
-            .instance()
-        CronParser(def)
-    }
+    private val parser: CronParser =
+        run {
+            val def =
+                CronDefinitionBuilder
+                    .defineCron()
+                    .withMinutes()
+                    .withValidRange(0, 59)
+                    .and()
+                    .withHours()
+                    .withValidRange(0, 23)
+                    .and()
+                    .withDayOfMonth()
+                    .withValidRange(1, 31)
+                    .supportsL()
+                    .supportsW()
+                    .supportsLW()
+                    .supportsQuestionMark()
+                    .and()
+                    .withMonth()
+                    .withValidRange(1, 12)
+                    .and()
+                    .withDayOfWeek()
+                    .withValidRange(0, 7)
+                    .withMondayDoWValue(1)
+                    .supportsHash()
+                    .supportsL()
+                    .supportsQuestionMark()
+                    .and()
+                    .withSupportedNicknameYearly()
+                    .withSupportedNicknameAnnually()
+                    .withSupportedNicknameMonthly()
+                    .withSupportedNicknameWeekly()
+                    .withSupportedNicknameDaily()
+                    .withSupportedNicknameMidnight()
+                    .withSupportedNicknameHourly()
+                    .instance()
+            CronParser(def)
+        }
 
     private const val CACHE_CAP = 32
 
     /** LRU cache keyed by the ORIGINAL (pre-expansion) expression string. */
-    private val cache = object : LinkedHashMap<String, Cron>(16, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<String, Cron>?) = size > CACHE_CAP
-    }
+    private val cache =
+        object : LinkedHashMap<String, Cron>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: Map.Entry<String, Cron>?) = size > CACHE_CAP
+        }
 
     /**
      * Expand @every duration aliases into standard 5-field cron expressions.
@@ -78,33 +97,49 @@ object CronExpressionParser {
         if (!trimmed.startsWith("@every ")) return null
         val duration = trimmed.removePrefix("@every ").trim()
         val value = duration.dropLast(1).toLongOrNull() ?: return null
-        if (value <= 0) return null   // reject @every 0m / 0s / 0h as invalid
+        if (value <= 0) return null // reject @every 0m / 0s / 0h as invalid
         return when (duration.last()) {
-            's' -> when {
-                value < 60 -> null  // sub-minute not supported
-                value < 3600 -> {
-                    val minutes = (value / 60).coerceIn(1, 59)
-                    "*/$minutes * * * *"
+            's' -> {
+                when {
+                    value < 60 -> {
+                        null
+                    }
+
+                    // sub-minute not supported
+                    value < 3600 -> {
+                        val minutes = (value / 60).coerceIn(1, 59)
+                        "*/$minutes * * * *"
+                    }
+
+                    value < 86400 -> {
+                        val hours = (value / 3600).coerceIn(1, 23)
+                        "0 */$hours * * *"
+                    }
+
+                    value <= 86400L * 31 -> {
+                        val days = (value / 86400).coerceIn(1, 31)
+                        "0 0 */$days * *"
+                    }
+
+                    else -> {
+                        null
+                    } // >31 days not expressible in 5-field cron
                 }
-                value < 86400 -> {
-                    val hours = (value / 3600).coerceIn(1, 23)
-                    "0 */$hours * * *"
-                }
-                value <= 86400L * 31 -> {
-                    val days = (value / 86400).coerceIn(1, 31)
-                    "0 0 */$days * *"
-                }
-                else -> null  // >31 days not expressible in 5-field cron
             }
+
             'm' -> {
                 val minutes = value.coerceAtMost(59)
                 "*/$minutes * * * *"
             }
+
             'h' -> {
                 val hours = value.coerceAtMost(23)
                 "0 */$hours * * *"
             }
-            else -> null
+
+            else -> {
+                null
+            }
         }
     }
 
@@ -124,9 +159,13 @@ object CronExpressionParser {
         synchronized(cache) {
             cache[expr]?.let { return Result.success(it) }
             return runCatching {
-                val effective = expandEvery(expr)
-                    ?: if (expr.trim().startsWith("@every ")) error("Unsupported @every value: $expr")
-                    else expr
+                val effective =
+                    expandEvery(expr)
+                        ?: if (expr.trim().startsWith("@every ")) {
+                            error("Unsupported @every value: $expr")
+                        } else {
+                            expr
+                        }
                 val cron = parser.parse(effective).validate()
                 cache[expr] = cron
                 cron
@@ -138,7 +177,10 @@ object CronExpressionParser {
      * Compute the next fire time after [basis]. Returns null if the expression has no
      * future fire from this basis (e.g. impossible date like Feb 30).
      */
-    fun nextExecution(cron: Cron, basis: ZonedDateTime): ZonedDateTime? {
+    fun nextExecution(
+        cron: Cron,
+        basis: ZonedDateTime,
+    ): ZonedDateTime? {
         val et = ExecutionTime.forCron(cron)
         return et.nextExecution(basis).orElse(null)
     }

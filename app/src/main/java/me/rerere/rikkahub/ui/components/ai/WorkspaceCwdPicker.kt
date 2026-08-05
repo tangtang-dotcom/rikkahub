@@ -29,13 +29,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.res.stringResource
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowTurnBackward
 import me.rerere.hugeicons.stroke.Folder01
@@ -44,6 +43,7 @@ import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceStorageArea
 import org.koin.compose.koinInject
+import java.util.concurrent.CancellationException
 
 @Composable
 fun WorkspaceCwdPickerSheet(
@@ -61,9 +61,10 @@ fun WorkspaceCwdPickerSheet(
     LaunchedEffect(browsePath) {
         loading = true
         try {
-            val result = withContext(Dispatchers.IO) {
-                workspaceRepository.listFiles(workspaceId, WorkspaceStorageArea.FILES, browsePath)
-            }
+            val result =
+                withContext(Dispatchers.IO) {
+                    workspaceRepository.listFiles(workspaceId, WorkspaceStorageArea.FILES, browsePath)
+                }
             entries = result.sortedWith(compareByDescending<WorkspaceFileEntry> { it.isDirectory }.thenBy { it.name })
             loading = false
         } catch (e: CancellationException) {
@@ -76,10 +77,11 @@ fun WorkspaceCwdPickerSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
@@ -118,9 +120,10 @@ fun WorkspaceCwdPickerSheet(
             HorizontalDivider()
 
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 350.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 350.dp),
             ) {
                 val dirs = entries.filter { it.isDirectory }
                 items(dirs, key = { it.path }) { entry ->
@@ -141,9 +144,10 @@ fun WorkspaceCwdPickerSheet(
                             )
                         },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable {
-                            browsePath = entry.path
-                        },
+                        modifier =
+                            Modifier.clickable {
+                                browsePath = entry.path
+                            },
                     )
                 }
 
@@ -187,9 +191,8 @@ fun WorkspaceCwdPickerSheet(
 
 private const val WORKSPACE_PREFIX = "/workspace"
 
-private fun toAbsolutePath(relativePath: String): String {
-    return if (relativePath.isBlank()) WORKSPACE_PREFIX else "$WORKSPACE_PREFIX/$relativePath"
-}
+private fun toAbsolutePath(relativePath: String): String =
+    if (relativePath.isBlank()) WORKSPACE_PREFIX else "$WORKSPACE_PREFIX/$relativePath"
 
 private fun fromAbsolutePath(absolutePath: String?): String {
     if (absolutePath.isNullOrBlank()) return ""

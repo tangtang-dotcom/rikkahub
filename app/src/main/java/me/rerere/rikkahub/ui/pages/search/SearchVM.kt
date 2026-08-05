@@ -1,9 +1,9 @@
 package me.rerere.rikkahub.ui.pages.search
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,9 +29,9 @@ class SearchVM(
     var sortOrder by mutableStateOf(
         runCatching {
             MessageSearchSort.valueOf(
-                context.readStringPreference(SORT_ORDER_PREF_KEY, MessageSearchSort.RELEVANCE.name)!!
+                context.readStringPreference(SORT_ORDER_PREF_KEY, MessageSearchSort.RELEVANCE.name)!!,
             )
-        }.getOrDefault(MessageSearchSort.RELEVANCE)
+        }.getOrDefault(MessageSearchSort.RELEVANCE),
     )
         private set
     var results by mutableStateOf<List<MessageSearchResult>>(emptyList())

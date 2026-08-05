@@ -36,23 +36,24 @@ fun BackgroundPicker(
     modifier: Modifier = Modifier,
     background: String?,
     backgroundOpacity: Float = 1.0f,
-    onUpdate: (String?) -> Unit
+    onUpdate: (String?) -> Unit,
 ) {
     val filesManager: FilesManager = koinInject()
     var showPickOption by remember { mutableStateOf(false) }
     var showUrlInput by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val localUris = filesManager.createChatFilesByContents(listOf(it))
-            localUris.firstOrNull()?.let { localUri ->
-                onUpdate(localUri.toString())
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let {
+                val localUris = filesManager.createChatFilesByContents(listOf(it))
+                localUris.firstOrNull()?.let { localUri ->
+                    onUpdate(localUri.toString())
+                }
             }
         }
-    }
 
     val previewOpacity = backgroundOpacity.coerceIn(0f, 1f)
 
@@ -63,20 +64,21 @@ fun BackgroundPicker(
         },
         description = {
             Text(stringResource(R.string.assistant_page_chat_background_desc))
-        }
+        },
     ) {
         Button(
             onClick = {
                 showPickOption = true
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = if (background != null) {
-                    stringResource(R.string.assistant_page_change_background)
-                } else {
-                    stringResource(R.string.assistant_page_select_background)
-                }
+                text =
+                    if (background != null) {
+                        stringResource(R.string.assistant_page_change_background)
+                    } else {
+                        stringResource(R.string.assistant_page_select_background)
+                    },
             )
         }
 
@@ -90,12 +92,12 @@ fun BackgroundPicker(
                     text = stringResource(R.string.assistant_page_background_set),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 TextButton(
                     onClick = {
                         onUpdate(null)
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_remove))
                 }
@@ -104,9 +106,10 @@ fun BackgroundPicker(
             AsyncImage(
                 model = background,
                 contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(previewOpacity)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(previewOpacity),
             )
         }
     }
@@ -121,14 +124,14 @@ fun BackgroundPicker(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Button(
                         onClick = {
                             showPickOption = false
                             imagePickerLauncher.launch("image/*")
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.assistant_page_select_from_gallery))
                     }
@@ -138,7 +141,7 @@ fun BackgroundPicker(
                             urlInput = ""
                             showUrlInput = true
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.assistant_page_enter_image_url))
                     }
@@ -148,7 +151,7 @@ fun BackgroundPicker(
                                 showPickOption = false
                                 onUpdate(null)
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(stringResource(R.string.assistant_page_remove_background))
                         }
@@ -159,11 +162,11 @@ fun BackgroundPicker(
                 TextButton(
                     onClick = {
                         showPickOption = false
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -182,7 +185,7 @@ fun BackgroundPicker(
                     label = { Text(stringResource(R.string.assistant_page_image_url)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("https://example.com/image.jpg") },
-                    singleLine = true
+                    singleLine = true,
                 )
             },
             confirmButton = {
@@ -192,7 +195,7 @@ fun BackgroundPicker(
                             onUpdate(urlInput.trim())
                             showUrlInput = false
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_confirm))
                 }
@@ -201,11 +204,11 @@ fun BackgroundPicker(
                 TextButton(
                     onClick = {
                         showUrlInput = false
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_cancel))
                 }
-            }
+            },
         )
     }
 }

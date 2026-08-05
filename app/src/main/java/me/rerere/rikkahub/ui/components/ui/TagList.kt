@@ -53,7 +53,7 @@ fun TagsInput(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        itemVerticalAlignment = Alignment.CenterVertically
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         // 显示已选择的tags
         selectedTags.fastForEach { tag ->
@@ -63,14 +63,16 @@ fun TagsInput(
                 Icon(
                     imageVector = HugeIcons.Cancel01,
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable {
-                            onValueChange(
-                                value.filter { it != tag.id }, tags
-                            )
-                        },
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier =
+                        Modifier
+                            .size(16.dp)
+                            .clickable {
+                                onValueChange(
+                                    value.filter { it != tag.id },
+                                    tags,
+                                )
+                            },
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             })
         }
@@ -79,16 +81,19 @@ fun TagsInput(
         Surface(
             shape = CircleShape,
             tonalElevation = 2.dp,
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { showAddDialog = true }) {
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .clickable { showAddDialog = true },
+        ) {
             Icon(
                 imageVector = HugeIcons.Add01,
                 contentDescription = stringResource(R.string.add),
-                modifier = Modifier
-                    .padding(6.dp)
-                    .size(16.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier =
+                    Modifier
+                        .padding(6.dp)
+                        .size(16.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -115,14 +120,14 @@ fun TagsInput(
                         text = stringResource(R.string.tag_input_dialog_existing_tags),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         unselectedTags.forEach { tag ->
                             InputChip(
@@ -131,7 +136,9 @@ fun TagsInput(
                                     showAddDialog = false
                                     tagName = ""
                                     showError = false
-                                }, label = { Text(tag.name) }, selected = false
+                                },
+                                label = { Text(tag.name) },
+                                selected = false,
                             )
                         }
                     }
@@ -142,7 +149,7 @@ fun TagsInput(
                         text = stringResource(R.string.tag_input_dialog_create_new),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -158,7 +165,7 @@ fun TagsInput(
                     placeholder = { Text(stringResource(R.string.tag_input_dialog_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    isError = showError
+                    isError = showError,
                 )
 
                 // 显示错误信息
@@ -167,7 +174,7 @@ fun TagsInput(
                     Text(
                         text = stringResource(R.string.tag_input_dialog_tag_exists),
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -191,17 +198,17 @@ fun TagsInput(
                             showError = false
                         }
                     }
-                }, enabled = tagName.isNotBlank()
+                },
+                enabled = tagName.isNotBlank(),
             ) {
                 Text(stringResource(R.string.confirm))
             }
         }, dismissButton = {
-            TextButton(
-                onClick = {
-                    showAddDialog = false
-                    tagName = ""
-                    showError = false
-                }) {
+            TextButton(onClick = {
+                showAddDialog = false
+                tagName = ""
+                showError = false
+            }) {
                 Text(stringResource(R.string.cancel))
             }
         })

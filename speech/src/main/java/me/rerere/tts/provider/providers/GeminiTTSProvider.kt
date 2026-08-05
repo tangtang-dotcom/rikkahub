@@ -23,109 +23,146 @@ import java.util.concurrent.TimeUnit
 private const val TAG = "GeminiTTSProvider"
 
 class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
     private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
     data class GeminiTTSResponse(
-        val candidates: List<Candidate>
+        val candidates: List<Candidate>,
     )
 
     @Serializable
     data class Candidate(
-        val content: Content
+        val content: Content,
     )
 
     @Serializable
     data class Content(
-        val parts: List<Part>
+        val parts: List<Part>,
     )
 
     @Serializable
     data class Part(
-        val inlineData: InlineData
+        val inlineData: InlineData,
     )
 
     @Serializable
     data class InlineData(
         val data: String,
-        val mimeType: String
+        val mimeType: String,
     )
 
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.Gemini,
-        request: TTSRequest
-    ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("text", request.text)
-                        })
-                    })
-                })
-            })
-            put("generationConfig", JSONObject().apply {
-                put("responseModalities", JSONArray().apply {
-                    put("AUDIO")
-                })
-                put("speechConfig", JSONObject().apply {
-                    put("voiceConfig", JSONObject().apply {
-                        put("prebuiltVoiceConfig", JSONObject().apply {
-                            put("voiceName", providerSetting.voiceName)
-                        })
-                    })
-                })
-            })
-            put("model", providerSetting.model)
-        }
+        request: TTSRequest,
+    ): Flow<AudioChunk> =
+        flow {
+            val requestBody =
+                JSONObject().apply {
+                    put(
+                        "contents",
+                        JSONArray().apply {
+                            put(
+                                JSONObject().apply {
+                                    put(
+                                        "parts",
+                                        JSONArray().apply {
+                                            put(
+                                                JSONObject().apply {
+                                                    put("text", request.text)
+                                                },
+                                            )
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )
+                    put(
+                        "generationConfig",
+                        JSONObject().apply {
+                            put(
+                                "responseModalities",
+                                JSONArray().apply {
+                                    put("AUDIO")
+                                },
+                            )
+                            put(
+                                "speechConfig",
+                                JSONObject().apply {
+                                    put(
+                                        "voiceConfig",
+                                        JSONObject().apply {
+                                            put(
+                                                "prebuiltVoiceConfig",
+                                                JSONObject().apply {
+                                                    put("voiceName", providerSetting.voiceName)
+                                                },
+                                            )
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )
+                    put("model", providerSetting.model)
+                }
 
-        Log.i(TAG, "generateSpeech: $requestBody")
+            Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent")
-            .addHeader("x-goog-api-key", providerSetting.apiKey)
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
+            val httpRequest =
+                Request
+                    .Builder()
+                    .url("${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent")
+                    .addHeader("x-goog-api-key", providerSetting.apiKey)
+                    .addHeader("Content-Type", "application/json")
+                    .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
 
-        val response = httpClient.newCall(httpRequest).execute()
+            val response = httpClient.newCall(httpRequest).execute()
 
-        if (!response.isSuccessful) {
-            throw Exception("Gemini TTS request failed: ${response.code} ${response.message}")
-        }
+            if (!response.isSuccessful) {
+                throw Exception("Gemini TTS request failed: ${response.code} ${response.message}")
+            }
 
-        val responseJson = response.body.string()
-        val geminiResponse = json.decodeFromString<GeminiTTSResponse>(responseJson)
+            val responseJson = response.body.string()
+            val geminiResponse = json.decodeFromString<GeminiTTSResponse>(responseJson)
 
-        if (geminiResponse.candidates.isEmpty() ||
-            geminiResponse.candidates[0].content.parts.isEmpty()
-        ) {
-            throw Exception("No audio data returned from Gemini TTS")
-        }
+            if (geminiResponse.candidates.isEmpty() ||
+                geminiResponse.candidates[0]
+                    .content.parts
+                    .isEmpty()
+            ) {
+                throw Exception("No audio data returned from Gemini TTS")
+            }
 
-        val audioBase64 = geminiResponse.candidates[0].content.parts[0].inlineData.data
-        val audioData = Base64.decode(audioBase64, Base64.DEFAULT)
+            val audioBase64 =
+                geminiResponse.candidates[0]
+                    .content.parts[0]
+                    .inlineData.data
+            val audioData = Base64.decode(audioBase64, Base64.DEFAULT)
 
-        emit(
-            AudioChunk(
-                data = audioData,
-                format = AudioFormat.PCM,
-                sampleRate = 24000, // Gemini TTS returns 24kHz 16-bit mono PCM
-                isLast = true,
-                metadata = mapOf(
-                    "provider" to "gemini",
-                    "model" to providerSetting.model,
-                    "voice" to providerSetting.voiceName,
-                    "sampleRate" to "24000",
-                    "channels" to "1",
-                    "bitDepth" to "16"
-                )
+            emit(
+                AudioChunk(
+                    data = audioData,
+                    format = AudioFormat.PCM,
+                    sampleRate = 24000, // Gemini TTS returns 24kHz 16-bit mono PCM
+                    isLast = true,
+                    metadata =
+                        mapOf(
+                            "provider" to "gemini",
+                            "model" to providerSetting.model,
+                            "voice" to providerSetting.voiceName,
+                            "sampleRate" to "24000",
+                            "channels" to "1",
+                            "bitDepth" to "16",
+                        ),
+                ),
             )
-        )
-    }
+        }
 }

@@ -16,7 +16,7 @@ fun ToggleSurface(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(50),
     onClick: () -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val contentColor =
         if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
@@ -27,7 +27,7 @@ fun ToggleSurface(
         modifier = modifier,
         shape = shape,
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        shadowElevation = 0.dp,
     ) {
         ProvideTextStyle(MaterialTheme.typography.labelLarge) {
             content()

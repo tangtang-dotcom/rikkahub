@@ -111,8 +111,14 @@ class SkillSecretsStore(context: Context) {
         encode(encrypted) to encode(iv)
     } catch (t: Throwable) {
         Log.w(TAG, "Keystore-backed encrypt failed; falling back to obfuscated plaintext", t)
+        prefs.edit { putBoolean(PREF_KEY_SECURITY_DEGRADED, true) }
         encode(plain.toByteArray(StandardCharsets.UTF_8)) to FALLBACK_IV_MARKER
     }
+
+    /** Whether the encryption keystore is unavailable and secrets are stored with
+     *  weak obfuscation. Settings UI can query this to warn the user. */
+    fun isSecurityDegraded(): Boolean =
+        prefs.getBoolean(PREF_KEY_SECURITY_DEGRADED, false)
 
     private fun decrypt(encrypted: String, iv: String): String? = try {
         if (iv == FALLBACK_IV_MARKER) {
@@ -165,6 +171,7 @@ class SkillSecretsStore(context: Context) {
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val GCM_TAG_BITS = 128
         private const val FALLBACK_IV_MARKER = "__no_keystore__"
+        private const val PREF_KEY_SECURITY_DEGRADED = "security_degraded"
 
         // Secrets and IVs live under disjoint top-level prefixes. The old scheme put
         // IVs under `skill_secret_iv_`, a superset of the secret prefix, which forced

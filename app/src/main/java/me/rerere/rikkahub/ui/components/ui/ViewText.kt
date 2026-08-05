@@ -52,10 +52,11 @@ fun ViewText(
     AndroidView(
         factory = { context ->
             TextView(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
                 movementMethod = LinkMovementMethod.getInstance()
                 setText(text)
                 setComposeTextStyle(density, mergedStyle)
@@ -65,7 +66,7 @@ fun ViewText(
         update = { view ->
             view.setComposeTextStyle(density, mergedStyle)
             view.text = text
-        }
+        },
     )
 }
 
@@ -74,17 +75,20 @@ fun ViewText(
 private fun TextViewPreview() {
     MaterialTheme {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             val style = MaterialTheme.typography.bodyMedium
             Text(
-                text = buildAnnotatedString {
-                    append("How many roads must a man walk down How many roads must a man walk downHow many roads must a man walk down")
-                    withStyle(SpanStyle(fontSize = 39.sp)) {
-                        append("BIG TEXT")
-                    }
-                    append("ahah")
-                },
+                text =
+                    buildAnnotatedString {
+                        append(
+                            "How many roads must a man walk down How many roads must a man walk downHow many roads must a man walk down",
+                        )
+                        withStyle(SpanStyle(fontSize = 39.sp)) {
+                            append("BIG TEXT")
+                        }
+                        append("ahah")
+                    },
                 style = style,
             )
 
@@ -107,13 +111,13 @@ private fun TextViewPreview() {
                 AbsoluteSizeSpan(bigTextSizePx),
                 bigTextStart,
                 bigTextEnd,
-                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
 
             ViewText(
                 text = spannableString,
                 modifier = Modifier.fillMaxWidth(),
-                style = style
+                style = style,
             )
         }
     }
@@ -121,7 +125,7 @@ private fun TextViewPreview() {
 
 private fun TextView.setComposeTextStyle(
     density: Density,
-    textStyle: TextStyle
+    textStyle: TextStyle,
 ) {
     with(density) {
         // text color
@@ -132,11 +136,12 @@ private fun TextView.setComposeTextStyle(
 
         // letter spacing
         if (textStyle.letterSpacing.isSpecified) {
-            letterSpacing = when (textStyle.letterSpacing.type) {
-                TextUnitType.Em -> textStyle.letterSpacing.value
-                TextUnitType.Sp -> textStyle.letterSpacing.toPx() / textStyle.fontSize.toPx()
-                else -> 1f
-            }
+            letterSpacing =
+                when (textStyle.letterSpacing.type) {
+                    TextUnitType.Em -> textStyle.letterSpacing.value
+                    TextUnitType.Sp -> textStyle.letterSpacing.toPx() / textStyle.fontSize.toPx()
+                    else -> 1f
+                }
         }
 
         // decoration
@@ -153,31 +158,50 @@ private fun TextView.setComposeTextStyle(
 
         // align
         textStyle.textAlign.let {
-            gravity = when (it) {
-                TextAlign.Left -> Gravity.LEFT
-                TextAlign.Right -> Gravity.RIGHT
-                TextAlign.Center -> Gravity.CENTER_HORIZONTAL
-                TextAlign.Start -> Gravity.START
-                TextAlign.End -> Gravity.END
-                TextAlign.Justify -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                        justificationMode = LineBreaker.JUSTIFICATION_MODE_INTER_CHARACTER
+            gravity =
+                when (it) {
+                    TextAlign.Left -> {
+                        Gravity.LEFT
                     }
-                    // 两端对齐也需要一个基础的 gravity，通常是 START
-                    Gravity.START
-                }
 
-                else -> gravity // 保持当前 gravity
-            }
+                    TextAlign.Right -> {
+                        Gravity.RIGHT
+                    }
+
+                    TextAlign.Center -> {
+                        Gravity.CENTER_HORIZONTAL
+                    }
+
+                    TextAlign.Start -> {
+                        Gravity.START
+                    }
+
+                    TextAlign.End -> {
+                        Gravity.END
+                    }
+
+                    TextAlign.Justify -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            justificationMode = LineBreaker.JUSTIFICATION_MODE_INTER_CHARACTER
+                        }
+                        // 两端对齐也需要一个基础的 gravity，通常是 START
+                        Gravity.START
+                    }
+
+                    else -> {
+                        gravity
+                    } // 保持当前 gravity
+                }
         }
 
         // line height
         if (textStyle.lineHeight.isSpecified) {
-            val lineHeightPx = when (textStyle.lineHeight.type) {
-                TextUnitType.Em -> textStyle.lineHeight.value * textStyle.fontSize.toPx()
-                TextUnitType.Sp -> textStyle.lineHeight.toPx()
-                else -> textStyle.lineHeight.value // 默认使用 px
-            }
+            val lineHeightPx =
+                when (textStyle.lineHeight.type) {
+                    TextUnitType.Em -> textStyle.lineHeight.value * textStyle.fontSize.toPx()
+                    TextUnitType.Sp -> textStyle.lineHeight.toPx()
+                    else -> textStyle.lineHeight.value // 默认使用 px
+                }
             // Android P (API 28) 及以上版本可以直接设置行高
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 lineHeight = lineHeightPx.roundToInt()
@@ -197,34 +221,51 @@ private fun TextView.setComposeTextStyle(
                 shadow.blurRadius,
                 shadow.offset.x,
                 shadow.offset.y,
-                shadow.color.toArgb()
+                shadow.color.toArgb(),
             )
         }
 
         // 这是最复杂的部分，因为它需要将 Compose 的字体概念映射到 Android 的 Typeface
-        val typefaceStyle = getAndroidTypefaceStyle(
-            fontWeight = textStyle.fontWeight,
-            fontStyle = textStyle.fontStyle
-        )
-        val finalTypeface = when (textStyle.fontFamily) {
-            FontFamily.SansSerif, null -> Typeface.create(Typeface.SANS_SERIF, typefaceStyle)
-            FontFamily.Serif -> Typeface.create(Typeface.SERIF, typefaceStyle)
-            FontFamily.Monospace -> Typeface.create(Typeface.MONOSPACE, typefaceStyle)
-            FontFamily.Cursive -> Typeface.create(
-                Typeface.SANS_SERIF,
-                typefaceStyle
-            ) // Cursive 没有直接映射，回退到 SansSerif
-            // 注意：这里没有处理自定义字体 (FontFamily(Font(...)))
-            // 要处理自定义字体，需要更复杂的逻辑来加载字体资源
-            else -> Typeface.create(typeface, typefaceStyle)
-        }
+        val typefaceStyle =
+            getAndroidTypefaceStyle(
+                fontWeight = textStyle.fontWeight,
+                fontStyle = textStyle.fontStyle,
+            )
+        val finalTypeface =
+            when (textStyle.fontFamily) {
+                FontFamily.SansSerif, null -> {
+                    Typeface.create(Typeface.SANS_SERIF, typefaceStyle)
+                }
+
+                FontFamily.Serif -> {
+                    Typeface.create(Typeface.SERIF, typefaceStyle)
+                }
+
+                FontFamily.Monospace -> {
+                    Typeface.create(Typeface.MONOSPACE, typefaceStyle)
+                }
+
+                FontFamily.Cursive -> {
+                    Typeface.create(
+                        Typeface.SANS_SERIF,
+                        typefaceStyle,
+                    )
+                }
+
+                // Cursive 没有直接映射，回退到 SansSerif
+                // 注意：这里没有处理自定义字体 (FontFamily(Font(...)))
+                // 要处理自定义字体，需要更复杂的逻辑来加载字体资源
+                else -> {
+                    Typeface.create(typeface, typefaceStyle)
+                }
+            }
         setTypeface(finalTypeface)
     }
 }
 
 private fun getAndroidTypefaceStyle(
     fontWeight: FontWeight?,
-    fontStyle: FontStyle?
+    fontStyle: FontStyle?,
 ): Int {
     val isBold = fontWeight != null && fontWeight >= FontWeight.W600
     val isItalic = fontStyle == FontStyle.Italic

@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.developer
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.FileScript
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.FileScript
 import me.rerere.rikkahub.data.ai.AILogging
 import me.rerere.rikkahub.data.datastore.AiLogLevel
 import org.koin.androidx.compose.koinViewModel
@@ -45,7 +45,7 @@ fun DeveloperPage(vm: DeveloperVM = koinViewModel()) {
                         text = "Developer Page",
                         maxLines = 1,
                     )
-                }
+                },
             )
         },
         bottomBar = {
@@ -58,14 +58,14 @@ fun DeveloperPage(vm: DeveloperVM = koinViewModel()) {
                     },
                     icon = {
                         Icon(HugeIcons.FileScript, null)
-                    }
+                    },
                 )
             }
-        }
+        },
     ) { innerPadding ->
         HorizontalPager(
             state = pager,
-            contentPadding = innerPadding
+            contentPadding = innerPadding,
         ) { page ->
             when (page) {
                 0 -> {
@@ -91,9 +91,10 @@ fun LoggingPaging(vm: DeveloperVM) {
                     Text(text = "AI Log Level")
                     AiLogLevel.entries.forEach { item ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(
@@ -112,9 +113,8 @@ fun LoggingPaging(vm: DeveloperVM) {
                     Card {
                         Column(
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-
                         }
                     }
                 }

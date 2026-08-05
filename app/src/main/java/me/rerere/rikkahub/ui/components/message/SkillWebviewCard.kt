@@ -17,13 +17,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import me.rerere.rikkahub.R
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.browser.BrowserActivity
 
 /**
@@ -73,10 +73,14 @@ internal fun SkillWebviewCardOrNull(
             // a direct full-screen open. v1 always opens direct in BrowserActivity; the
             // label is informational.
             Text(
-                text = stringResource(
-                    if (webview.iframe) R.string.skill_webview_card_embedded
-                    else R.string.skill_webview_card_direct
-                ),
+                text =
+                    stringResource(
+                        if (webview.iframe) {
+                            R.string.skill_webview_card_embedded
+                        } else {
+                            R.string.skill_webview_card_direct
+                        },
+                    ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
             )
@@ -96,9 +100,10 @@ internal fun SkillWebviewCardOrNull(
                 modifier = Modifier.padding(top = 4.dp),
             )
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

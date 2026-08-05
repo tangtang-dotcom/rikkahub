@@ -43,16 +43,16 @@ fun SettingPreferencesPage() {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { contentPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding + PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 CardGroup(
@@ -68,7 +68,11 @@ fun SettingPreferencesPage() {
                         onClick = { navController.navigate(Screen.SettingPreferencesNotification) },
                         leadingContent = { Icon(HugeIcons.Notification01, null) },
                         headlineContent = { Text(stringResource(R.string.setting_page_preferences_notification)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_preferences_notification_desc)) },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_page_preferences_notification_desc),
+                            )
+                        },
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingPreferencesGeneral) },

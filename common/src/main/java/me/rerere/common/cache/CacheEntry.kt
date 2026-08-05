@@ -13,19 +13,26 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 
 @Serializable
-data class CacheEntry<V>(val value: V, val expiresAt: Long? = null) {
+data class CacheEntry<V>(
+    val value: V,
+    val expiresAt: Long? = null,
+) {
     fun isExpired(nowMillis: Long): Boolean = expiresAt?.let { nowMillis >= it } ?: false
 }
 
 @OptIn(ExperimentalSerializationApi::class)
 internal fun <V> cacheEntrySerializer(valueSerializer: KSerializer<V>): KSerializer<CacheEntry<V>> =
     object : KSerializer<CacheEntry<V>> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("CacheEntry") {
-            element("value", valueSerializer.descriptor)
-            element("expiresAt", Long.serializer().descriptor, isOptional = true)
-        }
+        override val descriptor: SerialDescriptor =
+            buildClassSerialDescriptor("CacheEntry") {
+                element("value", valueSerializer.descriptor)
+                element("expiresAt", Long.serializer().descriptor, isOptional = true)
+            }
 
-        override fun serialize(encoder: Encoder, value: CacheEntry<V>) {
+        override fun serialize(
+            encoder: Encoder,
+            value: CacheEntry<V>,
+        ) {
             encoder.encodeStructure(descriptor) {
                 encodeSerializableElement(descriptor, 0, valueSerializer, value.value)
                 value.expiresAt?.let {
@@ -40,9 +47,18 @@ internal fun <V> cacheEntrySerializer(valueSerializer: KSerializer<V>): KSeriali
             decoder.decodeStructure(descriptor) {
                 loop@ while (true) {
                     when (val index = decodeElementIndex(descriptor)) {
-                        -1 -> break@loop
-                        0 -> v = decodeSerializableElement(descriptor, 0, valueSerializer)
-                        1 -> exp = decodeNullableSerializableElement(descriptor, 1, Long.serializer())
+                        -1 -> {
+                            break@loop
+                        }
+
+                        0 -> {
+                            v = decodeSerializableElement(descriptor, 0, valueSerializer)
+                        }
+
+                        1 -> {
+                            exp = decodeNullableSerializableElement(descriptor, 1, Long.serializer())
+                        }
+
                         else -> {
                             // ignore unknown
                         }
@@ -53,4 +69,3 @@ internal fun <V> cacheEntrySerializer(valueSerializer: KSerializer<V>): KSeriali
             return CacheEntry(nonNull, exp)
         }
     }
-

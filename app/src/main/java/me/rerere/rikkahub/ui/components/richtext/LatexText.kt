@@ -17,15 +17,18 @@ import androidx.compose.ui.unit.TextUnit
 import ru.noties.jlatexmath.JLatexMathDrawable
 import ru.noties.jlatexmath.JLatexMathSplitter
 
-fun assumeLatexSize(latex: String, fontSize: Float): Rect {
-    return runCatching {
-        JLatexMathDrawable.builder(latex)
+fun assumeLatexSize(
+    latex: String,
+    fontSize: Float,
+): Rect =
+    runCatching {
+        JLatexMathDrawable
+            .builder(latex)
             .textSize(fontSize)
             .padding(0)
             .build()
             .bounds
     }.getOrElse { Rect(0, 0, 0, 0) }
-}
 
 @Composable
 fun LatexText(
@@ -33,37 +36,40 @@ fun LatexText(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = TextUnit.Unspecified,
     color: Color = Color.Unspecified,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
-    val style = style.merge(
-        fontSize = fontSize,
-        color = color
-    )
+    val style =
+        style.merge(
+            fontSize = fontSize,
+            color = color,
+        )
     val density = LocalDensity.current
 
-    val drawable = remember(latex, fontSize, style) {
-        runCatching {
-            with(density) {
-                getLatexDrawable(
-                    latex = processLatex(latex),
-                    fontSize = fontSize.toPx(),
-                    color = style.color.toArgb(),
-                    background = style.background.toArgb()
-                )
-            }
-        }.onFailure {
-            it.printStackTrace()
-        }.getOrNull()
-    }
+    val drawable =
+        remember(latex, fontSize, style) {
+            runCatching {
+                with(density) {
+                    getLatexDrawable(
+                        latex = processLatex(latex),
+                        fontSize = fontSize.toPx(),
+                        color = style.color.toArgb(),
+                        background = style.background.toArgb(),
+                    )
+                }
+            }.onFailure {
+                it.printStackTrace()
+            }.getOrNull()
+        }
 
     if (drawable != null) {
         with(density) {
             Canvas(
-                modifier = modifier
-                    .size(
-                        width = drawable.bounds.width().toDp(),
-                        height = drawable.bounds.height().toDp()
-                    )
+                modifier =
+                    modifier
+                        .size(
+                            width = drawable.bounds.width().toDp(),
+                            height = drawable.bounds.height().toDp(),
+                        ),
             ) {
                 drawable.draw(drawContext.canvas.nativeCanvas)
             }
@@ -72,7 +78,7 @@ fun LatexText(
         Text(
             text = latex,
             style = style,
-            modifier = modifier
+            modifier = modifier,
         )
     }
 }
@@ -81,10 +87,11 @@ fun getLatexDrawable(
     latex: String,
     fontSize: Float,
     color: Int,
-    background: Int
-): JLatexMathDrawable? {
-    return runCatching {
-        JLatexMathDrawable.builder(processLatex(latex))
+    background: Int,
+): JLatexMathDrawable? =
+    runCatching {
+        JLatexMathDrawable
+            .builder(processLatex(latex))
             .textSize(fontSize)
             .color(color)
             .background(background)
@@ -94,7 +101,6 @@ fun getLatexDrawable(
     }.onFailure {
         it.printStackTrace()
     }.getOrNull()
-}
 
 /**
  * 将一条行内公式按顶层运算符水平拆分为多段 Drawable，
@@ -105,27 +111,27 @@ fun splitLatex(
     latex: String,
     maxWidthPx: Float,
     fontSize: Float,
-    color: Int
-): List<JLatexMathDrawable> {
-    return runCatching {
+    color: Int,
+): List<JLatexMathDrawable> =
+    runCatching {
         JLatexMathSplitter.split(processLatex(latex), maxWidthPx, fontSize, color)
     }.onFailure {
         it.printStackTrace()
     }.getOrElse { emptyList() }
-}
 
 @Composable
 fun LatexDrawable(
     drawable: JLatexMathDrawable,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
     with(density) {
         Canvas(
-            modifier = modifier.size(
-                width = drawable.bounds.width().toDp(),
-                height = drawable.bounds.height().toDp()
-            )
+            modifier =
+                modifier.size(
+                    width = drawable.bounds.width().toDp(),
+                    height = drawable.bounds.height().toDp(),
+                ),
         ) {
             drawable.draw(drawContext.canvas.nativeCanvas)
         }
@@ -140,18 +146,40 @@ private val displayBracketRegex = Regex("""^\\\[(.*?)\\\]""", RegexOption.DOT_MA
 private fun processLatex(latex: String): String {
     val trimmed = latex.trim()
     return when {
-        displayDollarRegex.matches(trimmed) ->
-            displayDollarRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
+        displayDollarRegex.matches(trimmed) -> {
+            displayDollarRegex
+                .find(trimmed)
+                ?.groupValues
+                ?.get(1)
+                ?.trim() ?: trimmed
+        }
 
-        inlineDollarRegex.matches(trimmed) ->
-            inlineDollarRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
+        inlineDollarRegex.matches(trimmed) -> {
+            inlineDollarRegex
+                .find(trimmed)
+                ?.groupValues
+                ?.get(1)
+                ?.trim() ?: trimmed
+        }
 
-        displayBracketRegex.matches(trimmed) ->
-            displayBracketRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
+        displayBracketRegex.matches(trimmed) -> {
+            displayBracketRegex
+                .find(trimmed)
+                ?.groupValues
+                ?.get(1)
+                ?.trim() ?: trimmed
+        }
 
-        inlineParenRegex.matches(trimmed) ->
-            inlineParenRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
+        inlineParenRegex.matches(trimmed) -> {
+            inlineParenRegex
+                .find(trimmed)
+                ?.groupValues
+                ?.get(1)
+                ?.trim() ?: trimmed
+        }
 
-        else -> trimmed
+        else -> {
+            trimmed
+        }
     }
 }

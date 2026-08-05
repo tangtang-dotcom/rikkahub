@@ -1,14 +1,10 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.PencilEdit01
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -42,6 +38,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
@@ -56,11 +56,12 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AssistantMemoryPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val memories by vm.memories.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -88,7 +89,7 @@ fun AssistantMemoryPage(id: String) {
             onUpdateAssistant = { vm.update(it) },
             onDeleteMemory = { vm.deleteMemory(it) },
             onAddMemory = { vm.addMemory(it) },
-            onUpdateMemory = { vm.updateMemory(it) }
+            onUpdateMemory = { vm.updateMemory(it) },
         )
     }
 }
@@ -103,13 +104,14 @@ private fun AssistantMemoryContent(
     onUpdateMemory: (AssistantMemory) -> Unit,
     onDeleteMemory: (AssistantMemory) -> Unit,
 ) {
-    val memoryDialogState = useEditState<AssistantMemory> {
-        if (it.id == 0) {
-            onAddMemory(it)
-        } else {
-            onUpdateMemory(it)
+    val memoryDialogState =
+        useEditState<AssistantMemory> {
+            if (it.id == 0) {
+                onAddMemory(it)
+            } else {
+                onUpdateMemory(it)
+            }
         }
-    }
     var pendingDeleteMemory by remember { mutableStateOf<AssistantMemory?>(null) }
 
     // 记忆对话框
@@ -131,14 +133,14 @@ private fun AssistantMemoryContent(
                         Text(stringResource(R.string.assistant_page_manage_memory_title))
                     },
                     minLines = 2,
-                    maxLines = 8
+                    maxLines = 8,
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         memoryDialogState.confirm()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_save))
                 }
@@ -147,22 +149,23 @@ private fun AssistantMemoryContent(
                 TextButton(
                     onClick = {
                         memoryDialogState.dismiss()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_page_cancel))
                 }
-            }
+            },
         )
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(innerPadding)
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(innerPadding)
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CardGroup {
             item(
@@ -178,12 +181,12 @@ private fun AssistantMemoryContent(
                         onCheckedChange = {
                             onUpdateAssistant(
                                 assistant.copy(
-                                    enableMemory = it
-                                )
+                                    enableMemory = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
             item(
                 headlineContent = { Text(stringResource(R.string.assistant_page_global_memory)) },
@@ -198,13 +201,13 @@ private fun AssistantMemoryContent(
                         onCheckedChange = {
                             onUpdateAssistant(
                                 assistant.copy(
-                                    useGlobalMemory = it
-                                )
+                                    useGlobalMemory = it,
+                                ),
                             )
                         },
-                        enabled = assistant.enableMemory
+                        enabled = assistant.enableMemory,
                     )
-                }
+                },
             )
             item(
                 headlineContent = { Text(stringResource(R.string.assistant_page_recent_chats)) },
@@ -219,12 +222,12 @@ private fun AssistantMemoryContent(
                         onCheckedChange = {
                             onUpdateAssistant(
                                 assistant.copy(
-                                    enableRecentChatsReference = it
-                                )
+                                    enableRecentChatsReference = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
             item(
                 headlineContent = { Text(stringResource(R.string.assistant_page_time_reminder)) },
@@ -239,37 +242,39 @@ private fun AssistantMemoryContent(
                         onCheckedChange = {
                             onUpdateAssistant(
                                 assistant.copy(
-                                    enableTimeReminder = it
-                                )
+                                    enableTimeReminder = it,
+                                ),
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
         }
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
         ) {
             Text(
                 text = stringResource(R.string.assistant_page_manage_memory_title),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-                    .align(Alignment.CenterStart)
+                modifier =
+                    Modifier
+                        .padding(bottom = 8.dp)
+                        .align(Alignment.CenterStart),
             )
 
             IconButton(
                 onClick = {
                     memoryDialogState.open(AssistantMemory(0, ""))
                 },
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier.align(Alignment.CenterEnd),
             ) {
                 Icon(
                     imageVector = HugeIcons.Add01,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
         }
@@ -283,7 +288,7 @@ private fun AssistantMemoryContent(
                     },
                     onDeleteMemory = {
                         pendingDeleteMemory = it
-                    }
+                    },
                 )
             }
         }
@@ -303,9 +308,9 @@ private fun AssistantMemoryContent(
             Text(
                 text = pendingDeleteMemory?.content.orEmpty(),
                 maxLines = 8,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
-        }
+        },
     )
 }
 
@@ -313,22 +318,23 @@ private fun AssistantMemoryContent(
 private fun MemoryItem(
     memory: AssistantMemory,
     onEditMemory: (AssistantMemory) -> Unit,
-    onDeleteMemory: (AssistantMemory) -> Unit
+    onDeleteMemory: (AssistantMemory) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CustomColors.cardColorsOnSurfaceContainer
+        colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = "#${memory.id}",
@@ -336,23 +342,22 @@ private fun MemoryItem(
                 )
                 Text(
                     text = memory.content,
-
                     maxLines = 5,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
             IconButton(
-                onClick = { onEditMemory(memory) }
+                onClick = { onEditMemory(memory) },
             ) {
                 Icon(HugeIcons.PencilEdit01, null)
             }
             IconButton(
-                onClick = { onDeleteMemory(memory) }
+                onClick = { onDeleteMemory(memory) },
             ) {
                 Icon(
                     HugeIcons.Delete01,
-                    stringResource(R.string.assistant_page_delete)
+                    stringResource(R.string.assistant_page_delete),
                 )
             }
         }

@@ -18,35 +18,43 @@ internal var highlightDebugMode: Boolean = false
  * and later run through the mode's keywords (or a sub-language), `begin` matches push a new mode,
  * and `end` matches pop back out.
  */
-internal class HighlightEngine(languages: List<Language>) {
-
-    private val languagesByAlias: Map<String, Language> = buildMap {
-        languages.forEach { language ->
-            language.aliases.forEach { alias ->
-                require(put(alias.lowercase(), language) == null) {
-                    "Duplicate language alias: $alias"
+internal class HighlightEngine(
+    languages: List<Language>,
+) {
+    private val languagesByAlias: Map<String, Language> =
+        buildMap {
+            languages.forEach { language ->
+                language.aliases.forEach { alias ->
+                    require(put(alias.lowercase(), language) == null) {
+                        "Duplicate language alias: $alias"
+                    }
                 }
             }
         }
-    }
 
     private val compiledRoots = HashMap<String, Mode>()
 
-    fun supports(language: String): Boolean =
-        languagesByAlias.containsKey(language.trim().lowercase())
+    fun supports(language: String): Boolean = languagesByAlias.containsKey(language.trim().lowercase())
 
     /** Highlights [code], or returns `null` when [language] is not registered. */
-    fun highlight(code: String, language: String): List<HighlightToken>? {
+    fun highlight(
+        code: String,
+        language: String,
+    ): List<HighlightToken>? {
         val definition = languagesByAlias[language.trim().lowercase()] ?: return null
         return Run(definition).highlight(code, ignoreIllegals = true, continuation = null).tokens
     }
 
-    private fun compiledRootOf(language: Language): Mode = synchronized(compiledRoots) {
-        compiledRoots.getOrPut(language.name) { ModeCompiler(language).compile() }
-    }
+    private fun compiledRootOf(language: Language): Mode =
+        synchronized(compiledRoots) {
+            compiledRoots.getOrPut(language.name) { ModeCompiler(language).compile() }
+        }
 
     /** A mode on the highlighting stack, replacing the prototype-linked objects used upstream. */
-    private class Frame(val mode: Mode, val parent: Frame?)
+    private class Frame(
+        val mode: Mode,
+        val parent: Frame?,
+    )
 
     private class Result(
         val tokens: List<HighlightToken>,
@@ -54,10 +62,14 @@ internal class HighlightEngine(languages: List<Language>) {
         val top: Frame,
     )
 
-    private class IllegalLexemeException(message: String) : Exception(message)
+    private class IllegalLexemeException(
+        message: String,
+    ) : Exception(message)
 
     /** One highlighting pass over one string; holds the mutable parser state. */
-    private inner class Run(private val language: Language) {
+    private inner class Run(
+        private val language: Language,
+    ) {
         private val emitter = TokenEmitter()
         private val keywordHits = HashMap<String, Int>()
         private val continuations = HashMap<String, Frame>()
@@ -74,7 +86,11 @@ internal class HighlightEngine(languages: List<Language>) {
         private var resumeScanAtSamePosition = false
         private var lastMatch: MultiMatch? = null
 
-        fun highlight(code: String, ignoreIllegals: Boolean, continuation: Frame?): Result {
+        fun highlight(
+            code: String,
+            ignoreIllegals: Boolean,
+            continuation: Frame?,
+        ): Result {
             this.code = code
             this.ignoreIllegals = ignoreIllegals
             root = compiledRootOf(language)
@@ -195,11 +211,12 @@ internal class HighlightEngine(languages: List<Language>) {
                     emitter.addText(buffer)
                     return
                 }
-                result = Run(definition).highlight(
-                    code = buffer,
-                    ignoreIllegals = true,
-                    continuation = continuations[name],
-                )
+                result =
+                    Run(definition).highlight(
+                        code = buffer,
+                        ignoreIllegals = true,
+                        continuation = continuations[name],
+                    )
                 continuations[name] = result.top
             } else {
                 // A list of candidates carries no continuation upstream either: every chunk is
@@ -220,11 +237,15 @@ internal class HighlightEngine(languages: List<Language>) {
          * relevance, so a tie — the usual case being that nothing scored at all — is won by plain
          * text. Illegal input scores zero and can therefore never win.
          */
-        private fun highlightAuto(code: String, subset: List<String>): Result {
-            val best = subset
-                .mapNotNull { languagesByAlias[it.lowercase()] }
-                .map { Run(it).highlight(code, ignoreIllegals = false, continuation = null) }
-                .maxByOrNull { it.relevance }
+        private fun highlightAuto(
+            code: String,
+            subset: List<String>,
+        ): Result {
+            val best =
+                subset
+                    .mapNotNull { languagesByAlias[it.lowercase()] }
+                    .map { Run(it).highlight(code, ignoreIllegals = false, continuation = null) }
+                    .maxByOrNull { it.relevance }
 
             return if (best != null && best.relevance > 0.0) {
                 best
@@ -233,14 +254,20 @@ internal class HighlightEngine(languages: List<Language>) {
             }
         }
 
-        private fun emitKeyword(keyword: String, scope: String) {
+        private fun emitKeyword(
+            keyword: String,
+            scope: String,
+        ) {
             if (keyword.isEmpty()) return
             emitter.startScope(scope)
             emitter.addText(keyword)
             emitter.endScope()
         }
 
-        private fun emitMultiClass(scope: CompiledScope, match: MultiMatch) {
+        private fun emitMultiClass(
+            scope: CompiledScope,
+            match: MultiMatch,
+        ) {
             for (group in 1..match.groupCount) {
                 if (group !in scope.emit) continue
                 val text = match[group].orEmpty()
@@ -259,7 +286,10 @@ internal class HighlightEngine(languages: List<Language>) {
 
         // ---- mode transitions -----------------------------------------------------------------
 
-        private fun startNewMode(mode: Mode, match: MultiMatch) {
+        private fun startNewMode(
+            mode: Mode,
+            match: MultiMatch,
+        ) {
             mode.scope?.let { emitter.startScope(aliasOf(it)) }
 
             mode.compiledBeginScope?.let { scope ->
@@ -275,7 +305,11 @@ internal class HighlightEngine(languages: List<Language>) {
         }
 
         /** Which mode, if any, is ended by this match? */
-        private fun endOfMode(frame: Frame, match: MatchData, matchPlusRemainder: String): Frame? {
+        private fun endOfMode(
+            frame: Frame,
+            match: MatchData,
+            matchPlusRemainder: String,
+        ): Frame? {
             var matched = startsWith(frame.mode.endRe, matchPlusRemainder)
 
             if (matched) {
@@ -298,8 +332,8 @@ internal class HighlightEngine(languages: List<Language>) {
             return null
         }
 
-        private fun doIgnore(lexeme: String): Int {
-            return if (top.mode.matcher!!.regexIndex == 0) {
+        private fun doIgnore(lexeme: String): Int =
+            if (top.mode.matcher!!.regexIndex == 0) {
                 // Nothing else can match here, so step the cursor forward one character.
                 modeBuffer.append(lexeme.take(1))
                 1
@@ -308,7 +342,6 @@ internal class HighlightEngine(languages: List<Language>) {
                 resumeScanAtSamePosition = true
                 0
             }
-        }
 
         private fun doBeginMatch(match: MultiMatch): Int {
             val lexeme = match.value
@@ -351,7 +384,9 @@ internal class HighlightEngine(languages: List<Language>) {
                     emitMultiClass(endScope, match)
                 }
 
-                origin.skip -> modeBuffer.append(lexeme)
+                origin.skip -> {
+                    modeBuffer.append(lexeme)
+                }
 
                 else -> {
                     if (!origin.returnEnd && !origin.excludeEnd) modeBuffer.append(lexeme)
@@ -379,7 +414,10 @@ internal class HighlightEngine(languages: List<Language>) {
         }
 
         /** Processes the text since the previous match plus the match itself. */
-        private fun processLexeme(textBeforeMatch: String, match: MultiMatch?): Int {
+        private fun processLexeme(
+            textBeforeMatch: String,
+            match: MultiMatch?,
+        ): Int {
             modeBuffer.append(textBeforeMatch)
 
             if (match == null) {
@@ -403,14 +441,19 @@ internal class HighlightEngine(languages: List<Language>) {
             lastMatch = match
 
             when {
-                match.type == MatchType.BEGIN -> return doBeginMatch(match)
+                match.type == MatchType.BEGIN -> {
+                    return doBeginMatch(match)
+                }
 
-                match.type == MatchType.ILLEGAL && !ignoreIllegals ->
+                match.type == MatchType.ILLEGAL && !ignoreIllegals -> {
                     throw IllegalLexemeException(
                         "Illegal lexeme \"$lexeme\" for mode \"${top.mode.scope ?: "<unnamed>"}\"",
                     )
+                }
 
-                match.type == MatchType.END -> doEndMatch(match)?.let { return it }
+                match.type == MatchType.END -> {
+                    doEndMatch(match)?.let { return it }
+                }
             }
 
             // `illegal` matching `$` is a zero width match that is neither a begin nor an end.

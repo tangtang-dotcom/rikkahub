@@ -26,11 +26,11 @@ private const val TAG = "TelegramInboundAttachments"
  *  Telegram allows up to 2 GB, but the Bot API's getFile only serves files up to ~20 MB;
  *  above that getFile fails outright. We cap here at 20 MB so larger files hit the over-cap
  *  guard (and get a visible SKIPPED note) instead of silently failing in the download path. */
-const val INBOUND_ATTACHMENT_SIZE_CAP_BYTES: Long = 20L * 1024 * 1024   // 20 MB
+const val INBOUND_ATTACHMENT_SIZE_CAP_BYTES: Long = 20L * 1024 * 1024 // 20 MB
 
 /** Total size cap for the per-chat attachment inbox. Oldest files are pruned when
  *  this is exceeded. */
-private const val INBOUND_ATTACHMENT_INBOX_CAP_BYTES: Long = 500L * 1024 * 1024  // 500 MB
+private const val INBOUND_ATTACHMENT_INBOX_CAP_BYTES: Long = 500L * 1024 * 1024 // 500 MB
 
 /**
  * Result of a single attachment download attempt.
@@ -46,8 +46,7 @@ internal data class DownloadedAttachment(
 )
 
 /** The per-chat inbound-attachment inbox on shared storage. Termux / file tools can reach it. */
-internal fun inboxDirFor(chatId: Long): File =
-    File("/sdcard/Download/telegram_inbox/$chatId").apply { mkdirs() }
+internal fun inboxDirFor(chatId: Long): File = File("/sdcard/Download/telegram_inbox/$chatId").apply { mkdirs() }
 
 /**
  * Prune a per-chat inbox: drop files older than 24h, then cap total size at
@@ -135,7 +134,13 @@ internal suspend fun downloadInboundAttachments(
         // Skip over-sized attachments without downloading.
         if (att.sizeBytes != null && att.sizeBytes > INBOUND_ATTACHMENT_SIZE_CAP_BYTES) {
             val sizeMb = att.sizeBytes / (1024.0 * 1024.0)
-            out.add(DownloadedAttachment(att, savedPath = null, skipReason = "exceeds 20 MB cap (${String.format("%.1f", sizeMb)} MB)"))
+            out.add(
+                DownloadedAttachment(
+                    att,
+                    savedPath = null,
+                    skipReason = "exceeds 20 MB cap (${String.format("%.1f", sizeMb)} MB)",
+                ),
+            )
             continue
         }
 
@@ -161,7 +166,13 @@ internal suspend fun downloadInboundAttachments(
             Log.w(TAG, "downloadInboundAttachments: failed for ${att.fileId}", e)
             // Surface the failure as a SKIPPED note instead of dropping the file: the LLM/user
             // still learns the attachment arrived (e.g. getFile rejects files near the 20 MB edge).
-            out.add(DownloadedAttachment(att, savedPath = null, skipReason = "download failed: ${e.message ?: e.javaClass.simpleName}"))
+            out.add(
+                DownloadedAttachment(
+                    att,
+                    savedPath = null,
+                    skipReason = "download failed: ${e.message ?: e.javaClass.simpleName}",
+                ),
+            )
         }
     }
     return out
@@ -187,23 +198,26 @@ internal fun buildAttachmentNote(downloads: List<DownloadedAttachment>): String 
     for (dl in downloads) {
         val att = dl.attachment
         val kindSlug = att.kind.name.lowercase()
-        val nameForDisplay = att.originalFileName ?: when (att.kind) {
-            AttachmentKind.VOICE -> "voice.ogg"
-            AttachmentKind.VIDEO_NOTE -> "video_note.mp4"
-            else -> "attachment"
-        }
-        val sizePart = att.sizeBytes?.let { bytes ->
-            val mb = bytes / (1024.0 * 1024.0)
-            if (mb >= 0.1) String.format("%.1f MB", mb) else String.format("%d KB", bytes / 1024)
-        }
+        val nameForDisplay =
+            att.originalFileName ?: when (att.kind) {
+                AttachmentKind.VOICE -> "voice.ogg"
+                AttachmentKind.VIDEO_NOTE -> "video_note.mp4"
+                else -> "attachment"
+            }
+        val sizePart =
+            att.sizeBytes?.let { bytes ->
+                val mb = bytes / (1024.0 * 1024.0)
+                if (mb >= 0.1) String.format("%.1f MB", mb) else String.format("%d KB", bytes / 1024)
+            }
         val durPart = att.durationSec?.let { "${it}s" }
         val mimePart = att.mimeType
         val metaParts = listOfNotNull(mimePart, durPart, sizePart).joinToString(", ")
-        val destination = when {
-            dl.savedPath != null -> "saved to ${dl.savedPath}"
-            dl.skipReason != null -> "SKIPPED: ${dl.skipReason}"
-            else -> "download failed"
-        }
+        val destination =
+            when {
+                dl.savedPath != null -> "saved to ${dl.savedPath}"
+                dl.skipReason != null -> "SKIPPED: ${dl.skipReason}"
+                else -> "download failed"
+            }
         val metaSuffix = if (metaParts.isNotEmpty()) "  ($metaParts)" else ""
         sb.append("- $kindSlug/$nameForDisplay$metaSuffix → $destination\n")
     }
@@ -225,7 +239,9 @@ internal fun buildPhotoNote(paths: List<String>): String {
     for (p in paths) {
         sb.append("- photo → saved to $p\n")
     }
-    sb.append("View it directly if you have vision, or process the file at that path (e.g. OCR with `tesseract` via Termux).]")
+    sb.append(
+        "View it directly if you have vision, or process the file at that path (e.g. OCR with `tesseract` via Termux).]",
+    )
     return sb.toString()
 }
 
@@ -269,7 +285,10 @@ internal fun sanitizeAttachmentFilename(
  * Return a [File] in [dir] with [preferredName] that does not already exist.
  * If a file with that name already exists, appends `-<timestamp>` before the extension.
  */
-internal fun uniqueFile(dir: File, preferredName: String): File {
+internal fun uniqueFile(
+    dir: File,
+    preferredName: String,
+): File {
     val candidate = File(dir, preferredName)
     if (!candidate.exists()) return candidate
     val ts = System.currentTimeMillis()

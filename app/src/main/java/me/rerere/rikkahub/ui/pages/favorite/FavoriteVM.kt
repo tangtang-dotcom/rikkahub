@@ -25,25 +25,25 @@ data class NodeFavoriteListItem(
 class FavoriteVM(
     private val favoriteRepository: FavoriteRepository,
 ) : ViewModel() {
-    val nodeFavorites = favoriteRepository
-        .listByType(FavoriteType.NODE)
-        .map { favorites ->
-            favorites.mapNotNull { entity ->
-                val ref = NodeFavoriteAdapter.decodeRef(entity) ?: return@mapNotNull null
-                val meta = NodeFavoriteAdapter.decodeMeta(entity)
+    val nodeFavorites =
+        favoriteRepository
+            .listByType(FavoriteType.NODE)
+            .map { favorites ->
+                favorites.mapNotNull { entity ->
+                    val ref = NodeFavoriteAdapter.decodeRef(entity) ?: return@mapNotNull null
+                    val meta = NodeFavoriteAdapter.decodeMeta(entity)
 
-                NodeFavoriteListItem(
-                    id = entity.id,
-                    refKey = entity.refKey,
-                    conversationId = ref.conversationId,
-                    nodeId = ref.nodeId,
-                    conversationTitle = meta?.title.orEmpty(),
-                    preview = meta?.previewText ?: "",
-                    createdAt = entity.createdAt,
-                )
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+                    NodeFavoriteListItem(
+                        id = entity.id,
+                        refKey = entity.refKey,
+                        conversationId = ref.conversationId,
+                        nodeId = ref.nodeId,
+                        conversationTitle = meta?.title.orEmpty(),
+                        preview = meta?.previewText ?: "",
+                        createdAt = entity.createdAt,
+                    )
+                }
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun removeFavorite(refKey: String) {
         viewModelScope.launch {
@@ -51,9 +51,7 @@ class FavoriteVM(
         }
     }
 
-    suspend fun getEntityByRefKey(refKey: String): FavoriteEntity? {
-        return favoriteRepository.getByRefKey(refKey)
-    }
+    suspend fun getEntityByRefKey(refKey: String): FavoriteEntity? = favoriteRepository.getByRefKey(refKey)
 
     fun restoreFavorite(entity: FavoriteEntity) {
         viewModelScope.launch {

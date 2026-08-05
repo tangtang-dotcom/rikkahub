@@ -25,7 +25,10 @@ internal val DiffAddedColor = Color(0xFF4CAF50)
 internal val DiffRemovedColor = Color(0xFFEF5350)
 
 /** unified diff 的增删行数统计 */
-internal data class DiffStats(val additions: Int, val deletions: Int)
+internal data class DiffStats(
+    val additions: Int,
+    val deletions: Int,
+)
 
 internal fun parseDiffStats(diff: String): DiffStats {
     var additions = 0
@@ -33,8 +36,14 @@ internal fun parseDiffStats(diff: String): DiffStats {
     diff.lineSequence().forEach { line ->
         when {
             line.startsWith("+++") || line.startsWith("---") -> {}
-            line.startsWith("+") -> additions++
-            line.startsWith("-") -> deletions++
+
+            line.startsWith("+") -> {
+                additions++
+            }
+
+            line.startsWith("-") -> {
+                deletions++
+            }
         }
     }
     return DiffStats(additions, deletions)
@@ -53,26 +62,28 @@ fun DiffView(
     maxLines: Int = Int.MAX_VALUE,
     showFileHeader: Boolean = true,
 ) {
-    val allLines = remember(diff, showFileHeader) {
-        val lines = diff.lines()
-        if (!showFileHeader && lines.size >= 2 &&
-            lines[0].startsWith("---") && lines[1].startsWith("+++")
-        ) {
-            lines.drop(2)
-        } else {
-            lines
+    val allLines =
+        remember(diff, showFileHeader) {
+            val lines = diff.lines()
+            if (!showFileHeader && lines.size >= 2 &&
+                lines[0].startsWith("---") && lines[1].startsWith("+++")
+            ) {
+                lines.drop(2)
+            } else {
+                lines
+            }
         }
-    }
     val lines = remember(allLines, maxLines) { allLines.take(maxLines) }
     val truncated = allLines.size - lines.size
 
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .horizontalScroll(rememberScrollState())
-            .width(IntrinsicSize.Max)
-            .padding(vertical = 4.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .horizontalScroll(rememberScrollState())
+                .width(IntrinsicSize.Max)
+                .padding(vertical = 4.dp),
     ) {
         lines.fastForEach { line ->
             DiffLine(line)
@@ -92,22 +103,28 @@ fun DiffView(
 
 @Composable
 private fun DiffLine(line: String) {
-    val (textColor, background) = when {
-        line.startsWith("+++") || line.startsWith("---") ->
-            MaterialTheme.colorScheme.onSurfaceVariant to Color.Transparent
+    val (textColor, background) =
+        when {
+            line.startsWith("+++") || line.startsWith("---") -> {
+                MaterialTheme.colorScheme.onSurfaceVariant to Color.Transparent
+            }
 
-        line.startsWith("@@") ->
-            MaterialTheme.colorScheme.primary to Color.Transparent
+            line.startsWith("@@") -> {
+                MaterialTheme.colorScheme.primary to Color.Transparent
+            }
 
-        line.startsWith("+") ->
-            DiffAddedColor to DiffAddedColor.copy(alpha = 0.12f)
+            line.startsWith("+") -> {
+                DiffAddedColor to DiffAddedColor.copy(alpha = 0.12f)
+            }
 
-        line.startsWith("-") ->
-            DiffRemovedColor to DiffRemovedColor.copy(alpha = 0.12f)
+            line.startsWith("-") -> {
+                DiffRemovedColor to DiffRemovedColor.copy(alpha = 0.12f)
+            }
 
-        else ->
-            MaterialTheme.colorScheme.onSurface to Color.Transparent
-    }
+            else -> {
+                MaterialTheme.colorScheme.onSurface to Color.Transparent
+            }
+        }
     Text(
         text = line.ifEmpty { " " },
         color = textColor,
@@ -115,9 +132,10 @@ private fun DiffLine(line: String) {
         fontSize = 11.sp,
         lineHeight = 16.sp,
         softWrap = false,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(background)
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(background)
+                .padding(horizontal = 8.dp),
     )
 }

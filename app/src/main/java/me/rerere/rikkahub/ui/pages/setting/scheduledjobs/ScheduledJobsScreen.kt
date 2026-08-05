@@ -80,9 +80,10 @@ fun ScheduledJobsScreen(vm: ScheduledJobsViewModel = koinViewModel()) {
     ) { innerPadding ->
         if (jobs.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -125,21 +126,27 @@ private fun ScheduledJobRow(
 ) {
     val rel = relativeStrings()
     val nowMs by rememberTickingNowMs()
-    val schedule = remember(job.scheduleType, job.atUnixMs, job.cronExpression) {
-        summariseSchedule(job)
-    }
-    val statusLine: String = when (job.lastRunAtMs) {
-        null -> stringResource(R.string.setting_page_scheduled_jobs_subtitle_never_run)
-        else -> {
-            val ago = formatRelativeAgo(job.lastRunAtMs, nowMs, rel)
-            stringResource(R.string.setting_page_scheduled_jobs_subtitle_ran, ago)
+    val schedule =
+        remember(job.scheduleType, job.atUnixMs, job.cronExpression) {
+            summariseSchedule(job)
         }
-    }
+    val statusLine: String =
+        when (job.lastRunAtMs) {
+            null -> {
+                stringResource(R.string.setting_page_scheduled_jobs_subtitle_never_run)
+            }
+
+            else -> {
+                val ago = formatRelativeAgo(job.lastRunAtMs, nowMs, rel)
+                stringResource(R.string.setting_page_scheduled_jobs_subtitle_ran, ago)
+            }
+        }
     ListItem(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onTap() }
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onTap() }
+                .padding(horizontal = 8.dp),
         headlineContent = { Text(job.name) },
         supportingContent = {
             Text(
@@ -156,13 +163,14 @@ private fun ScheduledJobRow(
 }
 
 @Composable
-internal fun relativeStrings(): RelativeTimeStrings = RelativeTimeStrings(
-    justNow = stringResource(R.string.relative_time_just_now),
-    secondsAgo = stringResource(R.string.relative_time_seconds_ago),
-    minutesAgo = stringResource(R.string.relative_time_minutes_ago),
-    hoursAgo = stringResource(R.string.relative_time_hours_ago),
-    daysAgo = stringResource(R.string.relative_time_days_ago),
-)
+internal fun relativeStrings(): RelativeTimeStrings =
+    RelativeTimeStrings(
+        justNow = stringResource(R.string.relative_time_just_now),
+        secondsAgo = stringResource(R.string.relative_time_seconds_ago),
+        minutesAgo = stringResource(R.string.relative_time_minutes_ago),
+        hoursAgo = stringResource(R.string.relative_time_hours_ago),
+        daysAgo = stringResource(R.string.relative_time_days_ago),
+    )
 
 @Composable
 internal fun rememberTickingNowMs(): State<Long> {

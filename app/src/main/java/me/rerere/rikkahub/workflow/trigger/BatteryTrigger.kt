@@ -26,61 +26,77 @@ internal class BatteryTriggerFamily(
     private val context: Context,
     private val scope: CoroutineScope,
 ) : WorkflowTriggerFamily {
-
     override val name = "battery"
 
     @Volatile private var receiver: BroadcastReceiver? = null
+
     @Volatile private var matching: List<WorkflowDefinition> = emptyList()
+
     @Volatile private var prevLevel: Int? = null
 
     override fun handles(spec: TriggerSpec): Boolean =
         spec is TriggerSpec.BatteryBelow || spec is TriggerSpec.BatteryAbove
 
-    override suspend fun sync(matching: List<WorkflowDefinition>, callback: TriggerFireCallback) {
+    override suspend fun sync(
+        matching: List<WorkflowDefinition>,
+        callback: TriggerFireCallback,
+    ) {
         this.matching = matching
         if (matching.isEmpty()) {
             unregister()
             return
         }
         if (receiver != null) return
-        val r = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)?.takeIf { it >= 0 } ?: return
-                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
-                val pct = (level * 100 / scale).coerceIn(0, 100)
-                val prev = prevLevel
-                prevLevel = pct
-                if (prev == null) return  // seed; no transition to compare against
+        val r =
+            object : BroadcastReceiver() {
+                override fun onReceive(
+                    ctx: Context?,
+                    intent: Intent?,
+                ) {
+                    val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)?.takeIf { it >= 0 } ?: return
+                    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+                    val pct = (level * 100 / scale).coerceIn(0, 100)
+                    val prev = prevLevel
+                    prevLevel = pct
+                    if (prev == null) return // seed; no transition to compare against
 
-                val fires = mutableListOf<Pair<String, TriggerSpec>>()
-                for (wf in this@BatteryTriggerFamily.matching) {
-                    when (val t = wf.trigger) {
-                        is TriggerSpec.BatteryBelow -> {
-                            if (prev >= t.thresholdPercent && pct < t.thresholdPercent) {
-                                fires += wf.id to t
+                    val fires = mutableListOf<Pair<String, TriggerSpec>>()
+                    for (wf in this@BatteryTriggerFamily.matching) {
+                        when (val t = wf.trigger) {
+                            is TriggerSpec.BatteryBelow -> {
+                                if (prev >= t.thresholdPercent && pct < t.thresholdPercent) {
+                                    fires += wf.id to t
+                                }
+                            }
+
+                            is TriggerSpec.BatteryAbove -> {
+                                if (prev < t.thresholdPercent && pct >= t.thresholdPercent) {
+                                    fires += wf.id to t
+                                }
+                            }
+
+                            else -> {
+                                Unit
                             }
                         }
-                        is TriggerSpec.BatteryAbove -> {
-                            if (prev < t.thresholdPercent && pct >= t.thresholdPercent) {
-                                fires += wf.id to t
-                            }
-                        }
-                        else -> Unit
                     }
-                }
-                if (fires.isEmpty()) return
-                scope.launch(Dispatchers.IO) {
-                    for ((wfId, spec) in fires) {
-                        runCatching { callback.onFire(wfId, spec) }.onFailure {
-                            Log.w(TAG, "battery fire failed for wf=$wfId", it)
+                    if (fires.isEmpty()) return
+                    scope.launch(Dispatchers.IO) {
+                        for ((wfId, spec) in fires) {
+                            runCatching { callback.onFire(wfId, spec) }.onFailure {
+                                Log.w(TAG, "battery fire failed for wf=$wfId", it)
+                            }
                         }
                     }
                 }
             }
-        }
         try {
-            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                Context.RECEIVER_NOT_EXPORTED else 0
+            val flags =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Context.RECEIVER_NOT_EXPORTED
+                } else {
+                    0
+                }
             // ACTION_BATTERY_CHANGED is sticky — the registerReceiver call returns the
             // current Intent, which we pass through to seed prevLevel without firing.
             val sticky = context.registerReceiver(r, IntentFilter(Intent.ACTION_BATTERY_CHANGED), flags)
@@ -90,7 +106,7 @@ internal class BatteryTriggerFamily(
                 val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
                 if (level >= 0) prevLevel = (level * 100 / scale).coerceIn(0, 100)
             }
-            Log.d(TAG, "battery: receiver registered, seed=${prevLevel}%, ${matching.size} wf(s)")
+            Log.d(TAG, "battery: receiver registered, seed=$prevLevel%, ${matching.size} wf(s)")
         } catch (t: Throwable) {
             Log.w(TAG, "battery: registerReceiver failed", t)
         }
@@ -107,5 +123,7 @@ internal class BatteryTriggerFamily(
 
     override suspend fun shutdown() = unregister()
 
-    companion object { private const val TAG = "WorkflowTrigger" }
+    companion object {
+        private const val TAG = "WorkflowTrigger"
+    }
 }

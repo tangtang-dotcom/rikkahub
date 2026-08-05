@@ -10,7 +10,10 @@ import okhttp3.OkHttpClient
 /**
  * Provider管理器，负责注册和获取Provider实例
  */
-class ProviderManager(client: OkHttpClient, context: Context) {
+class ProviderManager(
+    client: OkHttpClient,
+    context: Context,
+) {
     // 存储已注册的Provider实例
     private val providers = mutableMapOf<String, Provider<*>>()
 
@@ -28,7 +31,10 @@ class ProviderManager(client: OkHttpClient, context: Context) {
      * @param name Provider名称
      * @param provider Provider实例
      */
-    fun registerProvider(name: String, provider: Provider<*>) {
+    fun registerProvider(
+        name: String,
+        provider: Provider<*>,
+    ) {
         providers[name] = provider
     }
 
@@ -38,9 +44,8 @@ class ProviderManager(client: OkHttpClient, context: Context) {
      * @param name Provider名称
      * @return Provider实例，如果不存在则返回null
      */
-    fun getProvider(name: String): Provider<*> {
-        return providers[name] ?: throw IllegalArgumentException("Provider not found: $name")
-    }
+    fun getProvider(name: String): Provider<*> =
+        providers[name] ?: throw IllegalArgumentException("Provider not found: $name")
 
     /**
      * 根据ProviderSetting获取对应的Provider实例

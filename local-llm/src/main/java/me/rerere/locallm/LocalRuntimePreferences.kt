@@ -8,10 +8,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 
 private val Context.localRuntimeDataStore by preferencesDataStore(name = "local_runtime_prefs")
 
@@ -23,21 +23,19 @@ private val Context.localRuntimeDataStore by preferencesDataStore(name = "local_
  * One DataStore instance, two key sets, both keyed on the [LocalRuntime] enum's
  * displayName so a future third runtime doesn't need a schema migration.
  */
-class LocalRuntimePreferences(private val context: Context) {
-
+class LocalRuntimePreferences(
+    private val context: Context,
+) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    private fun acceleratorKey(runtime: LocalRuntime) =
-        stringPreferencesKey("accel_${runtime.displayName}")
+    private fun acceleratorKey(runtime: LocalRuntime) = stringPreferencesKey("accel_${runtime.displayName}")
 
-    private fun installedModelsKey(runtime: LocalRuntime) =
-        stringPreferencesKey("installed_${runtime.displayName}")
+    private fun installedModelsKey(runtime: LocalRuntime) = stringPreferencesKey("installed_${runtime.displayName}")
 
     /** Per-runtime force-CPU override. The default is device-dependent (see
      *  [defaultForceCpu]): CPU for the Google Tensor crash class, GPU everywhere else.
      *  Users can flip it either way via the "Try GPU acceleration" toggle. */
-    private fun forceCpuKey(runtime: LocalRuntime) =
-        booleanPreferencesKey("force_cpu_${runtime.displayName}")
+    private fun forceCpuKey(runtime: LocalRuntime) = booleanPreferencesKey("force_cpu_${runtime.displayName}")
 
     /** The default value for [forceCpuFlow] when the user has not set a preference.
      *  Computed once from the SoC: GPU for capable devices, CPU for Google Tensor (where
@@ -61,8 +59,7 @@ class LocalRuntimePreferences(private val context: Context) {
      *  exited with REASON_CRASH_NATIVE inside liblitertlm_jni.so. The settings UI
      *  reads this, shows a friendly recovery banner, and clears it on dismiss. Value
      *  is the accelerator label that crashed (so the banner can name it). */
-    private fun crashRecoveryKey(runtime: LocalRuntime) =
-        stringPreferencesKey("crash_recovery_${runtime.displayName}")
+    private fun crashRecoveryKey(runtime: LocalRuntime) = stringPreferencesKey("crash_recovery_${runtime.displayName}")
 
     /** Per-runtime set of model filenames whose GPU vision encoder failed to initialise on
      *  this device. The provider seeds this from [LiteRtRuntime.LoadOutcome.visionFellBackToTextOnly]
@@ -77,8 +74,7 @@ class LocalRuntimePreferences(private val context: Context) {
      *  (an app update bumped the dependency), [maybeInvalidateOnSdkUpgrade] clears those
      *  stale decisions so the new SDK gets a fresh probe — picks up upstream fixes that
      *  would otherwise be masked by the previous fallback. */
-    private fun sdkVersionKey(runtime: LocalRuntime) =
-        stringPreferencesKey("sdk_version_${runtime.displayName}")
+    private fun sdkVersionKey(runtime: LocalRuntime) = stringPreferencesKey("sdk_version_${runtime.displayName}")
 
     /** Compiled-in SDK identifier. Bumped in lockstep with the dependency line in
      *  `local-llm/build.gradle.kts`. Mismatch with the persisted [sdkVersionKey] triggers
@@ -93,10 +89,10 @@ class LocalRuntimePreferences(private val context: Context) {
      * a fresh probe. Then writes [currentSdkVersion] back. Idempotent — second call in
      * the same app session is a no-op. Safe to call from app startup.
      */
+
     /** Per-modelId last-known telemetry sample: prefill tok/s and decode tok/s. Stored as
      *  a JSON map: { modelId -> "prefillTps|decodeTps|specDecodingEngaged|sampledAtMs" }. */
-    private fun perfTelemetryKey(runtime: LocalRuntime) =
-        stringPreferencesKey("perf_telemetry_${runtime.displayName}")
+    private fun perfTelemetryKey(runtime: LocalRuntime) = stringPreferencesKey("perf_telemetry_${runtime.displayName}")
 
     data class PerfSample(
         val modelId: String,
@@ -116,21 +112,23 @@ class LocalRuntimePreferences(private val context: Context) {
 
     private fun decodePerfMap(raw: String?): Map<String, PerfSample> {
         if (raw.isNullOrBlank()) return emptyMap()
-        val rawMap = runCatching {
-            json.decodeFromString(
-                MapSerializer(String.serializer(), String.serializer()),
-                raw,
-            )
-        }.getOrDefault(emptyMap())
-        return rawMap.mapNotNull { (modelId, packed) ->
-            val parts = packed.split("|")
-            if (parts.size < 4) return@mapNotNull null
-            val prefill = parts[0].toDoubleOrNull() ?: return@mapNotNull null
-            val decode = parts[1].toDoubleOrNull() ?: return@mapNotNull null
-            val spec = parts[2].toBooleanStrictOrNull() ?: false
-            val ts = parts[3].toLongOrNull() ?: return@mapNotNull null
-            modelId to PerfSample(modelId, prefill, decode, spec, ts)
-        }.toMap()
+        val rawMap =
+            runCatching {
+                json.decodeFromString(
+                    MapSerializer(String.serializer(), String.serializer()),
+                    raw,
+                )
+            }.getOrDefault(emptyMap())
+        return rawMap
+            .mapNotNull { (modelId, packed) ->
+                val parts = packed.split("|")
+                if (parts.size < 4) return@mapNotNull null
+                val prefill = parts[0].toDoubleOrNull() ?: return@mapNotNull null
+                val decode = parts[1].toDoubleOrNull() ?: return@mapNotNull null
+                val spec = parts[2].toBooleanStrictOrNull() ?: false
+                val ts = parts[3].toLongOrNull() ?: return@mapNotNull null
+                modelId to PerfSample(modelId, prefill, decode, spec, ts)
+            }.toMap()
     }
 
     /** Observe the last-known perf sample for every model under [runtime]. */
@@ -138,12 +136,17 @@ class LocalRuntimePreferences(private val context: Context) {
         context.localRuntimeDataStore.data.map { decodePerfMap(it[perfTelemetryKey(runtime)]) }
 
     /** One-shot read of the perf sample for [modelId], if any. */
-    suspend fun perfTelemetry(runtime: LocalRuntime, modelId: String): PerfSample? =
-        perfTelemetryFlow(runtime).first()[modelId]
+    suspend fun perfTelemetry(
+        runtime: LocalRuntime,
+        modelId: String,
+    ): PerfSample? = perfTelemetryFlow(runtime).first()[modelId]
 
     /** Record the latest perf sample for [modelId]. Overwrites the prior sample for the
      *  same modelId; other models' samples are preserved. */
-    suspend fun setPerfTelemetry(runtime: LocalRuntime, sample: PerfSample) {
+    suspend fun setPerfTelemetry(
+        runtime: LocalRuntime,
+        sample: PerfSample,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
             val current = decodePerfMap(prefs[perfTelemetryKey(runtime)]).toMutableMap()
             current[sample.modelId] = sample
@@ -198,7 +201,10 @@ class LocalRuntimePreferences(private val context: Context) {
     fun acceleratorFlow(runtime: LocalRuntime): Flow<String?> =
         context.localRuntimeDataStore.data.map { it[acceleratorKey(runtime)] }
 
-    suspend fun setAccelerator(runtime: LocalRuntime, accel: String) {
+    suspend fun setAccelerator(
+        runtime: LocalRuntime,
+        accel: String,
+    ) {
         context.localRuntimeDataStore.edit { it[acceleratorKey(runtime)] = accel }
     }
 
@@ -220,22 +226,31 @@ class LocalRuntimePreferences(private val context: Context) {
     fun maxNumTokensOverrideFlow(runtime: LocalRuntime): Flow<Int?> =
         context.localRuntimeDataStore.data.map { it[maxNumTokensOverrideKey(runtime)] }
 
-    suspend fun maxNumTokensOverride(runtime: LocalRuntime): Int? =
-        maxNumTokensOverrideFlow(runtime).first()
+    suspend fun maxNumTokensOverride(runtime: LocalRuntime): Int? = maxNumTokensOverrideFlow(runtime).first()
 
-    suspend fun setMaxNumTokensOverride(runtime: LocalRuntime, value: Int?) {
+    suspend fun setMaxNumTokensOverride(
+        runtime: LocalRuntime,
+        value: Int?,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
-            if (value == null) prefs.remove(maxNumTokensOverrideKey(runtime))
-            else prefs[maxNumTokensOverrideKey(runtime)] = value
+            if (value == null) {
+                prefs.remove(maxNumTokensOverrideKey(runtime))
+            } else {
+                prefs[maxNumTokensOverrideKey(runtime)] = value
+            }
         }
     }
 
     private fun maxNumTokensOverrideKey(runtime: LocalRuntime) =
-        androidx.datastore.preferences.core.intPreferencesKey("max_tokens_${runtime.displayName}")
+        androidx.datastore.preferences.core
+            .intPreferencesKey("max_tokens_${runtime.displayName}")
 
     suspend fun forceCpu(runtime: LocalRuntime): Boolean = forceCpuFlow(runtime).first()
 
-    suspend fun setForceCpu(runtime: LocalRuntime, force: Boolean) {
+    suspend fun setForceCpu(
+        runtime: LocalRuntime,
+        force: Boolean,
+    ) {
         context.localRuntimeDataStore.edit { it[forceCpuKey(runtime)] = force }
     }
 
@@ -245,7 +260,10 @@ class LocalRuntimePreferences(private val context: Context) {
     fun crashRecoveryFlow(runtime: LocalRuntime): Flow<String?> =
         context.localRuntimeDataStore.data.map { it[crashRecoveryKey(runtime)] }
 
-    suspend fun setCrashRecovery(runtime: LocalRuntime, crashedAccelerator: String) {
+    suspend fun setCrashRecovery(
+        runtime: LocalRuntime,
+        crashedAccelerator: String,
+    ) {
         context.localRuntimeDataStore.edit { it[crashRecoveryKey(runtime)] = crashedAccelerator }
     }
 
@@ -259,18 +277,22 @@ class LocalRuntimePreferences(private val context: Context) {
             decodeInstalledMap(raw)
         }
 
-    suspend fun installedModels(runtime: LocalRuntime): Map<String, String> =
-        installedModelsFlow(runtime).first()
+    suspend fun installedModels(runtime: LocalRuntime): Map<String, String> = installedModelsFlow(runtime).first()
 
-    suspend fun addInstalledModel(runtime: LocalRuntime, fileName: String, absolutePath: String) {
+    suspend fun addInstalledModel(
+        runtime: LocalRuntime,
+        fileName: String,
+        absolutePath: String,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
             val raw = prefs[installedModelsKey(runtime)]
             val current = decodeInstalledMap(raw).toMutableMap()
             current[fileName] = absolutePath
-            prefs[installedModelsKey(runtime)] = json.encodeToString(
-                MapSerializer(String.serializer(), String.serializer()),
-                current,
-            )
+            prefs[installedModelsKey(runtime)] =
+                json.encodeToString(
+                    MapSerializer(String.serializer(), String.serializer()),
+                    current,
+                )
         }
     }
 
@@ -281,39 +303,48 @@ class LocalRuntimePreferences(private val context: Context) {
         }
 
     /** One-shot read. */
-    suspend fun visionUnavailable(runtime: LocalRuntime): Set<String> =
-        visionUnavailableFlow(runtime).first()
+    suspend fun visionUnavailable(runtime: LocalRuntime): Set<String> = visionUnavailableFlow(runtime).first()
 
     /** True when [fileName] previously failed its vision-encoder init for [runtime]. */
-    suspend fun isVisionUnavailable(runtime: LocalRuntime, fileName: String): Boolean =
-        fileName in visionUnavailable(runtime)
+    suspend fun isVisionUnavailable(
+        runtime: LocalRuntime,
+        fileName: String,
+    ): Boolean = fileName in visionUnavailable(runtime)
 
     /** Mark [fileName] as vision-unavailable. Idempotent. */
-    suspend fun setVisionUnavailable(runtime: LocalRuntime, fileName: String) {
+    suspend fun setVisionUnavailable(
+        runtime: LocalRuntime,
+        fileName: String,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
             val current = decodeStringSet(prefs[visionUnavailableKey(runtime)]).toMutableSet()
             if (current.add(fileName)) {
-                prefs[visionUnavailableKey(runtime)] = json.encodeToString(
-                    SetSerializer(String.serializer()),
-                    current,
-                )
+                prefs[visionUnavailableKey(runtime)] =
+                    json.encodeToString(
+                        SetSerializer(String.serializer()),
+                        current,
+                    )
             }
         }
     }
 
     /** Clear the vision-unavailable flag for [fileName]. Used by the settings "Re-try vision"
      *  affordance — after the user updates GPU drivers / changes ROM / moves the file. */
-    suspend fun clearVisionUnavailable(runtime: LocalRuntime, fileName: String) {
+    suspend fun clearVisionUnavailable(
+        runtime: LocalRuntime,
+        fileName: String,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
             val current = decodeStringSet(prefs[visionUnavailableKey(runtime)]).toMutableSet()
             if (current.remove(fileName)) {
                 if (current.isEmpty()) {
                     prefs.remove(visionUnavailableKey(runtime))
                 } else {
-                    prefs[visionUnavailableKey(runtime)] = json.encodeToString(
-                        SetSerializer(String.serializer()),
-                        current,
-                    )
+                    prefs[visionUnavailableKey(runtime)] =
+                        json.encodeToString(
+                            SetSerializer(String.serializer()),
+                            current,
+                        )
                 }
             }
         }
@@ -340,7 +371,10 @@ class LocalRuntimePreferences(private val context: Context) {
         return removed
     }
 
-    suspend fun removeInstalledModel(runtime: LocalRuntime, fileName: String) {
+    suspend fun removeInstalledModel(
+        runtime: LocalRuntime,
+        fileName: String,
+    ) {
         context.localRuntimeDataStore.edit { prefs ->
             val raw = prefs[installedModelsKey(runtime)]
             val current = decodeInstalledMap(raw).toMutableMap()
@@ -351,10 +385,11 @@ class LocalRuntimePreferences(private val context: Context) {
                 // initial state (key absent == empty map via decodeInstalledMap).
                 prefs.remove(installedModelsKey(runtime))
             } else {
-                prefs[installedModelsKey(runtime)] = json.encodeToString(
-                    MapSerializer(String.serializer(), String.serializer()),
-                    current,
-                )
+                prefs[installedModelsKey(runtime)] =
+                    json.encodeToString(
+                        MapSerializer(String.serializer(), String.serializer()),
+                        current,
+                    )
             }
             // Also drop any vision-unavailable flag for this file. Reinstalling the same
             // filename on a new SDK / new ROM should get a fresh chance to load with vision.
@@ -364,10 +399,11 @@ class LocalRuntimePreferences(private val context: Context) {
                 if (visionSet.isEmpty()) {
                     prefs.remove(visionUnavailableKey(runtime))
                 } else {
-                    prefs[visionUnavailableKey(runtime)] = json.encodeToString(
-                        SetSerializer(String.serializer()),
-                        visionSet,
-                    )
+                    prefs[visionUnavailableKey(runtime)] =
+                        json.encodeToString(
+                            SetSerializer(String.serializer()),
+                            visionSet,
+                        )
                 }
             }
         }

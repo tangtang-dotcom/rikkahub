@@ -50,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -67,11 +68,10 @@ import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Refresh01
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Share08
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.ai.tools.resolveWorkspaceToolApproval
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
-import androidx.compose.ui.res.stringResource
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
@@ -100,28 +100,33 @@ fun WorkspaceDetailPage(id: String) {
     var showInstallDialog by remember { mutableStateOf(false) }
     var previewImageUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
-    val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val fileName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex >= 0) cursor.getString(nameIndex) else null
-            } else null
-        } ?: uri.lastPathSegment ?: "imported_file"
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return@rememberLauncherForActivityResult
-        vm.importFile(inputStream, fileName)
-    }
+    val filePicker =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val fileName =
+                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex >= 0) cursor.getString(nameIndex) else null
+                    } else {
+                        null
+                    }
+                } ?: uri.lastPathSegment ?: "imported_file"
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return@rememberLauncherForActivityResult
+            vm.importFile(inputStream, fileName)
+        }
     var exportTarget by remember { mutableStateOf<WorkspaceFileEntry?>(null) }
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*"),
-    ) { uri ->
-        val entry = exportTarget.also { exportTarget = null } ?: return@rememberLauncherForActivityResult
-        if (uri == null) return@rememberLauncherForActivityResult
-        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
-        vm.exportFile(entry, outputStream)
-    }
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("*/*"),
+        ) { uri ->
+            val entry = exportTarget.also { exportTarget = null } ?: return@rememberLauncherForActivityResult
+            if (uri == null) return@rememberLauncherForActivityResult
+            val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
+            vm.exportFile(entry, outputStream)
+        }
 
     BackHandler(enabled = pagerState.currentPage == 1 && state.path.isNotBlank()) {
         vm.goUp()
@@ -179,79 +184,99 @@ fun WorkspaceDetailPage(id: String) {
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
         ) { page ->
             when (page) {
-                0 -> WorkspaceBasicPage(
-                    workspace = state.workspace,
-                    installProgress = installProgress,
-                    onInstallRootfs = { showInstallDialog = true },
-                    onToolApprovalChange = vm::setToolApproval,
-                )
+                0 -> {
+                    WorkspaceBasicPage(
+                        workspace = state.workspace,
+                        installProgress = installProgress,
+                        onInstallRootfs = { showInstallDialog = true },
+                        onToolApprovalChange = vm::setToolApproval,
+                    )
+                }
 
-                1 -> WorkspaceFilesPage(
-                    state = state,
-                    contentPadding = PaddingValues(),
-                    onSelectArea = vm::selectArea,
-                    onGoUp = vm::goUp,
-                    onOpen = { entry ->
-                        when {
-                            entry.isDirectory -> vm.open(entry)
-
-                            else -> when (entry.detectFileType()) {
-                                WorkspaceFileType.TEXT -> navController.navigate(
-                                    Screen.WorkspaceFileEditor(id, state.area.name, entry.path)
-                                )
-
-                                WorkspaceFileType.IMAGE -> vm.exportToCacheFile(entry, context.cacheDir) { file ->
-                                    // 传绝对路径 (而非 content:// URI): Coil 可直接加载,
-                                    // 预览弹窗的保存按钮 saveMessageImage 只认 "/" 开头路径, content URI 会报错
-                                    previewImageUri = file.absolutePath
+                1 -> {
+                    WorkspaceFilesPage(
+                        state = state,
+                        contentPadding = PaddingValues(),
+                        onSelectArea = vm::selectArea,
+                        onGoUp = vm::goUp,
+                        onOpen = { entry ->
+                            when {
+                                entry.isDirectory -> {
+                                    vm.open(entry)
                                 }
 
-                                WorkspaceFileType.OTHER -> vm.exportToCacheFile(entry, context.cacheDir) { file ->
-                                    val uri = FileProvider.getUriForFile(
+                                else -> {
+                                    when (entry.detectFileType()) {
+                                        WorkspaceFileType.TEXT -> {
+                                            navController.navigate(
+                                                Screen.WorkspaceFileEditor(id, state.area.name, entry.path),
+                                            )
+                                        }
+
+                                        WorkspaceFileType.IMAGE -> {
+                                            vm.exportToCacheFile(entry, context.cacheDir) { file ->
+                                                // 传绝对路径 (而非 content:// URI): Coil 可直接加载,
+                                                // 预览弹窗的保存按钮 saveMessageImage 只认 "/" 开头路径, content URI 会报错
+                                                previewImageUri = file.absolutePath
+                                            }
+                                        }
+
+                                        WorkspaceFileType.OTHER -> {
+                                            vm.exportToCacheFile(entry, context.cacheDir) { file ->
+                                                val uri =
+                                                    FileProvider.getUriForFile(
+                                                        context,
+                                                        "${context.packageName}.fileprovider",
+                                                        file,
+                                                    )
+                                                val mime =
+                                                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                                                        file.extension.lowercase(),
+                                                    ) ?: "*/*"
+                                                val intent =
+                                                    Intent(Intent.ACTION_VIEW).apply {
+                                                        setDataAndType(uri, mime)
+                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                    }
+                                                runCatching {
+                                                    context.startActivity(Intent.createChooser(intent, null))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        onDelete = { deleteTarget = it },
+                        onExport = { entry ->
+                            exportTarget = entry
+                            exportLauncher.launch(entry.name)
+                        },
+                        onShare = { entry ->
+                            vm.exportToCacheFile(entry, context.cacheDir) { file ->
+                                val uri =
+                                    FileProvider.getUriForFile(
                                         context,
                                         "${context.packageName}.fileprovider",
                                         file,
                                     )
-                                    val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
-                                        file.extension.lowercase()
-                                    ) ?: "*/*"
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(uri, mime)
+                                val intent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/octet-stream"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     }
-                                    runCatching {
-                                        context.startActivity(Intent.createChooser(intent, null))
-                                    }
-                                }
+                                context.startActivity(Intent.createChooser(intent, null))
                             }
-                        }
-                    },
-                    onDelete = { deleteTarget = it },
-                    onExport = { entry ->
-                        exportTarget = entry
-                        exportLauncher.launch(entry.name)
-                    },
-                    onShare = { entry ->
-                        vm.exportToCacheFile(entry, context.cacheDir) { file ->
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                file,
-                            )
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/octet-stream"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
         }
     }
@@ -292,7 +317,14 @@ fun WorkspaceDetailPage(id: String) {
     deleteTarget?.let { entry ->
         RikkaConfirmDialog(
             show = true,
-            title = if (entry.isDirectory) stringResource(R.string.workspace_detail_delete_directory) else stringResource(R.string.workspace_detail_delete_file),
+            title =
+                if (entry.isDirectory) {
+                    stringResource(
+                        R.string.workspace_detail_delete_directory,
+                    )
+                } else {
+                    stringResource(R.string.workspace_detail_delete_file)
+                },
             confirmText = stringResource(R.string.common_delete),
             dismissText = stringResource(R.string.common_cancel),
             onConfirm = {
@@ -316,11 +348,12 @@ private fun WorkspaceBasicPage(
     val shellStatus = workspace?.shellStatus
     val installing = installProgress != null || shellStatus == WorkspaceShellStatus.INSTALLING.name
     val rootfsReady = shellStatus == WorkspaceShellStatus.READY.name
-    val installButtonText = when {
-        installing -> stringResource(R.string.workspace_detail_installing)
-        rootfsReady -> stringResource(R.string.workspace_detail_reinstall_rootfs)
-        else -> stringResource(R.string.workspace_detail_install_rootfs)
-    }
+    val installButtonText =
+        when {
+            installing -> stringResource(R.string.workspace_detail_installing)
+            rootfsReady -> stringResource(R.string.workspace_detail_reinstall_rootfs)
+            else -> stringResource(R.string.workspace_detail_install_rootfs)
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -333,17 +366,24 @@ private fun WorkspaceBasicPage(
                 colors = CustomColors.cardColorsOnSurfaceContainer,
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.workspace_detail_workspace_info),
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    WorkspaceInfoRow(stringResource(R.string.workspace_detail_name), workspace?.name ?: stringResource(R.string.workspace_detail_loading))
-                    WorkspaceInfoRow(stringResource(R.string.workspace_detail_shell_status), workspace?.shellStatus?.toShellStatusLabel() ?: "-")
+                    WorkspaceInfoRow(
+                        stringResource(R.string.workspace_detail_name),
+                        workspace?.name ?: stringResource(R.string.workspace_detail_loading),
+                    )
+                    WorkspaceInfoRow(
+                        stringResource(R.string.workspace_detail_shell_status),
+                        workspace?.shellStatus?.toShellStatusLabel() ?: "-",
+                    )
                 }
             }
         }
@@ -354,9 +394,10 @@ private fun WorkspaceBasicPage(
                 colors = CustomColors.cardColorsOnSurfaceContainer,
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
@@ -409,9 +450,10 @@ private fun WorkspaceToolApprovalCard(
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -460,12 +502,13 @@ private fun WorkspaceToolApprovalCard(
 }
 
 @Composable
-private fun workspaceToolApprovalItems() = listOf(
-    "workspace_read_file" to stringResource(R.string.workspace_detail_tool_read_file),
-    "workspace_write_file" to stringResource(R.string.workspace_detail_tool_write_file),
-    "workspace_edit_file" to stringResource(R.string.workspace_detail_tool_edit_file),
-    "workspace_shell" to stringResource(R.string.workspace_detail_tool_shell),
-)
+private fun workspaceToolApprovalItems() =
+    listOf(
+        "workspace_read_file" to stringResource(R.string.workspace_detail_tool_read_file),
+        "workspace_write_file" to stringResource(R.string.workspace_detail_tool_write_file),
+        "workspace_edit_file" to stringResource(R.string.workspace_detail_tool_edit_file),
+        "workspace_shell" to stringResource(R.string.workspace_detail_tool_shell),
+    )
 
 @Composable
 private fun WorkspaceInfoRow(
@@ -501,9 +544,10 @@ private fun RootfsProgress(progress: RootfsInstallProgress) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        val fraction = progress.totalBytes?.takeIf { it > 0 }?.let {
-            (progress.bytesRead.toFloat() / it).coerceIn(0f, 1f)
-        }
+        val fraction =
+            progress.totalBytes?.takeIf { it > 0 }?.let {
+                (progress.bytesRead.toFloat() / it).coerceIn(0f, 1f)
+            }
         if (fraction != null && progress.stage == RootfsInstallStage.DOWNLOADING) {
             LinearProgressIndicator(
                 progress = { fraction },
@@ -513,19 +557,26 @@ private fun RootfsProgress(progress: RootfsInstallProgress) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
         Text(
-            text = when (progress.stage) {
-                RootfsInstallStage.DOWNLOADING -> {
-                    val total = progress.totalBytes?.let { " / ${it.fileSizeToString()}" }.orEmpty()
-                    stringResource(R.string.workspace_detail_downloading, progress.bytesRead.fileSizeToString(), total)
-                }
+            text =
+                when (progress.stage) {
+                    RootfsInstallStage.DOWNLOADING -> {
+                        val total = progress.totalBytes?.let { " / ${it.fileSizeToString()}" }.orEmpty()
+                        stringResource(
+                            R.string.workspace_detail_downloading,
+                            progress.bytesRead.fileSizeToString(),
+                            total,
+                        )
+                    }
 
-                RootfsInstallStage.EXTRACTING -> {
-                    val entry = progress.currentEntry?.let { " · $it" }.orEmpty()
-                    stringResource(R.string.workspace_detail_extracting, progress.entriesExtracted, entry)
-                }
+                    RootfsInstallStage.EXTRACTING -> {
+                        val entry = progress.currentEntry?.let { " · $it" }.orEmpty()
+                        stringResource(R.string.workspace_detail_extracting, progress.entriesExtracted, entry)
+                    }
 
-                RootfsInstallStage.INSTALLED -> stringResource(R.string.workspace_detail_install_complete)
-            },
+                    RootfsInstallStage.INSTALLED -> {
+                        stringResource(R.string.workspace_detail_install_complete)
+                    }
+                },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -637,10 +688,11 @@ private fun WorkspaceAreaSelector(
     selected: WorkspaceStorageArea,
     onSelected: (WorkspaceStorageArea) -> Unit,
 ) {
-    val areas = listOf(
-        WorkspaceStorageArea.FILES to stringResource(R.string.workspace_detail_area_files),
-        WorkspaceStorageArea.LINUX to stringResource(R.string.workspace_detail_area_rootfs),
-    )
+    val areas =
+        listOf(
+            WorkspaceStorageArea.FILES to stringResource(R.string.workspace_detail_area_files),
+            WorkspaceStorageArea.LINUX to stringResource(R.string.workspace_detail_area_rootfs),
+        )
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         areas.forEachIndexed { index, (area, label) ->
             SegmentedButton(
@@ -693,31 +745,35 @@ private fun WorkspaceFileCard(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpen),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpen),
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = if (entry.isDirectory) HugeIcons.Folder01 else HugeIcons.File02,
                 contentDescription = null,
                 modifier = Modifier.size(22.dp),
-                tint = if (entry.isDirectory) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                tint =
+                    if (entry.isDirectory) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
@@ -771,7 +827,12 @@ private fun WorkspaceFileCard(
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) },
+                        text = {
+                            Text(
+                                stringResource(R.string.common_delete),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
@@ -793,9 +854,10 @@ private fun WorkspaceFileCard(
 @Composable
 private fun EmptyDirectoryState() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -829,13 +891,14 @@ private fun ErrorCard(message: String) {
 }
 
 @Composable
-internal fun String.toShellStatusLabel(): String = when (this) {
-    WorkspaceShellStatus.DISABLED.name -> stringResource(R.string.workspace_detail_shell_disabled)
-    WorkspaceShellStatus.INSTALLING.name -> stringResource(R.string.workspace_detail_shell_installing)
-    WorkspaceShellStatus.READY.name -> stringResource(R.string.workspace_detail_shell_ready)
-    WorkspaceShellStatus.BROKEN.name -> stringResource(R.string.workspace_detail_shell_broken)
-    else -> lowercase()
-}
+internal fun String.toShellStatusLabel(): String =
+    when (this) {
+        WorkspaceShellStatus.DISABLED.name -> stringResource(R.string.workspace_detail_shell_disabled)
+        WorkspaceShellStatus.INSTALLING.name -> stringResource(R.string.workspace_detail_shell_installing)
+        WorkspaceShellStatus.READY.name -> stringResource(R.string.workspace_detail_shell_ready)
+        WorkspaceShellStatus.BROKEN.name -> stringResource(R.string.workspace_detail_shell_broken)
+        else -> lowercase()
+    }
 
 private const val DEFAULT_ROOTFS_URL =
     "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"

@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -21,9 +21,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,15 +85,18 @@ fun CodexProviderConfigure(
                 oauthManager.consumeResult()
             }
 
-            else -> Unit
+            else -> {
+                Unit
+            }
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
@@ -124,11 +127,12 @@ fun CodexProviderConfigure(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = if (canEnable) {
-                        stringResource(R.string.codex_round_robin_description)
-                    } else {
-                        stringResource(R.string.codex_sign_in_required)
-                    },
+                    text =
+                        if (canEnable) {
+                            stringResource(R.string.codex_round_robin_description)
+                        } else {
+                            stringResource(R.string.codex_sign_in_required)
+                        },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -164,9 +168,10 @@ fun CodexProviderConfigure(
         if (accounts.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
             ) {
                 Text(
                     text = stringResource(R.string.codex_no_accounts),
@@ -187,7 +192,7 @@ fun CodexProviderConfigure(
                                 .onFailure {
                                     toaster.show(
                                         it.message ?: context.getString(
-                                            R.string.codex_refresh_failed
+                                            R.string.codex_refresh_failed,
                                         ),
                                         type = ToastType.Error,
                                     )
@@ -209,17 +214,21 @@ fun CodexProviderConfigure(
     }
 }
 
-internal fun mergeCodexModels(existing: List<Model>, refreshed: List<Model>): List<Model> {
+internal fun mergeCodexModels(
+    existing: List<Model>,
+    refreshed: List<Model>,
+): List<Model> {
     val refreshedByModelId = refreshed.associateBy(Model::modelId)
-    val merged = existing.map { model ->
-        refreshedByModelId[model.modelId]?.let { refreshedModel ->
-            model.copy(
-                inputModalities = refreshedModel.inputModalities,
-                outputModalities = refreshedModel.outputModalities,
-                abilities = refreshedModel.abilities,
-            )
-        } ?: model
-    }
+    val merged =
+        existing.map { model ->
+            refreshedByModelId[model.modelId]?.let { refreshedModel ->
+                model.copy(
+                    inputModalities = refreshedModel.inputModalities,
+                    outputModalities = refreshedModel.outputModalities,
+                    abilities = refreshedModel.abilities,
+                )
+            } ?: model
+        }
     val existingModelIds = existing.mapTo(mutableSetOf(), Model::modelId)
     return merged + refreshed.filterNot { it.modelId in existingModelIds }
 }
@@ -244,7 +253,7 @@ private fun CodexAccountCard(
                     onClick = {
                         showDeleteConfirmation = false
                         onDelete()
-                    }
+                    },
                 ) {
                     Text(
                         stringResource(R.string.codex_remove),
@@ -262,9 +271,10 @@ private fun CodexAccountCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -292,18 +302,20 @@ private fun CodexAccountCard(
             }
 
             Text(
-                text = when (account.tokenStatus) {
-                    CodexTokenStatus.AVAILABLE -> stringResource(R.string.codex_token_available)
-                    CodexTokenStatus.EXPIRED -> stringResource(R.string.codex_token_expired)
-                    CodexTokenStatus.INVALID -> stringResource(R.string.codex_token_unavailable)
-                    CodexTokenStatus.UNKNOWN -> stringResource(R.string.codex_token_not_checked)
-                },
+                text =
+                    when (account.tokenStatus) {
+                        CodexTokenStatus.AVAILABLE -> stringResource(R.string.codex_token_available)
+                        CodexTokenStatus.EXPIRED -> stringResource(R.string.codex_token_expired)
+                        CodexTokenStatus.INVALID -> stringResource(R.string.codex_token_unavailable)
+                        CodexTokenStatus.UNKNOWN -> stringResource(R.string.codex_token_not_checked)
+                    },
                 style = MaterialTheme.typography.labelMedium,
-                color = when (account.tokenStatus) {
-                    CodexTokenStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
-                    CodexTokenStatus.INVALID, CodexTokenStatus.EXPIRED -> MaterialTheme.colorScheme.error
-                    CodexTokenStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                color =
+                    when (account.tokenStatus) {
+                        CodexTokenStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
+                        CodexTokenStatus.INVALID, CodexTokenStatus.EXPIRED -> MaterialTheme.colorScheme.error
+                        CodexTokenStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
 
             account.usage?.primary?.let {
@@ -347,13 +359,14 @@ private fun CodexUsageRow(
     fallbackName: String,
 ) {
     val remaining = (100.0 - window.usedPercent).coerceIn(0.0, 100.0)
-    val name = when (window.windowMinutes) {
-        300L -> stringResource(R.string.codex_five_hour_limit)
-        10_080L -> stringResource(R.string.codex_weekly_limit)
-        43_200L -> stringResource(R.string.codex_monthly_limit)
-        null -> fallbackName
-        else -> stringResource(R.string.codex_minute_limit, window.windowMinutes)
-    }
+    val name =
+        when (window.windowMinutes) {
+            300L -> stringResource(R.string.codex_five_hour_limit)
+            10_080L -> stringResource(R.string.codex_weekly_limit)
+            43_200L -> stringResource(R.string.codex_monthly_limit)
+            null -> fallbackName
+            else -> stringResource(R.string.codex_minute_limit, window.windowMinutes)
+        }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -371,10 +384,11 @@ private fun CodexUsageRow(
         )
         window.resetsAt?.let { epochSeconds ->
             Text(
-                text = stringResource(
-                    R.string.codex_resets_at,
-                    RESET_FORMAT.format(Instant.ofEpochSecond(epochSeconds)),
-                ),
+                text =
+                    stringResource(
+                        R.string.codex_resets_at,
+                        RESET_FORMAT.format(Instant.ofEpochSecond(epochSeconds)),
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -382,6 +396,7 @@ private fun CodexUsageRow(
     }
 }
 
-private val RESET_FORMAT: DateTimeFormatter = DateTimeFormatter
-    .ofPattern("yyyy-MM-dd HH:mm")
-    .withZone(ZoneId.systemDefault())
+private val RESET_FORMAT: DateTimeFormatter =
+    DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm")
+        .withZone(ZoneId.systemDefault())

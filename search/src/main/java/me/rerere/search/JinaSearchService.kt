@@ -31,7 +31,7 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://jina.ai/")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -39,122 +39,143 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
 
     override fun parameters(options: SearchServiceOptions.JinaOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.JinaOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("url", buildJsonObject {
-                    put("type", "string")
-                    put("description", "url to scrape")
-                })
-            },
-            required = listOf("url")
+            properties =
+                buildJsonObject {
+                    put(
+                        "url",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "url to scrape")
+                        },
+                    )
+                },
+            required = listOf("url"),
         )
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.JinaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        serviceOptions: SearchServiceOptions.JinaOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val body = buildJsonObject {
-                put("q", query)
-            }
+                val body =
+                    buildJsonObject {
+                        put("q", query)
+                    }
 
-            val searchUrl = serviceOptions.searchUrl.ifBlank { DEFAULT_SEARCH_URL }
+                val searchUrl = serviceOptions.searchUrl.ifBlank { DEFAULT_SEARCH_URL }
 
-            val request = Request.Builder()
-                .url(searchUrl)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url(searchUrl)
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                        .addHeader("Accept", "application/json")
+                        .addHeader("Content-Type", "application/json")
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseData = response.body.string().let {
-                    json.decodeFromString<JinaSearchResponse>(it)
-                }
-
-                return@withContext Result.success(
-                    SearchResult(
-                        items = responseData.data.take(commonOptions.resultSize).map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.description
-                            )
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val responseData =
+                        response.body.string().let {
+                            json.decodeFromString<JinaSearchResponse>(it)
                         }
+
+                    return@withContext Result.success(
+                        SearchResult(
+                            items =
+                                responseData.data.take(commonOptions.resultSize).map {
+                                    SearchResultItem(
+                                        title = it.title,
+                                        url = it.url,
+                                        text = it.description,
+                                    )
+                                },
+                        ),
                     )
-                )
-            } else {
-                error("response failed #${response.code}")
+                } else {
+                    error("response failed #${response.code}")
+                }
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.JinaOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = params["url"]?.jsonPrimitive?.content ?: error("urls is required")
+        serviceOptions: SearchServiceOptions.JinaOptions,
+    ): Result<ScrapedResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val url = params["url"]?.jsonPrimitive?.content ?: error("urls is required")
 
-            val body = buildJsonObject {
-                put("url", url)
-            }
+                val body =
+                    buildJsonObject {
+                        put("url", url)
+                    }
 
-            val scrapeUrl = serviceOptions.scrapeUrl.ifBlank { DEFAULT_SCRAPE_URL }
+                val scrapeUrl = serviceOptions.scrapeUrl.ifBlank { DEFAULT_SCRAPE_URL }
 
-            val request = Request.Builder()
-                .url(scrapeUrl)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("X-Return-Format", "markdown")
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url(scrapeUrl)
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                        .addHeader("Accept", "application/json")
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("X-Return-Format", "markdown")
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("response failed for url $url #${response.code}")
-            }
-            val responseData = response.body.string().let {
-                json.decodeFromString<JinaScrapeResponse>(it)
-            }
+                val response = httpClient.newCall(request).await()
+                if (!response.isSuccessful) {
+                    error("response failed for url $url #${response.code}")
+                }
+                val responseData =
+                    response.body.string().let {
+                        json.decodeFromString<JinaScrapeResponse>(it)
+                    }
 
-            ScrapedResult(
-                urls = listOf(
-                    ScrapedResultUrl(
-                        url = responseData.data.url,
-                        content = responseData.data.content,
-                        metadata = ScrapedResultMetadata(
-                            title = responseData.data.title,
-                            description = responseData.data.description
-                        )
-                    )
+                ScrapedResult(
+                    urls =
+                        listOf(
+                            ScrapedResultUrl(
+                                url = responseData.data.url,
+                                content = responseData.data.content,
+                                metadata =
+                                    ScrapedResultMetadata(
+                                        title = responseData.data.title,
+                                        description = responseData.data.description,
+                                    ),
+                            ),
+                        ),
                 )
-            )
+            }
         }
-    }
 
     @Serializable
     data class JinaSearchResponse(
         val code: Int,
         val status: Int,
-        val data: List<JinaSearchResultItem>
+        val data: List<JinaSearchResultItem>,
     )
 
     @Serializable
@@ -163,19 +184,19 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
         val url: String,
         val description: String,
         val content: String = "",
-        val usage: JinaUsage? = null
+        val usage: JinaUsage? = null,
     )
 
     @Serializable
     data class JinaUsage(
-        val tokens: Int
+        val tokens: Int,
     )
 
     @Serializable
     data class JinaScrapeResponse(
         val code: Int,
         val status: Int,
-        val data: JinaScrapeData
+        val data: JinaScrapeData,
     )
 
     @Serializable
@@ -185,6 +206,6 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
         val url: String,
         val content: String,
         val publishedTime: String? = null,
-        val usage: JinaUsage? = null
+        val usage: JinaUsage? = null,
     )
 }

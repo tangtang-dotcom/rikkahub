@@ -5,22 +5,24 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Switch
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -33,6 +35,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,42 +44,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.HorizontalDivider
-import me.rerere.ai.provider.Model
-import me.rerere.ai.provider.OpenRouterRouting
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.hugeicons.stroke.Delete01
-import me.rerere.hugeicons.stroke.Edit01
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import me.rerere.ai.provider.ClaudePromptCacheTtl
-import me.rerere.ai.provider.ProviderSetting
-import me.rerere.locallm.LocalRuntime
-import me.rerere.locallm.ModelInstall
-import me.rerere.locallm.litert.LiteRtCatalog
-import me.rerere.locallm.litert.LiteRtCatalogEntry
-import me.rerere.rikkahub.R
-import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
-import me.rerere.hugeicons.stroke.View
-import me.rerere.hugeicons.stroke.ViewOff
-import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.pages.setting.locallm.SettingLocalLlmViewModel
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -84,31 +63,53 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.ai.provider.ClaudePromptCacheTtl
+import me.rerere.ai.provider.Model
+import me.rerere.ai.provider.OpenRouterRouting
+import me.rerere.ai.provider.ProviderSetting
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.Edit01
+import me.rerere.hugeicons.stroke.View
+import me.rerere.hugeicons.stroke.ViewOff
+import me.rerere.locallm.LocalRuntime
+import me.rerere.locallm.ModelInstall
+import me.rerere.locallm.litert.LiteRtCatalog
+import me.rerere.locallm.litert.LiteRtCatalogEntry
+import me.rerere.rikkahub.R
+import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
+import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.pages.setting.locallm.SettingLocalLlmViewModel
+import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import java.io.FileOutputStream
 import kotlin.reflect.KClass
 
 @Composable
 fun ProviderConfigure(
     provider: ProviderSetting,
     modifier: Modifier = Modifier,
-    onEdit: (provider: ProviderSetting) -> Unit
+    onEdit: (provider: ProviderSetting) -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier
+        modifier = modifier,
     ) {
         if (!provider.builtIn) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 ProviderSetting.Types.forEachIndexed { index, type ->
                     SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = ProviderSetting.Types.size
-                        ),
+                        shape =
+                            SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = ProviderSetting.Types.size,
+                            ),
                         label = { Text(type.simpleName ?: "") },
                         selected = provider::class == type,
-                        onClick = { onEdit(provider.convertTo(type)) }
+                        onClick = { onEdit(provider.convertTo(type)) },
                     )
                 }
             }
@@ -135,8 +136,13 @@ fun ProviderConfigure(
                 ProviderConfigureLiteRT(provider, onEdit)
             }
 
-            is ProviderSetting.Codex -> Unit
-            is ProviderSetting.Grok -> Unit
+            is ProviderSetting.Codex -> {
+                Unit
+            }
+
+            is ProviderSetting.Grok -> {
+                Unit
+            }
         }
     }
 }
@@ -144,77 +150,130 @@ fun ProviderConfigure(
 fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSetting {
     if (this::class == type) return this
 
-    val apiKey = when (this) {
-        is ProviderSetting.OpenAI -> this.apiKey
-        is ProviderSetting.Google -> this.apiKey
-        is ProviderSetting.Claude -> this.apiKey
-        is ProviderSetting.AICore -> "" // on-device, no API key
-        is ProviderSetting.LiteRtLocal -> "" // on-device, no API key
-        is ProviderSetting.Codex -> "" // OAuth, no API key
-        is ProviderSetting.Grok -> "" // OAuth, no API key
-    }
-    val sourceBaseUrl = when (this) {
-        is ProviderSetting.OpenAI -> this.baseUrl
-        is ProviderSetting.Google -> this.baseUrl
-        is ProviderSetting.Claude -> this.baseUrl
-        is ProviderSetting.AICore -> "" // on-device, no base URL
-        is ProviderSetting.LiteRtLocal -> "" // on-device, no base URL
-        is ProviderSetting.Codex -> "" // OAuth, no base URL
-        is ProviderSetting.Grok -> "" // OAuth, no base URL
-    }
-    val targetDefaultBaseUrl = when (type) {
-        ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI().baseUrl
-        ProviderSetting.Google::class -> ProviderSetting.Google().baseUrl
-        ProviderSetting.Claude::class -> ProviderSetting.Claude().baseUrl
-        ProviderSetting.AICore::class -> ""
-        ProviderSetting.LiteRtLocal::class -> ""
-        else -> error("Unsupported provider type: $type")
-    }
+    val apiKey =
+        when (this) {
+            is ProviderSetting.OpenAI -> this.apiKey
+
+            is ProviderSetting.Google -> this.apiKey
+
+            is ProviderSetting.Claude -> this.apiKey
+
+            is ProviderSetting.AICore -> ""
+
+            // on-device, no API key
+            is ProviderSetting.LiteRtLocal -> ""
+
+            // on-device, no API key
+            is ProviderSetting.Codex -> ""
+
+            // OAuth, no API key
+            is ProviderSetting.Grok -> "" // OAuth, no API key
+        }
+    val sourceBaseUrl =
+        when (this) {
+            is ProviderSetting.OpenAI -> this.baseUrl
+
+            is ProviderSetting.Google -> this.baseUrl
+
+            is ProviderSetting.Claude -> this.baseUrl
+
+            is ProviderSetting.AICore -> ""
+
+            // on-device, no base URL
+            is ProviderSetting.LiteRtLocal -> ""
+
+            // on-device, no base URL
+            is ProviderSetting.Codex -> ""
+
+            // OAuth, no base URL
+            is ProviderSetting.Grok -> "" // OAuth, no base URL
+        }
+    val targetDefaultBaseUrl =
+        when (type) {
+            ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI().baseUrl
+            ProviderSetting.Google::class -> ProviderSetting.Google().baseUrl
+            ProviderSetting.Claude::class -> ProviderSetting.Claude().baseUrl
+            ProviderSetting.AICore::class -> ""
+            ProviderSetting.LiteRtLocal::class -> ""
+            else -> error("Unsupported provider type: $type")
+        }
     val convertedBaseUrl = sourceBaseUrl.convertToTargetBaseUrl(targetDefaultBaseUrl)
 
     return when (type) {
-        ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI(
-            id = this.id, enabled = this.enabled, name = this.name, models = this.models,
-            balanceOption = this.balanceOption, builtIn = this.builtIn,
-            description = this.description, shortDescription = this.shortDescription,
-            apiKey = apiKey, baseUrl = convertedBaseUrl
-        )
-        ProviderSetting.Google::class -> ProviderSetting.Google(
-            id = this.id, enabled = this.enabled, name = this.name, models = this.models,
-            balanceOption = this.balanceOption, builtIn = this.builtIn,
-            description = this.description, shortDescription = this.shortDescription,
-            apiKey = apiKey, baseUrl = convertedBaseUrl
-        )
-        ProviderSetting.Claude::class -> ProviderSetting.Claude(
-            id = this.id, enabled = this.enabled, name = this.name, models = this.models,
-            balanceOption = this.balanceOption, builtIn = this.builtIn,
-            description = this.description, shortDescription = this.shortDescription,
-            apiKey = apiKey, baseUrl = convertedBaseUrl
-        )
+        ProviderSetting.OpenAI::class -> {
+            ProviderSetting.OpenAI(
+                id = this.id,
+                enabled = this.enabled,
+                name = this.name,
+                models = this.models,
+                balanceOption = this.balanceOption,
+                builtIn = this.builtIn,
+                description = this.description,
+                shortDescription = this.shortDescription,
+                apiKey = apiKey,
+                baseUrl = convertedBaseUrl,
+            )
+        }
 
-        ProviderSetting.AICore::class -> ProviderSetting.AICore(
-            id = this.id,
-            enabled = this.enabled,
-            name = this.name,
-            models = this.models,
-            balanceOption = this.balanceOption,
-            builtIn = this.builtIn,
-            description = this.description,
-            shortDescription = this.shortDescription,
-        )
+        ProviderSetting.Google::class -> {
+            ProviderSetting.Google(
+                id = this.id,
+                enabled = this.enabled,
+                name = this.name,
+                models = this.models,
+                balanceOption = this.balanceOption,
+                builtIn = this.builtIn,
+                description = this.description,
+                shortDescription = this.shortDescription,
+                apiKey = apiKey,
+                baseUrl = convertedBaseUrl,
+            )
+        }
 
-        ProviderSetting.LiteRtLocal::class -> ProviderSetting.LiteRtLocal(
-            id = this.id,
-            enabled = this.enabled,
-            name = this.name,
-            models = this.models,
-            balanceOption = this.balanceOption,
-            builtIn = this.builtIn,
-            description = this.description,
-            shortDescription = this.shortDescription,
-        )
+        ProviderSetting.Claude::class -> {
+            ProviderSetting.Claude(
+                id = this.id,
+                enabled = this.enabled,
+                name = this.name,
+                models = this.models,
+                balanceOption = this.balanceOption,
+                builtIn = this.builtIn,
+                description = this.description,
+                shortDescription = this.shortDescription,
+                apiKey = apiKey,
+                baseUrl = convertedBaseUrl,
+            )
+        }
 
-        else -> error("Unsupported provider type: $type")
+        ProviderSetting.AICore::class -> {
+            ProviderSetting.AICore(
+                id = this.id,
+                enabled = this.enabled,
+                name = this.name,
+                models = this.models,
+                balanceOption = this.balanceOption,
+                builtIn = this.builtIn,
+                description = this.description,
+                shortDescription = this.shortDescription,
+            )
+        }
+
+        ProviderSetting.LiteRtLocal::class -> {
+            ProviderSetting.LiteRtLocal(
+                id = this.id,
+                enabled = this.enabled,
+                name = this.name,
+                models = this.models,
+                balanceOption = this.balanceOption,
+                builtIn = this.builtIn,
+                description = this.description,
+                shortDescription = this.shortDescription,
+            )
+        }
+
+        else -> {
+            error("Unsupported provider type: $type")
+        }
     }
 }
 
@@ -223,11 +282,20 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
     if (defaultProvider != null) {
         when (this) {
             is ProviderSetting.OpenAI -> if (defaultProvider is ProviderSetting.OpenAI) return defaultProvider.baseUrl
+
             is ProviderSetting.Google -> if (defaultProvider is ProviderSetting.Google) return defaultProvider.baseUrl
+
             is ProviderSetting.Claude -> if (defaultProvider is ProviderSetting.Claude) return defaultProvider.baseUrl
-            is ProviderSetting.AICore -> return "" // on-device, no base URL
-            is ProviderSetting.LiteRtLocal -> return "" // on-device, no base URL
-            is ProviderSetting.Codex -> return "" // OAuth, no base URL
+
+            is ProviderSetting.AICore -> return ""
+
+            // on-device, no base URL
+            is ProviderSetting.LiteRtLocal -> return ""
+
+            // on-device, no base URL
+            is ProviderSetting.Codex -> return ""
+
+            // OAuth, no base URL
             is ProviderSetting.Grok -> return "" // OAuth, no base URL
         }
     }
@@ -246,25 +314,44 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
     val defaultBaseUrl = defaultBaseUrlForReset()
     return when (this) {
         is ProviderSetting.OpenAI -> this.copy(baseUrl = defaultBaseUrl)
+
         is ProviderSetting.Google -> this.copy(baseUrl = defaultBaseUrl)
+
         is ProviderSetting.Claude -> this.copy(baseUrl = defaultBaseUrl)
-        is ProviderSetting.AICore -> this // no base URL to reset
-        is ProviderSetting.LiteRtLocal -> this // no base URL to reset
-        is ProviderSetting.Codex -> this // no base URL to reset
+
+        is ProviderSetting.AICore -> this
+
+        // no base URL to reset
+        is ProviderSetting.LiteRtLocal -> this
+
+        // no base URL to reset
+        is ProviderSetting.Codex -> this
+
+        // no base URL to reset
         is ProviderSetting.Grok -> this // no base URL to reset
     }
 }
 
 internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
-    val baseUrl = when (this) {
-        is ProviderSetting.OpenAI -> this.baseUrl
-        is ProviderSetting.Google -> this.baseUrl
-        is ProviderSetting.Claude -> this.baseUrl
-        is ProviderSetting.AICore -> return true // no base URL concept
-        is ProviderSetting.LiteRtLocal -> return true // no base URL concept
-        is ProviderSetting.Codex -> return true // no base URL concept
-        is ProviderSetting.Grok -> return true // no base URL concept
-    }
+    val baseUrl =
+        when (this) {
+            is ProviderSetting.OpenAI -> this.baseUrl
+
+            is ProviderSetting.Google -> this.baseUrl
+
+            is ProviderSetting.Claude -> this.baseUrl
+
+            is ProviderSetting.AICore -> return true
+
+            // no base URL concept
+            is ProviderSetting.LiteRtLocal -> return true
+
+            // no base URL concept
+            is ProviderSetting.Codex -> return true
+
+            // no base URL concept
+            is ProviderSetting.Grok -> return true // no base URL concept
+        }
     return baseUrl == defaultBaseUrlForReset()
 }
 
@@ -274,18 +361,23 @@ private fun String.convertToTargetBaseUrl(targetDefaultBaseUrl: String): String 
     if (sourceHost in OFFICIAL_PROVIDER_HOSTS) return targetDefaultBaseUrl
     val targetUrl = targetDefaultBaseUrl.toHttpUrlOrNull() ?: return this
     val convertedPath = sourceUrl.encodedPath.convertToTargetPath(targetUrl.encodedPath)
-    return sourceUrl.newBuilder().encodedPath(convertedPath).build().toString()
+    return sourceUrl
+        .newBuilder()
+        .encodedPath(convertedPath)
+        .build()
+        .toString()
 }
 
 private fun String.convertToTargetPath(targetPath: String): String {
     val source = this.normalizePath()
     val target = targetPath.normalizePath()
-    val replaced = when {
-        source.lowercase().endsWith(V1_BETA_SUFFIX) -> source.dropLast(V1_BETA_SUFFIX.length) + target
-        source.lowercase().endsWith(V1_SUFFIX) -> source.dropLast(V1_SUFFIX.length) + target
-        source.isBlank() -> target
-        else -> source + target
-    }
+    val replaced =
+        when {
+            source.lowercase().endsWith(V1_BETA_SUFFIX) -> source.dropLast(V1_BETA_SUFFIX.length) + target
+            source.lowercase().endsWith(V1_SUFFIX) -> source.dropLast(V1_SUFFIX.length) + target
+            source.isBlank() -> target
+            else -> source + target
+        }
     return replaced.normalizePath()
 }
 
@@ -303,16 +395,17 @@ private const val GOOGLE_OFFICIAL_HOST = "generativelanguage.googleapis.com"
 private const val CLAUDE_OFFICIAL_HOST = "api.anthropic.com"
 private const val V1_SUFFIX = "/v1"
 private const val V1_BETA_SUFFIX = "/v1beta"
-private val OFFICIAL_PROVIDER_HOSTS = setOf(
-    OPENAI_OFFICIAL_HOST,
-    GOOGLE_OFFICIAL_HOST,
-    CLAUDE_OFFICIAL_HOST
-)
+private val OFFICIAL_PROVIDER_HOSTS =
+    setOf(
+        OPENAI_OFFICIAL_HOST,
+        GOOGLE_OFFICIAL_HOST,
+        CLAUDE_OFFICIAL_HOST,
+    )
 
 @Composable
 private fun ProviderConfigureOpenAI(
     provider: ProviderSetting.OpenAI,
-    onEdit: (provider: ProviderSetting.OpenAI) -> Unit
+    onEdit: (provider: ProviderSetting.OpenAI) -> Unit,
 ) {
     val toaster = LocalToaster.current
 
@@ -361,12 +454,12 @@ private fun ProviderConfigureOpenAI(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
-            onCheckedChange = { onEdit(provider.copy(enabled = it)) }
+            onCheckedChange = { onEdit(provider.copy(enabled = it)) },
         )
     }
 
@@ -374,7 +467,7 @@ private fun ProviderConfigureOpenAI(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_response_api))
         Switch(
@@ -384,7 +477,7 @@ private fun ProviderConfigureOpenAI(
                 if (it && provider.baseUrl.toHttpUrlOrNull()?.host != "api.openai.com") {
                     toaster.show(message = responseAPIWarning, type = ToastType.Warning)
                 }
-            }
+            },
         )
     }
 
@@ -393,17 +486,17 @@ private fun ProviderConfigureOpenAI(
     // through it. Other models on OpenRouter cache automatically regardless.
     if (provider.baseUrl.toHttpUrlOrNull()?.host == "openrouter.ai") {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 stringResource(id = R.string.setting_provider_page_claude_prompt_caching),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             Checkbox(
                 checked = provider.promptCaching,
                 onCheckedChange = {
                     onEdit(provider.copy(promptCaching = it))
-                }
+                },
             )
         }
         OpenRouterRoutingSection(
@@ -414,12 +507,12 @@ private fun ProviderConfigureOpenAI(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_include_history_reasoning))
         Switch(
             checked = provider.includeHistoryReasoning,
-            onCheckedChange = { onEdit(provider.copy(includeHistoryReasoning = it)) }
+            onCheckedChange = { onEdit(provider.copy(includeHistoryReasoning = it)) },
         )
     }
 }
@@ -430,6 +523,7 @@ private fun OpenRouterRoutingSection(
     onChange: (OpenRouterRouting) -> Unit,
 ) {
     fun listToText(list: List<String>) = list.joinToString(", ")
+
     fun textToList(text: String) = text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
@@ -452,11 +546,12 @@ private fun OpenRouterRoutingSection(
                         sortLabels[index],
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
-                        autoSize = TextAutoSize.StepBased(
-                            minFontSize = 9.sp,
-                            maxFontSize = 14.sp,
-                            stepSize = 1.sp,
-                        ),
+                        autoSize =
+                            TextAutoSize.StepBased(
+                                minFontSize = 9.sp,
+                                maxFontSize = 14.sp,
+                                stepSize = 1.sp,
+                            ),
                     )
                 },
             )
@@ -557,7 +652,11 @@ private fun OpenRouterRoutingSection(
 }
 
 @Composable
-private fun RoutingToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun RoutingToggle(
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -571,7 +670,7 @@ private fun RoutingToggle(label: String, checked: Boolean, onChange: (Boolean) -
 @Composable
 private fun ProviderConfigureClaude(
     provider: ProviderSetting.Claude,
-    onEdit: (provider: ProviderSetting.Claude) -> Unit
+    onEdit: (provider: ProviderSetting.Claude) -> Unit,
 ) {
     provider.description()
 
@@ -609,24 +708,24 @@ private fun ProviderConfigureClaude(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
-            onCheckedChange = { onEdit(provider.copy(enabled = it)) }
+            onCheckedChange = { onEdit(provider.copy(enabled = it)) },
         )
     }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_claude_prompt_caching))
         Switch(
             checked = provider.promptCaching,
-            onCheckedChange = { onEdit(provider.copy(promptCaching = it)) }
+            onCheckedChange = { onEdit(provider.copy(promptCaching = it)) },
         )
     }
 
@@ -635,20 +734,30 @@ private fun ProviderConfigureClaude(
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             ClaudePromptCacheTtl.entries.forEachIndexed { index, ttl ->
                 SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ClaudePromptCacheTtl.entries.size
-                    ),
+                    shape =
+                        SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = ClaudePromptCacheTtl.entries.size,
+                        ),
                     label = {
                         Text(
                             when (ttl) {
-                                ClaudePromptCacheTtl.FIVE_MINUTES -> stringResource(R.string.setting_provider_page_claude_prompt_cache_ttl_5m)
-                                ClaudePromptCacheTtl.ONE_HOUR -> stringResource(R.string.setting_provider_page_claude_prompt_cache_ttl_1h)
-                            }
+                                ClaudePromptCacheTtl.FIVE_MINUTES -> {
+                                    stringResource(
+                                        R.string.setting_provider_page_claude_prompt_cache_ttl_5m,
+                                    )
+                                }
+
+                                ClaudePromptCacheTtl.ONE_HOUR -> {
+                                    stringResource(
+                                        R.string.setting_provider_page_claude_prompt_cache_ttl_1h,
+                                    )
+                                }
+                            },
                         )
                     },
                     selected = provider.promptCacheTtl == ttl,
-                    onClick = { onEdit(provider.copy(promptCacheTtl = ttl)) }
+                    onClick = { onEdit(provider.copy(promptCacheTtl = ttl)) },
                 )
             }
         }
@@ -658,32 +767,41 @@ private fun ProviderConfigureClaude(
 @Composable
 private fun ProviderConfigureGoogle(
     provider: ProviderSetting.Google,
-    onEdit: (provider: ProviderSetting.Google) -> Unit
+    onEdit: (provider: ProviderSetting.Google) -> Unit,
 ) {
     val context = LocalContext.current
     val toaster = LocalToaster.current
-    val serviceAccountJsonLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        try {
-            val content = context.contentResolver.openInputStream(uri)
-                ?.bufferedReader()
-                ?.readText()
-                ?: return@rememberLauncherForActivityResult
-            val json = Json.parseToJsonElement(content).jsonObject
-            onEdit(
-                provider.copy(
-                    projectId = json["project_id"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.projectId,
-                    serviceAccountEmail = json["client_email"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.serviceAccountEmail,
-                    privateKey = json["private_key"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.privateKey,
+    val serviceAccountJsonLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            try {
+                val content =
+                    context.contentResolver
+                        .openInputStream(uri)
+                        ?.bufferedReader()
+                        ?.readText()
+                        ?: return@rememberLauncherForActivityResult
+                val json = Json.parseToJsonElement(content).jsonObject
+                onEdit(
+                    provider.copy(
+                        projectId =
+                            json["project_id"]?.jsonPrimitive?.contentOrNull?.ifEmpty {
+                                null
+                            } ?: provider.projectId,
+                        serviceAccountEmail =
+                            json["client_email"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null }
+                                ?: provider.serviceAccountEmail,
+                        privateKey =
+                            json["private_key"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.privateKey,
+                    ),
                 )
-            )
-            toaster.show("Service account imported", type = ToastType.Success)
-        } catch (e: Exception) {
-            toaster.show("Failed to import: ${e.message}", type = ToastType.Error)
+                toaster.show("Service account imported", type = ToastType.Success)
+            } catch (e: Exception) {
+                toaster.show("Failed to import: ${e.message}", type = ToastType.Error)
+            }
         }
-    }
 
     provider.description()
 
@@ -717,36 +835,40 @@ private fun ProviderConfigureGoogle(
             onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
             label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
             modifier = Modifier.fillMaxWidth(),
-            isError = provider.baseUrl.isNotBlank() && (
-                !provider.baseUrl.isValidBaseUrl() || !provider.baseUrl.endsWith("/v1beta")
+            isError =
+                provider.baseUrl.isNotBlank() && (
+                    !provider.baseUrl.isValidBaseUrl() || !provider.baseUrl.endsWith("/v1beta")
                 ),
-            supportingText = if (!provider.baseUrl.endsWith("/v1beta")) {
-                { Text("The base URL usually ends with `/v1beta`") }
-            } else null,
+            supportingText =
+                if (!provider.baseUrl.endsWith("/v1beta")) {
+                    { Text("The base URL usually ends with `/v1beta`") }
+                } else {
+                    null
+                },
         )
     }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
-            onCheckedChange = { onEdit(provider.copy(enabled = it)) }
+            onCheckedChange = { onEdit(provider.copy(enabled = it)) },
         )
     }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(R.string.setting_provider_page_vertex_ai))
         Switch(
             checked = provider.vertexAI,
-            onCheckedChange = { onEdit(provider.copy(vertexAI = it)) }
+            onCheckedChange = { onEdit(provider.copy(vertexAI = it)) },
         )
     }
 
@@ -754,12 +876,12 @@ private fun ProviderConfigureGoogle(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.setting_provider_page_use_service_account))
             Switch(
                 checked = provider.useServiceAccount,
-                onCheckedChange = { onEdit(provider.copy(useServiceAccount = it)) }
+                onCheckedChange = { onEdit(provider.copy(useServiceAccount = it)) },
             )
         }
     }
@@ -767,7 +889,7 @@ private fun ProviderConfigureGoogle(
     if (provider.vertexAI && provider.useServiceAccount) {
         OutlinedButton(
             onClick = { serviceAccountJsonLauncher.launch(arrayOf("application/json", "*/*")) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.setting_provider_page_import_service_account_json))
         }
@@ -820,7 +942,7 @@ private fun ColumnScope.ProviderConfigureAICore(
     provider.description()
 
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(id = R.string.setting_provider_page_enable), modifier = Modifier.weight(1f))
         Checkbox(
@@ -867,10 +989,11 @@ private fun ColumnScope.ProviderConfigureLiteRT(
     provider: ProviderSetting.LiteRtLocal,
     onEdit: (ProviderSetting.LiteRtLocal) -> Unit,
 ) {
-    val vm = koinViewModel<SettingLocalLlmViewModel>(
-        key = "configure-${LocalRuntime.LiteRT.displayName}",
-        parameters = { parametersOf(LocalRuntime.LiteRT) },
-    )
+    val vm =
+        koinViewModel<SettingLocalLlmViewModel>(
+            key = "configure-${LocalRuntime.LiteRT.displayName}",
+            parameters = { parametersOf(LocalRuntime.LiteRT) },
+        )
     val downloadProgress by vm.downloadProgress.collectAsStateWithLifecycle()
     val errorMessage by vm.errorMessage.collectAsStateWithLifecycle()
     val accelerator by vm.accelerator.collectAsStateWithLifecycle()
@@ -885,55 +1008,62 @@ private fun ColumnScope.ProviderConfigureLiteRT(
     val context = LocalContext.current
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
-    val importLocalLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        scope.launch(Dispatchers.IO) {
-            try {
-                val fileName = queryOpenDocumentName(context, uri) ?: "imported.litertlm"
-                val ext = fileName.substringAfterLast('.', "").lowercase()
-                val baseDir = ModelInstall.localModelsDir(context)
-                val target = ModelInstall.targetFile(baseDir, LocalRuntime.LiteRT, fileName)
-                val imported = context.contentResolver.openInputStream(uri)?.use { input ->
-                    // Magic 校验（与下载完成后的完整性检查一致，见 SettingLocalLlmViewModel.refreshFromDisk）
-                    val buf = ByteArray(64)
-                    val n = input.read(buf)
-                    if (n <= 0 || !ModelInstall.isValidMagicForExtension(ext, buf.copyOf(n))) {
-                        false
-                    } else {
-                        target.parentFile?.mkdirs()
-                        FileOutputStream(target).use { output -> input.copyTo(output) }
-                        true
+    val importLocalLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val fileName = queryOpenDocumentName(context, uri) ?: "imported.litertlm"
+                    val ext = fileName.substringAfterLast('.', "").lowercase()
+                    val baseDir = ModelInstall.localModelsDir(context)
+                    val target = ModelInstall.targetFile(baseDir, LocalRuntime.LiteRT, fileName)
+                    val imported =
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            // Magic 校验（与下载完成后的完整性检查一致，见 SettingLocalLlmViewModel.refreshFromDisk）
+                            val buf = ByteArray(64)
+                            val n = input.read(buf)
+                            if (n <= 0 || !ModelInstall.isValidMagicForExtension(ext, buf.copyOf(n))) {
+                                false
+                            } else {
+                                target.parentFile?.mkdirs()
+                                FileOutputStream(target).use { output -> input.copyTo(output) }
+                                true
+                            }
+                        } ?: false
+                    withContext(Dispatchers.Main) {
+                        if (imported) {
+                            vm.registerImportedModel(fileName, target.absolutePath)
+                            toaster.show("Imported $fileName", type = ToastType.Success)
+                        } else {
+                            toaster.show(
+                                "Invalid model file: magic bytes don't match .litertlm",
+                                type = ToastType.Error,
+                            )
+                        }
                     }
-                } ?: false
-                withContext(Dispatchers.Main) {
-                    if (imported) {
-                        vm.registerImportedModel(fileName, target.absolutePath)
-                        toaster.show("Imported $fileName", type = ToastType.Success)
-                    } else {
-                        toaster.show("Invalid model file: magic bytes don't match .litertlm", type = ToastType.Error)
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        toaster.show("Import failed: ${e.message}", type = ToastType.Error)
                     }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    toaster.show("Import failed: ${e.message}", type = ToastType.Error)
                 }
             }
         }
-    }
 
     provider.description()
 
     // Friendly post-crash banner. Default tone is "we handled it", not "panic".
     crashRecoveryAccel?.let { accel ->
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { vm.dismissCrashRecovery() },
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { vm.dismissCrashRecovery() },
         ) {
             Text(
                 text = stringResource(R.string.local_llm_crash_recovery_format, accel),
@@ -1167,8 +1297,9 @@ private fun ColumnScope.ProviderConfigureLiteRT(
                 provider.models.forEach { model ->
                     OutlinedButton(onClick = { vm.deleteModel(model.modelId) }) {
                         Text(
-                            text = stringResource(R.string.local_llm_delete_model) +
-                                if (provider.models.size > 1) " ${model.modelId}" else "",
+                            text =
+                                stringResource(R.string.local_llm_delete_model) +
+                                    if (provider.models.size > 1) " ${model.modelId}" else "",
                         )
                     }
                 }
@@ -1185,9 +1316,10 @@ private fun LiteRtCatalogEntryCard(
     onInstall: () -> Unit,
 ) {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -1209,10 +1341,11 @@ private fun LiteRtCatalogEntryCard(
                         text = stringResource(R.string.local_llm_catalog_recommended),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        modifier =
+                            Modifier
+                                .clip(MaterialTheme.shapes.small)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
             }
@@ -1231,12 +1364,13 @@ private fun LiteRtCatalogEntryCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     entry.tags.forEach { tag ->
-                        val labelRes = when (tag) {
-                            "multimodal" -> R.string.local_llm_catalog_tag_multimodal
-                            "thinking" -> R.string.local_llm_catalog_tag_thinking
-                            "speculative-decoding" -> R.string.local_llm_catalog_tag_speculative
-                            else -> null
-                        }
+                        val labelRes =
+                            when (tag) {
+                                "multimodal" -> R.string.local_llm_catalog_tag_multimodal
+                                "thinking" -> R.string.local_llm_catalog_tag_thinking
+                                "speculative-decoding" -> R.string.local_llm_catalog_tag_speculative
+                                else -> null
+                            }
                         val label = labelRes?.let { stringResource(it) } ?: tag
                         SuggestionChip(
                             onClick = {},
@@ -1247,22 +1381,24 @@ private fun LiteRtCatalogEntryCard(
                                     style = MaterialTheme.typography.labelSmall,
                                 )
                             },
-                            colors = SuggestionChipDefaults.suggestionChipColors(
-                                disabledContainerColor = MaterialTheme.colorScheme.surface,
-                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                            colors =
+                                SuggestionChipDefaults.suggestionChipColors(
+                                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                         )
                     }
                 }
             }
 
             Text(
-                text = String.format(
-                    java.util.Locale.US,
-                    stringResource(R.string.local_llm_catalog_size_format),
-                    entry.sizeBytes / 1_000_000_000.0,
-                    entry.minDeviceMemoryGb,
-                ),
+                text =
+                    String.format(
+                        java.util.Locale.US,
+                        stringResource(R.string.local_llm_catalog_size_format),
+                        entry.sizeBytes / 1_000_000_000.0,
+                        entry.minDeviceMemoryGb,
+                    ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1369,13 +1505,18 @@ private fun InstalledModelRow(
                 }
                 perfSample?.let { sample ->
                     Text(
-                        text = stringResource(
-                            R.string.local_llm_perf_telemetry_format,
-                            sample.prefillTps,
-                            sample.decodeTps,
-                        ) + if (sample.specDecodingEngaged) " · " +
-                            stringResource(R.string.local_llm_spec_decoding_engaged_short)
-                        else "",
+                        text =
+                            stringResource(
+                                R.string.local_llm_perf_telemetry_format,
+                                sample.prefillTps,
+                                sample.decodeTps,
+                            ) +
+                                if (sample.specDecodingEngaged) {
+                                    " · " +
+                                        stringResource(R.string.local_llm_spec_decoding_engaged_short)
+                                } else {
+                                    ""
+                                },
                         style = MaterialTheme.typography.labelSmall,
                         color = LocalContentColor.current.copy(alpha = 0.7f),
                     )
@@ -1413,11 +1554,17 @@ private fun InstalledModelRow(
 }
 
 /** 从 OpenDocument 返回的 content uri 中解析文件名（DISPLAY_NAME），解析失败返回 null。 */
-private fun queryOpenDocumentName(context: Context, uri: Uri): String? =
-    context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+private fun queryOpenDocumentName(
+    context: Context,
+    uri: Uri,
+): String? =
+    context.contentResolver
+        .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
         ?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 if (index >= 0) cursor.getString(index) else null
-            } else null
+            } else {
+                null
+            }
         }

@@ -1,10 +1,5 @@
 package me.rerere.rikkahub.ui.pages.webview
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.ArrowRight01
-import me.rerere.hugeicons.stroke.Bug01
-import me.rerere.hugeicons.stroke.Earth
-import me.rerere.hugeicons.stroke.Refresh01
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,9 +16,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +30,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ArrowRight01
+import me.rerere.hugeicons.stroke.Bug01
+import me.rerere.hugeicons.stroke.Earth
 import me.rerere.hugeicons.stroke.MoreVertical
+import me.rerere.hugeicons.stroke.Refresh01
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.webview.WEB_VIEW_BASE_URL
 import me.rerere.rikkahub.ui.components.webview.WebView
@@ -45,33 +45,39 @@ import me.rerere.rikkahub.ui.theme.JetbrainsMono
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebViewPage(url: String, contentId: String) {
+fun WebViewPage(
+    url: String,
+    contentId: String,
+) {
     val context = LocalContext.current
-    val state = if (url.isNotEmpty()) {
-        rememberWebViewState(
-            url = url,
-            settings = {
-                builtInZoomControls = true
-                displayZoomControls = false
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            })
-    } else {
-        val content = remember(contentId) {
-            WebViewContentCache.load(context.cacheDir, contentId).orEmpty()
+    val state =
+        if (url.isNotEmpty()) {
+            rememberWebViewState(
+                url = url,
+                settings = {
+                    builtInZoomControls = true
+                    displayZoomControls = false
+                    useWideViewPort = true
+                    loadWithOverviewMode = true
+                },
+            )
+        } else {
+            val content =
+                remember(contentId) {
+                    WebViewContentCache.load(context.cacheDir, contentId).orEmpty()
+                }
+            rememberWebViewState(
+                data = content,
+                baseUrl = WEB_VIEW_BASE_URL,
+                mimeType = "text/html",
+                settings = {
+                    builtInZoomControls = true
+                    displayZoomControls = false
+                    useWideViewPort = true
+                    loadWithOverviewMode = true
+                },
+            )
         }
-        rememberWebViewState(
-            data = content,
-            baseUrl = WEB_VIEW_BASE_URL,
-            mimeType = "text/html",
-            settings = {
-                builtInZoomControls = true
-                displayZoomControls = false
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            }
-        )
-    }
 
     var showDropdown by remember { mutableStateOf(false) }
     var showConsoleSheet by remember { mutableStateOf(false) }
@@ -86,10 +92,11 @@ fun WebViewPage(url: String, contentId: String) {
             TopAppBar(
                 title = {
                     Text(
-                        text = state.pageTitle?.takeIf { it.isNotEmpty() } ?: state.currentUrl
-                        ?: "",
+                        text =
+                            state.pageTitle?.takeIf { it.isNotEmpty() } ?: state.currentUrl
+                                ?: "",
                         maxLines = 1,
-                        style = MaterialTheme.typography.titleSmall
+                        style = MaterialTheme.typography.titleSmall,
                     )
                 },
                 navigationIcon = {
@@ -102,20 +109,20 @@ fun WebViewPage(url: String, contentId: String) {
 
                     IconButton(
                         onClick = { state.goForward() },
-                        enabled = state.canGoForward
+                        enabled = state.canGoForward,
                     ) {
                         Icon(HugeIcons.ArrowRight01, contentDescription = "Forward")
                     }
 
                     val urlHandler = LocalUriHandler.current
                     IconButton(
-                        onClick = { showDropdown = true }
+                        onClick = { showDropdown = true },
                     ) {
                         Icon(HugeIcons.MoreVertical, contentDescription = "More options")
 
                         DropdownMenu(
                             expanded = showDropdown,
-                            onDismissRequest = { showDropdown = false }
+                            onDismissRequest = { showDropdown = false },
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Open in Browser") },
@@ -127,7 +134,7 @@ fun WebViewPage(url: String, contentId: String) {
                                             urlHandler.openUri(url)
                                         }
                                     }
-                                }
+                                },
                             )
                             DropdownMenuItem(
                                 text = { Text("Console Logs") },
@@ -135,54 +142,59 @@ fun WebViewPage(url: String, contentId: String) {
                                 onClick = {
                                     showDropdown = false
                                     showConsoleSheet = true
-                                }
+                                },
                             )
                         }
                     }
-                }
+                },
             )
-        }
+        },
     ) {
         WebView(
             state = state,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(it),
         )
     }
 
     if (showConsoleSheet) {
         ModalBottomSheet(
             onDismissRequest = { showConsoleSheet = false },
-            sheetState = sheetState
+            sheetState = sheetState,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "Console Logs",
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
 
                 SelectionContainer {
                     LazyColumn {
                         items(state.consoleMessages) { message ->
                             Text(
-                                text = "${message.messageLevel().name}: ${message.message()}\n" +
-                                    "Source: ${message.sourceId()}:${message.lineNumber()}",
+                                text =
+                                    "${message.messageLevel().name}: ${message.message()}\n" +
+                                        "Source: ${message.sourceId()}:${message.lineNumber()}",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = JetbrainsMono,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                color = when (message.messageLevel().name) {
-                                    "ERROR" -> MaterialTheme.colorScheme.error
-                                    "WARNING" -> MaterialTheme.colorScheme.secondary
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                }
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                color =
+                                    when (message.messageLevel().name) {
+                                        "ERROR" -> MaterialTheme.colorScheme.error
+                                        "WARNING" -> MaterialTheme.colorScheme.secondary
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                         }
                     }
@@ -193,7 +205,7 @@ fun WebViewPage(url: String, contentId: String) {
                         text = "No console messages",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }

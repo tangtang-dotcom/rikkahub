@@ -25,11 +25,12 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AssistantMcpPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val mcpServerConfigs by vm.mcpServerConfigs.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -53,15 +54,16 @@ fun AssistantMcpPage(id: String) {
         val layoutDirection = LocalLayoutDirection.current
         McpPicker(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + 16.dp,
-                top = innerPadding.calculateTopPadding(),
-                end = innerPadding.calculateEndPadding(layoutDirection) + 16.dp,
-                bottom = innerPadding.calculateBottomPadding() + 16.dp,
-            ),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + 16.dp,
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateEndPadding(layoutDirection) + 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                ),
             assistant = assistant,
             servers = mcpServerConfigs,
-            onUpdateAssistant = { vm.update(it) }
+            onUpdateAssistant = { vm.update(it) },
         )
     }
 }

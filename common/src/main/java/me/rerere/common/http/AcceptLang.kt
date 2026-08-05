@@ -13,9 +13,8 @@ import java.util.Locale
  */
 class AcceptLanguageBuilder private constructor(
     private val localesInPreference: List<Locale>,
-    private val options: Options
+    private val options: Options,
 ) {
-
     data class Options(
         /** 参与生成的语言标签最多个数（去重后再截断）。*/
         val maxLanguages: Int = 6,
@@ -26,7 +25,7 @@ class AcceptLanguageBuilder private constructor(
         /** 是否为地区化语言添加“通用语言码”，如 "zh-CN" 追加 "zh"。*/
         val includeGenericLanguage: Boolean = true,
         /** 是否对标签去重（保持首次出现的顺序）。*/
-        val deduplicate: Boolean = true
+        val deduplicate: Boolean = true,
     )
 
     companion object {
@@ -41,15 +40,19 @@ class AcceptLanguageBuilder private constructor(
          * 从 Android 系统环境创建。
          * @param context 建议传入应用或当前上下文，以获取用户“应用内语言”/系统语言首选列表
          */
-        fun fromAndroid(context: android.content.Context, options: Options = Options()): AcceptLanguageBuilder {
+        fun fromAndroid(
+            context: android.content.Context,
+            options: Options = Options(),
+        ): AcceptLanguageBuilder {
             val locales = systemLocalesAndroid(context)
             return AcceptLanguageBuilder(locales, options)
         }
 
         /** 使用调用方自定义的 Locale 列表（按优先顺序）创建。*/
-        fun withLocales(locales: List<Locale>, options: Options = Options()): AcceptLanguageBuilder {
-            return AcceptLanguageBuilder(locales, options)
-        }
+        fun withLocales(
+            locales: List<Locale>,
+            options: Options = Options(),
+        ): AcceptLanguageBuilder = AcceptLanguageBuilder(locales, options)
 
         // Android 的系统 Locale 列表获取
         private fun systemLocalesAndroid(context: android.content.Context): List<Locale> {

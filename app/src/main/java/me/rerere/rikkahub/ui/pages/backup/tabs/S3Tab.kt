@@ -1,9 +1,5 @@
 package me.rerere.rikkahub.ui.pages.backup.tabs
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.View
-import me.rerere.hugeicons.stroke.ViewOff
-import me.rerere.hugeicons.stroke.Upload02
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,10 +30,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,6 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Upload02
+import me.rerere.hugeicons.stroke.View
+import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.sync.S3BackupItem
 import me.rerere.rikkahub.data.sync.s3.S3Config
@@ -72,7 +72,7 @@ import java.time.Instant
 @Composable
 fun S3Tab(
     vm: BackupVM,
-    onShowRestartDialog: () -> Unit
+    onShowRestartDialog: () -> Unit,
 ) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val s3Config = settings.s3Config
@@ -88,37 +88,41 @@ fun S3Tab(
         vm.updateSettings(settings.copy(s3Config = newConfig))
     }
 
-    val lastBackupText = if (settings.backupReminderConfig.lastBackupTime == 0L) {
-        stringResource(R.string.backup_page_reminder_no_record)
-    } else {
-        stringResource(
-            R.string.backup_page_reminder_last_time,
-            Instant.ofEpochMilli(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
-        )
-    }
-    val backupFileSummary = when (val state = backupItemsState) {
-        is UiState.Success -> "${stringResource(R.string.backup_page_files)}: ${state.data.size}"
-        UiState.Loading -> "${stringResource(R.string.backup_page_files)}: ..."
-        UiState.Idle -> "${stringResource(R.string.backup_page_files)}: -"
-        is UiState.Error -> "${stringResource(R.string.backup_page_files)}: -"
-    }
+    val lastBackupText =
+        if (settings.backupReminderConfig.lastBackupTime == 0L) {
+            stringResource(R.string.backup_page_reminder_no_record)
+        } else {
+            stringResource(
+                R.string.backup_page_reminder_last_time,
+                Instant.ofEpochMilli(settings.backupReminderConfig.lastBackupTime).toLocalDateTime(),
+            )
+        }
+    val backupFileSummary =
+        when (val state = backupItemsState) {
+            is UiState.Success -> "${stringResource(R.string.backup_page_files)}: ${state.data.size}"
+            UiState.Loading -> "${stringResource(R.string.backup_page_files)}: ..."
+            UiState.Idle -> "${stringResource(R.string.backup_page_files)}: -"
+            is UiState.Error -> "${stringResource(R.string.backup_page_files)}: -"
+        }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .imePadding(),
     ) {
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             BackupStatusCard(
                 title = stringResource(R.string.backup_page_s3_backup),
                 lastBackupText = lastBackupText,
-                fileSummaryText = backupFileSummary
+                fileSummaryText = backupFileSummary,
             )
 
             CardGroup {
@@ -130,7 +134,7 @@ fun S3Tab(
                             value = s3Config.endpoint,
                             onValueChange = { updateS3Config(s3Config.copy(endpoint = it.trim())) },
                             placeholder = { Text("https://s3.amazonaws.com") },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                 )
@@ -141,7 +145,7 @@ fun S3Tab(
                             modifier = Modifier.fillMaxWidth(),
                             value = s3Config.accessKeyId,
                             onValueChange = { updateS3Config(s3Config.copy(accessKeyId = it.trim())) },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                 )
@@ -155,16 +159,17 @@ fun S3Tab(
                             onValueChange = { updateS3Config(s3Config.copy(secretAccessKey = it.trim())) },
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
-                                val image = if (passwordVisible) {
-                                    HugeIcons.ViewOff
-                                } else {
-                                    HugeIcons.View
-                                }
+                                val image =
+                                    if (passwordVisible) {
+                                        HugeIcons.ViewOff
+                                    } else {
+                                        HugeIcons.View
+                                    }
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(imageVector = image, contentDescription = null)
                                 }
                             },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                 )
@@ -176,7 +181,7 @@ fun S3Tab(
                             value = s3Config.bucket,
                             onValueChange = { updateS3Config(s3Config.copy(bucket = it.trim())) },
                             placeholder = { Text("my-bucket") },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                 )
@@ -198,7 +203,7 @@ fun S3Tab(
                             value = s3Config.region,
                             onValueChange = { updateS3Config(s3Config.copy(region = it.trim())) },
                             placeholder = { Text("auto") },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                 )
@@ -213,25 +218,34 @@ fun S3Tab(
                         ) {
                             S3Config.BackupItem.entries.forEachIndexed { index, item ->
                                 SegmentedButton(
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = S3Config.BackupItem.entries.size
-                                    ),
+                                    shape =
+                                        SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = S3Config.BackupItem.entries.size,
+                                        ),
                                     onCheckedChange = { checked ->
-                                        val newItems = if (checked) {
-                                            s3Config.items + item
-                                        } else {
-                                            s3Config.items - item
-                                        }
+                                        val newItems =
+                                            if (checked) {
+                                                s3Config.items + item
+                                            } else {
+                                                s3Config.items - item
+                                            }
                                         updateS3Config(s3Config.copy(items = newItems))
                                     },
-                                    checked = item in s3Config.items
+                                    checked = item in s3Config.items,
                                 ) {
                                     Text(
                                         when (item) {
-                                            S3Config.BackupItem.DATABASE -> stringResource(R.string.backup_page_chat_records)
-                                            S3Config.BackupItem.FILES -> stringResource(R.string.backup_page_files)
-                                        }
+                                            S3Config.BackupItem.DATABASE -> {
+                                                stringResource(
+                                                    R.string.backup_page_chat_records,
+                                                )
+                                            }
+
+                                            S3Config.BackupItem.FILES -> {
+                                                stringResource(R.string.backup_page_files)
+                                            }
+                                        },
                                     )
                                 }
                             }
@@ -243,10 +257,11 @@ fun S3Tab(
 
         HorizontalDivider()
         FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         ) {
             OutlinedButton(
                 onClick = {
@@ -255,20 +270,20 @@ fun S3Tab(
                             vm.testS3()
                             toaster.show(
                                 context.getString(R.string.backup_page_connection_success),
-                                type = ToastType.Success
+                                type = ToastType.Success,
                             )
                         } catch (e: Exception) {
                             e.printStackTrace()
                             toaster.show(
                                 context.getString(
                                     R.string.backup_page_connection_failed,
-                                    e.message ?: ""
+                                    e.message ?: "",
                                 ),
-                                type = ToastType.Error
+                                type = ToastType.Error,
                             )
                         }
                     }
-                }
+                },
             ) {
                 Text(stringResource(R.string.backup_page_test_connection))
             }
@@ -276,7 +291,7 @@ fun S3Tab(
                 onClick = {
                     vm.loadS3BackupFileItems()
                     showBackupFiles = true
-                }
+                },
             ) {
                 Text(stringResource(R.string.backup_page_restore))
             }
@@ -290,23 +305,23 @@ fun S3Tab(
                             vm.loadS3BackupFileItems()
                             toaster.show(
                                 context.getString(R.string.backup_page_backup_success),
-                                type = ToastType.Success
+                                type = ToastType.Success,
                             )
                         }.onFailure {
                             it.printStackTrace()
                             toaster.show(
                                 it.message ?: context.getString(R.string.backup_page_unknown_error),
-                                type = ToastType.Error
+                                type = ToastType.Error,
                             )
                         }
                         isBackingUp = false
                     }
                 },
-                enabled = !isBackingUp
+                enabled = !isBackingUp,
             ) {
                 if (isBackingUp) {
                     CircularWavyProgressIndicator(
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                 } else {
                     Icon(HugeIcons.Upload02, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -317,7 +332,7 @@ fun S3Tab(
                         stringResource(R.string.backup_page_backing_up)
                     } else {
                         stringResource(R.string.backup_page_backup_now)
-                    }
+                    },
                 )
             }
         }
@@ -328,96 +343,102 @@ fun S3Tab(
             onDismissRequest = {
                 showBackupFiles = false
             },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.8f)
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.8f)
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     stringResource(R.string.backup_page_s3_backup_files),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                backupItemsState.onSuccess {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(it) { item ->
-                            S3BackupItemCard(
-                                item = item,
-                                isRestoring = restoringItemId == item.displayName,
-                                onDelete = {
-                                    scope.launch {
-                                        runCatching {
-                                            vm.deleteS3BackupFile(item)
-                                            toaster.show(
-                                                context.getString(R.string.backup_page_delete_success),
-                                                type = ToastType.Success
-                                            )
-                                            vm.loadS3BackupFileItems()
-                                        }.onFailure { err ->
-                                            err.printStackTrace()
-                                            toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_delete_failed,
-                                                    err.message ?: ""
-                                                ),
-                                                type = ToastType.Error
-                                            )
+                backupItemsState
+                    .onSuccess {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(it) { item ->
+                                S3BackupItemCard(
+                                    item = item,
+                                    isRestoring = restoringItemId == item.displayName,
+                                    onDelete = {
+                                        scope.launch {
+                                            runCatching {
+                                                vm.deleteS3BackupFile(item)
+                                                toaster.show(
+                                                    context.getString(R.string.backup_page_delete_success),
+                                                    type = ToastType.Success,
+                                                )
+                                                vm.loadS3BackupFileItems()
+                                            }.onFailure { err ->
+                                                err.printStackTrace()
+                                                toaster.show(
+                                                    context.getString(
+                                                        R.string.backup_page_delete_failed,
+                                                        err.message ?: "",
+                                                    ),
+                                                    type = ToastType.Error,
+                                                )
+                                            }
                                         }
-                                    }
-                                },
-                                onRestore = { restoreItem ->
-                                    scope.launch {
-                                        restoringItemId = restoreItem.displayName
-                                        runCatching {
-                                            vm.restoreFromS3(item = restoreItem)
-                                            toaster.show(
-                                                context.getString(R.string.backup_page_restore_success),
-                                                type = ToastType.Success
-                                            )
-                                            showBackupFiles = false
-                                            onShowRestartDialog()
-                                        }.onFailure { err ->
-                                            err.printStackTrace()
-                                            toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_restore_failed,
-                                                    err.message ?: ""
-                                                ),
-                                                type = ToastType.Error
-                                            )
+                                    },
+                                    onRestore = { restoreItem ->
+                                        scope.launch {
+                                            restoringItemId = restoreItem.displayName
+                                            runCatching {
+                                                vm.restoreFromS3(item = restoreItem)
+                                                toaster.show(
+                                                    context.getString(R.string.backup_page_restore_success),
+                                                    type = ToastType.Success,
+                                                )
+                                                showBackupFiles = false
+                                                onShowRestartDialog()
+                                            }.onFailure { err ->
+                                                err.printStackTrace()
+                                                toaster.show(
+                                                    context.getString(
+                                                        R.string.backup_page_restore_failed,
+                                                        err.message ?: "",
+                                                    ),
+                                                    type = ToastType.Error,
+                                                )
+                                            }
+                                            restoringItemId = null
                                         }
-                                        restoringItemId = null
-                                    }
-                                },
+                                    },
+                                )
+                            }
+                        }
+                    }.onError {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.backup_page_loading_failed, it.message ?: ""),
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
+                    }.onLoading {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularWavyProgressIndicator()
+                        }
                     }
-                }.onError {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.backup_page_loading_failed, it.message ?: ""),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }.onLoading {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularWavyProgressIndicator()
-                    }
-                }
             }
         }
     }
@@ -434,7 +455,7 @@ private fun BackupStatusCard(
             headlineContent = {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
             },
             supportingContent = {
@@ -444,12 +465,12 @@ private fun BackupStatusCard(
                     Text(
                         text = lastBackupText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = fileSummaryText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             },
@@ -469,7 +490,7 @@ private fun S3BackupItemCard(
             headlineContent = {
                 Text(
                     text = item.displayName,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
             },
             supportingContent = {
@@ -480,7 +501,7 @@ private fun S3BackupItemCard(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = item.lastModified.toLocalDateTime(),
@@ -494,13 +515,13 @@ private fun S3BackupItemCard(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextButton(
                             onClick = {
                                 onDelete(item)
                             },
-                            enabled = !isRestoring
+                            enabled = !isRestoring,
                         ) {
                             Text(stringResource(R.string.backup_page_delete))
                         }
@@ -508,11 +529,11 @@ private fun S3BackupItemCard(
                             onClick = {
                                 onRestore(item)
                             },
-                            enabled = !isRestoring
+                            enabled = !isRestoring,
                         ) {
                             if (isRestoring) {
                                 CircularWavyProgressIndicator(
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
                             }
@@ -521,7 +542,7 @@ private fun S3BackupItemCard(
                                     stringResource(R.string.backup_page_restoring)
                                 } else {
                                     stringResource(R.string.backup_page_restore_now)
-                                }
+                                },
                             )
                         }
                     }

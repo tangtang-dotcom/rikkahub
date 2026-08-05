@@ -47,11 +47,11 @@ import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.common.android.Logging
 import me.rerere.rikkahub.data.model.Avatar
-import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.richtext.MathBlock
 import me.rerere.rikkahub.ui.components.richtext.Mermaid
+import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
@@ -72,15 +72,16 @@ fun DebugPage(vm: DebugVM = koinViewModel()) {
                 },
                 navigationIcon = {
                     BackButton()
-                }
+                },
             )
-        }
+        },
     ) { contentPadding ->
         val state = rememberPagerState { 3 }
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
         ) {
             SecondaryTabRow(
                 selectedTabIndex = state.currentPage,
@@ -94,7 +95,7 @@ fun DebugPage(vm: DebugVM = koinViewModel()) {
                     },
                     text = {
                         Text("Main")
-                    }
+                    },
                 )
                 Tab(
                     selected = state.currentPage == 1,
@@ -105,7 +106,7 @@ fun DebugPage(vm: DebugVM = koinViewModel()) {
                     },
                     text = {
                         Text("Colors")
-                    }
+                    },
                 )
                 Tab(
                     selected = state.currentPage == 2,
@@ -116,14 +117,15 @@ fun DebugPage(vm: DebugVM = koinViewModel()) {
                     },
                     text = {
                         Text("Logging")
-                    }
+                    },
                 )
             }
             HorizontalPager(
                 state = state,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             ) { page ->
                 when (page) {
                     0 -> MainPage(vm)
@@ -140,11 +142,12 @@ private fun MainPage(vm: DebugVM) {
     val settings = LocalSettings.current
     val conversationCount by vm.conversationCount.collectAsStateWithLifecycle()
     Column(
-        modifier = Modifier
-            .padding(8.dp)
-            .verticalScroll(rememberScrollState())
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        modifier =
+            Modifier
+                .padding(8.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         var avatar: Avatar by remember { mutableStateOf(Avatar.Emoji("😎")) }
         UIAvatar(
@@ -153,10 +156,11 @@ private fun MainPage(vm: DebugVM) {
                 println("Avatar updated: $it")
                 avatar = it
             },
-            name = "A"
+            name = "A",
         )
         Mermaid(
-            code = """
+            code =
+                """
                 mindmap
                   root((mindmap))
                     Origins
@@ -187,7 +191,7 @@ private fun MainPage(vm: DebugVM) {
                 toaster.show("测试 ${counter++}")
                 toaster.show("测试 ${counter++}", type = ToastType.Info)
                 toaster.show("测试 ${counter++}", type = ToastType.Error)
-            }
+            },
         ) {
             Text("toast")
         }
@@ -195,10 +199,10 @@ private fun MainPage(vm: DebugVM) {
             onClick = {
                 vm.updateSettings(
                     settings.copy(
-                        chatModelId = Uuid.random()
-                    )
+                        chatModelId = Uuid.random(),
+                    ),
                 )
-            }
+            },
         ) {
             Text("重置Chat模型")
         }
@@ -206,7 +210,7 @@ private fun MainPage(vm: DebugVM) {
         Button(
             onClick = {
                 error("测试崩溃 ${Random.nextInt(0..1000)}")
-            }
+            },
         ) {
             Text("崩溃")
         }
@@ -228,7 +232,7 @@ private fun MainPage(vm: DebugVM) {
             onClick = {
                 vm.createOversizedConversation(30)
                 toaster.show("正在创建 30MB 超大对话...")
-            }
+            },
         ) {
             Text("创建超大对话 (30MB)")
         }
@@ -237,7 +241,7 @@ private fun MainPage(vm: DebugVM) {
             onClick = {
                 vm.createConversationWithMessages(1024)
                 toaster.show("正在创建 1024 条消息对话...")
-            }
+            },
         ) {
             Text("创建 1024 个消息的聊天")
         }
@@ -298,7 +302,7 @@ private fun MainPage(vm: DebugVM) {
         OutlinedTextField(
             value = markdown,
             onValueChange = { markdown = it },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -306,58 +310,59 @@ private fun MainPage(vm: DebugVM) {
 @Composable
 private fun ColorsPage() {
     val colorScheme = MaterialTheme.colorScheme
-    val colorTokens = remember(colorScheme) {
-        listOf(
-            "primary" to colorScheme.primary,
-            "onPrimary" to colorScheme.onPrimary,
-            "primaryContainer" to colorScheme.primaryContainer,
-            "onPrimaryContainer" to colorScheme.onPrimaryContainer,
-            "inversePrimary" to colorScheme.inversePrimary,
-            "secondary" to colorScheme.secondary,
-            "onSecondary" to colorScheme.onSecondary,
-            "secondaryContainer" to colorScheme.secondaryContainer,
-            "onSecondaryContainer" to colorScheme.onSecondaryContainer,
-            "tertiary" to colorScheme.tertiary,
-            "onTertiary" to colorScheme.onTertiary,
-            "tertiaryContainer" to colorScheme.tertiaryContainer,
-            "onTertiaryContainer" to colorScheme.onTertiaryContainer,
-            "background" to colorScheme.background,
-            "onBackground" to colorScheme.onBackground,
-            "surface" to colorScheme.surface,
-            "onSurface" to colorScheme.onSurface,
-            "surfaceVariant" to colorScheme.surfaceVariant,
-            "onSurfaceVariant" to colorScheme.onSurfaceVariant,
-            "surfaceTint" to colorScheme.surfaceTint,
-            "inverseSurface" to colorScheme.inverseSurface,
-            "inverseOnSurface" to colorScheme.inverseOnSurface,
-            "surfaceBright" to colorScheme.surfaceBright,
-            "surfaceDim" to colorScheme.surfaceDim,
-            "surfaceContainer" to colorScheme.surfaceContainer,
-            "surfaceContainerHigh" to colorScheme.surfaceContainerHigh,
-            "surfaceContainerHighest" to colorScheme.surfaceContainerHighest,
-            "surfaceContainerLow" to colorScheme.surfaceContainerLow,
-            "surfaceContainerLowest" to colorScheme.surfaceContainerLowest,
-            "error" to colorScheme.error,
-            "onError" to colorScheme.onError,
-            "errorContainer" to colorScheme.errorContainer,
-            "onErrorContainer" to colorScheme.onErrorContainer,
-            "outline" to colorScheme.outline,
-            "outlineVariant" to colorScheme.outlineVariant,
-            "scrim" to colorScheme.scrim,
-            "primaryFixed" to colorScheme.primaryFixed,
-            "primaryFixedDim" to colorScheme.primaryFixedDim,
-            "onPrimaryFixed" to colorScheme.onPrimaryFixed,
-            "onPrimaryFixedVariant" to colorScheme.onPrimaryFixedVariant,
-            "secondaryFixed" to colorScheme.secondaryFixed,
-            "secondaryFixedDim" to colorScheme.secondaryFixedDim,
-            "onSecondaryFixed" to colorScheme.onSecondaryFixed,
-            "onSecondaryFixedVariant" to colorScheme.onSecondaryFixedVariant,
-            "tertiaryFixed" to colorScheme.tertiaryFixed,
-            "tertiaryFixedDim" to colorScheme.tertiaryFixedDim,
-            "onTertiaryFixed" to colorScheme.onTertiaryFixed,
-            "onTertiaryFixedVariant" to colorScheme.onTertiaryFixedVariant,
-        )
-    }
+    val colorTokens =
+        remember(colorScheme) {
+            listOf(
+                "primary" to colorScheme.primary,
+                "onPrimary" to colorScheme.onPrimary,
+                "primaryContainer" to colorScheme.primaryContainer,
+                "onPrimaryContainer" to colorScheme.onPrimaryContainer,
+                "inversePrimary" to colorScheme.inversePrimary,
+                "secondary" to colorScheme.secondary,
+                "onSecondary" to colorScheme.onSecondary,
+                "secondaryContainer" to colorScheme.secondaryContainer,
+                "onSecondaryContainer" to colorScheme.onSecondaryContainer,
+                "tertiary" to colorScheme.tertiary,
+                "onTertiary" to colorScheme.onTertiary,
+                "tertiaryContainer" to colorScheme.tertiaryContainer,
+                "onTertiaryContainer" to colorScheme.onTertiaryContainer,
+                "background" to colorScheme.background,
+                "onBackground" to colorScheme.onBackground,
+                "surface" to colorScheme.surface,
+                "onSurface" to colorScheme.onSurface,
+                "surfaceVariant" to colorScheme.surfaceVariant,
+                "onSurfaceVariant" to colorScheme.onSurfaceVariant,
+                "surfaceTint" to colorScheme.surfaceTint,
+                "inverseSurface" to colorScheme.inverseSurface,
+                "inverseOnSurface" to colorScheme.inverseOnSurface,
+                "surfaceBright" to colorScheme.surfaceBright,
+                "surfaceDim" to colorScheme.surfaceDim,
+                "surfaceContainer" to colorScheme.surfaceContainer,
+                "surfaceContainerHigh" to colorScheme.surfaceContainerHigh,
+                "surfaceContainerHighest" to colorScheme.surfaceContainerHighest,
+                "surfaceContainerLow" to colorScheme.surfaceContainerLow,
+                "surfaceContainerLowest" to colorScheme.surfaceContainerLowest,
+                "error" to colorScheme.error,
+                "onError" to colorScheme.onError,
+                "errorContainer" to colorScheme.errorContainer,
+                "onErrorContainer" to colorScheme.onErrorContainer,
+                "outline" to colorScheme.outline,
+                "outlineVariant" to colorScheme.outlineVariant,
+                "scrim" to colorScheme.scrim,
+                "primaryFixed" to colorScheme.primaryFixed,
+                "primaryFixedDim" to colorScheme.primaryFixedDim,
+                "onPrimaryFixed" to colorScheme.onPrimaryFixed,
+                "onPrimaryFixedVariant" to colorScheme.onPrimaryFixedVariant,
+                "secondaryFixed" to colorScheme.secondaryFixed,
+                "secondaryFixedDim" to colorScheme.secondaryFixedDim,
+                "onSecondaryFixed" to colorScheme.onSecondaryFixed,
+                "onSecondaryFixedVariant" to colorScheme.onSecondaryFixedVariant,
+                "tertiaryFixed" to colorScheme.tertiaryFixed,
+                "tertiaryFixedDim" to colorScheme.tertiaryFixedDim,
+                "onTertiaryFixed" to colorScheme.onTertiaryFixed,
+                "onTertiaryFixedVariant" to colorScheme.onTertiaryFixedVariant,
+            )
+        }
     LazyColumn(
         contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -369,24 +374,29 @@ private fun ColorsPage() {
 }
 
 @Composable
-private fun ColorTokenItem(name: String, color: Color) {
+private fun ColorTokenItem(
+    name: String,
+    color: Color,
+) {
     val shape = RoundedCornerShape(8.dp)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .clip(shape)
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+                .clip(shape)
+                .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .height(40.dp)
-                .weight(1f)
-                .clip(RoundedCornerShape(4.dp))
-                .background(color)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+            modifier =
+                Modifier
+                    .height(40.dp)
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(color)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp)),
         )
         Column(modifier = Modifier.weight(2f)) {
             Text(name, style = MaterialTheme.typography.bodyMedium)

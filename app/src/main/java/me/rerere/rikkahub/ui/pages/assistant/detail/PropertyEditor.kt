@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,23 +28,30 @@ import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.CustomHeader
 import me.rerere.highlight.LocalCodeHighlighter
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
+import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 
-private val jsonLenient = Json {
-    ignoreUnknownKeys = true
-    isLenient = true
-    prettyPrint = true
-}
+private val jsonLenient =
+    Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        prettyPrint = true
+    }
 
 @Composable
-fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) -> Unit) {
+fun CustomHeaders(
+    headers: List<CustomHeader>,
+    onUpdate: (List<CustomHeader>) -> Unit,
+) {
     Column(
         modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(stringResource(R.string.assistant_page_custom_headers))
         Spacer(Modifier.height(8.dp))
@@ -72,7 +76,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                     onUpdate(updatedHeaders)
                                 },
                                 label = { Text(stringResource(R.string.assistant_page_header_name)) },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             OutlinedTextField(
                                 value = headerValue,
@@ -84,7 +88,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                     onUpdate(updatedHeaders)
                                 },
                                 label = { Text(stringResource(R.string.assistant_page_header_value)) },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     },
@@ -96,7 +100,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.assistant_page_delete_header)
+                                contentDescription = stringResource(R.string.assistant_page_delete_header),
                             )
                         }
                     },
@@ -111,7 +115,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                 updatedHeaders.add(CustomHeader("", ""))
                 onUpdate(updatedHeaders)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(HugeIcons.Add01, contentDescription = stringResource(R.string.assistant_page_add_header))
             Spacer(Modifier.width(4.dp))
@@ -121,11 +125,14 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
 }
 
 @Composable
-fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) -> Unit) {
+fun CustomBodies(
+    customBodies: List<CustomBody>,
+    onUpdate: (List<CustomBody>) -> Unit,
+) {
     val context = LocalContext.current
     Column(
         modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(stringResource(R.string.assistant_page_custom_bodies))
         Spacer(Modifier.height(8.dp))
@@ -153,7 +160,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                     onUpdate(updatedBodies)
                                 },
                                 label = { Text(stringResource(R.string.assistant_page_body_key)) },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             OutlinedTextField(
                                 value = bodyValueString,
@@ -170,7 +177,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                         jsonParseError =
                                             context.getString(
                                                 R.string.assistant_page_invalid_json,
-                                                e.message?.take(100) ?: ""
+                                                e.message?.take(100) ?: "",
                                             )
                                     }
                                 },
@@ -184,11 +191,12 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                 },
                                 minLines = 3,
                                 maxLines = 5,
-                                visualTransformation = HighlightCodeVisualTransformation(
-                                    language = "json",
-                                    highlighter = LocalCodeHighlighter.current,
-                                    darkMode = LocalDarkMode.current
-                                ),
+                                visualTransformation =
+                                    HighlightCodeVisualTransformation(
+                                        language = "json",
+                                        highlighter = LocalCodeHighlighter.current,
+                                        darkMode = LocalDarkMode.current,
+                                    ),
                                 textStyle = LocalTextStyle.current.merge(fontFamily = JetbrainsMono),
                             )
                         }
@@ -201,7 +209,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.assistant_page_delete_body)
+                                contentDescription = stringResource(R.string.assistant_page_delete_body),
                             )
                         }
                     },
@@ -216,7 +224,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                 updatedBodies.add(CustomBody("", JsonPrimitive("")))
                 onUpdate(updatedBodies)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(HugeIcons.Add01, contentDescription = stringResource(R.string.assistant_page_add_body))
             Spacer(Modifier.width(4.dp))

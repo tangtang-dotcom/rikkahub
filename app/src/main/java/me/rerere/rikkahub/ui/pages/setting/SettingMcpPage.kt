@@ -1,4 +1,4 @@
-@file:Suppress("DEPRECATION")  // FlowRowOverflow deprecated; no replacement in current Compose
+@file:Suppress("DEPRECATION") // FlowRowOverflow deprecated; no replacement in current Compose
 
 package me.rerere.rikkahub.ui.pages.setting
 
@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,8 +29,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -120,25 +120,29 @@ import org.koin.compose.koinInject
 fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val mcpConfigs = settings.mcpServers
-    val creationState = useEditState<McpServerConfig> {
-        vm.updateSettings(
-            settings.copy(
-                mcpServers = mcpConfigs + it
+    val creationState =
+        useEditState<McpServerConfig> {
+            vm.updateSettings(
+                settings.copy(
+                    mcpServers = mcpConfigs + it,
+                ),
             )
-        )
-    }
-    val editState = useEditState<McpServerConfig> { newConfig ->
-        vm.updateSettings(
-            settings.copy(
-                mcpServers = mcpConfigs.map {
-                    if (it.id == newConfig.id) {
-                        newConfig
-                    } else {
-                        it
-                    }
-                }
-            ))
-    }
+        }
+    val editState =
+        useEditState<McpServerConfig> { newConfig ->
+            vm.updateSettings(
+                settings.copy(
+                    mcpServers =
+                        mcpConfigs.map {
+                            if (it.id == newConfig.id) {
+                                newConfig
+                            } else {
+                                it
+                            }
+                        },
+                ),
+            )
+        }
     var showImportDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -154,24 +158,24 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
                     IconButton(
                         onClick = {
                             showImportDialog = true
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.FileImport, null)
                     }
                     IconButton(
                         onClick = {
                             creationState.open(McpServerConfig.StreamableHTTPServer())
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.Add01, null)
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         val mcpManager = koinInject<McpManager>()
         val status by mcpManager.syncingStatus.collectAsStateWithLifecycle()
@@ -187,18 +191,20 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
                 }
             },
             state = state,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(
-                    start = innerPadding.calculateStartPadding(layoutDirection) + 16.dp,
-                    top = innerPadding.calculateTopPadding() + 16.dp,
-                    end = innerPadding.calculateEndPadding(layoutDirection) + 16.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
-                )
+                contentPadding =
+                    PaddingValues(
+                        start = innerPadding.calculateStartPadding(layoutDirection) + 16.dp,
+                        top = innerPadding.calculateTopPadding() + 16.dp,
+                        end = innerPadding.calculateEndPadding(layoutDirection) + 16.dp,
+                        bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                    ),
             ) {
                 items(mcpConfigs, key = { it.id }) { mcpConfig ->
                     McpServerItem(
@@ -209,11 +215,11 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
                         onDelete = {
                             vm.updateSettings(
                                 settings.copy(
-                                    mcpServers = mcpConfigs.filter { it.id != mcpConfig.id }
-                                )
+                                    mcpServers = mcpConfigs.filter { it.id != mcpConfig.id },
+                                ),
                             )
                         },
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -240,10 +246,14 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
             onDismiss = { showImportDialog = false },
             onImport = { newConfigs ->
                 val existingIds = mcpConfigs.map { it.commonOptions.name }.toSet()
-                val toAdd = newConfigs.filter { it.commonOptions.name.isNotBlank() && it.commonOptions.name !in existingIds }
+                val toAdd =
+                    newConfigs.filter {
+                        it.commonOptions.name.isNotBlank() &&
+                            it.commonOptions.name !in existingIds
+                    }
                 vm.updateSettings(settings.copy(mcpServers = mcpConfigs + toAdd))
                 showImportDialog = false
-            }
+            },
         )
     }
 }
@@ -272,9 +282,10 @@ private fun McpServerItem(
                     Text(
                         text = fullText,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .heightIn(max = 320.dp)
-                            .verticalScroll(rememberScrollState()),
+                        modifier =
+                            Modifier
+                                .heightIn(max = 320.dp)
+                                .verticalScroll(rememberScrollState()),
                     )
                 }
             },
@@ -283,7 +294,7 @@ private fun McpServerItem(
                     onClick = {
                         context.writeClipboardText(fullText)
                         errorDetail = null
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.copy))
                 }
@@ -306,14 +317,14 @@ private fun McpServerItem(
                 FilledTonalIconButton(
                     onClick = {
                         scope.launch { dismissBoxState.reset() }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Cancel01, null)
                 }
                 FilledTonalIconButton(
                     onClick = {
                         onDelete()
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Delete01, null)
                 }
@@ -321,37 +332,59 @@ private fun McpServerItem(
         },
         enableDismissFromStartToEnd = false,
         enableDismissFromEndToStart = true,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = CustomColors.listItemColors.containerColor
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = CustomColors.listItemColors.containerColor,
+                ),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when (status) {
-                    McpStatus.Idle -> Icon(HugeIcons.MessageBlocked, null)
-                    McpStatus.Connecting -> CircularProgressIndicator(
-                        modifier = Modifier.size(
-                            24.dp
-                        )
-                    )
+                    McpStatus.Idle -> {
+                        Icon(HugeIcons.MessageBlocked, null)
+                    }
 
-                    McpStatus.Connected -> Icon(HugeIcons.McpServer, null)
-                    is McpStatus.Reconnecting -> CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp)
-                    )
-                    is McpStatus.Error -> Icon(HugeIcons.AlertCircle, null)
-                    McpStatus.NeedsAuthorization -> Icon(HugeIcons.AlertCircle, null)
-                    McpStatus.Authorizing -> CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp)
-                    )
+                    McpStatus.Connecting -> {
+                        CircularProgressIndicator(
+                            modifier =
+                                Modifier.size(
+                                    24.dp,
+                                ),
+                        )
+                    }
+
+                    McpStatus.Connected -> {
+                        Icon(HugeIcons.McpServer, null)
+                    }
+
+                    is McpStatus.Reconnecting -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+
+                    is McpStatus.Error -> {
+                        Icon(HugeIcons.AlertCircle, null)
+                    }
+
+                    McpStatus.NeedsAuthorization -> {
+                        Icon(HugeIcons.AlertCircle, null)
+                    }
+
+                    McpStatus.Authorizing -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
 
                 Column(
@@ -360,7 +393,7 @@ private fun McpServerItem(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = item.commonOptions.name,
@@ -369,13 +402,14 @@ private fun McpServerItem(
                         val dotColor =
                             if (item.commonOptions.enable) MaterialTheme.extendColors.green6 else MaterialTheme.extendColors.red6
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .drawWithContent {
-                                    drawCircle(
-                                        color = dotColor
-                                    )
-                                }
+                            modifier =
+                                Modifier
+                                    .size(8.dp)
+                                    .drawWithContent {
+                                        drawCircle(
+                                            color = dotColor,
+                                        )
+                                    },
                         )
                     }
 
@@ -431,7 +465,7 @@ private fun McpServerItem(
                 IconButton(
                     onClick = {
                         onEdit(item)
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Settings03, null)
                 }
@@ -449,18 +483,23 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
             onDismissRequest = {
                 state.dismiss()
             },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.9f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.9f)
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SecondaryTabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    containerColor = Color.Transparent
+                    containerColor = Color.Transparent,
                 ) {
                     Tab(
                         selected = pagerState.currentPage == 0,
@@ -471,7 +510,7 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                         },
                         text = {
                             Text(stringResource(R.string.setting_mcp_page_basic_settings))
-                        }
+                        },
                     )
                     Tab(
                         selected = pagerState.currentPage == 1,
@@ -482,20 +521,21 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                         },
                         text = {
                             Text(stringResource(R.string.setting_mcp_page_tools))
-                        }
+                        },
                     )
                 }
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                 ) { page ->
                     when (page) {
                         0 -> {
                             McpCommonOptionsConfigure(
                                 config = config,
-                                update = updateValue
+                                update = updateValue,
                             )
                         }
 
@@ -509,14 +549,14 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 ) {
                     TextButton(
                         onClick = {
                             if (config.commonOptions.name.isNotBlank() && isValidMcpName(config.commonOptions.name)) {
                                 state.confirm()
                             }
-                        }
+                        },
                     ) {
                         Text(stringResource(R.string.setting_mcp_page_save))
                     }
@@ -529,15 +569,16 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
 @Composable
 private fun McpCommonOptionsConfigure(
     config: McpServerConfig,
-    update: (McpServerConfig) -> Unit
+    update: (McpServerConfig) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-            .imePadding(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // 启用/禁用开关
         FormItem(
@@ -546,12 +587,12 @@ private fun McpCommonOptionsConfigure(
             },
             description = {
                 Text(stringResource(R.string.setting_mcp_page_enable_desc))
-            }
+            },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.setting_mcp_page_enable))
                 Spacer(Modifier.weight(1f))
@@ -560,16 +601,20 @@ private fun McpCommonOptionsConfigure(
                     onCheckedChange = { enabled ->
                         update(
                             when (config) {
-                                is McpServerConfig.SseTransportServer -> config.copy(
-                                    commonOptions = config.commonOptions.copy(enable = enabled)
-                                )
+                                is McpServerConfig.SseTransportServer -> {
+                                    config.copy(
+                                        commonOptions = config.commonOptions.copy(enable = enabled),
+                                    )
+                                }
 
-                                is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                    commonOptions = config.commonOptions.copy(enable = enabled)
-                                )
-                            }
+                                is McpServerConfig.StreamableHTTPServer -> {
+                                    config.copy(
+                                        commonOptions = config.commonOptions.copy(enable = enabled),
+                                    )
+                                }
+                            },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -583,7 +628,7 @@ private fun McpCommonOptionsConfigure(
             },
             description = {
                 Text(stringResource(R.string.setting_mcp_page_name_desc))
-            }
+            },
         ) {
             val nameInvalid = !isValidMcpName(config.commonOptions.name)
             OutlinedTextField(
@@ -591,23 +636,30 @@ private fun McpCommonOptionsConfigure(
                 onValueChange = { name ->
                     update(
                         when (config) {
-                            is McpServerConfig.SseTransportServer -> config.copy(
-                                commonOptions = config.commonOptions.copy(name = name)
-                            )
+                            is McpServerConfig.SseTransportServer -> {
+                                config.copy(
+                                    commonOptions = config.commonOptions.copy(name = name),
+                                )
+                            }
 
-                            is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                commonOptions = config.commonOptions.copy(name = name)
-                            )
-                        }
+                            is McpServerConfig.StreamableHTTPServer -> {
+                                config.copy(
+                                    commonOptions = config.commonOptions.copy(name = name),
+                                )
+                            }
+                        },
                     )
                 },
                 label = { Text(stringResource(R.string.setting_mcp_page_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.setting_mcp_page_name_placeholder)) },
                 isError = nameInvalid,
-                supportingText = if (nameInvalid) {
-                    { Text(stringResource(R.string.setting_mcp_page_name_invalid)) }
-                } else null
+                supportingText =
+                    if (nameInvalid) {
+                        { Text(stringResource(R.string.setting_mcp_page_name_invalid)) }
+                    } else {
+                        null
+                    },
             )
         }
 
@@ -620,50 +672,61 @@ private fun McpCommonOptionsConfigure(
             },
             description = {
                 Text(stringResource(R.string.setting_mcp_page_transport_type_desc))
-            }
+            },
         ) {
-            val transportTypes = listOf(
-                "Streamable HTTP",
-                "SSE"
-            )
-            val currentTypeIndex = when (config) {
-                is McpServerConfig.StreamableHTTPServer -> 0
-                is McpServerConfig.SseTransportServer -> 1
-            }
+            val transportTypes =
+                listOf(
+                    "Streamable HTTP",
+                    "SSE",
+                )
+            val currentTypeIndex =
+                when (config) {
+                    is McpServerConfig.StreamableHTTPServer -> 0
+                    is McpServerConfig.SseTransportServer -> 1
+                }
 
             SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 transportTypes.forEachIndexed { index, type ->
                     SegmentedButton(
                         shape = SegmentedButtonDefaults.itemShape(index, transportTypes.size),
                         onClick = {
                             if (index != currentTypeIndex) {
-                                val newConfig = when (index) {
-                                    0 -> McpServerConfig.StreamableHTTPServer(
-                                        id = config.id,
-                                        commonOptions = config.commonOptions,
-                                        url = when (config) {
-                                            is McpServerConfig.SseTransportServer -> config.url
-                                            is McpServerConfig.StreamableHTTPServer -> config.url
+                                val newConfig =
+                                    when (index) {
+                                        0 -> {
+                                            McpServerConfig.StreamableHTTPServer(
+                                                id = config.id,
+                                                commonOptions = config.commonOptions,
+                                                url =
+                                                    when (config) {
+                                                        is McpServerConfig.SseTransportServer -> config.url
+                                                        is McpServerConfig.StreamableHTTPServer -> config.url
+                                                    },
+                                            )
                                         }
-                                    )
 
-                                    1 -> McpServerConfig.SseTransportServer(
-                                        id = config.id,
-                                        commonOptions = config.commonOptions,
-                                        url = when (config) {
-                                            is McpServerConfig.SseTransportServer -> config.url
-                                            is McpServerConfig.StreamableHTTPServer -> config.url
+                                        1 -> {
+                                            McpServerConfig.SseTransportServer(
+                                                id = config.id,
+                                                commonOptions = config.commonOptions,
+                                                url =
+                                                    when (config) {
+                                                        is McpServerConfig.SseTransportServer -> config.url
+                                                        is McpServerConfig.StreamableHTTPServer -> config.url
+                                                    },
+                                            )
                                         }
-                                    )
 
-                                    else -> config
-                                }
+                                        else -> {
+                                            config
+                                        }
+                                    }
                                 update(newConfig)
                             }
                         },
-                        selected = index == currentTypeIndex
+                        selected = index == currentTypeIndex,
                     ) {
                         Text(type)
                     }
@@ -681,23 +744,31 @@ private fun McpCommonOptionsConfigure(
             description = {
                 Text(
                     when (config) {
-                        is McpServerConfig.SseTransportServer -> stringResource(R.string.setting_mcp_page_sse_url_desc)
-                        is McpServerConfig.StreamableHTTPServer -> stringResource(R.string.setting_mcp_page_streamable_http_url_desc)
-                    }
+                        is McpServerConfig.SseTransportServer -> {
+                            stringResource(R.string.setting_mcp_page_sse_url_desc)
+                        }
+
+                        is McpServerConfig.StreamableHTTPServer -> {
+                            stringResource(
+                                R.string.setting_mcp_page_streamable_http_url_desc,
+                            )
+                        }
+                    },
                 )
-            }
+            },
         ) {
             OutlinedTextField(
-                value = when (config) {
-                    is McpServerConfig.SseTransportServer -> config.url
-                    is McpServerConfig.StreamableHTTPServer -> config.url
-                },
+                value =
+                    when (config) {
+                        is McpServerConfig.SseTransportServer -> config.url
+                        is McpServerConfig.StreamableHTTPServer -> config.url
+                    },
                 onValueChange = { url ->
                     update(
                         when (config) {
                             is McpServerConfig.SseTransportServer -> config.copy(url = url)
                             is McpServerConfig.StreamableHTTPServer -> config.copy(url = url)
-                        }
+                        },
                     )
                 },
                 label = { Text(stringResource(R.string.setting_mcp_page_url_label)) },
@@ -705,11 +776,20 @@ private fun McpCommonOptionsConfigure(
                 placeholder = {
                     Text(
                         when (config) {
-                            is McpServerConfig.SseTransportServer -> stringResource(R.string.setting_mcp_page_sse_url_placeholder)
-                            is McpServerConfig.StreamableHTTPServer -> stringResource(R.string.setting_mcp_page_streamable_http_url_placeholder)
-                        }
+                            is McpServerConfig.SseTransportServer -> {
+                                stringResource(
+                                    R.string.setting_mcp_page_sse_url_placeholder,
+                                )
+                            }
+
+                            is McpServerConfig.StreamableHTTPServer -> {
+                                stringResource(
+                                    R.string.setting_mcp_page_streamable_http_url_placeholder,
+                                )
+                            }
+                        },
                     )
-                }
+                },
             )
         }
 
@@ -722,10 +802,10 @@ private fun McpCommonOptionsConfigure(
             },
             description = {
                 Text(stringResource(R.string.setting_mcp_page_custom_headers_desc))
-            }
+            },
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 config.commonOptions.headers.forEachIndexed { index, header ->
                     var headerName by remember(header.first) { mutableStateOf(header.first) }
@@ -733,7 +813,7 @@ private fun McpCommonOptionsConfigure(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             OutlinedTextField(
@@ -746,19 +826,27 @@ private fun McpCommonOptionsConfigure(
                                         it.trim() to updatedHeaders[index].second
                                     update(
                                         when (config) {
-                                            is McpServerConfig.SseTransportServer -> config.copy(
-                                                commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                            )
+                                            is McpServerConfig.SseTransportServer -> {
+                                                config.copy(
+                                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                                )
+                                            }
 
-                                            is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                                commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                            )
-                                        }
+                                            is McpServerConfig.StreamableHTTPServer -> {
+                                                config.copy(
+                                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                                )
+                                            }
+                                        },
                                     )
                                 },
                                 label = { Text(stringResource(R.string.setting_mcp_page_header_name)) },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.setting_mcp_page_header_name_placeholder)) }
+                                placeholder = {
+                                    Text(
+                                        stringResource(R.string.setting_mcp_page_header_name_placeholder),
+                                    )
+                                },
                             )
                             Spacer(Modifier.height(8.dp))
                             var headerValueVisible by remember(header.second) { mutableStateOf(false) }
@@ -771,14 +859,18 @@ private fun McpCommonOptionsConfigure(
                                     updatedHeaders[index] = updatedHeaders[index].first to it.trim()
                                     update(
                                         when (config) {
-                                            is McpServerConfig.SseTransportServer -> config.copy(
-                                                commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                            )
+                                            is McpServerConfig.SseTransportServer -> {
+                                                config.copy(
+                                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                                )
+                                            }
 
-                                            is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                                commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                            )
-                                        }
+                                            is McpServerConfig.StreamableHTTPServer -> {
+                                                config.copy(
+                                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                                )
+                                            }
+                                        },
                                     )
                                 },
                                 label = { Text(stringResource(R.string.setting_mcp_page_header_value)) },
@@ -788,11 +880,15 @@ private fun McpCommonOptionsConfigure(
                                     IconButton(onClick = { headerValueVisible = !headerValueVisible }) {
                                         Icon(
                                             if (headerValueVisible) HugeIcons.ViewOff else HugeIcons.View,
-                                            contentDescription = null
+                                            contentDescription = null,
                                         )
                                     }
                                 },
-                                placeholder = { Text(stringResource(R.string.setting_mcp_page_header_value_placeholder)) }
+                                placeholder = {
+                                    Text(
+                                        stringResource(R.string.setting_mcp_page_header_value_placeholder),
+                                    )
+                                },
                             )
                         }
                         IconButton(onClick = {
@@ -800,19 +896,23 @@ private fun McpCommonOptionsConfigure(
                             updatedHeaders.removeAt(index)
                             update(
                                 when (config) {
-                                    is McpServerConfig.SseTransportServer -> config.copy(
-                                        commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                    )
+                                    is McpServerConfig.SseTransportServer -> {
+                                        config.copy(
+                                            commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                        )
+                                    }
 
-                                    is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                        commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                    )
-                                }
+                                    is McpServerConfig.StreamableHTTPServer -> {
+                                        config.copy(
+                                            commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                        )
+                                    }
+                                },
                             )
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.setting_mcp_page_delete_header)
+                                contentDescription = stringResource(R.string.setting_mcp_page_delete_header),
                             )
                         }
                     }
@@ -824,21 +924,25 @@ private fun McpCommonOptionsConfigure(
                         updatedHeaders.add("" to "")
                         update(
                             when (config) {
-                                is McpServerConfig.SseTransportServer -> config.copy(
-                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                )
+                                is McpServerConfig.SseTransportServer -> {
+                                    config.copy(
+                                        commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                    )
+                                }
 
-                                is McpServerConfig.StreamableHTTPServer -> config.copy(
-                                    commonOptions = config.commonOptions.copy(headers = updatedHeaders)
-                                )
-                            }
+                                is McpServerConfig.StreamableHTTPServer -> {
+                                    config.copy(
+                                        commonOptions = config.commonOptions.copy(headers = updatedHeaders),
+                                    )
+                                }
+                            },
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(
                         HugeIcons.Add01,
-                        contentDescription = stringResource(R.string.setting_mcp_page_add_header)
+                        contentDescription = stringResource(R.string.setting_mcp_page_add_header),
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.setting_mcp_page_add_header))
@@ -870,33 +974,37 @@ private fun McpToolsConfigure(
                 onEnableChange = { newVal ->
                     update(
                         config.clone(
-                            commonOptions = config.commonOptions.copy(
-                                tools = config.commonOptions.tools.map {
-                                    if (tool.name == it.name) {
-                                        it.copy(enable = newVal)
-                                    } else {
-                                        it
-                                    }
-                                }
-                            )
-                        )
+                            commonOptions =
+                                config.commonOptions.copy(
+                                    tools =
+                                        config.commonOptions.tools.map {
+                                            if (tool.name == it.name) {
+                                                it.copy(enable = newVal)
+                                            } else {
+                                                it
+                                            }
+                                        },
+                                ),
+                        ),
                     )
                 },
                 onNeedsApprovalChange = { newVal ->
                     update(
                         config.clone(
-                            commonOptions = config.commonOptions.copy(
-                                tools = config.commonOptions.tools.map {
-                                    if (tool.name == it.name) {
-                                        it.copy(needsApproval = newVal)
-                                    } else {
-                                        it
-                                    }
-                                }
-                            )
-                        )
+                            commonOptions =
+                                config.commonOptions.copy(
+                                    tools =
+                                        config.commonOptions.tools.map {
+                                            if (tool.name == it.name) {
+                                                it.copy(needsApproval = newVal)
+                                            } else {
+                                                it
+                                            }
+                                        },
+                                ),
+                        ),
                     )
-                }
+                },
             )
         }
     }
@@ -910,15 +1018,17 @@ private fun McpToolCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = CustomColors.listItemColors.containerColor
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .animateContentSize()
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .animateContentSize()
+                    .fillMaxWidth()
+                    .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // 第一行：工具名字和3个按钮
@@ -946,7 +1056,7 @@ private fun McpToolCard(
                     Switch(
                         checked = tool.needsApproval,
                         onCheckedChange = onNeedsApprovalChange,
-                        size = SwitchSize.Small
+                        size = SwitchSize.Small,
                     )
                 }
                 // 启用开关
@@ -961,18 +1071,18 @@ private fun McpToolCard(
                     Switch(
                         checked = tool.enable,
                         onCheckedChange = onEnableChange,
-                        size = SwitchSize.Small
+                        size = SwitchSize.Small,
                     )
                 }
                 // 展开/收起按钮
                 IconButton(
                     onClick = { expanded = !expanded },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 ) {
                     Icon(
                         if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
@@ -995,7 +1105,14 @@ private fun McpToolCard(
                         ) {
                             schema.properties.forEach { (key, _) ->
                                 Tag(
-                                    type = if (schema.required?.contains(key) == true) TagType.INFO else TagType.DEFAULT
+                                    type =
+                                        if (schema.required?.contains(key) ==
+                                            true
+                                        ) {
+                                            TagType.INFO
+                                        } else {
+                                            TagType.DEFAULT
+                                        },
                                 ) {
                                     Text(
                                         text = key,
@@ -1011,9 +1128,11 @@ private fun McpToolCard(
     }
 }
 
-private fun isValidMcpName(name: String): Boolean {
-    return name.isEmpty() || name.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' }
-}
+private fun isValidMcpName(name: String): Boolean =
+    name.isEmpty() ||
+        name.all {
+            it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9'
+        }
 
 private fun parseMcpServersFromJson(json: String): List<McpServerConfig> {
     val root = Json.parseToJsonElement(json).jsonObject
@@ -1022,9 +1141,10 @@ private fun parseMcpServersFromJson(json: String): List<McpServerConfig> {
         val obj = element.jsonObject
         val type = obj["type"]?.jsonPrimitive?.contentOrNull ?: "streamable_http"
         val url = obj["url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-        val headers = obj["headers"]?.jsonObject?.entries?.map { (k, v) ->
-            k to (v.jsonPrimitive.contentOrNull ?: "")
-        } ?: emptyList()
+        val headers =
+            obj["headers"]?.jsonObject?.entries?.map { (k, v) ->
+                k to (v.jsonPrimitive.contentOrNull ?: "")
+            } ?: emptyList()
         val commonOptions = McpCommonOptions(name = name, headers = headers)
         when (type) {
             "sse" -> McpServerConfig.SseTransportServer(commonOptions = commonOptions, url = url)
@@ -1045,21 +1165,26 @@ private fun McpImportModal(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(16.dp)
-                .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.7f)
+                    .padding(16.dp)
+                    .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.setting_mcp_page_import_title), style = MaterialTheme.typography.titleLarge)
             Text(
                 stringResource(R.string.setting_mcp_page_import_desc),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             OutlinedTextField(
                 value = jsonText,
@@ -1067,16 +1192,17 @@ private fun McpImportModal(
                     jsonText = it
                     errorMessage = null
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 placeholder = { Text("{ \"mcpServers\": { ... } }") },
                 isError = errorMessage != null,
-                supportingText = errorMessage?.let { msg -> { Text(msg, color = MaterialTheme.colorScheme.error) } }
+                supportingText = errorMessage?.let { msg -> { Text(msg, color = MaterialTheme.colorScheme.error) } },
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
             ) {
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.cancel))
@@ -1093,7 +1219,7 @@ private fun McpImportModal(
                         } catch (e: Exception) {
                             errorMessage = parseErrorMsg.format(e.message ?: "")
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.setting_mcp_page_import_confirm))
                 }

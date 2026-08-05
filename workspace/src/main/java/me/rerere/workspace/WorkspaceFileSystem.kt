@@ -12,11 +12,15 @@ import kotlin.io.path.name
 class WorkspaceFileSystem(
     private val config: WorkspaceConfig = WorkspaceConfig(),
 ) {
-    fun list(root: File, path: String = ""): List<WorkspaceFileEntry> {
+    fun list(
+        root: File,
+        path: String = "",
+    ): List<WorkspaceFileEntry> {
         val dir = resolvePath(root, path)
         require(dir.exists()) { "Path does not exist: $path" }
         require(dir.isDirectory) { "Path is not a directory: $path" }
-        return dir.listFiles()
+        return dir
+            .listFiles()
             .orEmpty()
             .filter { !it.name.startsWith(".l2s.") }
             .sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() })
@@ -24,7 +28,11 @@ class WorkspaceFileSystem(
             .map { it.toEntry(root) }
     }
 
-    fun readText(root: File, path: String, charset: Charset = StandardCharsets.UTF_8): String {
+    fun readText(
+        root: File,
+        path: String,
+        charset: Charset = StandardCharsets.UTF_8,
+    ): String {
         val file = resolvePath(root, path)
         require(file.exists()) { "File does not exist: $path" }
         require(file.isFile) { "Path is not a file: $path" }
@@ -53,7 +61,11 @@ class WorkspaceFileSystem(
         return file.toEntry(root)
     }
 
-    fun importBytes(root: File, path: String, inputStream: InputStream): WorkspaceFileEntry {
+    fun importBytes(
+        root: File,
+        path: String,
+        inputStream: InputStream,
+    ): WorkspaceFileEntry {
         val file = resolvePath(root, path)
         file.parentFile?.mkdirs()
         val target = if (!file.exists()) file else resolveConflict(file)
@@ -66,11 +78,18 @@ class WorkspaceFileSystem(
         val ext = file.extension.let { if (it.isNotEmpty()) ".$it" else "" }
         var n = 1
         var candidate: File
-        do { candidate = File(file.parentFile, "$stem ($n)$ext"); n++ } while (candidate.exists())
+        do {
+            candidate = File(file.parentFile, "$stem ($n)$ext")
+            n++
+        } while (candidate.exists())
         return candidate
     }
 
-    fun delete(root: File, path: String, recursive: Boolean = false): Boolean {
+    fun delete(
+        root: File,
+        path: String,
+        recursive: Boolean = false,
+    ): Boolean {
         require(path.isNotBlank() && path != ".") { "Refusing to delete workspace root" }
         val file = resolvePath(root, path)
         if (!file.exists()) return false
@@ -82,7 +101,12 @@ class WorkspaceFileSystem(
         }
     }
 
-    fun move(root: File, source: String, target: String, overwrite: Boolean = false): WorkspaceFileEntry {
+    fun move(
+        root: File,
+        source: String,
+        target: String,
+        overwrite: Boolean = false,
+    ): WorkspaceFileEntry {
         require(source.isNotBlank() && source != ".") { "Refusing to move workspace root" }
         val sourceFile = resolvePath(root, source)
         val targetFile = resolvePath(root, target)
@@ -102,7 +126,11 @@ class WorkspaceFileSystem(
         return targetFile.toEntry(root)
     }
 
-    fun glob(root: File, pattern: String, path: String = ""): List<WorkspaceFileEntry> {
+    fun glob(
+        root: File,
+        pattern: String,
+        path: String = "",
+    ): List<WorkspaceFileEntry> {
         require(pattern.isNotBlank()) { "Glob pattern is required" }
         val start = resolvePath(root, path)
         require(start.exists()) { "Path does not exist: $path" }
@@ -131,9 +159,10 @@ class WorkspaceFileSystem(
         require(start.exists()) { "Path does not exist: $path" }
         val options = if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet()
         val matcher = if (regex) Regex(query, options) else Regex(Regex.escape(query), options)
-        val includeMatcher = includeGlob
-            ?.takeIf { it.isNotBlank() }
-            ?.let { FileSystems.getDefault().getPathMatcher("glob:$it") }
+        val includeMatcher =
+            includeGlob
+                ?.takeIf { it.isNotBlank() }
+                ?.let { FileSystems.getDefault().getPathMatcher("glob:$it") }
 
         val results = mutableListOf<WorkspaceSearchMatch>()
         walk(start) { paths ->
@@ -153,11 +182,12 @@ class WorkspaceFileSystem(
                         lines.forEachIndexed { index, line ->
                             if (results.size >= config.maxSearchResults) return@useLines
                             if (matcher.containsMatchIn(line)) {
-                                results += WorkspaceSearchMatch(
-                                    path = file.relativePath(root),
-                                    line = index + 1,
-                                    text = line,
-                                )
+                                results +=
+                                    WorkspaceSearchMatch(
+                                        path = file.relativePath(root),
+                                        line = index + 1,
+                                        text = line,
+                                    )
                             }
                         }
                     }
@@ -166,18 +196,25 @@ class WorkspaceFileSystem(
         return results
     }
 
-    private fun <T> walk(start: File, block: (Sequence<Path>) -> T): T =
+    private fun <T> walk(
+        start: File,
+        block: (Sequence<Path>) -> T,
+    ): T =
         Files.walk(start.toPath()).use { stream ->
             block(stream.iterator().asSequence())
         }
 
-    private fun resolvePath(root: File, path: String): File {
+    private fun resolvePath(
+        root: File,
+        path: String,
+    ): File {
         root.mkdirs()
-        val normalized = path
-            .replace('\\', '/')
-            .trim()
-            .trimStart('/')
-            .ifBlank { "." }
+        val normalized =
+            path
+                .replace('\\', '/')
+                .trim()
+                .trimStart('/')
+                .ifBlank { "." }
         require(!normalized.contains('\u0000')) { "Path contains invalid character" }
 
         val rootFile = root.canonicalFile
@@ -190,15 +227,19 @@ class WorkspaceFileSystem(
         return target
     }
 
-    fun resolve(root: File, path: String): File = resolvePath(root, path)
+    fun resolve(
+        root: File,
+        path: String,
+    ): File = resolvePath(root, path)
 
-    private fun File.toEntry(root: File): WorkspaceFileEntry = WorkspaceFileEntry(
-        path = relativePath(root),
-        name = name,
-        isDirectory = isDirectory,
-        sizeBytes = if (isFile) length() else 0L,
-        updatedAt = lastModified(),
-    )
+    private fun File.toEntry(root: File): WorkspaceFileEntry =
+        WorkspaceFileEntry(
+            path = relativePath(root),
+            name = name,
+            isDirectory = isDirectory,
+            sizeBytes = if (isFile) length() else 0L,
+            updatedAt = lastModified(),
+        )
 
     private fun File.relativePath(root: File): String {
         val rootCanonical = root.canonicalFile
@@ -206,9 +247,7 @@ class WorkspaceFileSystem(
         return File(parentCanonical, name).relativeTo(rootCanonical).path.replace(File.separatorChar, '/')
     }
 
-    private fun Path.normalizeForMatch(): Path =
-        FileSystems.getDefault().getPath(relativeToString())
+    private fun Path.normalizeForMatch(): Path = FileSystems.getDefault().getPath(relativeToString())
 
-    private fun Path.relativeToString(): String =
-        joinToString("/") { it.name }
+    private fun Path.relativeToString(): String = joinToString("/") { it.name }
 }

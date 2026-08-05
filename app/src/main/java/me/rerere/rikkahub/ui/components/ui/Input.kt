@@ -21,7 +21,7 @@ fun <T : Number> OutlinedNumberInput(
     onValueChange: (T) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "",
-    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
 ) {
     var textFieldValue by remember(value) { mutableStateOf(value.toString()) }
     OutlinedTextField(
@@ -32,12 +32,13 @@ fun <T : Number> OutlinedNumberInput(
             if (textFieldValue.isValidNumberInput()) {
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val newVal = when (value) {
-                        is Int -> newValue.toInt() as T
-                        is Float -> newValue.toFloat() as T
-                        is Double -> newValue.toDouble() as T
-                        else -> throw IllegalArgumentException("Unsupported number type")
-                    }
+                    val newVal =
+                        when (value) {
+                            is Int -> newValue.toInt() as T
+                            is Float -> newValue.toFloat() as T
+                            is Double -> newValue.toDouble() as T
+                            else -> throw IllegalArgumentException("Unsupported number type")
+                        }
                     onValueChange(newVal)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -47,7 +48,7 @@ fun <T : Number> OutlinedNumberInput(
         label = { Text(label) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         isError = !textFieldValue.isValidNumberInput(),
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -57,7 +58,7 @@ fun <T : Number> NumberInput(
     onValueChange: (T) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "",
-    colors: TextFieldColors = TextFieldDefaults.colors()
+    colors: TextFieldColors = TextFieldDefaults.colors(),
 ) {
     var textFieldValue by remember(value) { mutableStateOf(value.toString()) }
     TextField(
@@ -68,12 +69,13 @@ fun <T : Number> NumberInput(
             if (textFieldValue.isValidNumberInput()) {
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val newVal = when (value) {
-                        is Int -> newValue.toInt() as T
-                        is Float -> newValue.toFloat() as T
-                        is Double -> newValue.toDouble() as T
-                        else -> throw IllegalArgumentException("Unsupported number type")
-                    }
+                    val newVal =
+                        when (value) {
+                            is Int -> newValue.toInt() as T
+                            is Float -> newValue.toFloat() as T
+                            is Double -> newValue.toDouble() as T
+                            else -> throw IllegalArgumentException("Unsupported number type")
+                        }
                     onValueChange(newVal)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -83,9 +85,10 @@ fun <T : Number> NumberInput(
         label = { Text(label) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         isError = !textFieldValue.isValidNumberInput(),
-        colors = colors
+        colors = colors,
     )
 }
 
 private val NumberRegex = Regex("^[+-]?\\d+(\\.\\d+)?$")
+
 private fun String.isValidNumberInput() = this.isNotEmpty() && NumberRegex.matches(this)

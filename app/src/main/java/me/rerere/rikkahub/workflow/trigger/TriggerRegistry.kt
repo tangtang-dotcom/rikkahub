@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -41,7 +41,6 @@ class TriggerRegistry(
     private val appScope: AppScope,
     private val workflowRepository: WorkflowRepository,
 ) {
-
     private val triggerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val syncMutex = Mutex()
 
@@ -61,10 +60,21 @@ class TriggerRegistry(
     private val boot = BootTriggerFamily(triggerScope)
     private val manual = ManualTriggerFamily()
 
-    private val families: List<WorkflowTriggerFamily> = listOf(
-        wifi, bluetooth, headphones, power, screen, battery, timeCron, geofence,
-        appForeground, notification, boot, manual,
-    )
+    private val families: List<WorkflowTriggerFamily> =
+        listOf(
+            wifi,
+            bluetooth,
+            headphones,
+            power,
+            screen,
+            battery,
+            timeCron,
+            geofence,
+            appForeground,
+            notification,
+            boot,
+            manual,
+        )
 
     fun setEngineCallback(callback: TriggerFireCallback) {
         engineFire = callback
@@ -73,12 +83,14 @@ class TriggerRegistry(
 
     /** Start observing workflows. Idempotent — a second call is ignored. */
     @Volatile private var started = false
+
     @OptIn(FlowPreview::class)
     fun start() {
         if (started) return
         started = true
         appScope.launch(Dispatchers.IO) {
-            workflowRepository.observeAll()
+            workflowRepository
+                .observeAll()
                 .map { loaded -> loaded.filter { it.entity.enabled }.map { it.definition } }
                 .distinctUntilChanged()
                 // 500 ms quiet window so a burst of edits in the workflow editor (10 rapid
@@ -94,30 +106,32 @@ class TriggerRegistry(
     }
 
     /** Re-bucket workflows and ask each family to reconcile. */
-    suspend fun resync(enabled: List<WorkflowDefinition>): Unit = syncMutex.withLock {
-        val fire = engineFire ?: return@withLock
-        for (family in families) {
-            val matching = enabled.filter { family.handles(it.trigger) }
-            runCatching { family.sync(matching, fire) }.onFailure {
-                Log.w(TAG, "resync failed for family=${family.name}", it)
-            }
-        }
-        // Tell AppForegroundDispatcher whether any workflow currently needs foreground-app
-        // state — if zero, the accessibility service can short-circuit the volatile write on
-        // every TYPE_WINDOW_STATE_CHANGED event (heavy fan-in). Counts:
-        //  - workflows with app_launched / app_closed triggers
-        //  - workflows whose conditions reference foreground_app_is / foreground_app_in
-        val foregroundConsumerCount = enabled.count { wf ->
-            wf.trigger is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched
-                || wf.trigger is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed
-                || wf.conditions.any {
-                    it is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIs
-                        || it is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIn
+    suspend fun resync(enabled: List<WorkflowDefinition>): Unit =
+        syncMutex.withLock {
+            val fire = engineFire ?: return@withLock
+            for (family in families) {
+                val matching = enabled.filter { family.handles(it.trigger) }
+                runCatching { family.sync(matching, fire) }.onFailure {
+                    Log.w(TAG, "resync failed for family=${family.name}", it)
                 }
+            }
+            // Tell AppForegroundDispatcher whether any workflow currently needs foreground-app
+            // state — if zero, the accessibility service can short-circuit the volatile write on
+            // every TYPE_WINDOW_STATE_CHANGED event (heavy fan-in). Counts:
+            //  - workflows with app_launched / app_closed triggers
+            //  - workflows whose conditions reference foreground_app_is / foreground_app_in
+            val foregroundConsumerCount =
+                enabled.count { wf ->
+                    wf.trigger is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched ||
+                        wf.trigger is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed ||
+                        wf.conditions.any {
+                            it is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIs ||
+                                it is me.rerere.rikkahub.workflow.model.ConditionSpec.ForegroundAppIn
+                        }
+                }
+            me.rerere.rikkahub.workflow.trigger.AppForegroundDispatcher
+                .setForegroundConsumerCount(foregroundConsumerCount)
         }
-        me.rerere.rikkahub.workflow.trigger.AppForegroundDispatcher
-            .setForegroundConsumerCount(foregroundConsumerCount)
-    }
 
     /**
      * Fire a workflow by id (used by `workflow_run` tool and the Settings "Run now"

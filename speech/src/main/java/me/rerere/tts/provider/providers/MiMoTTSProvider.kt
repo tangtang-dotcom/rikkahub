@@ -25,27 +25,28 @@ import java.util.concurrent.TimeUnit
 // MiMo 流式音频按文档示例使用 24kHz PCM16LE
 private const val MIMO_SAMPLE_RATE = 24000
 private val JSON_MEDIA_TYPE = "application/json".toMediaType()
+
 // 只关心 delta.audio.data 其余字段忽略
 private val mimoJson = Json { ignoreUnknownKeys = true }
 
 @Serializable
 private data class MiMoChunk(
-    val choices: List<MiMoChoice> = emptyList()
+    val choices: List<MiMoChoice> = emptyList(),
 )
 
 @Serializable
 private data class MiMoChoice(
-    val delta: MiMoDelta? = null
+    val delta: MiMoDelta? = null,
 )
 
 @Serializable
 private data class MiMoDelta(
-    val audio: MiMoAudio? = null
+    val audio: MiMoAudio? = null,
 )
 
 @Serializable
 private data class MiMoAudio(
-    val data: String? = null
+    val data: String? = null,
 )
 
 internal fun decodeMiMoAudioData(data: String): ByteArray? {
@@ -54,7 +55,12 @@ internal fun decodeMiMoAudioData(data: String): ByteArray? {
     if (payload == "[DONE]") return null
     // 非 [DONE] 的 data 视为 JSON 片段 解析失败直接上抛
     val chunk = mimoJson.decodeFromString<MiMoChunk>(payload)
-    val encoded = chunk.choices.firstOrNull()?.delta?.audio?.data ?: return null
+    val encoded =
+        chunk.choices
+            .firstOrNull()
+            ?.delta
+            ?.audio
+            ?.data ?: return null
     // 空字符串视为无音频片段
     if (encoded.isBlank()) return null
     return Base64.getDecoder().decode(encoded)
@@ -62,19 +68,24 @@ internal fun decodeMiMoAudioData(data: String): ByteArray? {
 
 internal class MiMoSseProcessor(
     private val model: String,
-    private val voice: String
+    private val voice: String,
 ) {
     private var hasAudio = false
+
     // metadata 只构造一次 贯穿整个流
-    private val metadata = mapOf(
-        "provider" to "mimo",
-        "model" to model,
-        "voice" to voice
-    )
+    private val metadata =
+        mapOf(
+            "provider" to "mimo",
+            "model" to model,
+            "voice" to voice,
+        )
 
     fun process(event: SseEvent): AudioChunk? {
         return when (event) {
-            is SseEvent.Open -> null
+            is SseEvent.Open -> {
+                null
+            }
+
             is SseEvent.Event -> {
                 // 只处理包含 audio.data 的增量事件 其他事件忽略
                 val pcmData = decodeMiMoAudioData(event.data) ?: return null
@@ -83,7 +94,7 @@ internal class MiMoSseProcessor(
                     data = pcmData,
                     format = AudioFormat.PCM,
                     sampleRate = MIMO_SAMPLE_RATE,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             }
 
@@ -98,23 +109,28 @@ internal class MiMoSseProcessor(
                     format = AudioFormat.PCM,
                     sampleRate = MIMO_SAMPLE_RATE,
                     isLast = true,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             }
 
-            is SseEvent.Failure -> throw event.throwable ?: Exception("MiMo TTS streaming failed")
+            is SseEvent.Failure -> {
+                throw event.throwable ?: Exception("MiMo TTS streaming failed")
+            }
         }
     }
 }
 
 class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .readTimeout(120, TimeUnit.SECONDS)
+            .build()
 
     // MiMo 支持在朗读文本中嵌入风格/音频标签控制语气与情感
     // 官方文档: https://xiaomimimo.com (音频标签控制)
-    override val promptGuidance: String = """
+    override val promptGuidance: String =
+        """
         The active text-to-speech engine (MiMo) supports emotion and style control via embedded tags.
         When you call the text_to_speech tool, you MAY enrich the "text" argument with these tags to make the speech more expressive.
         Put tags ONLY inside the tool's text argument — never in your visible reply to the user.
@@ -132,46 +148,59 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
         - Use tags naturally and sparingly; don't over-annotate.
 
         Example text argument: (磁性)夜已经深了[叹气]城市还在呼吸。我是今晚陪你的人。
-    """.trimIndent()
+        """.trimIndent()
 
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.MiMo,
-        request: TTSRequest
-    ): Flow<AudioChunk> = flow {
-        // OpenAI 兼容的 chat/completions SSE 流式返回 音频增量在 delta.audio.data
-        val requestBody = buildJsonObject {
-            put("model", providerSetting.model)
-            put("messages", buildJsonArray {
-                add(buildJsonObject {
-                    put("role", "assistant")
-                    put("content", request.text)
-                })
-            })
-            put("audio", buildJsonObject {
-                put("format", "pcm16")
-                put("voice", providerSetting.voice)
-            })
-            put("stream", true)
+        request: TTSRequest,
+    ): Flow<AudioChunk> =
+        flow {
+            // OpenAI 兼容的 chat/completions SSE 流式返回 音频增量在 delta.audio.data
+            val requestBody =
+                buildJsonObject {
+                    put("model", providerSetting.model)
+                    put(
+                        "messages",
+                        buildJsonArray {
+                            add(
+                                buildJsonObject {
+                                    put("role", "assistant")
+                                    put("content", request.text)
+                                },
+                            )
+                        },
+                    )
+                    put(
+                        "audio",
+                        buildJsonObject {
+                            put("format", "pcm16")
+                            put("voice", providerSetting.voice)
+                        },
+                    )
+                    put("stream", true)
+                }
+
+            // baseUrl 允许用户在设置页自定义 这里直接拼接路径
+            val httpRequest =
+                Request
+                    .Builder()
+                    .url("${providerSetting.baseUrl}/chat/completions")
+                    // MiMo 使用 api-key 头传 token
+                    .addHeader("api-key", providerSetting.apiKey)
+                    .addHeader("Content-Type", "application/json")
+                    // JsonObject 的 toString 会输出 JSON 字符串
+                    .post(requestBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+                    .build()
+
+            val processor =
+                MiMoSseProcessor(
+                    model = providerSetting.model,
+                    voice = providerSetting.voice,
+                )
+
+            httpClient.sseFlow(httpRequest).collect { event ->
+                processor.process(event)?.let { emit(it) }
+            }
         }
-
-        // baseUrl 允许用户在设置页自定义 这里直接拼接路径
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/chat/completions")
-            // MiMo 使用 api-key 头传 token
-            .addHeader("api-key", providerSetting.apiKey)
-            .addHeader("Content-Type", "application/json")
-            // JsonObject 的 toString 会输出 JSON 字符串
-            .post(requestBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-
-        val processor = MiMoSseProcessor(
-            model = providerSetting.model,
-            voice = providerSetting.voice
-        )
-
-        httpClient.sseFlow(httpRequest).collect { event ->
-            processor.process(event)?.let { emit(it) }
-        }
-    }
 }

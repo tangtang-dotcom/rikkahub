@@ -33,7 +33,7 @@ private const val TAG = "TtsController"
  */
 class TtsController(
     context: Context,
-    private val ttsManager: TTSManager
+    private val ttsManager: TTSManager,
 ) {
     // 协程作用域
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -49,7 +49,9 @@ class TtsController(
     private var isPaused = false
 
     // 队列与缓存（基于稳定 ID）
-    private val queue: java.util.concurrent.ConcurrentLinkedQueue<TtsChunk> = java.util.concurrent.ConcurrentLinkedQueue()
+    private val queue: java.util.concurrent.ConcurrentLinkedQueue<TtsChunk> =
+        java.util.concurrent
+            .ConcurrentLinkedQueue()
     private val allChunks: MutableList<TtsChunk> = mutableListOf()
     private val cache = java.util.concurrent.ConcurrentHashMap<UUID, kotlinx.coroutines.Deferred<TTSResponse>>()
     private var lastPrefetchedIndex: Int = -1
@@ -86,7 +88,7 @@ class TtsController(
                     audioState.copy(
                         currentChunkIndex = _currentChunk.value,
                         totalChunks = _totalChunks.value,
-                        status = if (!_isAvailable.value) PlaybackStatus.Idle else audioState.status
+                        status = if (!_isAvailable.value) PlaybackStatus.Idle else audioState.status,
                     )
                 }
             }
@@ -105,7 +107,10 @@ class TtsController(
      * - flush=true: 清空当前进度并重新开始
      * - flush=false: 继续队列，追加朗读
      */
-    fun speak(text: String, flush: Boolean = true) {
+    fun speak(
+        text: String,
+        flush: Boolean = true,
+    ) {
         if (text.isBlank()) return
         val provider = currentProvider
         if (provider == null) {
@@ -135,7 +140,7 @@ class TtsController(
             it.copy(
                 currentChunkIndex = _currentChunk.value,
                 totalChunks = _totalChunks.value,
-                status = PlaybackStatus.Buffering
+                status = PlaybackStatus.Buffering,
             )
         }
 
@@ -225,61 +230,63 @@ class TtsController(
             return
         }
 
-        workerJob = scope.launch {
-            _isSpeaking.update { true }
-            var processedCount = _currentChunk.value
-            try {
-                while (isActive) {
-                    if (isPaused) {
-                        delay(80)
-                        continue
-                    }
+        workerJob =
+            scope.launch {
+                _isSpeaking.update { true }
+                var processedCount = _currentChunk.value
+                try {
+                    while (isActive) {
+                        if (isPaused) {
+                            delay(80)
+                            continue
+                        }
 
-                    val chunk = queue.poll() ?: break
+                        val chunk = queue.poll() ?: break
 
-                    // 更新状态（1-based）
-                    _currentChunk.update { processedCount + 1 }
-                    _totalChunks.update { queue.size + 1 }
-                    _playbackState.update {
-                        it.copy(
-                            currentChunkIndex = _currentChunk.value,
-                            totalChunks = _totalChunks.value
-                        )
-                    }
+                        // 更新状态（1-based）
+                        _currentChunk.update { processedCount + 1 }
+                        _totalChunks.update { queue.size + 1 }
+                        _playbackState.update {
+                            it.copy(
+                                currentChunkIndex = _currentChunk.value,
+                                totalChunks = _totalChunks.value,
+                            )
+                        }
 
-                    // 预取下一窗口
-                    prefetchFrom(chunk.index + 1)
+                        // 预取下一窗口
+                        prefetchFrom(chunk.index + 1)
 
-                    val response = try {
-                        awaitOrCreate(chunk, provider)
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        Log.e(TAG, "Synthesis error", e)
-                        _error.update { e.message ?: "TTS synthesis error" }
+                        val response =
+                            try {
+                                awaitOrCreate(chunk, provider)
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e(TAG, "Synthesis error", e)
+                                _error.update { e.message ?: "TTS synthesis error" }
+                                processedCount++
+                                continue
+                            }
+
+                        // 播放
+                        try {
+                            audio.play(response)
+                        } catch (e: Exception) {
+                            if (e is CancellationException) throw e
+                            Log.e(TAG, "Playback error", e)
+                            _error.update { e.message ?: "Audio playback error" }
+                        }
+
+                        if (queue.isNotEmpty()) delay(chunkDelayMs)
+
                         processedCount++
-                        continue
                     }
-
-                    // 播放
-                    try {
-                        audio.play(response)
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        Log.e(TAG, "Playback error", e)
-                        _error.update { e.message ?: "Audio playback error" }
+                } finally {
+                    _isSpeaking.update { false }
+                    if (queue.isEmpty()) {
+                        _playbackState.update { it.copy(status = PlaybackStatus.Ended) }
                     }
-
-                    if (queue.isNotEmpty()) delay(chunkDelayMs)
-
-                    processedCount++
-                }
-            } finally {
-                _isSpeaking.update { false }
-                if (queue.isEmpty()) {
-                    _playbackState.update { it.copy(status = PlaybackStatus.Ended) }
                 }
             }
-        }
     }
 
     private fun prefetchFrom(startIndex: Int) {
@@ -297,10 +304,14 @@ class TtsController(
         lastPrefetchedIndex = endExclusive - 1
     }
 
-    private suspend fun awaitOrCreate(chunk: TtsChunk, provider: TTSProviderSetting): TTSResponse {
-        val deferred = cache.computeIfAbsent(chunk.id) {
-            scope.async(Dispatchers.IO) { synthesizer.synthesize(provider, chunk) }
-        }
+    private suspend fun awaitOrCreate(
+        chunk: TtsChunk,
+        provider: TTSProviderSetting,
+    ): TTSResponse {
+        val deferred =
+            cache.computeIfAbsent(chunk.id) {
+                scope.async(Dispatchers.IO) { synthesizer.synthesize(provider, chunk) }
+            }
         return try {
             deferred.await()
         } finally {

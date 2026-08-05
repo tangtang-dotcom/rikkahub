@@ -27,108 +27,125 @@ private const val TAG = "MiniMaxTTSProvider"
 private data class MiniMaxResponseData(
     val audio: String,
     val status: Int,
-    val ced: String
+    val ced: String,
 )
 
 @Serializable
 private data class MiniMaxResponse(
-    val data: MiniMaxResponseData
+    val data: MiniMaxResponseData,
 )
 
 class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .readTimeout(60, TimeUnit.SECONDS)
+            .build()
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.MiniMax,
-        request: TTSRequest
-    ): Flow<AudioChunk> = flow {
-        val requestBody = buildJsonObject {
-            put("model", providerSetting.model)
-            put("text", request.text)
-            put("stream", true)
-            put("output_format", "hex")
-            put("stream_options", buildJsonObject {
-                put("exclude_aggregated_audio", true)
-            })
-            put("voice_setting", buildJsonObject {
-                put("voice_id", providerSetting.voiceId)
-                put("speed", providerSetting.speed)
-            })
-        }
-
-        Log.i(TAG, "generateSpeech: $requestBody")
-
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/t2a_v2")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .build()
-
-        var hasEmittedAudio = false
-
-        httpClient.sseFlow(httpRequest).collect {
-            when (it) {
-                is SseEvent.Open -> Log.i(TAG, "SSE connection opened")
-                is SseEvent.Event -> {
-                    try {
-                        val data = json.decodeFromString<MiniMaxResponse>(it.data)
-
-                        // Convert hex string to bytes
-                        val audioBytes = hexStringToBytes(data.data.audio)
-
-                        emit(
-                            AudioChunk(
-                                data = audioBytes,
-                                format = AudioFormat.MP3, // MiniMax returns MP3 format
-                                sampleRate = 32000, // Default sample rate from MiniMax
-                                isLast = false, // Will be set to true on last chunk
-                                metadata = mapOf(
-                                    "provider" to "minimax",
-                                    "model" to providerSetting.model,
-                                    "voice" to providerSetting.voiceId,
-                                    "status" to data.data.status.toString(),
-                                    "ced" to data.data.ced
-                                )
-                            )
-                        )
-                        hasEmittedAudio = true
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to process audio chunk", e)
-                    }
+        request: TTSRequest,
+    ): Flow<AudioChunk> =
+        flow {
+            val requestBody =
+                buildJsonObject {
+                    put("model", providerSetting.model)
+                    put("text", request.text)
+                    put("stream", true)
+                    put("output_format", "hex")
+                    put(
+                        "stream_options",
+                        buildJsonObject {
+                            put("exclude_aggregated_audio", true)
+                        },
+                    )
+                    put(
+                        "voice_setting",
+                        buildJsonObject {
+                            put("voice_id", providerSetting.voiceId)
+                            put("speed", providerSetting.speed)
+                        },
+                    )
                 }
 
-                is SseEvent.Closed -> {
-                    Log.i(TAG, "SSE connection closed")
-                    // Emit final chunk if we haven't already
-                    if (hasEmittedAudio) {
-                        emit(
-                            AudioChunk(
-                                data = byteArrayOf(), // Empty data for last chunk
-                                format = AudioFormat.MP3,
-                                sampleRate = 32000,
-                                isLast = true,
-                                metadata = mapOf("provider" to "minimax")
-                            )
-                        )
-                    }
-                }
+            Log.i(TAG, "generateSpeech: $requestBody")
 
-                is SseEvent.Failure -> {
-                    Log.e(TAG, "SSE connection failed", it.throwable)
-                    throw it.throwable ?: Exception("MiniMax TTS streaming failed")
+            val httpRequest =
+                Request
+                    .Builder()
+                    .url("${providerSetting.baseUrl}/t2a_v2")
+                    .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
+                    .addHeader("Content-Type", "application/json")
+                    .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
+                    .build()
+
+            var hasEmittedAudio = false
+
+            httpClient.sseFlow(httpRequest).collect {
+                when (it) {
+                    is SseEvent.Open -> {
+                        Log.i(TAG, "SSE connection opened")
+                    }
+
+                    is SseEvent.Event -> {
+                        try {
+                            val data = json.decodeFromString<MiniMaxResponse>(it.data)
+
+                            // Convert hex string to bytes
+                            val audioBytes = hexStringToBytes(data.data.audio)
+
+                            emit(
+                                AudioChunk(
+                                    data = audioBytes,
+                                    format = AudioFormat.MP3, // MiniMax returns MP3 format
+                                    sampleRate = 32000, // Default sample rate from MiniMax
+                                    isLast = false, // Will be set to true on last chunk
+                                    metadata =
+                                        mapOf(
+                                            "provider" to "minimax",
+                                            "model" to providerSetting.model,
+                                            "voice" to providerSetting.voiceId,
+                                            "status" to data.data.status.toString(),
+                                            "ced" to data.data.ced,
+                                        ),
+                                ),
+                            )
+                            hasEmittedAudio = true
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to process audio chunk", e)
+                        }
+                    }
+
+                    is SseEvent.Closed -> {
+                        Log.i(TAG, "SSE connection closed")
+                        // Emit final chunk if we haven't already
+                        if (hasEmittedAudio) {
+                            emit(
+                                AudioChunk(
+                                    data = byteArrayOf(), // Empty data for last chunk
+                                    format = AudioFormat.MP3,
+                                    sampleRate = 32000,
+                                    isLast = true,
+                                    metadata = mapOf("provider" to "minimax"),
+                                ),
+                            )
+                        }
+                    }
+
+                    is SseEvent.Failure -> {
+                        Log.e(TAG, "SSE connection failed", it.throwable)
+                        throw it.throwable ?: Exception("MiniMax TTS streaming failed")
+                    }
                 }
             }
         }
-    }
 }
 
 private fun hexStringToBytes(hexString: String): ByteArray {

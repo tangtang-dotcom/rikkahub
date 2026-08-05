@@ -62,14 +62,14 @@ data class DiffMetadata(
  * 由于 json 配置了 ignoreUnknownKeys, 不同 provider 的 metadata 互不干扰
  * (例如切换 provider 后, OpenAI 写入的 reasoning 元数据不会影响 Claude 的解析)
  */
-inline fun <reified T : PartMetadata> UIMessagePart.metadataAs(): T? = metadata?.let {
-    runCatching { json.decodeFromJsonElement<T>(it) }.getOrNull()
-}
+inline fun <reified T : PartMetadata> UIMessagePart.metadataAs(): T? =
+    metadata?.let {
+        runCatching { json.decodeFromJsonElement<T>(it) }.getOrNull()
+    }
 
 /**
  * 将类型化的 [PartMetadata] 编码为 metadata [JsonObject]
  *
  * 由于 json 配置了 explicitNulls = false, 值为 null 的字段不会写入
  */
-inline fun <reified T : PartMetadata> T.toMetadata(): JsonObject =
-    json.encodeToJsonElement(this).jsonObject
+inline fun <reified T : PartMetadata> T.toMetadata(): JsonObject = json.encodeToJsonElement(this).jsonObject

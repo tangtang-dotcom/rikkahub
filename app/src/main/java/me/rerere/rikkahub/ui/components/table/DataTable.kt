@@ -58,163 +58,198 @@ fun DataTable(
     val surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
 
     BoxWithConstraints(
-        modifier = modifier
-            .clip(shape)
-            .then(
-                if (outerBorder != null) Modifier.border(outerBorder, shape) else Modifier
-            )
+        modifier =
+            modifier
+                .clip(shape)
+                .then(
+                    if (outerBorder != null) Modifier.border(outerBorder, shape) else Modifier,
+                ),
     ) {
         // 捕获滚动视口的可用宽度，用于在内容较窄时把列宽拉伸铺满
         val viewportMaxWidth = constraints.maxWidth
 
         Box(modifier = Modifier.horizontalScroll(hScroll)) {
             SubcomposeLayout { constraints ->
-            val columnCount = max(headers.size, rows.maxOfOrNull { it.size } ?: 0)
-            val rowCount = rows.size
-            if (columnCount == 0) return@SubcomposeLayout layout(0, 0) {}
+                val columnCount = max(headers.size, rows.maxOfOrNull { it.size } ?: 0)
+                val rowCount = rows.size
+                if (columnCount == 0) return@SubcomposeLayout layout(0, 0) {}
 
-            // ---------- 参数 & 中间结果容器 ----------
-            val infinity = Constraints.Infinity
-            val unbounded = Constraints(0, infinity, 0, infinity)
-            val minWidthsPx = IntArray(columnCount) { i -> columnMinWidths.getOrNull(i)?.roundToPx() ?: 0 }
-            val maxWidthsPx = IntArray(columnCount) { i -> columnMaxWidths.getOrNull(i)?.roundToPx() ?: Int.MAX_VALUE }
-            val colWidths = IntArray(columnCount) { 0 }
-            val headerP1 = arrayOfNulls<Placeable>(columnCount)
-            val bodyP1 = arrayOfNulls<Placeable>(rowCount * columnCount)
-
-            // ---------- 第一阶段：自然尺寸测量（估列宽、算行高） ----------
-            fun subcomposeHeaderOnce(c: Int): Placeable {
-                val measurables = subcompose("h1_$c") {
-                    CellBox(
-                        padding = cellPadding,
-                        border = cellBorder,
-                        background = headerBackground,
-                        alignment = cellAlignment
-                    ) {
-                        headers.getOrNull(c)?.invoke()
+                // ---------- 参数 & 中间结果容器 ----------
+                val infinity = Constraints.Infinity
+                val unbounded = Constraints(0, infinity, 0, infinity)
+                val minWidthsPx = IntArray(columnCount) { i -> columnMinWidths.getOrNull(i)?.roundToPx() ?: 0 }
+                val maxWidthsPx =
+                    IntArray(columnCount) { i ->
+                        columnMaxWidths.getOrNull(i)?.roundToPx()
+                            ?: Int.MAX_VALUE
                     }
-                }
-                val constraints = if (maxWidthsPx[c] != Int.MAX_VALUE) {
-                    Constraints(0, maxWidthsPx[c], 0, infinity)
-                } else {
-                    unbounded
-                }
-                val p = measurables.first().measure(constraints)
-                colWidths[c] = max(colWidths[c], max(p.width, minWidthsPx[c])).coerceAtMost(maxWidthsPx[c])
-                return p
-            }
+                val colWidths = IntArray(columnCount) { 0 }
+                val headerP1 = arrayOfNulls<Placeable>(columnCount)
+                val bodyP1 = arrayOfNulls<Placeable>(rowCount * columnCount)
 
-            fun subcomposeBodyOnce(r: Int, c: Int): Placeable {
-                val bg = if (zebraStriping && r % 2 == 1) surfaceContainer else Color.Transparent
-                val measurables = subcompose("b1_${r}_$c") {
-                    CellBox(padding = cellPadding, border = cellBorder, background = bg, alignment = cellAlignment) {
-                        rows[r].getOrNull(c)?.invoke()
-                    }
+                // ---------- 第一阶段：自然尺寸测量（估列宽、算行高） ----------
+                fun subcomposeHeaderOnce(c: Int): Placeable {
+                    val measurables =
+                        subcompose("h1_$c") {
+                            CellBox(
+                                padding = cellPadding,
+                                border = cellBorder,
+                                background = headerBackground,
+                                alignment = cellAlignment,
+                            ) {
+                                headers.getOrNull(c)?.invoke()
+                            }
+                        }
+                    val constraints =
+                        if (maxWidthsPx[c] != Int.MAX_VALUE) {
+                            Constraints(0, maxWidthsPx[c], 0, infinity)
+                        } else {
+                            unbounded
+                        }
+                    val p = measurables.first().measure(constraints)
+                    colWidths[c] = max(colWidths[c], max(p.width, minWidthsPx[c])).coerceAtMost(maxWidthsPx[c])
+                    return p
                 }
-                val constraints = if (maxWidthsPx[c] != Int.MAX_VALUE) {
-                    Constraints(0, maxWidthsPx[c], 0, infinity)
-                } else {
-                    unbounded
+
+                fun subcomposeBodyOnce(
+                    r: Int,
+                    c: Int,
+                ): Placeable {
+                    val bg = if (zebraStriping && r % 2 == 1) surfaceContainer else Color.Transparent
+                    val measurables =
+                        subcompose("b1_${r}_$c") {
+                            CellBox(
+                                padding = cellPadding,
+                                border = cellBorder,
+                                background = bg,
+                                alignment = cellAlignment,
+                            ) {
+                                rows[r].getOrNull(c)?.invoke()
+                            }
+                        }
+                    val constraints =
+                        if (maxWidthsPx[c] != Int.MAX_VALUE) {
+                            Constraints(0, maxWidthsPx[c], 0, infinity)
+                        } else {
+                            unbounded
+                        }
+                    val p = measurables.first().measure(constraints)
+                    colWidths[c] = max(colWidths[c], max(p.width, minWidthsPx[c])).coerceAtMost(maxWidthsPx[c])
+                    return p
                 }
-                val p = measurables.first().measure(constraints)
-                colWidths[c] = max(colWidths[c], max(p.width, minWidthsPx[c])).coerceAtMost(maxWidthsPx[c])
-                return p
-            }
 
-            for (c in 0 until columnCount) headerP1[c] = subcomposeHeaderOnce(c)
-            for (r in 0 until rowCount) for (c in 0 until columnCount) bodyP1[r * columnCount + c] =
-                subcomposeBodyOnce(r, c)
-
-            val rowHeights = IntArray(rowCount) { r ->
-                var h = 0
-                for (c in 0 until columnCount) {
-                    h = max(h, bodyP1[r * columnCount + c]!!.height)
-                }
-                h
-            }
-            val headerHeight = headerP1.maxOf { it?.height ?: 0 }
-
-            // ---------- 列宽拉伸：内容较窄时按比例铺满视口宽度 ----------
-            val naturalWidth = colWidths.sum()
-            if (stretchToFillWidth &&
-                viewportMaxWidth != Constraints.Infinity &&
-                viewportMaxWidth > naturalWidth &&
-                naturalWidth > 0
-            ) {
-                val extra = viewportMaxWidth - naturalWidth
-                var distributed = 0
-                for (c in 0 until columnCount) {
-                    val add = if (c == columnCount - 1) {
-                        extra - distributed
-                    } else {
-                        (extra.toLong() * colWidths[c] / naturalWidth).toInt()
-                    }
-                    colWidths[c] += add
-                    distributed += add
-                }
-            }
-
-            // ---------- 第二阶段：固定列宽 + 统一行高重新测量 ----------
-            fun constraintsFor(colWidth: Int, minH: Int): Constraints {
-                val safeColWidth = colWidth.coerceAtLeast(0)
-                val safeMinH = minH.coerceAtLeast(0)
-                return Constraints(
-                    minWidth = safeColWidth,
-                    maxWidth = safeColWidth,
-                    minHeight = safeMinH,
-                    maxHeight = infinity,
-                )
-            }
-
-            val headerPlaceables = Array(columnCount) { c ->
-                val measurables = subcompose("h2_$c") {
-                    CellBox(
-                        padding = cellPadding,
-                        border = cellBorder,
-                        background = headerBackground,
-                        alignment = cellAlignment
-                    ) {
-                        headers.getOrNull(c)?.invoke()
-                    }
-                }
-                measurables.first().measure(constraintsFor(colWidths[c], headerHeight))
-            }
-
-            val bodyPlaceables = Array(rowCount * columnCount) { i ->
-                val r = i / columnCount
-                val c = i % columnCount
-                val bg =
-                    if (zebraStriping && r % 2 == 1) surfaceContainer else Color.Transparent
-                val measurables = subcompose("b2_${r}_$c") {
-                    CellBox(padding = cellPadding, border = cellBorder, background = bg, alignment = cellAlignment) {
-                        rows[r].getOrNull(c)?.invoke()
-                    }
-                }
-                measurables.first().measure(constraintsFor(colWidths[c], rowHeights[r]))
-            }
-
-            val tableWidth = colWidths.sum()
-            val tableHeight = headerHeight + rowHeights.sum()
-            val finalWidth = tableWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
-            val finalHeight = tableHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
-
-            // ---------- 放置 ----------
-            layout(finalWidth, finalHeight) {
-                var x = 0
-                for (c in 0 until columnCount) {
-                    headerPlaceables[c].placeRelative(x, 0)
-                    x += colWidths[c]
-                }
-                var y = headerHeight
+                for (c in 0 until columnCount) headerP1[c] = subcomposeHeaderOnce(c)
                 for (r in 0 until rowCount) {
-                    x = 0
                     for (c in 0 until columnCount) {
-                        bodyPlaceables[r * columnCount + c].placeRelative(x, y)
+                        bodyP1[r * columnCount + c] =
+                            subcomposeBodyOnce(r, c)
+                    }
+                }
+
+                val rowHeights =
+                    IntArray(rowCount) { r ->
+                        var h = 0
+                        for (c in 0 until columnCount) {
+                            h = max(h, bodyP1[r * columnCount + c]!!.height)
+                        }
+                        h
+                    }
+                val headerHeight = headerP1.maxOf { it?.height ?: 0 }
+
+                // ---------- 列宽拉伸：内容较窄时按比例铺满视口宽度 ----------
+                val naturalWidth = colWidths.sum()
+                if (stretchToFillWidth &&
+                    viewportMaxWidth != Constraints.Infinity &&
+                    viewportMaxWidth > naturalWidth &&
+                    naturalWidth > 0
+                ) {
+                    val extra = viewportMaxWidth - naturalWidth
+                    var distributed = 0
+                    for (c in 0 until columnCount) {
+                        val add =
+                            if (c == columnCount - 1) {
+                                extra - distributed
+                            } else {
+                                (extra.toLong() * colWidths[c] / naturalWidth).toInt()
+                            }
+                        colWidths[c] += add
+                        distributed += add
+                    }
+                }
+
+                // ---------- 第二阶段：固定列宽 + 统一行高重新测量 ----------
+                fun constraintsFor(
+                    colWidth: Int,
+                    minH: Int,
+                ): Constraints {
+                    val safeColWidth = colWidth.coerceAtLeast(0)
+                    val safeMinH = minH.coerceAtLeast(0)
+                    return Constraints(
+                        minWidth = safeColWidth,
+                        maxWidth = safeColWidth,
+                        minHeight = safeMinH,
+                        maxHeight = infinity,
+                    )
+                }
+
+                val headerPlaceables =
+                    Array(columnCount) { c ->
+                        val measurables =
+                            subcompose("h2_$c") {
+                                CellBox(
+                                    padding = cellPadding,
+                                    border = cellBorder,
+                                    background = headerBackground,
+                                    alignment = cellAlignment,
+                                ) {
+                                    headers.getOrNull(c)?.invoke()
+                                }
+                            }
+                        measurables.first().measure(constraintsFor(colWidths[c], headerHeight))
+                    }
+
+                val bodyPlaceables =
+                    Array(rowCount * columnCount) { i ->
+                        val r = i / columnCount
+                        val c = i % columnCount
+                        val bg =
+                            if (zebraStriping && r % 2 == 1) surfaceContainer else Color.Transparent
+                        val measurables =
+                            subcompose("b2_${r}_$c") {
+                                CellBox(
+                                    padding = cellPadding,
+                                    border = cellBorder,
+                                    background = bg,
+                                    alignment = cellAlignment,
+                                ) {
+                                    rows[r].getOrNull(c)?.invoke()
+                                }
+                            }
+                        measurables.first().measure(constraintsFor(colWidths[c], rowHeights[r]))
+                    }
+
+                val tableWidth = colWidths.sum()
+                val tableHeight = headerHeight + rowHeights.sum()
+                val finalWidth = tableWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
+                val finalHeight = tableHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+
+                // ---------- 放置 ----------
+                layout(finalWidth, finalHeight) {
+                    var x = 0
+                    for (c in 0 until columnCount) {
+                        headerPlaceables[c].placeRelative(x, 0)
                         x += colWidths[c]
                     }
-                    y += rowHeights[r]
+                    var y = headerHeight
+                    for (r in 0 until rowCount) {
+                        x = 0
+                        for (c in 0 until columnCount) {
+                            bodyPlaceables[r * columnCount + c].placeRelative(x, y)
+                            x += colWidths[c]
+                        }
+                        y += rowHeights[r]
+                    }
                 }
-            }
             }
         }
     }
@@ -229,10 +264,11 @@ private fun CellBox(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .then(if (background != Color.Transparent) Modifier.background(background) else Modifier)
-            .then(if (border != null) Modifier.border(border) else Modifier)
-            .padding(padding),
+        modifier =
+            Modifier
+                .then(if (background != Color.Transparent) Modifier.background(background) else Modifier)
+                .then(if (border != null) Modifier.border(border) else Modifier)
+                .padding(padding),
         contentAlignment = alignment,
     ) {
         content()
@@ -245,29 +281,31 @@ private fun CellBox(
 private fun DataTablePreview() {
     CompositionLocalProvider(LocalSettings provides Settings()) {
         Surface {
-            val headers = listOf<@Composable () -> Unit>(
-                { Text("Semester", style = MaterialTheme.typography.labelLarge) },
-                { Text("Attendance", style = MaterialTheme.typography.labelLarge) },
-                { Text("Notes / Example", style = MaterialTheme.typography.labelLarge) },
-            )
-
-            val rows = listOf<List<@Composable () -> Unit>>(
+            val headers =
                 listOf<@Composable () -> Unit>(
-                    { Text("Fall 2024") },
-                    { Text("Excellent", style = MaterialTheme.typography.bodyMedium) },
-                    { Text("x² + y² = 1") },
-                ),
-                listOf(
-                    { Text("Fall 2024") },
-                    { Text("Good", style = MaterialTheme.typography.bodyMedium) },
-                    { Text("∑ k = n(n+1)/2", maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                ),
-                listOf(
-                    { Text("Fall 2024") },
-                    { Text("Fair", style = MaterialTheme.typography.bodyMedium) },
-                    { MarkdownBlock("这行更高会把整行拉齐! 这是一个很长的文本用来测试换行功能!  \n>haha") },
-                ),
-            )
+                    { Text("Semester", style = MaterialTheme.typography.labelLarge) },
+                    { Text("Attendance", style = MaterialTheme.typography.labelLarge) },
+                    { Text("Notes / Example", style = MaterialTheme.typography.labelLarge) },
+                )
+
+            val rows =
+                listOf<List<@Composable () -> Unit>>(
+                    listOf<@Composable () -> Unit>(
+                        { Text("Fall 2024") },
+                        { Text("Excellent", style = MaterialTheme.typography.bodyMedium) },
+                        { Text("x² + y² = 1") },
+                    ),
+                    listOf(
+                        { Text("Fall 2024") },
+                        { Text("Good", style = MaterialTheme.typography.bodyMedium) },
+                        { Text("∑ k = n(n+1)/2", maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    ),
+                    listOf(
+                        { Text("Fall 2024") },
+                        { Text("Fair", style = MaterialTheme.typography.bodyMedium) },
+                        { MarkdownBlock("这行更高会把整行拉齐! 这是一个很长的文本用来测试换行功能!  \n>haha") },
+                    ),
+                )
 
             DataTable(
                 headers = headers,

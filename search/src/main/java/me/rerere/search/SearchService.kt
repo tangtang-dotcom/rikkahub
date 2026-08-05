@@ -32,19 +32,19 @@ interface SearchService<T : SearchServiceOptions> {
     suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: T
+        serviceOptions: T,
     ): Result<SearchResult>
 
     suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: T
+        serviceOptions: T,
     ): Result<ScrapedResult>
 
     companion object {
         @Suppress("UNCHECKED_CAST")
-        fun <T : SearchServiceOptions> getService(options: T): SearchService<T> {
-            return when (options) {
+        fun <T : SearchServiceOptions> getService(options: T): SearchService<T> =
+            when (options) {
                 is SearchServiceOptions.TavilyOptions -> TavilySearchService
                 is SearchServiceOptions.ExaOptions -> ExaSearchService
                 is SearchServiceOptions.ZhipuOptions -> ZhipuSearchService
@@ -64,20 +64,24 @@ interface SearchService<T : SearchServiceOptions> {
                 is SearchServiceOptions.SerperOptions -> SerperSearchService
                 is SearchServiceOptions.CustomJsOptions -> CustomJsSearchService
             } as SearchService<T>
-        }
 
         @Volatile
-        internal var httpClient: OkHttpClient = OkHttpClient.Builder()
-            .retryOnConnectionFailure(true)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        internal var httpClient: OkHttpClient =
+            OkHttpClient
+                .Builder()
+                .retryOnConnectionFailure(true)
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
 
         @Volatile
         internal var keyRoulette: KeyRoulette = KeyRoulette.default()
 
-        fun init(client: OkHttpClient, context: Context? = null) {
+        fun init(
+            client: OkHttpClient,
+            context: Context? = null,
+        ) {
             httpClient = client
             keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
         }
@@ -93,7 +97,7 @@ interface SearchService<T : SearchServiceOptions> {
 
 @Serializable
 data class SearchCommonOptions(
-    val resultSize: Int = 10
+    val resultSize: Int = 10,
 )
 
 @Serializable
@@ -139,32 +143,33 @@ sealed class SearchServiceOptions {
     companion object {
         val DEFAULT = BingLocalOptions()
 
-        val TYPES = mapOf(
-            BingLocalOptions::class to "Bing",
-            RikkaHubOptions::class to "RikkaHub",
-            ZhipuOptions::class to "智谱",
-            TavilyOptions::class to "Tavily",
-            ExaOptions::class to "Exa",
-            SearXNGOptions::class to "SearXNG",
-            LinkUpOptions::class to "LinkUp",
-            BraveOptions::class to "Brave",
-            MetasoOptions::class to "秘塔",
-            OllamaOptions::class to "Ollama",
-            PerplexityOptions::class to "Perplexity",
-            FirecrawlOptions::class to "Firecrawl",
-            JinaOptions::class to "Jina",
-            BochaOptions::class to "博查",
-            GrokOptions::class to "Grok",
-            TinyfishOptions::class to "Tinyfish",
-            SerperOptions::class to "Serper",
-            CustomJsOptions::class to "Custom JS",
-        )
+        val TYPES =
+            mapOf(
+                BingLocalOptions::class to "Bing",
+                RikkaHubOptions::class to "RikkaHub",
+                ZhipuOptions::class to "智谱",
+                TavilyOptions::class to "Tavily",
+                ExaOptions::class to "Exa",
+                SearXNGOptions::class to "SearXNG",
+                LinkUpOptions::class to "LinkUp",
+                BraveOptions::class to "Brave",
+                MetasoOptions::class to "秘塔",
+                OllamaOptions::class to "Ollama",
+                PerplexityOptions::class to "Perplexity",
+                FirecrawlOptions::class to "Firecrawl",
+                JinaOptions::class to "Jina",
+                BochaOptions::class to "博查",
+                GrokOptions::class to "Grok",
+                TinyfishOptions::class to "Tinyfish",
+                SerperOptions::class to "Serper",
+                CustomJsOptions::class to "Custom JS",
+            )
     }
 
     @Serializable
     @SerialName("bing_local")
     class BingLocalOptions(
-        override val id: Uuid = Uuid.random()
+        override val id: Uuid = Uuid.random(),
     ) : SearchServiceOptions()
 
     @Serializable
@@ -304,6 +309,7 @@ sealed class SearchServiceOptions {
     ) : SearchServiceOptions() {
         override val displayName: String
             get() = name.ifBlank { "Custom JS" }
+
         companion object {
             const val DEFAULT_SCRAPE_SCRIPT = """// Implement scrape(urls) function
 // urls is an array of URL strings
@@ -340,20 +346,27 @@ function search(query, resultSize) {
     }
 }
 
-internal suspend fun Call.await(): Response {
-    return suspendCancellableCoroutine { continuation ->
-        enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (continuation.isActive) {
-                    continuation.resumeWithException(e)
+internal suspend fun Call.await(): Response =
+    suspendCancellableCoroutine { continuation ->
+        enqueue(
+            object : Callback {
+                override fun onFailure(
+                    call: Call,
+                    e: IOException,
+                ) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
                 }
-            }
 
-            override fun onResponse(call: Call, response: Response) {
-                continuation.resume(response) { cause, _, _ ->
-                    response.closeQuietly()
+                override fun onResponse(
+                    call: Call,
+                    response: Response,
+                ) {
+                    continuation.resume(response) { cause, _, _ ->
+                        response.closeQuietly()
+                    }
                 }
-            }
-        })
+            },
+        )
     }
-}

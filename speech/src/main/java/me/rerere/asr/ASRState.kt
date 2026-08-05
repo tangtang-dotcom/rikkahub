@@ -5,7 +5,7 @@ enum class ASRStatus {
     Connecting,
     Listening,
     Stopping,
-    Error
+    Error,
 }
 
 data class ASRState(

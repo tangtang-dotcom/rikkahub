@@ -14,7 +14,7 @@ val base = Typography()
 val Typography = Typography()
 
 // Set of Material typography styles to start with
-//val Typography = Typography(
+// val Typography = Typography(
 //    displayLargeEmphasized = base.displayLargeEmphasized.copy(
 //        fontFamily = GoogleSansFlex.Display.Emphasized.Large,
 //        fontWeight = FontWeight.Bold
@@ -75,14 +75,16 @@ val Typography = Typography()
 //        fontFamily = GoogleSansFlex.Label.Emphasized.Small,
 //        fontWeight = FontWeight.Bold
 //    ),
-//)
+// )
 
 @OptIn(ExperimentalTextApi::class)
-val JetbrainsMono = FontFamily(
-    Font(
-        resId = R.font.jetbrains_mono,
-        variationSettings = FontVariation.Settings(
-            FontVariation.weight(FontWeight.Normal.weight),
-        )
+val JetbrainsMono =
+    FontFamily(
+        Font(
+            resId = R.font.jetbrains_mono,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(FontWeight.Normal.weight),
+                ),
+        ),
     )
-)

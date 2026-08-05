@@ -62,11 +62,12 @@ class ExampleUnitTest {
         val baseDir = Files.createTempDirectory("workspace-manager-test").toFile()
         val manager = WorkspaceManager(baseDir)
         val installer = RootfsInstaller(manager)
-        val archive = tarGz(
-            TarTestEntry("bin/", type = '5'),
-            TarTestEntry("bin/hello", content = "echo hello\n".toByteArray(), mode = 493),
-            TarTestEntry("usr/bin/hello-link", type = '2', linkName = "../../bin/hello"),
-        )
+        val archive =
+            tarGz(
+                TarTestEntry("bin/", type = '5'),
+                TarTestEntry("bin/hello", content = "echo hello\n".toByteArray(), mode = 493),
+                TarTestEntry("usr/bin/hello-link", type = '2', linkName = "../../bin/hello"),
+            )
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.createContext("/rootfs.tar.gz") { exchange ->
             exchange.sendResponseHeaders(200, archive.size.toLong())
@@ -107,11 +108,12 @@ class ExampleUnitTest {
         val root = "test-workspace"
         manager.ensureWorkspace(root)
 
-        val result = manager.executeCommand(
-            root = root,
-            command = "cat > stdin.txt",
-            stdin = "hello\nstdin".toByteArray(),
-        )
+        val result =
+            manager.executeCommand(
+                root = root,
+                command = "cat > stdin.txt",
+                stdin = "hello\nstdin".toByteArray(),
+            )
 
         assertEquals(0, result.exitCode)
         assertEquals("hello\nstdin", File(manager.filesDir(root), "stdin.txt").readText())
@@ -120,10 +122,11 @@ class ExampleUnitTest {
     @Test
     fun prootRunnerRequiresRootfs() {
         val baseDir = Files.createTempDirectory("workspace-proot-test").toFile()
-        val manager = WorkspaceManager(
-            baseDir = baseDir,
-            shellRunner = ProotShellRunner(File(baseDir, "native"))
-        )
+        val manager =
+            WorkspaceManager(
+                baseDir = baseDir,
+                shellRunner = ProotShellRunner(File(baseDir, "native")),
+            )
         val root = "test-workspace"
         manager.ensureWorkspace(root)
 
@@ -140,10 +143,11 @@ class ExampleUnitTest {
         val root = "test-workspace"
         manager.ensureWorkspace(root)
 
-        val result = manager.executeCommand(
-            root,
-            "awk 'BEGIN { for (i = 0; i < 300000; i++) printf \"a\" }'",
-        )
+        val result =
+            manager.executeCommand(
+                root,
+                "awk 'BEGIN { for (i = 0; i < 300000; i++) printf \"a\" }'",
+            )
 
         assertEquals(0, result.exitCode)
         assertTrue(result.truncated)
@@ -163,7 +167,7 @@ class ExampleUnitTest {
                 nameservers = listOf("9.9.9.9", "8.8.8.8"),
                 hostname = "workspace-test",
                 groupIds = listOf(3003, 9997),
-            )
+            ),
         )
 
         assertEquals(
@@ -174,7 +178,7 @@ class ExampleUnitTest {
             options edns0 trust-ad
 
             """.trimIndent(),
-            File(linuxDir, "etc/resolv.conf").readText()
+            File(linuxDir, "etc/resolv.conf").readText(),
         )
         assertTrue(File(linuxDir, "etc/hosts").readText().contains("127.0.0.1 localhost workspace-test"))
         assertEquals("workspace-test\n", File(linuxDir, "etc/hostname").readText())
@@ -219,20 +223,29 @@ class ExampleUnitTest {
         return header
     }
 
-    private fun ByteArray.writeString(offset: Int, length: Int, value: String) {
+    private fun ByteArray.writeString(
+        offset: Int,
+        length: Int,
+        value: String,
+    ) {
         val bytes = value.toByteArray()
         bytes.copyInto(this, offset, 0, minOf(bytes.size, length))
     }
 
-    private fun ByteArray.writeOctal(offset: Int, length: Int, value: Long) {
+    private fun ByteArray.writeOctal(
+        offset: Int,
+        length: Int,
+        value: Long,
+    ) {
         val text = value.toString(8).padStart(length - 1, '0')
         writeString(offset, length, text)
         this[offset + length - 1] = 0
     }
 
-    private fun Int.paddingSize(): Int = (512 - (this % 512)).let {
-        if (it == 512) 0 else it
-    }
+    private fun Int.paddingSize(): Int =
+        (512 - (this % 512)).let {
+            if (it == 512) 0 else it
+        }
 
     private data class TarTestEntry(
         val name: String,

@@ -135,23 +135,30 @@ fun ScheduledJobDetailScreen(
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                 ) {
                     androidx.compose.material3.Button(onClick = {
                         scope.launch {
                             val outcome = vm.runNow(current.id)
                             history = vm.history(current.id)
                             job = vm.get(current.id)
-                            val msgRes = when (outcome) {
-                                ScheduledJobsViewModel.RunNowOutcome.Fired ->
-                                    R.string.setting_page_scheduled_jobs_run_now_fired
-                                ScheduledJobsViewModel.RunNowOutcome.Disabled ->
-                                    R.string.setting_page_scheduled_jobs_run_now_disabled
-                                ScheduledJobsViewModel.RunNowOutcome.NotFound ->
-                                    R.string.setting_page_scheduled_jobs_run_now_not_found
-                            }
+                            val msgRes =
+                                when (outcome) {
+                                    ScheduledJobsViewModel.RunNowOutcome.Fired -> {
+                                        R.string.setting_page_scheduled_jobs_run_now_fired
+                                    }
+
+                                    ScheduledJobsViewModel.RunNowOutcome.Disabled -> {
+                                        R.string.setting_page_scheduled_jobs_run_now_disabled
+                                    }
+
+                                    ScheduledJobsViewModel.RunNowOutcome.NotFound -> {
+                                        R.string.setting_page_scheduled_jobs_run_now_not_found
+                                    }
+                                }
                             snackbarHostState.showSnackbar(ctx.getString(msgRes))
                         }
                     }) {
@@ -160,12 +167,17 @@ fun ScheduledJobDetailScreen(
                     TextButton(onClick = {
                         nav.navigate(
                             Screen.Chat(
-                                id = kotlin.uuid.Uuid.random().toString(),
-                                text = ctx.getString(
-                                    R.string.setting_page_scheduled_jobs_edit_prefill,
-                                    current.name,
-                                ).base64Encode(),
-                            )
+                                id =
+                                    kotlin.uuid.Uuid
+                                        .random()
+                                        .toString(),
+                                text =
+                                    ctx
+                                        .getString(
+                                            R.string.setting_page_scheduled_jobs_edit_prefill,
+                                            current.name,
+                                        ).base64Encode(),
+                            ),
                         )
                     }) {
                         Text(stringResource(R.string.setting_page_scheduled_jobs_edit))
@@ -206,7 +218,10 @@ fun ScheduledJobDetailScreen(
                 }
                 current.startAtUnixMs?.let {
                     Text(
-                        stringResource(R.string.setting_page_scheduled_jobs_schedule_starts, formatAbsoluteForDetail(it)),
+                        stringResource(
+                            R.string.setting_page_scheduled_jobs_schedule_starts,
+                            formatAbsoluteForDetail(it),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -227,14 +242,14 @@ fun ScheduledJobDetailScreen(
                         Text(
                             text = it,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .padding(top = 6.dp)
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(8.dp),
-                                )
-                                .padding(8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(top = 6.dp)
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(8.dp),
+                                    ).padding(8.dp),
                         )
                     }
                 } else {
@@ -269,8 +284,9 @@ fun ScheduledJobDetailScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         for (r in history) {
                             val ago = formatRelativeAgo(r.startedAtMs, nowMs, rel)
-                            val line = "$ago — ${r.outcome}" +
-                                (r.errorMessage?.let { " — ${it.take(60)}" } ?: "")
+                            val line =
+                                "$ago — ${r.outcome}" +
+                                    (r.errorMessage?.let { " — ${it.take(60)}" } ?: "")
                             Text(line, style = MaterialTheme.typography.bodySmall)
                         }
                     }
@@ -292,7 +308,10 @@ private fun SectionHeader(text: String) {
     )
 }
 
-private data class ParsedAction(val tool: String, val argsBlock: String)
+private data class ParsedAction(
+    val tool: String,
+    val argsBlock: String,
+)
 
 /**
  * Parse the actions JSON the LLM stored. We don't ship the LLM's WorkflowAction model
@@ -313,16 +332,19 @@ private fun parseActions(actionsJson: String?): List<ParsedAction> {
 }
 
 @Composable
-private fun ActionRow(index: Int, action: ParsedAction) {
+private fun ActionRow(
+    index: Int,
+    action: ParsedAction,
+) {
     var expanded by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(8.dp),
-            )
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    RoundedCornerShape(8.dp),
+                ).padding(8.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("$index. ", style = MaterialTheme.typography.bodyMedium)
@@ -337,8 +359,11 @@ private fun ActionRow(index: Int, action: ParsedAction) {
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
             ) {
                 Text(
-                    if (expanded) stringResource(R.string.setting_page_scheduled_jobs_hide_args)
-                    else stringResource(R.string.setting_page_scheduled_jobs_show_args),
+                    if (expanded) {
+                        stringResource(R.string.setting_page_scheduled_jobs_hide_args)
+                    } else {
+                        stringResource(R.string.setting_page_scheduled_jobs_show_args)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -358,25 +383,28 @@ private fun StatsBlock(job: ScheduledJobEntity) {
     val rel = relativeStrings()
     val nowMs by rememberTickingNowMs()
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        val lastRun = job.lastRunAtMs?.let {
-            stringResource(
-                R.string.setting_page_scheduled_jobs_stat_last_run,
-                formatRelativeAgo(it, nowMs, rel),
-            )
-        } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_last_run_never)
+        val lastRun =
+            job.lastRunAtMs?.let {
+                stringResource(
+                    R.string.setting_page_scheduled_jobs_stat_last_run,
+                    formatRelativeAgo(it, nowMs, rel),
+                )
+            } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_last_run_never)
         Text(lastRun, style = MaterialTheme.typography.bodySmall)
 
-        val nextRun = job.nextRunAtMs?.let {
-            stringResource(
-                R.string.setting_page_scheduled_jobs_stat_next_run,
-                formatAbsoluteForDetail(it),
-            )
-        } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_next_run_unscheduled)
+        val nextRun =
+            job.nextRunAtMs?.let {
+                stringResource(
+                    R.string.setting_page_scheduled_jobs_stat_next_run,
+                    formatAbsoluteForDetail(it),
+                )
+            } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_next_run_unscheduled)
         Text(nextRun, style = MaterialTheme.typography.bodySmall)
 
-        val runs = job.maxRuns?.let {
-            stringResource(R.string.setting_page_scheduled_jobs_stat_runs_capped, job.runsSoFar, it)
-        } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_runs, job.runsSoFar)
+        val runs =
+            job.maxRuns?.let {
+                stringResource(R.string.setting_page_scheduled_jobs_stat_runs_capped, job.runsSoFar, it)
+            } ?: stringResource(R.string.setting_page_scheduled_jobs_stat_runs, job.runsSoFar)
         Text(runs, style = MaterialTheme.typography.bodySmall)
 
         if (job.scheduleType == "cron") {

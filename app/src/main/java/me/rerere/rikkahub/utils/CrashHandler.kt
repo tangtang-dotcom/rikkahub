@@ -21,27 +21,34 @@ object CrashHandler {
         }
     }
 
-    fun hasCrashed(context: Context): Boolean {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    fun hasCrashed(context: Context): Boolean =
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getBoolean(KEY_CRASHED, false)
-    }
 
-    fun getStackTrace(context: Context): String? {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    fun getStackTrace(context: Context): String? =
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_STACKTRACE, null)
-    }
 
     fun clearCrashed(context: Context) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit { remove(KEY_CRASHED).remove(KEY_STACKTRACE) }
     }
 
-    private fun markCrashed(context: Context, thread: Thread, throwable: Throwable) {
-        val stackTrace = buildString {
-            appendLine("Thread: ${thread.name}")
-            appendLine(throwable.stackTraceToString())
-        }.take(MAX_STACKTRACE_LENGTH)
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun markCrashed(
+        context: Context,
+        thread: Thread,
+        throwable: Throwable,
+    ) {
+        val stackTrace =
+            buildString {
+                appendLine("Thread: ${thread.name}")
+                appendLine(throwable.stackTraceToString())
+            }.take(MAX_STACKTRACE_LENGTH)
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit(commit = true) {
                 putBoolean(KEY_CRASHED, true)
                 putString(KEY_STACKTRACE, stackTrace)

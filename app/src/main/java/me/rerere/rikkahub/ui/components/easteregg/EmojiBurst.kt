@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.components.easteregg
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,7 +20,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -31,7 +31,7 @@ fun EmojiBurstHost(
     modifier: Modifier = Modifier,
     emojiOptions: List<String>,
     burstCount: Int = 12,
-    content: @Composable (onBurst: (Offset) -> Unit) -> Unit
+    content: @Composable (onBurst: (Offset) -> Unit) -> Unit,
 ) {
     val particles = remember { mutableStateListOf<EmojiParticle>() }
     var nextId by remember { mutableStateOf(0L) }
@@ -44,8 +44,8 @@ fun EmojiBurstHost(
         val bounds by rememberUpdatedState(
             Size(
                 width = constraints.maxWidth.toFloat(),
-                height = constraints.maxHeight.toFloat()
-            )
+                height = constraints.maxHeight.toFloat(),
+            ),
         )
         val onBurst: (Offset) -> Unit = onBurst@{ origin ->
             if (emojiOptions.isEmpty()) return@onBurst
@@ -53,10 +53,11 @@ fun EmojiBurstHost(
             val minY = emojiRadiusPx
             val maxX = (bounds.width - emojiRadiusPx).coerceAtLeast(minX)
             val maxY = (bounds.height - emojiRadiusPx).coerceAtLeast(minY)
-            val start = Offset(
-                origin.x.coerceIn(minX, maxX),
-                origin.y.coerceIn(minY, maxY)
-            )
+            val start =
+                Offset(
+                    origin.x.coerceIn(minX, maxX),
+                    origin.y.coerceIn(minY, maxY),
+                )
             pendingBursts.add(
                 BurstRequest(
                     center = start,
@@ -64,8 +65,8 @@ fun EmojiBurstHost(
                     minX = minX,
                     maxX = maxX,
                     minY = minY,
-                    maxY = maxY
-                )
+                    maxY = maxY,
+                ),
             )
         }
         content(onBurst)
@@ -74,12 +75,13 @@ fun EmojiBurstHost(
                 Text(
                     text = particle.emoji,
                     style = emojiTextStyle,
-                    modifier = Modifier.offset {
-                        IntOffset(
-                            (particle.position.x - emojiRadiusPx).roundToInt(),
-                            (particle.position.y - emojiRadiusPx).roundToInt()
-                        )
-                    }
+                    modifier =
+                        Modifier.offset {
+                            IntOffset(
+                                (particle.position.x - emojiRadiusPx).roundToInt(),
+                                (particle.position.y - emojiRadiusPx).roundToInt(),
+                            )
+                        },
                 )
             }
         }
@@ -105,14 +107,16 @@ fun EmojiBurstHost(
                             val emoji = emojiOptions[Random.nextInt(emojiOptions.size)]
                             val jitterAngle = Math.toRadians(Random.nextDouble(0.0, 360.0)).toFloat()
                             val jitterRadius = emojiRadiusPx * 1.5f * Random.nextFloat()
-                            val jitter = Offset(
-                                cos(jitterAngle) * jitterRadius,
-                                sin(jitterAngle) * jitterRadius
-                            )
-                            val spawn = Offset(
-                                (request.center.x + jitter.x).coerceIn(request.minX, request.maxX),
-                                (request.center.y + jitter.y).coerceIn(request.minY, request.maxY)
-                            )
+                            val jitter =
+                                Offset(
+                                    cos(jitterAngle) * jitterRadius,
+                                    sin(jitterAngle) * jitterRadius,
+                                )
+                            val spawn =
+                                Offset(
+                                    (request.center.x + jitter.x).coerceIn(request.minX, request.maxX),
+                                    (request.center.y + jitter.y).coerceIn(request.minY, request.maxY),
+                                )
                             val angleRad = Math.toRadians(Random.nextDouble(220.0, 320.0)).toFloat()
                             val speed = 350f + Random.nextFloat() * 250f
                             val vx = cos(angleRad) * speed
@@ -124,8 +128,8 @@ fun EmojiBurstHost(
                                     emoji = emoji,
                                     position = spawn,
                                     previousPosition = startPrev,
-                                    ageSeconds = 0f
-                                )
+                                    ageSeconds = 0f,
+                                ),
                             )
                         }
                         val remaining = request.remaining - spawnCount
@@ -169,14 +173,16 @@ fun EmojiBurstHost(
                             val nx = dx / dist
                             val ny = dy / dist
                             val overlap = minDistance - dist
-                            positions[i] = Offset(
-                                positions[i].x - nx * overlap / 2f,
-                                positions[i].y - ny * overlap / 2f
-                            )
-                            positions[j] = Offset(
-                                positions[j].x + nx * overlap / 2f,
-                                positions[j].y + ny * overlap / 2f
-                            )
+                            positions[i] =
+                                Offset(
+                                    positions[i].x - nx * overlap / 2f,
+                                    positions[i].y - ny * overlap / 2f,
+                                )
+                            positions[j] =
+                                Offset(
+                                    positions[j].x + nx * overlap / 2f,
+                                    positions[j].y + ny * overlap / 2f,
+                                )
                             val vi = positions[i] - previousPositions[i]
                             val vj = positions[j] - previousPositions[j]
                             val rvx = vj.x - vi.x
@@ -234,8 +240,8 @@ fun EmojiBurstHost(
                             current[i].copy(
                                 position = position,
                                 previousPosition = previousPositions[i],
-                                ageSeconds = age
-                            )
+                                ageSeconds = age,
+                            ),
                         )
                     }
                 }
@@ -249,7 +255,7 @@ private data class EmojiParticle(
     val emoji: String,
     val position: Offset,
     val previousPosition: Offset,
-    val ageSeconds: Float
+    val ageSeconds: Float,
 )
 
 private data class BurstRequest(
@@ -258,5 +264,5 @@ private data class BurstRequest(
     val minX: Float,
     val maxX: Float,
     val minY: Float,
-    val maxY: Float
+    val maxY: Float,
 )

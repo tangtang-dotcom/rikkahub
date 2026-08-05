@@ -19,13 +19,13 @@ private const val TAG = "LiteRtToolPrefix"
  * Mirrors the path AICoreProvider already uses for Gemini Nano.
  */
 object LiteRtToolPrefix {
-
     /** Lenient JSON: trailing commas are ignored, unknown keys preserved. */
-    private val lenient = Json {
-        isLenient = true
-        ignoreUnknownKeys = true
-        allowTrailingComma = true
-    }
+    private val lenient =
+        Json {
+            isLenient = true
+            ignoreUnknownKeys = true
+            allowTrailingComma = true
+        }
 
     /**
      * Adaptive tool-prefix budget. Scales with the model's `maxNumTokens` so large-context
@@ -43,13 +43,17 @@ object LiteRtToolPrefix {
      * — even at 32k context a runaway 50-kB tool list would crowd out the user's
      * conversation history.
      */
-    data class Budget(val maxTools: Int, val maxChars: Int)
+    data class Budget(
+        val maxTools: Int,
+        val maxChars: Int,
+    )
 
-    fun budgetForContext(maxNumTokens: Int): Budget = when {
-        maxNumTokens >= 16384 -> Budget(maxTools = Int.MAX_VALUE, maxChars = 12000)
-        maxNumTokens >= 6144 -> Budget(maxTools = 60, maxChars = 4500)
-        else -> Budget(maxTools = 25, maxChars = 2000)
-    }
+    fun budgetForContext(maxNumTokens: Int): Budget =
+        when {
+            maxNumTokens >= 16384 -> Budget(maxTools = Int.MAX_VALUE, maxChars = 12000)
+            maxNumTokens >= 6144 -> Budget(maxTools = 60, maxChars = 4500)
+            else -> Budget(maxTools = 25, maxChars = 2000)
+        }
 
     // Capture everything between <tool_call> and </tool_call> and hand the raw text to
     // the lenient JSON parser.  Using a greedy [\s\S]* here is intentional: the closing
@@ -58,11 +62,15 @@ object LiteRtToolPrefix {
     // argument objects like {"key": {"nested": 1}}.
     // RegexOption.MULTILINE only affects ^ and $ anchors which this pattern doesn't use,
     // so it's been removed to avoid confusion.
-    private val toolCallPattern = Regex(
-        pattern = "<tool_call>\\s*([\\s\\S]*?)\\s*</tool_call>",
-    )
+    private val toolCallPattern =
+        Regex(
+            pattern = "<tool_call>\\s*([\\s\\S]*?)\\s*</tool_call>",
+        )
 
-    data class ParsedCall(val name: String, val arguments: JsonObject)
+    data class ParsedCall(
+        val name: String,
+        val arguments: JsonObject,
+    )
 
     /**
      * Returns the system-prompt prefix that teaches the model how to invoke tools.
@@ -75,10 +83,11 @@ object LiteRtToolPrefix {
      */
     fun buildPrefix(tools: List<Tool>): String {
         if (tools.isEmpty()) return ""
-        val toolList = tools.joinToString("\n") { tool ->
-            val schema = runCatching { tool.parameters().toString() }.getOrDefault("{}")
-            "- ${tool.name}: ${tool.description}\n  arguments schema: $schema"
-        }
+        val toolList =
+            tools.joinToString("\n") { tool ->
+                val schema = runCatching { tool.parameters().toString() }.getOrDefault("{}")
+                "- ${tool.name}: ${tool.description}\n  arguments schema: $schema"
+            }
         return """
 You have access to the following tools. To call one, emit a single line in this exact format:
 <tool_call>{"name": "<tool_name>", "arguments": {<json arguments>}}</tool_call>
@@ -117,23 +126,31 @@ Only emit tool calls when actually needed. Otherwise reply with normal text.
         val sb = StringBuilder()
         var renderedCount = 0
         for (tool in capped) {
-            val firstLineDesc = tool.description.lineSequence().firstOrNull()?.trim().orEmpty()
+            val firstLineDesc =
+                tool.description
+                    .lineSequence()
+                    .firstOrNull()
+                    ?.trim()
+                    .orEmpty()
             val line = "- ${tool.name}: ${firstLineDesc.take(80)}\n"
             if (sb.length + line.length > maxChars) break
             sb.append(line)
             renderedCount++
         }
         val droppedTotal = tools.size - renderedCount
-        val droppedNote = if (droppedTotal > 0) {
-            "(…and $droppedTotal more tool(s) hidden to keep prompt short — disable some, switch to a model with bigger context, or raise \"Max context\" to see all)\n"
-        } else ""
+        val droppedNote =
+            if (droppedTotal > 0) {
+                "(…and $droppedTotal more tool(s) hidden to keep prompt short — disable some, switch to a model with bigger context, or raise \"Max context\" to see all)\n"
+            } else {
+                ""
+            }
         // Note the explicit "include the closing </tool_call> tag": tiny models otherwise
         // stop right after the JSON `}}`. extractToolCalls recovers an unclosed call
         // anyway, but nudging the model to close the tag keeps the happy path clean.
         return """
 Tools you can call. To call one, output exactly: <tool_call>{"name":"<n>","arguments":{<json>}}</tool_call> — and include the closing </tool_call> tag. Only call a tool when actually needed; otherwise reply normally.
 
-${sb}${droppedNote}
+${sb}$droppedNote
 """.trimStart()
     }
 
@@ -153,9 +170,11 @@ ${sb}${droppedNote}
      */
     fun extractToolCalls(response: String): List<ParsedCall> {
         // Pass 1 — well-formed blocks.
-        val closed = toolCallPattern.findAll(response)
-            .mapNotNull { parseToolCallJson(it.groupValues[1]) }
-            .toList()
+        val closed =
+            toolCallPattern
+                .findAll(response)
+                .mapNotNull { parseToolCallJson(it.groupValues[1]) }
+                .toList()
         if (closed.isNotEmpty()) return closed
 
         // Pass 2 — unclosed-tag recovery.
@@ -172,17 +191,18 @@ ${sb}${droppedNote}
 
     /** Parse one tool-call JSON payload into a [ParsedCall], or null if it is not a valid
      *  call object. Lenient about trailing commas + whitespace. */
-    private fun parseToolCallJson(raw: String): ParsedCall? = runCatching {
-        val obj = lenient.parseToJsonElement(raw).jsonObject
-        val name = obj["name"]?.jsonPrimitive?.contentOrNull ?: return@runCatching null
-        val args = (obj["arguments"] as? JsonObject) ?: JsonObject(emptyMap())
-        ParsedCall(name, args)
-    }.onFailure { t ->
-        // Log parse failures so model quality issues are diagnosable in logcat.
-        // Silent drops are fine UX (the model produces text output instead), but the log
-        // distinguishes "model didn't call a tool" from "model emitted malformed JSON".
-        Log.w(TAG, "Failed to parse tool_call block — raw=[$raw]: ${t.message}")
-    }.getOrNull()
+    private fun parseToolCallJson(raw: String): ParsedCall? =
+        runCatching {
+            val obj = lenient.parseToJsonElement(raw).jsonObject
+            val name = obj["name"]?.jsonPrimitive?.contentOrNull ?: return@runCatching null
+            val args = (obj["arguments"] as? JsonObject) ?: JsonObject(emptyMap())
+            ParsedCall(name, args)
+        }.onFailure { t ->
+            // Log parse failures so model quality issues are diagnosable in logcat.
+            // Silent drops are fine UX (the model produces text output instead), but the log
+            // distinguishes "model didn't call a tool" from "model emitted malformed JSON".
+            Log.w(TAG, "Failed to parse tool_call block — raw=[$raw]: ${t.message}")
+        }.getOrNull()
 
     /**
      * Return the first brace-balanced `{…}` JSON object found in [text], or null if there
@@ -206,8 +226,14 @@ ${sb}${droppedNote}
                 continue
             }
             when (c) {
-                '"' -> inString = true
-                '{' -> depth++
+                '"' -> {
+                    inString = true
+                }
+
+                '{' -> {
+                    depth++
+                }
+
                 '}' -> {
                     depth--
                     if (depth == 0) return text.substring(start, i + 1)

@@ -54,16 +54,16 @@ fun SettingPreferencesThemePage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { contentPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding + PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 CardGroup(
@@ -86,12 +86,20 @@ fun SettingPreferencesThemePage(vm: SettingVM = koinViewModel()) {
                         trailingContent = { Icon(HugeIcons.ArrowRight01, contentDescription = null) },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_amoled_dark_mode_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_amoled_dark_mode_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_amoled_dark_mode_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_amoled_dark_mode_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = amoledDarkMode,
-                                onCheckedChange = { amoledDarkMode = it }
+                                onCheckedChange = { amoledDarkMode = it },
                             )
                         },
                     )

@@ -5,16 +5,23 @@ internal class WorkspaceIgnoreMatcher private constructor(
 ) {
     constructor() : this(DEFAULT_RULES)
 
-    fun withGitignore(directory: String, content: String): WorkspaceIgnoreMatcher {
+    fun withGitignore(
+        directory: String,
+        content: String,
+    ): WorkspaceIgnoreMatcher {
         val basePath = directory.normalizeWorkspacePath()
-        val parsed = content
-            .lineSequence()
-            .mapNotNull { line -> Rule.parse(basePath, line) }
-            .toList()
+        val parsed =
+            content
+                .lineSequence()
+                .mapNotNull { line -> Rule.parse(basePath, line) }
+                .toList()
         return if (parsed.isEmpty()) this else WorkspaceIgnoreMatcher(rules + parsed)
     }
 
-    fun isIgnored(path: String, isDirectory: Boolean): Boolean {
+    fun isIgnored(
+        path: String,
+        isDirectory: Boolean,
+    ): Boolean {
         val normalized = path.normalizeWorkspacePath()
         var ignored = false
         rules.forEach { rule ->
@@ -34,7 +41,10 @@ internal class WorkspaceIgnoreMatcher private constructor(
         val anchored: Boolean,
         val hasSlash: Boolean,
     ) {
-        fun matches(path: String, isDirectory: Boolean): Boolean {
+        fun matches(
+            path: String,
+            isDirectory: Boolean,
+        ): Boolean {
             if (directoryOnly && !isDirectory) return false
             val relative = path.relativeToBaseOrNull(basePath) ?: return false
             if (relative.isBlank()) return false
@@ -43,7 +53,10 @@ internal class WorkspaceIgnoreMatcher private constructor(
         }
 
         companion object {
-            fun parse(basePath: String, rawLine: String): Rule? {
+            fun parse(
+                basePath: String,
+                rawLine: String,
+            ): Rule? {
                 var line = rawLine.trim()
                 if (line.isEmpty() || line.startsWith("#")) return null
                 if (line.startsWith("\\#") || line.startsWith("\\!")) {
@@ -56,10 +69,11 @@ internal class WorkspaceIgnoreMatcher private constructor(
 
                 val directoryOnly = line.endsWith("/")
                 val anchored = line.startsWith("/")
-                val pattern = line
-                    .trim('/')
-                    .takeIf { it.isNotBlank() }
-                    ?: return null
+                val pattern =
+                    line
+                        .trim('/')
+                        .takeIf { it.isNotBlank() }
+                        ?: return null
                 val hasSlash = pattern.contains('/')
                 return Rule(
                     basePath = basePath,
@@ -75,19 +89,19 @@ internal class WorkspaceIgnoreMatcher private constructor(
     }
 
     companion object {
-        private val DEFAULT_RULES = listOf(
-            "build/",
-            ".gradle/",
-            ".git/",
-            "node_modules/",
-            "dist/",
-            "out/",
-        ).mapNotNull { Rule.parse(basePath = "", rawLine = it) }
+        private val DEFAULT_RULES =
+            listOf(
+                "build/",
+                ".gradle/",
+                ".git/",
+                "node_modules/",
+                "dist/",
+                "out/",
+            ).mapNotNull { Rule.parse(basePath = "", rawLine = it) }
     }
 }
 
-private fun String.normalizeWorkspacePath(): String =
-    replace('\\', '/').trim().trim('/')
+private fun String.normalizeWorkspacePath(): String = replace('\\', '/').trim().trim('/')
 
 private fun String.relativeToBaseOrNull(basePath: String): String? {
     if (basePath.isBlank()) return this

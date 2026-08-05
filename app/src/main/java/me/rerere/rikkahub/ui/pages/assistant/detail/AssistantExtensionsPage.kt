@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.TextButton
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -12,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,8 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.ai.ExtensionEmptyState
 import me.rerere.rikkahub.ui.components.ai.LorebooksContent
@@ -59,9 +59,10 @@ fun AssistantExtensionsPage(id: String) {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             SecondaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
@@ -70,30 +71,31 @@ fun AssistantExtensionsPage(id: String) {
                 Tab(
                     selected = pagerState.currentPage == 0,
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_quick_messages)) }
+                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_quick_messages)) },
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_mode_injections)) }
+                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_mode_injections)) },
                 )
                 Tab(
                     selected = pagerState.currentPage == 2,
                     onClick = { scope.launch { pagerState.animateScrollToPage(2) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_lorebooks)) }
+                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_lorebooks)) },
                 )
                 Tab(
                     selected = pagerState.currentPage == 3,
                     onClick = { scope.launch { pagerState.animateScrollToPage(3) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_skills)) }
+                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_skills)) },
                 )
             }
 
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             ) { page ->
                 when (page) {
                     0 -> {
@@ -110,8 +112,12 @@ fun AssistantExtensionsPage(id: String) {
                                     quickMessages = settings.quickMessages,
                                     selectedIds = assistant.quickMessageIds,
                                     onToggle = { quickMessageId, checked ->
-                                        val newIds = if (checked) assistant.quickMessageIds + quickMessageId
-                                        else assistant.quickMessageIds - quickMessageId
+                                        val newIds =
+                                            if (checked) {
+                                                assistant.quickMessageIds + quickMessageId
+                                            } else {
+                                                assistant.quickMessageIds - quickMessageId
+                                            }
                                         vm.update(assistant.copy(quickMessageIds = newIds))
                                     },
                                 )
@@ -139,8 +145,12 @@ fun AssistantExtensionsPage(id: String) {
                                     modeInjections = settings.modeInjections,
                                     selectedIds = assistant.modeInjectionIds,
                                     onToggle = { injId, checked ->
-                                        val newIds = if (checked) assistant.modeInjectionIds + injId
-                                        else assistant.modeInjectionIds - injId
+                                        val newIds =
+                                            if (checked) {
+                                                assistant.modeInjectionIds + injId
+                                            } else {
+                                                assistant.modeInjectionIds - injId
+                                            }
                                         vm.update(assistant.copy(modeInjectionIds = newIds))
                                     },
                                 )
@@ -168,8 +178,12 @@ fun AssistantExtensionsPage(id: String) {
                                     lorebooks = settings.lorebooks,
                                     selectedIds = assistant.lorebookIds,
                                     onToggle = { injId, checked ->
-                                        val newIds = if (checked) assistant.lorebookIds + injId
-                                        else assistant.lorebookIds - injId
+                                        val newIds =
+                                            if (checked) {
+                                                assistant.lorebookIds + injId
+                                            } else {
+                                                assistant.lorebookIds - injId
+                                            }
                                         vm.update(assistant.copy(lorebookIds = newIds))
                                     },
                                 )
@@ -197,8 +211,12 @@ fun AssistantExtensionsPage(id: String) {
                                     skills = skills,
                                     enabledSkills = assistant.enabledSkills,
                                     onToggle = { name, checked ->
-                                        val newSkills = if (checked) assistant.enabledSkills + name
-                                        else assistant.enabledSkills - name
+                                        val newSkills =
+                                            if (checked) {
+                                                assistant.enabledSkills + name
+                                            } else {
+                                                assistant.enabledSkills - name
+                                            }
                                         vm.update(assistant.copy(enabledSkills = newSkills))
                                     },
                                 )

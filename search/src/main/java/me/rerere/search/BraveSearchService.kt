@@ -29,7 +29,7 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://api.search.brave.com/")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -37,13 +37,17 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
 
     override fun parameters(options: SearchServiceOptions.BraveOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.BraveOptions): InputSchema? = null
@@ -51,52 +55,55 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BraveOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://api.search.brave.com/res/v1/web/search" +
-                    "?q=${java.net.URLEncoder.encode(query, "UTF-8")}" +
-                    "&count=${commonOptions.resultSize}"
+        serviceOptions: SearchServiceOptions.BraveOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+                val url =
+                    "https://api.search.brave.com/res/v1/web/search" +
+                        "?q=${java.net.URLEncoder.encode(query, "UTF-8")}" +
+                        "&count=${commonOptions.resultSize}"
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Accept", "application/json")
-                .addHeader("X-Subscription-Token", serviceOptions.apiKey)
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .addHeader("Accept", "application/json")
+                        .addHeader("X-Subscription-Token", serviceOptions.apiKey)
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string()
-                val searchResponse = json.decodeFromString<BraveSearchResponse>(responseBody)
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    val searchResponse = json.decodeFromString<BraveSearchResponse>(responseBody)
 
-                val items = searchResponse.web?.results?.map { result ->
-                    SearchResultItem(
-                        title = result.title,
-                        url = result.url,
-                        text = result.description ?: ""
+                    val items =
+                        searchResponse.web?.results?.map { result ->
+                            SearchResultItem(
+                                title = result.title,
+                                url = result.url,
+                                text = result.description ?: "",
+                            )
+                        } ?: emptyList()
+
+                    return@withContext Result.success(
+                        SearchResult(
+                            answer = null,
+                            items = items,
+                        ),
                     )
-                } ?: emptyList()
-
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = null,
-                        items = items
-                    )
-                )
-            } else {
-                error("Brave search failed with code ${response.code}: ${response.message}")
+                } else {
+                    error("Brave search failed with code ${response.code}: ${response.message}")
+                }
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.BraveOptions
-    ): Result<ScrapedResult> {
-        return Result.failure(Exception("Scraping is not supported for Brave"))
-    }
+        serviceOptions: SearchServiceOptions.BraveOptions,
+    ): Result<ScrapedResult> = Result.failure(Exception("Scraping is not supported for Brave"))
 
     @Serializable
     data class BraveSearchResponse(

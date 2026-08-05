@@ -6,17 +6,17 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -27,10 +27,11 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ArrowDown01
 import me.rerere.hugeicons.stroke.Camera01
 import me.rerere.hugeicons.stroke.Codesandbox
 import me.rerere.hugeicons.stroke.ComputerTerminal01
@@ -63,17 +65,20 @@ import me.rerere.hugeicons.stroke.MusicNote03
 import me.rerere.hugeicons.stroke.Package
 import me.rerere.hugeicons.stroke.Package01
 import me.rerere.hugeicons.stroke.Settings02
+import me.rerere.hugeicons.stroke.Tools
 import me.rerere.hugeicons.stroke.Video01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.findProvider
+import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
+import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.rikkahub.ui.components.ui.ExtensionSelector
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
@@ -81,11 +86,6 @@ import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.hooks.ChatInputState
-import me.rerere.hugeicons.stroke.ArrowDown01
-import me.rerere.hugeicons.stroke.Tools
-import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
-import androidx.compose.material3.Switch
-import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.workspace.WorkspaceShellStatus
 import org.koin.compose.koinInject
 import kotlin.uuid.Uuid
@@ -121,9 +121,11 @@ internal fun FilesPicker(
     val workspaces by workspaceRepository.listFlow().collectAsState(initial = emptyList())
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         FlowRow(
             modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
@@ -144,7 +146,7 @@ internal fun FilesPicker(
         }
 
         HorizontalDivider(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
 
         if (workspaces.isNotEmpty()) {
@@ -208,14 +210,16 @@ internal fun FilesPicker(
                     )
                 }
             },
-            colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ),
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.large)
-                .clickable {
-                    onShowInjectionSheetChange(true)
-                },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable {
+                        onShowInjectionSheetChange(true)
+                    },
         )
 
         // Compress History Button
@@ -238,14 +242,16 @@ internal fun FilesPicker(
                     )
                 }
             },
-            colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ),
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.large)
-                .clickable {
-                    onShowCompressDialogChange(true)
-                },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable {
+                        onShowCompressDialogChange(true)
+                    },
         )
 
         // Auto-compress context
@@ -265,15 +271,17 @@ internal fun FilesPicker(
             trailingContent = {
                 Switch(
                     checked = settings.autoCompressEnabled,
-                    onCheckedChange = { onShowAutoCompressDialogChange(true) }
+                    onCheckedChange = { onShowAutoCompressDialogChange(true) },
                 )
             },
-            colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ),
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.large)
-                .clickable { onShowAutoCompressDialogChange(true) },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable { onShowAutoCompressDialogChange(true) },
         )
 
         // Tool output limit
@@ -293,21 +301,24 @@ internal fun FilesPicker(
             trailingContent = {
                 Switch(
                     checked = settings.toolOutputEnabled,
-                    onCheckedChange = { onShowToolOutputDialogChange(true) }
+                    onCheckedChange = { onShowToolOutputDialogChange(true) },
                 )
             },
-            colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ),
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.large)
-                .clickable { onShowToolOutputDialogChange(true) },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable { onShowToolOutputDialogChange(true) },
         )
 
         // Workspace CWD
-        val boundWorkspace = remember(workspaces, assistant.workspaceId) {
-            workspaces.find { it.id == assistant.workspaceId?.toString() }
-        }
+        val boundWorkspace =
+            remember(workspaces, assistant.workspaceId) {
+                workspaces.find { it.id == assistant.workspaceId?.toString() }
+            }
         if (boundWorkspace != null && boundWorkspace.shellStatus == WorkspaceShellStatus.READY.name) {
             var showCwdSheet by remember { mutableStateOf(false) }
             TextButton(
@@ -376,9 +387,10 @@ private fun WorkspacePickerListItem(
     onNavigateToManage: () -> Unit,
 ) {
     var showSheet by remember { mutableStateOf(false) }
-    val boundWorkspace = remember(workspaces, assistant.workspaceId) {
-        workspaces.find { it.id == assistant.workspaceId?.toString() }
-    }
+    val boundWorkspace =
+        remember(workspaces, assistant.workspaceId) {
+            workspaces.find { it.id == assistant.workspaceId?.toString() }
+        }
 
     ListItem(
         leadingContent = {
@@ -419,12 +431,14 @@ private fun WorkspacePickerListItem(
                 }
             }
         },
-        colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.large)
-            .clickable { showSheet = true },
+        colors =
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        modifier =
+            Modifier
+                .clip(MaterialTheme.shapes.large)
+                .clickable { showSheet = true },
     )
 
     if (showSheet) {
@@ -460,7 +474,11 @@ private fun InjectionQuickConfigSheet(
     onDismiss: () -> Unit,
     onDismissAll: () -> Unit,
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState =
+        rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        )
     val navController = LocalNavController.current
 
     ModalBottomSheet(
@@ -468,10 +486,11 @@ private fun InjectionQuickConfigSheet(
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.75f)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.75f)
+                    .padding(horizontal = 16.dp),
         ) {
             ExtensionSelector(
                 assistant = assistant,
@@ -491,7 +510,8 @@ private fun InjectionQuickConfigSheet(
                 onNavigateToSkills = {
                     onDismissAll()
                     navController.navigate(Screen.Skills)
-                })
+                },
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -562,22 +582,25 @@ private fun BigIconTextButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(
-                interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick
-            )
-            .semantics {
-                role = Role.Button
-            }
-            .wrapContentWidth(),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = onClick,
+                ).semantics {
+                    role = Role.Button
+                }.wrapContentWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(8.dp)
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(8.dp),
         ) {
             Box(
-                modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
             ) {
                 icon()
             }
@@ -592,7 +615,7 @@ private fun BigIconTextButton(
 @Composable
 private fun BigIconTextButtonPreview() {
     Row(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(16.dp),
     ) {
         BigIconTextButton(icon = {
             Icon(HugeIcons.Image02, null)

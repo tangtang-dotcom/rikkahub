@@ -1,11 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Code
-import me.rerere.hugeicons.stroke.Earth
-import me.rerere.hugeicons.stroke.File02
-import me.rerere.hugeicons.stroke.Github
-import me.rerere.hugeicons.stroke.SmartPhone01
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,11 +33,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Code
+import me.rerere.hugeicons.stroke.Earth
+import me.rerere.hugeicons.stroke.File02
+import me.rerere.hugeicons.stroke.Github
+import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.easteregg.EmojiBurstHost
+import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.CustomColors
@@ -55,17 +55,61 @@ fun SettingAboutPage() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val navController = LocalNavController.current
-    val emojiOptions = remember {
-        listOf(
-            "🎉", "✨", "🌟", "💫", "🎊", "🥳", "🎈", "🎆", "🎇", "🧨",
-            "🌈", "🧧", "🎁", "🍬", "🍭", "🍉", "🍓", "🍒", "🍍", "🥭",
-            "🐱", "🐶", "🦊", "🐼", "🦁", "🐯", "🐵", "🦄",
-            "❤️", "🧡", "💛", "💚", "💙", "💜",
-            "🇨🇳", "🌏", "🌍", "🌎",
-            "🤗", "🤩", "😆", "😺", "😸", "🤡",
-            "💡", "🔥", "💥", "🚀", "⭐", "🌙"
-        )
-    }
+    val emojiOptions =
+        remember {
+            listOf(
+                "🎉",
+                "✨",
+                "🌟",
+                "💫",
+                "🎊",
+                "🥳",
+                "🎈",
+                "🎆",
+                "🎇",
+                "🧨",
+                "🌈",
+                "🧧",
+                "🎁",
+                "🍬",
+                "🍭",
+                "🍉",
+                "🍓",
+                "🍒",
+                "🍍",
+                "🥭",
+                "🐱",
+                "🐶",
+                "🦊",
+                "🐼",
+                "🦁",
+                "🐯",
+                "🐵",
+                "🦄",
+                "❤️",
+                "🧡",
+                "💛",
+                "💚",
+                "💙",
+                "💜",
+                "🇨🇳",
+                "🌏",
+                "🌍",
+                "🌎",
+                "🤗",
+                "🤩",
+                "😆",
+                "😺",
+                "😸",
+                "🤡",
+                "💡",
+                "🔥",
+                "💥",
+                "🚀",
+                "⭐",
+                "🌙",
+            )
+        }
     var logoCenterPx by remember { mutableStateOf(Offset.Zero) }
     Scaffold(
         topBar = {
@@ -86,7 +130,7 @@ fun SettingAboutPage() {
         EmojiBurstHost(
             modifier = Modifier.fillMaxSize(),
             emojiOptions = emojiOptions,
-            burstCount = 12
+            burstCount = 12,
         ) { onBurst ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -95,29 +139,31 @@ fun SettingAboutPage() {
             ) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         AsyncImage(
                             model = R.mipmap.ic_launcher,
                             contentDescription = "Logo",
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(150.dp)
-                                .onGloballyPositioned { coordinates ->
-                                    val position = coordinates.positionInParent()
-                                    val size = coordinates.size
-                                    logoCenterPx = Offset(
-                                        position.x + size.width / 2f,
-                                        position.y + size.height / 2f
-                                    )
-                                }
-                                .clickable {
-                                    onBurst(logoCenterPx)
-                                }
+                            modifier =
+                                Modifier
+                                    .clip(CircleShape)
+                                    .size(150.dp)
+                                    .onGloballyPositioned { coordinates ->
+                                        val position = coordinates.positionInParent()
+                                        val size = coordinates.size
+                                        logoCenterPx =
+                                            Offset(
+                                                position.x + size.width / 2f,
+                                                position.y + size.height / 2f,
+                                            )
+                                    }.clickable {
+                                        onBurst(logoCenterPx)
+                                    },
                         )
 
                         Text(
@@ -132,10 +178,11 @@ fun SettingAboutPage() {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         item(
-                            modifier = Modifier.combinedClickable(
-                                onClick = {},
-                                onLongClick = { navController.navigate(Screen.Debug) },
-                            ),
+                            modifier =
+                                Modifier.combinedClickable(
+                                    onClick = {},
+                                    onLongClick = { navController.navigate(Screen.Debug) },
+                                ),
                             leadingContent = { Icon(HugeIcons.Code, null) },
                             supportingContent = {
                                 Text("${BuildConfig.VERSION_NAME} / ${BuildConfig.VERSION_CODE}")
@@ -145,7 +192,9 @@ fun SettingAboutPage() {
                         item(
                             leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
                             supportingContent = {
-                                Text("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}")
+                                Text(
+                                    "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}",
+                                )
                             },
                             headlineContent = { Text(stringResource(R.string.about_page_system)) },
                         )

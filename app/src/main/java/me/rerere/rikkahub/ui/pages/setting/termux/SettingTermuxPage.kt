@@ -55,9 +55,7 @@ import org.koin.androidx.compose.koinViewModel
  *  4. Help — expandable setup instructions for allow-external-apps=true.
  */
 @Composable
-fun SettingTermuxPage(
-    vm: SettingTermuxViewModel = koinViewModel(),
-) {
+fun SettingTermuxPage(vm: SettingTermuxViewModel = koinViewModel()) {
     val ctx = LocalContext.current
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
@@ -75,17 +73,18 @@ fun SettingTermuxPage(
 
     // Runtime-permission launcher for RUN_COMMAND, mirroring the PermissionedSwitch flow
     // on the assistant Local-tools page. If Termux is not installed the request no-ops.
-    val runCommandPermLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        val denied = results.filter { !it.value }.keys
-        if (denied.isEmpty()) {
-            integrationState = TermuxIntegration.state(ctx)
-            toaster.show(ctx.getString(R.string.setting_termux_toast_permission_granted), type = ToastType.Success)
-        } else {
-            toaster.show(ctx.getString(R.string.setting_termux_status_permission_missing), type = ToastType.Error)
+    val runCommandPermLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { results ->
+            val denied = results.filter { !it.value }.keys
+            if (denied.isEmpty()) {
+                integrationState = TermuxIntegration.state(ctx)
+                toaster.show(ctx.getString(R.string.setting_termux_toast_permission_granted), type = ToastType.Success)
+            } else {
+                toaster.show(ctx.getString(R.string.setting_termux_status_permission_missing), type = ToastType.Error)
+            }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -100,11 +99,12 @@ fun SettingTermuxPage(
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Section 1: Status
@@ -124,9 +124,10 @@ fun SettingTermuxPage(
                                         .getLaunchIntentForPackage("com.termux")
                                         ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         ?: Intent(Intent.ACTION_VIEW).apply {
-                                            data = android.net.Uri.parse("https://github.com/termux/termux-app/releases")
+                                            data =
+                                                android.net.Uri.parse("https://github.com/termux/termux-app/releases")
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
+                                        },
                                 )
                             }
                         } else {
@@ -135,7 +136,7 @@ fun SettingTermuxPage(
                                     Intent(Intent.ACTION_VIEW).apply {
                                         data = android.net.Uri.parse("https://github.com/termux/termux-app/releases")
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -143,13 +144,16 @@ fun SettingTermuxPage(
                     headlineContent = { Text(stringResource(R.string.setting_termux_status_app)) },
                     supportingContent = {
                         Text(
-                            if (appInstalled) stringResource(R.string.setting_termux_status_app_installed)
-                            else stringResource(R.string.setting_termux_status_app_missing)
+                            if (appInstalled) {
+                                stringResource(R.string.setting_termux_status_app_installed)
+                            } else {
+                                stringResource(R.string.setting_termux_status_app_missing)
+                            },
                         )
                     },
                     leadingContent = {
                         StatusDot(
-                            color = if (appInstalled) StatusColor.Green else StatusColor.Red
+                            color = if (appInstalled) StatusColor.Green else StatusColor.Red,
                         )
                     },
                 )
@@ -159,7 +163,10 @@ fun SettingTermuxPage(
                         // re-requests are a no-op at the system level.
                         val perms = listOf("com.termux.permission.RUN_COMMAND")
                         if (PermissionHelper.hasRuntime(ctx, perms)) {
-                            toaster.show(ctx.getString(R.string.setting_termux_toast_permission_granted), type = ToastType.Success)
+                            toaster.show(
+                                ctx.getString(R.string.setting_termux_toast_permission_granted),
+                                type = ToastType.Success,
+                            )
                         } else {
                             runCommandPermLauncher.launch(perms.toTypedArray())
                         }
@@ -167,13 +174,16 @@ fun SettingTermuxPage(
                     headlineContent = { Text(stringResource(R.string.setting_termux_status_permission)) },
                     supportingContent = {
                         Text(
-                            if (hasPermission) stringResource(R.string.setting_termux_status_permission_granted)
-                            else stringResource(R.string.setting_termux_status_permission_missing)
+                            if (hasPermission) {
+                                stringResource(R.string.setting_termux_status_permission_granted)
+                            } else {
+                                stringResource(R.string.setting_termux_status_permission_missing)
+                            },
                         )
                     },
                     leadingContent = {
                         StatusDot(
-                            color = if (hasPermission) StatusColor.Green else StatusColor.Red
+                            color = if (hasPermission) StatusColor.Green else StatusColor.Red,
                         )
                     },
                 )
@@ -200,32 +210,72 @@ fun SettingTermuxPage(
                             }
                             lastVerifiedOk = TermuxIntegration.lastVerifiedOkAtMs > 0L
                             integrationState = TermuxIntegration.state(ctx)
-                            val msg = when (result) {
-                                TermuxIntegration.VerifyResult.Ok -> ctx.getString(R.string.setting_termux_verify_ok)
-                                TermuxIntegration.VerifyResult.NotInstalled -> ctx.getString(R.string.setting_termux_verify_not_installed)
-                                TermuxIntegration.VerifyResult.NoPermission -> ctx.getString(R.string.setting_termux_verify_no_permission)
-                                TermuxIntegration.VerifyResult.AllowExternalAppsMissing -> ctx.getString(R.string.setting_termux_verify_allow_external_apps)
-                                is TermuxIntegration.VerifyResult.UnexpectedOutput -> ctx.getString(R.string.setting_termux_verify_unexpected_output)
-                                is TermuxIntegration.VerifyResult.OtherError -> ctx.getString(R.string.setting_termux_verify_other_error, result.message)
-                            }
-                            val type = if (result == TermuxIntegration.VerifyResult.Ok) ToastType.Success else ToastType.Error
+                            val msg =
+                                when (result) {
+                                    TermuxIntegration.VerifyResult.Ok -> {
+                                        ctx.getString(R.string.setting_termux_verify_ok)
+                                    }
+
+                                    TermuxIntegration.VerifyResult.NotInstalled -> {
+                                        ctx.getString(
+                                            R.string.setting_termux_verify_not_installed,
+                                        )
+                                    }
+
+                                    TermuxIntegration.VerifyResult.NoPermission -> {
+                                        ctx.getString(
+                                            R.string.setting_termux_verify_no_permission,
+                                        )
+                                    }
+
+                                    TermuxIntegration.VerifyResult.AllowExternalAppsMissing -> {
+                                        ctx.getString(
+                                            R.string.setting_termux_verify_allow_external_apps,
+                                        )
+                                    }
+
+                                    is TermuxIntegration.VerifyResult.UnexpectedOutput -> {
+                                        ctx.getString(
+                                            R.string.setting_termux_verify_unexpected_output,
+                                        )
+                                    }
+
+                                    is TermuxIntegration.VerifyResult.OtherError -> {
+                                        ctx.getString(
+                                            R.string.setting_termux_verify_other_error,
+                                            result.message,
+                                        )
+                                    }
+                                }
+                            val type =
+                                if (result ==
+                                    TermuxIntegration.VerifyResult.Ok
+                                ) {
+                                    ToastType.Success
+                                } else {
+                                    ToastType.Error
+                                }
                             toaster.show(msg, type = type)
                         }
                     },
                     headlineContent = { Text(stringResource(R.string.setting_termux_status_verify)) },
                     supportingContent = {
                         Text(
-                            if (lastVerifiedOk) stringResource(R.string.setting_termux_status_verify_ok)
-                            else stringResource(R.string.setting_termux_status_verify_unknown)
+                            if (lastVerifiedOk) {
+                                stringResource(R.string.setting_termux_status_verify_ok)
+                            } else {
+                                stringResource(R.string.setting_termux_status_verify_unknown)
+                            },
                         )
                     },
                     leadingContent = {
                         StatusDot(
-                            color = when {
-                                lastVerifiedOk -> StatusColor.Green
-                                integrationState == TermuxIntegration.State.READY -> StatusColor.Orange
-                                else -> StatusColor.Red
-                            }
+                            color =
+                                when {
+                                    lastVerifiedOk -> StatusColor.Green
+                                    integrationState == TermuxIntegration.State.READY -> StatusColor.Orange
+                                    else -> StatusColor.Red
+                                },
                         )
                     },
                 )
@@ -334,17 +384,19 @@ private enum class StatusColor { Green, Orange, Red }
 
 @Composable
 private fun StatusDot(color: StatusColor) {
-    val tint = when (color) {
-        StatusColor.Green  -> MaterialTheme.colorScheme.primary
-        StatusColor.Orange -> MaterialTheme.colorScheme.tertiary
-        StatusColor.Red    -> MaterialTheme.colorScheme.error
-    }
+    val tint =
+        when (color) {
+            StatusColor.Green -> MaterialTheme.colorScheme.primary
+            StatusColor.Orange -> MaterialTheme.colorScheme.tertiary
+            StatusColor.Red -> MaterialTheme.colorScheme.error
+        }
     // Simple colored circle. size() is required — without it the Canvas measures 0x0 and
     // nothing renders. Matches the Canvas(Modifier.size(10.dp)) pattern in AssistantLocalToolPage.
     androidx.compose.foundation.Canvas(
-        modifier = Modifier
-            .size(10.dp)
-            .padding(end = 4.dp, top = 2.dp),
+        modifier =
+            Modifier
+                .size(10.dp)
+                .padding(end = 4.dp, top = 2.dp),
     ) {
         drawCircle(color = tint)
     }
@@ -369,18 +421,19 @@ private fun TimeoutInput(
         singleLine = true,
         suffix = { Text(unitLabel, style = MaterialTheme.typography.bodySmall) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier
-            .width(148.dp)
-            .onFocusChanged { focus ->
-                if (!focus.isFocused) {
-                    val parsed = text.toLongOrNull()
-                    if (parsed != null && parsed != currentValue) {
-                        onCommit(parsed)
-                    } else {
-                        text = currentValue.toString()
+        modifier =
+            Modifier
+                .width(148.dp)
+                .onFocusChanged { focus ->
+                    if (!focus.isFocused) {
+                        val parsed = text.toLongOrNull()
+                        if (parsed != null && parsed != currentValue) {
+                            onCommit(parsed)
+                        } else {
+                            text = currentValue.toString()
+                        }
                     }
-                }
-            },
+                },
     )
 }
 
@@ -400,15 +453,16 @@ private fun WorkingDirInput(
         onValueChange = { text = it },
         singleLine = true,
         textStyle = MaterialTheme.typography.bodySmall,
-        modifier = Modifier
-            .onFocusChanged { focus ->
-                if (!focus.isFocused) {
-                    if (text != currentValue && text.isNotBlank()) {
-                        onCommit(text)
-                    } else {
-                        text = currentValue
+        modifier =
+            Modifier
+                .onFocusChanged { focus ->
+                    if (!focus.isFocused) {
+                        if (text != currentValue && text.isNotBlank()) {
+                            onCommit(text)
+                        } else {
+                            text = currentValue
+                        }
                     }
-                }
-            },
+                },
     )
 }

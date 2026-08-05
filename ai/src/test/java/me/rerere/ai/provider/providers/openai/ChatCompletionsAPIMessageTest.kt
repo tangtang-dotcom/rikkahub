@@ -23,7 +23,6 @@ import org.junit.Test
  * specifically focusing on multi-round reasoning/tool scenarios.
  */
 class ChatCompletionsAPIMessageTest {
-
     private lateinit var api: ChatCompletionsAPI
 
     @Before
@@ -36,20 +35,21 @@ class ChatCompletionsAPIMessageTest {
         messages: List<UIMessage>,
         includeHistoryReasoning: Boolean = true,
     ): JsonArray {
-        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
-            "buildMessages",
-            List::class.java,
-            Boolean::class.javaPrimitiveType,
-            Boolean::class.javaPrimitiveType,
-            List::class.java
-        )
+        val method =
+            ChatCompletionsAPI::class.java.getDeclaredMethod(
+                "buildMessages",
+                List::class.java,
+                Boolean::class.javaPrimitiveType,
+                Boolean::class.javaPrimitiveType,
+                List::class.java,
+            )
         method.isAccessible = true
         return method.invoke(
             api,
             messages,
             includeHistoryReasoning,
             false,
-            listOf(Modality.TEXT, Modality.IMAGE)
+            listOf(Modality.TEXT, Modality.IMAGE),
         ) as JsonArray
     }
 
@@ -57,23 +57,26 @@ class ChatCompletionsAPIMessageTest {
     fun `multi-round reasoning and tool calls should be correctly ordered`() {
         // Scenario: Assistant message with multiple rounds of reasoning and tool calls
         // [Reasoning1, Text1, Tool1(executed), Reasoning2, Text2, Tool2(executed), Text3]
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
-                UIMessagePart.Text("I'll search for information"),
-                createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result 1"),
-                UIMessagePart.Reasoning(reasoning = "Now I need to calculate..."),
-                UIMessagePart.Text("Let me calculate that"),
-                createExecutedTool("call_2", "calculate", """{"expr": "1+1"}""", "2"),
-                UIMessagePart.Text("The final answer is 2")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
+                        UIMessagePart.Text("I'll search for information"),
+                        createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result 1"),
+                        UIMessagePart.Reasoning(reasoning = "Now I need to calculate..."),
+                        UIMessagePart.Text("Let me calculate that"),
+                        createExecutedTool("call_2", "calculate", """{"expr": "1+1"}""", "2"),
+                        UIMessagePart.Text("The final answer is 2"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("What is 1+1?"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("What is 1+1?"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -97,7 +100,17 @@ class ChatCompletionsAPIMessageTest {
         assertTrue("First assistant message should have tool_calls", assistant1.containsKey("tool_calls"))
         val toolCalls1 = assistant1["tool_calls"]?.jsonArray
         assertEquals(1, toolCalls1?.size)
-        assertEquals("search", toolCalls1?.get(0)?.jsonObject?.get("function")?.jsonObject?.get("name")?.jsonPrimitive?.content)
+        assertEquals(
+            "search",
+            toolCalls1
+                ?.get(0)
+                ?.jsonObject
+                ?.get("function")
+                ?.jsonObject
+                ?.get("name")
+                ?.jsonPrimitive
+                ?.content,
+        )
 
         // Verify first tool result
         val toolResult1 = result[2].jsonObject
@@ -110,7 +123,17 @@ class ChatCompletionsAPIMessageTest {
         assertTrue("Second assistant message should have tool_calls", assistant2.containsKey("tool_calls"))
         val toolCalls2 = assistant2["tool_calls"]?.jsonArray
         assertEquals(1, toolCalls2?.size)
-        assertEquals("calculate", toolCalls2?.get(0)?.jsonObject?.get("function")?.jsonObject?.get("name")?.jsonPrimitive?.content)
+        assertEquals(
+            "calculate",
+            toolCalls2
+                ?.get(0)
+                ?.jsonObject
+                ?.get("function")
+                ?.jsonObject
+                ?.get("name")
+                ?.jsonPrimitive
+                ?.content,
+        )
 
         // Verify second tool result
         val toolResult2 = result[4].jsonObject
@@ -121,30 +144,42 @@ class ChatCompletionsAPIMessageTest {
         val assistant3 = result[5].jsonObject
         assertEquals("assistant", assistant3["role"]?.jsonPrimitive?.content)
         val content = assistant3["content"]
-        assertTrue("Final assistant content should contain 'final answer'",
+        assertTrue(
+            "Final assistant content should contain 'final answer'",
             content?.jsonPrimitive?.content?.contains("final answer") == true ||
-            (content is JsonArray && content.any { it.jsonObject["text"]?.jsonPrimitive?.content?.contains("final answer") == true })
+                (
+                    content is JsonArray &&
+                        content.any {
+                            it.jsonObject["text"]
+                                ?.jsonPrimitive
+                                ?.content
+                                ?.contains("final answer") == true
+                        }
+                ),
         )
     }
 
     @Test
     fun `parallel tool calls should be grouped together`() {
         // Scenario: Multiple tools called in parallel
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Let me search multiple sources"),
-                createExecutedTool("call_1", "search_web", """{"query": "test1"}""", "Result 1"),
-                createExecutedTool("call_2", "search_docs", """{"query": "test2"}""", "Result 2"),
-                createExecutedTool("call_3", "search_wiki", """{"query": "test3"}""", "Result 3"),
-                UIMessagePart.Text("Combined results show...")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Let me search multiple sources"),
+                        createExecutedTool("call_1", "search_web", """{"query": "test1"}""", "Result 1"),
+                        createExecutedTool("call_2", "search_docs", """{"query": "test2"}""", "Result 2"),
+                        createExecutedTool("call_3", "search_wiki", """{"query": "test3"}""", "Result 3"),
+                        UIMessagePart.Text("Combined results show..."),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Search everything"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Search everything"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -157,9 +192,14 @@ class ChatCompletionsAPIMessageTest {
                 if (toolCalls != null && toolCalls.size == 3) {
                     foundAssistantWithMultipleTools = true
                     // Verify all three tool calls are present
-                    val toolNames = toolCalls.map {
-                        it.jsonObject["function"]?.jsonObject?.get("name")?.jsonPrimitive?.content
-                    }
+                    val toolNames =
+                        toolCalls.map {
+                            it.jsonObject["function"]
+                                ?.jsonObject
+                                ?.get("name")
+                                ?.jsonPrimitive
+                                ?.content
+                        }
                     assertTrue(toolNames.contains("search_web"))
                     assertTrue(toolNames.contains("search_docs"))
                     assertTrue(toolNames.contains("search_wiki"))
@@ -170,9 +210,10 @@ class ChatCompletionsAPIMessageTest {
         assertTrue("Should have assistant message with 3 parallel tool calls", foundAssistantWithMultipleTools)
 
         // Verify 3 separate tool result messages
-        val toolResults = result.filter {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "tool"
-        }
+        val toolResults =
+            result.filter {
+                it.jsonObject["role"]?.jsonPrimitive?.content == "tool"
+            }
         assertEquals(3, toolResults.size)
     }
 
@@ -182,15 +223,20 @@ class ChatCompletionsAPIMessageTest {
 
         val result = invokeBuildMessages(messages, includeHistoryReasoning = true)
 
-        val assistantMessages = result.filter {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
-        }
+        val assistantMessages =
+            result.filter {
+                it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
+            }
 
         assertEquals(2, assistantMessages.size)
-        assertEquals("Initial thinking",
-            assistantMessages[0].jsonObject["reasoning_content"]?.jsonPrimitive?.content)
-        assertEquals("Final thinking",
-            assistantMessages[1].jsonObject["reasoning_content"]?.jsonPrimitive?.content)
+        assertEquals(
+            "Initial thinking",
+            assistantMessages[0].jsonObject["reasoning_content"]?.jsonPrimitive?.content,
+        )
+        assertEquals(
+            "Final thinking",
+            assistantMessages[1].jsonObject["reasoning_content"]?.jsonPrimitive?.content,
+        )
     }
 
     @Test
@@ -199,55 +245,65 @@ class ChatCompletionsAPIMessageTest {
 
         val result = invokeBuildMessages(messages, includeHistoryReasoning = false)
 
-        val assistantMessages = result.filter {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
-        }
+        val assistantMessages =
+            result.filter {
+                it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
+            }
 
         assertEquals(2, assistantMessages.size)
         assistantMessages.forEach { msg ->
-            assertFalse("Assistant should not have reasoning_content",
-                msg.jsonObject.containsKey("reasoning_content"))
+            assertFalse(
+                "Assistant should not have reasoning_content",
+                msg.jsonObject.containsKey("reasoning_content"),
+            )
         }
     }
 
     private fun createMultiRoundReasoningMessages(): List<UIMessage> {
-        val assistant1 = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Initial thinking"),
-                UIMessagePart.Text("Initial response")
+        val assistant1 =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Initial thinking"),
+                        UIMessagePart.Text("Initial response"),
+                    ),
             )
-        )
-        val assistant2 = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Final thinking"),
-                UIMessagePart.Text("Final response")
+        val assistant2 =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Final thinking"),
+                        UIMessagePart.Text("Final response"),
+                    ),
             )
-        )
         return listOf(
             UIMessage.user("First question"),
             assistant1,
             UIMessage.user("Second question"),
-            assistant2
+            assistant2,
         )
     }
 
     @Test
     fun `tool_call followed by tool result should maintain correct order`() {
         // Verify the pattern: assistant (with tool_calls) -> tool (result)
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Calling tool"),
-                createExecutedTool("call_abc", "my_tool", """{"param": "value"}""", "Tool output")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Calling tool"),
+                        createExecutedTool("call_abc", "my_tool", """{"param": "value"}""", "Tool output"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Use a tool"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Use a tool"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -273,22 +329,24 @@ class ChatCompletionsAPIMessageTest {
     @Test
     fun `complex multi-round conversation with interleaved reasoning and tools`() {
         // Complex scenario simulating agent conversation
-        val messages = listOf(
-            UIMessage.user("Plan and execute a task"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Reasoning(reasoning = "Step 1: Analyze the task"),
-                    UIMessagePart.Text("First, I'll gather information"),
-                    createExecutedTool("call_1", "gather_info", "{}", "Info gathered"),
-                    UIMessagePart.Reasoning(reasoning = "Step 2: Process the information"),
-                    UIMessagePart.Text("Now processing..."),
-                    createExecutedTool("call_2", "process", "{}", "Processed"),
-                    UIMessagePart.Reasoning(reasoning = "Step 3: Generate output"),
-                    UIMessagePart.Text("Here is the result")
-                )
+        val messages =
+            listOf(
+                UIMessage.user("Plan and execute a task"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Reasoning(reasoning = "Step 1: Analyze the task"),
+                            UIMessagePart.Text("First, I'll gather information"),
+                            createExecutedTool("call_1", "gather_info", "{}", "Info gathered"),
+                            UIMessagePart.Reasoning(reasoning = "Step 2: Process the information"),
+                            UIMessagePart.Text("Now processing..."),
+                            createExecutedTool("call_2", "process", "{}", "Processed"),
+                            UIMessagePart.Reasoning(reasoning = "Step 3: Generate output"),
+                            UIMessagePart.Text("Here is the result"),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildMessages(messages)
 
@@ -315,25 +373,30 @@ class ChatCompletionsAPIMessageTest {
             if (msg["role"]?.jsonPrimitive?.content == "assistant" && msg.containsKey("tool_calls")) {
                 assertTrue("Index should not be last", i < result.size - 1)
                 val nextMsg = result[i + 1].jsonObject
-                assertEquals("Tool result should follow tool_calls",
-                    "tool", nextMsg["role"]?.jsonPrimitive?.content)
+                assertEquals(
+                    "Tool result should follow tool_calls",
+                    "tool",
+                    nextMsg["role"]?.jsonPrimitive?.content,
+                )
             }
         }
     }
 
     @Test
     fun `assistant with only reasoning and empty text is dropped when includeHistoryReasoning is false`() {
-        val messages = listOf(
-            UIMessage.user("Question 1"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Reasoning(reasoning = "thinking"),
-                    UIMessagePart.Text("")
-                )
-            ),
-            UIMessage.user("Question 2")
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Question 1"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Reasoning(reasoning = "thinking"),
+                            UIMessagePart.Text(""),
+                        ),
+                ),
+                UIMessage.user("Question 2"),
+            )
 
         val result = invokeBuildMessages(messages, includeHistoryReasoning = false)
 
@@ -344,17 +407,19 @@ class ChatCompletionsAPIMessageTest {
 
     @Test
     fun `assistant with only reasoning and empty text should be kept when history reasoning enabled`() {
-        val messages = listOf(
-            UIMessage.user("Question 1"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Reasoning(reasoning = "thinking"),
-                    UIMessagePart.Text("")
-                )
-            ),
-            UIMessage.user("Question 2")
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Question 1"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Reasoning(reasoning = "thinking"),
+                            UIMessagePart.Text(""),
+                        ),
+                ),
+                UIMessage.user("Question 2"),
+            )
 
         val result = invokeBuildMessages(messages, includeHistoryReasoning = true)
 
@@ -365,16 +430,18 @@ class ChatCompletionsAPIMessageTest {
 
     @Test
     fun `latest assistant with reasoning and empty text should keep reasoning content`() {
-        val messages = listOf(
-            UIMessage.user("Question 1"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Reasoning(reasoning = "thinking"),
-                    UIMessagePart.Text("")
-                )
+        val messages =
+            listOf(
+                UIMessage.user("Question 1"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Reasoning(reasoning = "thinking"),
+                            UIMessagePart.Text(""),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildMessages(messages)
 
@@ -391,13 +458,12 @@ class ChatCompletionsAPIMessageTest {
         callId: String,
         name: String,
         input: String,
-        output: String
-    ): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+        output: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = input,
-            output = listOf(UIMessagePart.Text(output))
+            output = listOf(UIMessagePart.Text(output)),
         )
-    }
 }

@@ -23,10 +23,11 @@ class RootfsPathResolutionTest {
         val uploadDir = tempFolder.newFolder("upload")
         return WorkspaceManager(
             baseDir = tempFolder.newFolder("workspaces"),
-            bindMounts = listOf(
-                WorkspaceBindMount(source = skillsDir, target = "/skills"),
-                WorkspaceBindMount(source = uploadDir, target = "/upload"),
-            ),
+            bindMounts =
+                listOf(
+                    WorkspaceBindMount(source = skillsDir, target = "/skills"),
+                    WorkspaceBindMount(source = uploadDir, target = "/upload"),
+                ),
         ).also { it.ensureWorkspace(root) }
     }
 
@@ -47,13 +48,15 @@ class RootfsPathResolutionTest {
     fun bindMountTargetDoesNotMatchLongerSiblingPrefix() {
         val skills = tempFolder.newFolder("skills-src")
         val skillsets = tempFolder.newFolder("skillsets-src")
-        val manager = WorkspaceManager(
-            baseDir = tempFolder.newFolder("workspaces"),
-            bindMounts = listOf(
-                WorkspaceBindMount(source = skills, target = "/skills"),
-                WorkspaceBindMount(source = skillsets, target = "/skillsets"),
-            ),
-        ).also { it.ensureWorkspace(root) }
+        val manager =
+            WorkspaceManager(
+                baseDir = tempFolder.newFolder("workspaces"),
+                bindMounts =
+                    listOf(
+                        WorkspaceBindMount(source = skills, target = "/skills"),
+                        WorkspaceBindMount(source = skillsets, target = "/skillsets"),
+                    ),
+            ).also { it.ensureWorkspace(root) }
 
         assertEquals(skills, manager.resolveRootfsPath(root, "/skills/a.md").rootDir)
         assertEquals(skillsets, manager.resolveRootfsPath(root, "/skillsets/a.md").rootDir)
@@ -89,9 +92,10 @@ class RootfsPathResolutionTest {
         manager = createManager()
         tempFolder.newFile("secret.txt").writeText("secret")
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
-            manager.rootfsFileSize(root, "/skills/../secret.txt")
-        }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                manager.rootfsFileSize(root, "/skills/../secret.txt")
+            }
         assertTrue(error.message!!.contains("escapes workspace root"))
     }
 
@@ -99,9 +103,10 @@ class RootfsPathResolutionTest {
     fun kernelFilesystemPathIsRejectedWithHint() {
         manager = createManager()
 
-        val error = assertThrows(IllegalStateException::class.java) {
-            manager.rootfsFileSize(root, "/proc/version")
-        }
+        val error =
+            assertThrows(IllegalStateException::class.java) {
+                manager.rootfsFileSize(root, "/proc/version")
+            }
         assertTrue(error.message!!.contains("workspace_shell"))
     }
 
@@ -109,9 +114,10 @@ class RootfsPathResolutionTest {
     fun missingFileReportsOriginalAbsolutePath() {
         manager = createManager()
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
-            manager.rootfsFileSize(root, "/skills/missing/SKILL.md")
-        }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                manager.rootfsFileSize(root, "/skills/missing/SKILL.md")
+            }
         assertEquals("File does not exist: /skills/missing/SKILL.md", error.message)
     }
 
@@ -120,9 +126,10 @@ class RootfsPathResolutionTest {
         manager = createManager()
         File(skillsDir, "issue-1561").mkdirs()
 
-        val error = assertThrows(IllegalArgumentException::class.java) {
-            manager.rootfsFileSize(root, "/skills/issue-1561")
-        }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                manager.rootfsFileSize(root, "/skills/issue-1561")
+            }
         assertEquals("Path is not a file: /skills/issue-1561", error.message)
     }
 }

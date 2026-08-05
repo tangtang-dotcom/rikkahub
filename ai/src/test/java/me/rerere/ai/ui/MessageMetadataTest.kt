@@ -15,11 +15,11 @@ import org.junit.Test
  * 验证类型化 metadata 与旧版手写 JsonObject 数据的双向兼容
  */
 class MessageMetadataTest {
-
-    private fun reasoningWith(metadata: JsonObject?) = UIMessagePart.Reasoning(
-        reasoning = "thinking...",
-        metadata = metadata,
-    )
+    private fun reasoningWith(metadata: JsonObject?) =
+        UIMessagePart.Reasoning(
+            reasoning = "thinking...",
+            metadata = metadata,
+        )
 
     // ===== 读取旧数据(各 provider 旧代码写入的确切格式) =====
 
@@ -33,10 +33,13 @@ class MessageMetadataTest {
     @Test
     fun `parses legacy openai metadata`() {
         // 旧代码: buildJsonObject { put("encrypted_content", ...); put("reasoning_id", ...) }
-        val part = reasoningWith(buildJsonObject {
-            put("encrypted_content", "enc-xyz")
-            put("reasoning_id", "rs_123")
-        })
+        val part =
+            reasoningWith(
+                buildJsonObject {
+                    put("encrypted_content", "enc-xyz")
+                    put("reasoning_id", "rs_123")
+                },
+            )
         val meta = part.metadataAs<OpenAIReasoningMetadata>()
         assertEquals("rs_123", meta?.reasoningId)
         assertEquals("enc-xyz", meta?.encryptedContent)
@@ -45,10 +48,13 @@ class MessageMetadataTest {
     @Test
     fun `parses legacy openai metadata with json null encrypted content`() {
         // 旧代码 put("encrypted_content", null) 会写入 JsonNull
-        val part = reasoningWith(buildJsonObject {
-            put("encrypted_content", null as String?)
-            put("reasoning_id", "rs_123")
-        })
+        val part =
+            reasoningWith(
+                buildJsonObject {
+                    put("encrypted_content", null as String?)
+                    put("reasoning_id", "rs_123")
+                },
+            )
         val meta = part.metadataAs<OpenAIReasoningMetadata>()
         assertEquals("rs_123", meta?.reasoningId)
         assertNull(meta?.encryptedContent)
@@ -74,19 +80,25 @@ class MessageMetadataTest {
     @Test
     fun `cross provider metadata does not interfere`() {
         // 切换 provider 后, OpenAI 写入的 metadata 被 Claude 解析: 不抛异常, signature 为 null
-        val part = reasoningWith(buildJsonObject {
-            put("encrypted_content", "enc-xyz")
-            put("reasoning_id", "rs_123")
-        })
+        val part =
+            reasoningWith(
+                buildJsonObject {
+                    put("encrypted_content", "enc-xyz")
+                    put("reasoning_id", "rs_123")
+                },
+            )
         assertNull(part.metadataAs<ClaudeReasoningMetadata>()?.signature)
     }
 
     @Test
     fun `malformed metadata returns null instead of throwing`() {
         // 类型不匹配 (signature 是 object 而非 string)
-        val part = reasoningWith(buildJsonObject {
-            put("signature", buildJsonObject { put("nested", "value") })
-        })
+        val part =
+            reasoningWith(
+                buildJsonObject {
+                    put("signature", buildJsonObject { put("nested", "value") })
+                },
+            )
         assertNull(part.metadataAs<ClaudeReasoningMetadata>())
     }
 
@@ -116,9 +128,10 @@ class MessageMetadataTest {
     fun `metadata round trip via persistence is stable`() {
         // 模拟持久化: 部件序列化为 JSON 字符串再读回, metadata 不丢失不变形
         val json = Json { ignoreUnknownKeys = true }
-        val part: UIMessagePart = reasoningWith(
-            OpenAIReasoningMetadata(reasoningId = "rs_1", encryptedContent = "enc").toMetadata()
-        )
+        val part: UIMessagePart =
+            reasoningWith(
+                OpenAIReasoningMetadata(reasoningId = "rs_1", encryptedContent = "enc").toMetadata(),
+            )
         val restored = json.decodeFromString<UIMessagePart>(json.encodeToString(part))
         val meta = restored.metadataAs<OpenAIReasoningMetadata>()
         assertEquals("rs_1", meta?.reasoningId)
@@ -136,10 +149,11 @@ class MessageMetadataTest {
     @Test
     fun `diff metadata round trip`() {
         val diff = "--- a/file.txt\n+++ b/file.txt\n@@ -1,1 +1,1 @@\n-old\n+new"
-        val part = UIMessagePart.Text(
-            text = "{}",
-            metadata = DiffMetadata(diff = diff).toMetadata(),
-        )
+        val part =
+            UIMessagePart.Text(
+                text = "{}",
+                metadata = DiffMetadata(diff = diff).toMetadata(),
+            )
         assertEquals(diff, part.metadataAs<DiffMetadata>()?.diff)
     }
 }

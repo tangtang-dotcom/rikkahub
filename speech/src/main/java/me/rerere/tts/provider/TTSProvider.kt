@@ -9,7 +9,7 @@ interface TTSProvider<T : TTSProviderSetting> {
     fun generateSpeech(
         context: Context,
         providerSetting: T,
-        request: TTSRequest
+        request: TTSRequest,
     ): Flow<AudioChunk>
 
     /**

@@ -12,7 +12,10 @@ internal fun ensureParentDir(file: File) {
     }
 }
 
-internal fun atomicWrite(file: File, content: String) {
+internal fun atomicWrite(
+    file: File,
+    content: String,
+) {
     ensureParentDir(file)
     val tmp = File(file.parentFile, file.name + ".tmp")
     tmp.writeText(content)
@@ -32,4 +35,3 @@ internal fun atomicWrite(file: File, content: String) {
         }
     }
 }
-

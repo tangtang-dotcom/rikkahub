@@ -75,29 +75,30 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
 
     val importSuccessMsg = stringResource(R.string.setting_display_page_custom_font_import_success)
     val importFailedMsg = stringResource(R.string.setting_display_page_custom_font_import_failed)
-    val fontPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        scope.launch {
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    importCustomChatFontInternal(context, uri)
-                }
-            }.onSuccess { importedFont ->
-                updateDisplaySetting(
-                    displaySetting.copy(
-                        chatFontFamily = ChatFontFamily.CUSTOM,
-                        chatCustomFontPath = importedFont.relativePath,
-                        chatCustomFontName = importedFont.displayName,
+    val fontPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            scope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        importCustomChatFontInternal(context, uri)
+                    }
+                }.onSuccess { importedFont ->
+                    updateDisplaySetting(
+                        displaySetting.copy(
+                            chatFontFamily = ChatFontFamily.CUSTOM,
+                            chatCustomFontPath = importedFont.relativePath,
+                            chatCustomFontName = importedFont.displayName,
+                        ),
                     )
-                )
-                toaster.show(importSuccessMsg, type = ToastType.Success)
-            }.onFailure { error ->
-                toaster.show(importFailedMsg.format(error.message.orEmpty()), type = ToastType.Error)
+                    toaster.show(importSuccessMsg, type = ToastType.Success)
+                }.onFailure { error ->
+                    toaster.show(importFailedMsg.format(error.message.orEmpty()), type = ToastType.Error)
+                }
             }
         }
-    }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -111,16 +112,16 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { contentPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding + PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 CardGroup(
@@ -128,26 +129,42 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                     title = { Text(stringResource(R.string.setting_page_message_display_settings)) },
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_user_avatar_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_user_avatar_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_user_avatar_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_user_avatar_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showUserAvatar,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showUserAvatar = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_assistant_bubble_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_assistant_bubble_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_assistant_bubble_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_assistant_bubble_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showAssistantBubble,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showAssistantBubble = it))
-                                }
+                                },
                             )
                         },
                     )
@@ -166,121 +183,180 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                     },
                                     valueRange = 0.1f..1.0f,
                                     steps = 8,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                                 Text(text = "${(displaySetting.bubbleOpacity * 100).toInt()}%")
                             }
-                        }
+                        },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_chat_list_model_icon_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_chat_list_model_icon_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_chat_list_model_icon_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_chat_list_model_icon_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showModelIcon,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showModelIcon = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_display_page_show_model_name_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_model_name_desc)) },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_model_name_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showModelName,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showModelName = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_datetime_in_message_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_datetime_in_message_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_datetime_in_message_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_datetime_in_message_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showDateTimeInMessage,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showDateTimeInMessage = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_token_usage_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_token_usage_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_token_usage_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_token_usage_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showTokenUsage,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showTokenUsage = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_thinking_content_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_thinking_content_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_thinking_content_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_thinking_content_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showThinkingContent,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showThinkingContent = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_auto_collapse_thinking_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_auto_collapse_thinking_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.autoCloseThinking,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(autoCloseThinking = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_enable_latex_rendering_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_enable_latex_rendering_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_enable_latex_rendering_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_enable_latex_rendering_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableLatexRendering,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(enableLatexRendering = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_chat_font_family_title)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_chat_font_family_title),
+                            )
+                        },
                         supportingContent = {
                             Select(
                                 options = ChatFontFamily.entries,
                                 selectedOption = displaySetting.chatFontFamily,
                                 onOptionSelected = { family ->
-                                    if (family == ChatFontFamily.CUSTOM && displaySetting.chatCustomFontPath.isBlank()) {
+                                    if (family == ChatFontFamily.CUSTOM &&
+                                        displaySetting.chatCustomFontPath.isBlank()
+                                    ) {
                                         fontPickerLauncher.launch(CustomFontMimeTypesUI)
                                     } else {
                                         updateDisplaySetting(displaySetting.copy(chatFontFamily = family))
                                     }
                                 },
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .fillMaxWidth(),
+                                modifier =
+                                    Modifier
+                                        .padding(top = 4.dp)
+                                        .fillMaxWidth(),
                                 optionToString = { it.labelUI() },
                                 optionLeading = { family ->
                                     Text(
                                         text = "Aa",
                                         fontFamily = family.toFontFamilyUI(chatFontFamily),
                                     )
-                                }
+                                },
                             )
-                        }
+                        },
                     )
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_display_page_custom_font_title)) },
@@ -290,19 +366,20 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                     displaySetting.chatCustomFontName
                                 } else {
                                     stringResource(R.string.setting_display_page_custom_font_not_imported)
-                                }
+                                },
                             )
                         },
                         trailingContent = {
                             Row {
                                 IconButton(
-                                    onClick = { fontPickerLauncher.launch(CustomFontMimeTypesUI) }
+                                    onClick = { fontPickerLauncher.launch(CustomFontMimeTypesUI) },
                                 ) {
                                     Icon(
                                         HugeIcons.FileImport,
-                                        contentDescription = stringResource(
-                                            R.string.setting_display_page_custom_font_import
-                                        )
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.setting_display_page_custom_font_import,
+                                            ),
                                     )
                                 }
                                 if (displaySetting.chatCustomFontPath.isNotBlank()) {
@@ -314,20 +391,21 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                                     chatFontFamily = ChatFontFamily.DEFAULT,
                                                     chatCustomFontPath = "",
                                                     chatCustomFontName = "",
-                                                )
+                                                ),
                                             )
-                                        }
+                                        },
                                     ) {
                                         Icon(
                                             HugeIcons.Delete02,
-                                            contentDescription = stringResource(
-                                                R.string.setting_display_page_custom_font_remove
-                                            )
+                                            contentDescription =
+                                                stringResource(
+                                                    R.string.setting_display_page_custom_font_remove,
+                                                ),
                                         )
                                     }
                                 }
                             }
-                        }
+                        },
                     )
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_display_page_font_size_title)) },
@@ -345,20 +423,22 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                         },
                                         valueRange = 0.5f..2f,
                                         steps = 11,
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f),
                                     )
                                     Text(text = "${(displaySetting.fontSizeRatio * 100).toInt()}%")
                                 }
                                 MarkdownBlock(
                                     content = stringResource(R.string.setting_display_page_font_size_preview),
-                                    style = LocalTextStyle.current.copy(
-                                        fontSize = LocalTextStyle.current.fontSize * displaySetting.fontSizeRatio,
-                                        lineHeight = LocalTextStyle.current.lineHeight * displaySetting.fontSizeRatio,
-                                        fontFamily = chatFontFamily
-                                    )
+                                    style =
+                                        LocalTextStyle.current.copy(
+                                            fontSize = LocalTextStyle.current.fontSize * displaySetting.fontSizeRatio,
+                                            lineHeight =
+                                                LocalTextStyle.current.lineHeight * displaySetting.fontSizeRatio,
+                                            fontFamily = chatFontFamily,
+                                        ),
                                 )
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -369,38 +449,62 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                     title = { Text(stringResource(R.string.setting_page_code_display_settings)) },
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_code_block_auto_wrap_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_code_block_auto_wrap_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.codeBlockAutoWrap,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(codeBlockAutoWrap = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_code_block_auto_collapse_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_code_block_auto_collapse_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.codeBlockAutoCollapse,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(codeBlockAutoCollapse = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_line_numbers_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_line_numbers_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_line_numbers_title),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_show_line_numbers_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showLineNumbers,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showLineNumbers = it))
-                                }
+                                },
                             )
                         },
                     )
@@ -410,14 +514,15 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
     }
 }
 
-private val CustomFontMimeTypesUI = arrayOf(
-    "font/*",
-    "application/x-font-ttf",
-    "application/x-font-otf",
-    "application/vnd.ms-opentype",
-    "application/octet-stream",
-    "*/*",
-)
+private val CustomFontMimeTypesUI =
+    arrayOf(
+        "font/*",
+        "application/x-font-ttf",
+        "application/x-font-otf",
+        "application/vnd.ms-opentype",
+        "application/octet-stream",
+        "*/*",
+    )
 
 private val CustomFontExtensionsUI = setOf("ttf", "otf", "ttc")
 
@@ -427,26 +532,33 @@ private data class ImportedChatFontUI(
 )
 
 @Composable
-private fun ChatFontFamily.labelUI(): String = when (this) {
-    ChatFontFamily.DEFAULT -> stringResource(R.string.setting_display_page_chat_font_family_default)
-    ChatFontFamily.SERIF -> stringResource(R.string.setting_display_page_chat_font_family_serif)
-    ChatFontFamily.MONOSPACE -> stringResource(R.string.setting_display_page_chat_font_family_monospace)
-    ChatFontFamily.CUSTOM -> stringResource(R.string.setting_display_page_chat_font_family_custom)
-}
+private fun ChatFontFamily.labelUI(): String =
+    when (this) {
+        ChatFontFamily.DEFAULT -> stringResource(R.string.setting_display_page_chat_font_family_default)
+        ChatFontFamily.SERIF -> stringResource(R.string.setting_display_page_chat_font_family_serif)
+        ChatFontFamily.MONOSPACE -> stringResource(R.string.setting_display_page_chat_font_family_monospace)
+        ChatFontFamily.CUSTOM -> stringResource(R.string.setting_display_page_chat_font_family_custom)
+    }
 
-private fun ChatFontFamily.toFontFamilyUI(customFontFamily: FontFamily): FontFamily = when (this) {
-    ChatFontFamily.DEFAULT -> FontFamily.Default
-    ChatFontFamily.SERIF -> FontFamily.Serif
-    ChatFontFamily.MONOSPACE -> FontFamily.Monospace
-    ChatFontFamily.CUSTOM -> customFontFamily
-}
+private fun ChatFontFamily.toFontFamilyUI(customFontFamily: FontFamily): FontFamily =
+    when (this) {
+        ChatFontFamily.DEFAULT -> FontFamily.Default
+        ChatFontFamily.SERIF -> FontFamily.Serif
+        ChatFontFamily.MONOSPACE -> FontFamily.Monospace
+        ChatFontFamily.CUSTOM -> customFontFamily
+    }
 
-private fun importCustomChatFontInternal(context: Context, uri: Uri): ImportedChatFontUI {
+private fun importCustomChatFontInternal(
+    context: Context,
+    uri: Uri,
+): ImportedChatFontUI {
     val displayName = FileUtils.getFileNameFromUri(context, uri)?.takeIf { it.isNotBlank() } ?: "custom_font"
-    val extension = displayName.substringAfterLast('.', "")
-        .lowercase()
-        .takeIf { it in CustomFontExtensionsUI }
-        ?: "ttf"
+    val extension =
+        displayName
+            .substringAfterLast('.', "")
+            .lowercase()
+            .takeIf { it in CustomFontExtensionsUI }
+            ?: "ttf"
     val fontDir = File(context.filesDir, FileFolders.FONTS).apply { mkdirs() }
     val targetFile = File(fontDir, "chat_font.${System.currentTimeMillis()}.$extension")
     val tempFile = File(fontDir, "chat_font_import.tmp")
@@ -471,18 +583,27 @@ private fun importCustomChatFontInternal(context: Context, uri: Uri): ImportedCh
         throw error
     }
 
-    val relativePath = FileUtils.getRelativePathInFilesDir(context.filesDir, targetFile)
-        ?: "${FileFolders.FONTS}/${targetFile.name}"
+    val relativePath =
+        FileUtils.getRelativePathInFilesDir(context.filesDir, targetFile)
+            ?: "${FileFolders.FONTS}/${targetFile.name}"
     return ImportedChatFontUI(relativePath = relativePath, displayName = displayName)
 }
 
-private fun replaceCustomChatFontInternal(fontDir: File, tempFile: File, targetFile: File) {
-    val existingFiles = fontDir.listFiles { file ->
-        file.isFile && file.name.startsWith("chat_font.") && file != tempFile
-    }?.toList().orEmpty()
-    val backups = existingFiles.map { file ->
-        file to File(fontDir, "previous_${file.name}").also { it.delete() }
-    }
+private fun replaceCustomChatFontInternal(
+    fontDir: File,
+    tempFile: File,
+    targetFile: File,
+) {
+    val existingFiles =
+        fontDir
+            .listFiles { file ->
+                file.isFile && file.name.startsWith("chat_font.") && file != tempFile
+            }?.toList()
+            .orEmpty()
+    val backups =
+        existingFiles.map { file ->
+            file to File(fontDir, "previous_${file.name}").also { it.delete() }
+        }
 
     try {
         backups.forEach { (file, backup) ->
@@ -501,7 +622,10 @@ private fun replaceCustomChatFontInternal(fontDir: File, tempFile: File, targetF
     }
 }
 
-private fun deleteCustomChatFontInternal(context: Context, relativePath: String) {
+private fun deleteCustomChatFontInternal(
+    context: Context,
+    relativePath: String,
+) {
     val filesDir = runCatching { context.filesDir.canonicalFile }.getOrNull() ?: return
     val fontFile = runCatching { File(filesDir, relativePath).canonicalFile }.getOrNull() ?: return
     if (fontFile.path.startsWith("${filesDir.path}${File.separator}")) {

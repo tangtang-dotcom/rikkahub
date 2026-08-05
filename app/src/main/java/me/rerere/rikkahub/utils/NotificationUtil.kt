@@ -37,16 +37,14 @@ class NotificationConfig {
 }
 
 object NotificationUtil {
-
     /**
      * 检查是否有通知权限
      */
-    fun hasNotificationPermission(context: Context): Boolean {
-        return ActivityCompat.checkSelfPermission(
+    fun hasNotificationPermission(context: Context): Boolean =
+        ActivityCompat.checkSelfPermission(
             context,
-            Manifest.permission.POST_NOTIFICATIONS
+            Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
-    }
 
     /**
      * 使用 DSL 风格创建并发送通知
@@ -62,7 +60,7 @@ object NotificationUtil {
         context: Context,
         channelId: String,
         notificationId: Int,
-        config: NotificationConfig.() -> Unit
+        config: NotificationConfig.() -> Unit,
     ): Boolean {
         if (!hasNotificationPermission(context)) {
             return false
@@ -81,9 +79,9 @@ object NotificationUtil {
     fun buildNotification(
         context: Context,
         channelId: String,
-        config: NotificationConfig
-    ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(context, channelId).apply {
+        config: NotificationConfig,
+    ): NotificationCompat.Builder =
+        NotificationCompat.Builder(context, channelId).apply {
             setContentTitle(config.title)
             setContentText(config.content)
             setSmallIcon(config.smallIcon)
@@ -114,12 +112,14 @@ object NotificationUtil {
                 setShortCriticalText(config.shortCriticalText!!)
             }
         }
-    }
 
     /**
      * 取消通知
      */
-    fun cancel(context: Context, notificationId: Int) {
+    fun cancel(
+        context: Context,
+        notificationId: Int,
+    ) {
         NotificationManagerCompat.from(context).cancel(notificationId)
     }
 
@@ -137,7 +137,7 @@ object NotificationUtil {
 fun Context.sendNotification(
     channelId: String,
     notificationId: Int,
-    config: NotificationConfig.() -> Unit
+    config: NotificationConfig.() -> Unit,
 ): Boolean = NotificationUtil.notify(this, channelId, notificationId, config)
 
 /**

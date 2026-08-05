@@ -31,70 +31,83 @@ import kotlin.uuid.Uuid
  * status.md.
  */
 
-private fun errEnv(error: String, detail: String): List<UIMessagePart> {
-    val obj = buildJsonObject {
-        put("error", error)
-        put("detail", detail)
-    }
+private fun errEnv(
+    error: String,
+    detail: String,
+): List<UIMessagePart> {
+    val obj =
+        buildJsonObject {
+            put("error", error)
+            put("detail", detail)
+        }
     return listOf(UIMessagePart.Text(obj.toString()))
 }
 
 fun checkTokenUsageTool(
     settingsStore: SettingsStore,
     conversationRepo: ConversationRepository,
-): Tool = Tool(
-    name = "check_token_usage",
-    description = """
-        Read the running input + output token totals (including cached tokens) for a conversation and compare them
-        against the assistant's soft / hard token-budget caps. Use to self-throttle on a
-        long-running task: WARN means slow down or wrap up; OVER_HARD means stop and ask
-        the user before continuing. Returns NO_BUDGET when no caps are configured (the
-        defaults). If conversation_id is omitted, reports against the assistant's current
-        chat. Read-only.
-    """.trimIndent().replace("\n", " "),
-    parameters = {
-        InputSchema.Obj(
-            properties = buildJsonObject {
-                put("conversation_id", buildJsonObject {
-                    put("type", "string")
-                    put("description", "Conversation UUID; omit to use the assistant's current chat.")
-                })
-            },
-            required = emptyList(),
-        )
-    },
-    execute = { args ->
-        val params = args.jsonObject
-        val rawConvId = params["conversation_id"]?.jsonPrimitive?.contentOrNull
-        val settings = settingsStore.settingsFlow.first()
-        val assistant = settings.getCurrentAssistant()
-        val convId = rawConvId?.let { runCatching { Uuid.parse(it) }.getOrNull() }
-        val conv = if (convId != null) {
-            conversationRepo.getConversationById(convId)
-        } else {
-            // No conversation specified: pick the most recent for this assistant.
-            conversationRepo.getRecentConversations(assistant.id, 1).firstOrNull()
-        } ?: return@Tool errEnv(
-            "no_conversation",
-            "no conversation found to compute token usage against"
-        )
-        val snapshot = TokenBudgetTracker.snapshot(
-            conversation = conv,
-            softCap = assistant.tokenBudgetSoftCap,
-            hardCap = assistant.tokenBudgetHardCap,
-        )
-        val payload = buildJsonObject {
-            put("conversation_id", conv.id.toString())
-            put("input_tokens", snapshot.totals.inputTokens)
-            put("output_tokens", snapshot.totals.outputTokens)
-            put("cached_tokens", snapshot.totals.cachedTokens)
-            put("total_tokens", snapshot.totals.totalTokens)
-            put("per_message_max", snapshot.totals.perMessageMax)
-            put("message_count", snapshot.totals.messageCount)
-            if (snapshot.softCap != null) put("soft_cap", snapshot.softCap)
-            if (snapshot.hardCap != null) put("hard_cap", snapshot.hardCap)
-            put("status", snapshot.status.name)
-        }
-        listOf(UIMessagePart.Text(payload.toString()))
-    },
-)
+): Tool =
+    Tool(
+        name = "check_token_usage",
+        description =
+            """
+            Read the running input + output token totals (including cached tokens) for a conversation and compare them
+            against the assistant's soft / hard token-budget caps. Use to self-throttle on a
+            long-running task: WARN means slow down or wrap up; OVER_HARD means stop and ask
+            the user before continuing. Returns NO_BUDGET when no caps are configured (the
+            defaults). If conversation_id is omitted, reports against the assistant's current
+            chat. Read-only.
+            """.trimIndent().replace("\n", " "),
+        parameters = {
+            InputSchema.Obj(
+                properties =
+                    buildJsonObject {
+                        put(
+                            "conversation_id",
+                            buildJsonObject {
+                                put("type", "string")
+                                put("description", "Conversation UUID; omit to use the assistant's current chat.")
+                            },
+                        )
+                    },
+                required = emptyList(),
+            )
+        },
+        execute = { args ->
+            val params = args.jsonObject
+            val rawConvId = params["conversation_id"]?.jsonPrimitive?.contentOrNull
+            val settings = settingsStore.settingsFlow.first()
+            val assistant = settings.getCurrentAssistant()
+            val convId = rawConvId?.let { runCatching { Uuid.parse(it) }.getOrNull() }
+            val conv =
+                if (convId != null) {
+                    conversationRepo.getConversationById(convId)
+                } else {
+                    // No conversation specified: pick the most recent for this assistant.
+                    conversationRepo.getRecentConversations(assistant.id, 1).firstOrNull()
+                } ?: return@Tool errEnv(
+                    "no_conversation",
+                    "no conversation found to compute token usage against",
+                )
+            val snapshot =
+                TokenBudgetTracker.snapshot(
+                    conversation = conv,
+                    softCap = assistant.tokenBudgetSoftCap,
+                    hardCap = assistant.tokenBudgetHardCap,
+                )
+            val payload =
+                buildJsonObject {
+                    put("conversation_id", conv.id.toString())
+                    put("input_tokens", snapshot.totals.inputTokens)
+                    put("output_tokens", snapshot.totals.outputTokens)
+                    put("cached_tokens", snapshot.totals.cachedTokens)
+                    put("total_tokens", snapshot.totals.totalTokens)
+                    put("per_message_max", snapshot.totals.perMessageMax)
+                    put("message_count", snapshot.totals.messageCount)
+                    if (snapshot.softCap != null) put("soft_cap", snapshot.softCap)
+                    if (snapshot.hardCap != null) put("hard_cap", snapshot.hardCap)
+                    put("status", snapshot.status.name)
+                }
+            listOf(UIMessagePart.Text(payload.toString()))
+        },
+    )

@@ -51,69 +51,89 @@ class AssistantDetailVM(
     val settings: StateFlow<Settings> =
         settingsStore.settingsFlow.stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
 
-    val mcpServerConfigs = settingsStore
-        .settingsFlow.map { settings ->
-            settings.mcpServers
-        }.stateIn(
-            scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList()
-        )
+    val mcpServerConfigs =
+        settingsStore
+            .settingsFlow
+            .map { settings ->
+                settings.mcpServers
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList(),
+            )
 
-    val assistant: StateFlow<Assistant> = settingsStore
-        .settingsFlow
-        .map { settings ->
-            settings.assistants.find { it.id == assistantId } ?: Assistant()
-        }.stateIn(
-            scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = Assistant()
-        )
+    val assistant: StateFlow<Assistant> =
+        settingsStore
+            .settingsFlow
+            .map { settings ->
+                settings.assistants.find { it.id == assistantId } ?: Assistant()
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = Assistant(),
+            )
 
-    val memories = assistant
-        .flatMapLatest { currentAssistant ->
-            if (currentAssistant.useGlobalMemory) {
-                memoryRepository.getGlobalMemoriesFlow()
-            } else {
-                memoryRepository.getMemoriesOfAssistantFlow(assistantId.toString())
-            }
-        }
-        .stateIn(
-            scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList()
-        )
+    val memories =
+        assistant
+            .flatMapLatest { currentAssistant ->
+                if (currentAssistant.useGlobalMemory) {
+                    memoryRepository.getGlobalMemoriesFlow()
+                } else {
+                    memoryRepository.getMemoriesOfAssistantFlow(assistantId.toString())
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList(),
+            )
 
-    val providers = settingsStore
-        .settingsFlow
-        .map { settings ->
-            settings.providers
-        }.stateIn(
-            scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList()
-        )
+    val providers =
+        settingsStore
+            .settingsFlow
+            .map { settings ->
+                settings.providers
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList(),
+            )
 
-    val tags = settingsStore
-        .settingsFlow
-        .map { settings ->
-            settings.assistantTags
-        }.stateIn(
-            scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList()
-        )
+    val tags =
+        settingsStore
+            .settingsFlow
+            .map { settings ->
+                settings.assistantTags
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList(),
+            )
 
-    val workspaces: StateFlow<List<WorkspaceEntity>> = workspaceRepository
-        .listFlow()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = emptyList(),
-        )
+    val workspaces: StateFlow<List<WorkspaceEntity>> =
+        workspaceRepository
+            .listFlow()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList(),
+            )
 
-    fun updateTags(tagIds: List<Uuid>, tags: List<Tag>) {
+    fun updateTags(
+        tagIds: List<Uuid>,
+        tags: List<Tag>,
+    ) {
         viewModelScope.launch {
             val settings = settings.value
             settingsStore.update(
-                settings = settings.copy(
-                    assistantTags = tags
-                )
+                settings =
+                    settings.copy(
+                        assistantTags = tags,
+                    ),
             )
             update(
                 assistant.value.copy(
-                    tags = tagIds.toList()
-                )
+                    tags = tagIds.toList(),
+                ),
             )
             Log.d(TAG, "updateTags: ${tagIds.joinToString(",")}")
             cleanupUnusedTags()
@@ -126,24 +146,27 @@ class AssistantDetailVM(
             val validTagIds = settings.assistantTags.map { it.id }.toSet()
 
             // 清理 assistant 中的无效 tag id
-            val cleanedAssistants = settings.assistants.map { assistant ->
-                val validTags = assistant.tags.filter { tagId ->
-                    validTagIds.contains(tagId)
+            val cleanedAssistants =
+                settings.assistants.map { assistant ->
+                    val validTags =
+                        assistant.tags.filter { tagId ->
+                            validTagIds.contains(tagId)
+                        }
+                    if (validTags.size != assistant.tags.size) {
+                        assistant.copy(tags = validTags)
+                    } else {
+                        assistant
+                    }
                 }
-                if (validTags.size != assistant.tags.size) {
-                    assistant.copy(tags = validTags)
-                } else {
-                    assistant
-                }
-            }
 
             // 获取清理后的 assistant 中使用的 tag id
             val usedTagIds = cleanedAssistants.flatMap { it.tags }.toSet()
 
             // 清理未使用的 tags
-            val cleanedTags = settings.assistantTags.filter { tag ->
-                usedTagIds.contains(tag.id)
-            }
+            val cleanedTags =
+                settings.assistantTags.filter { tag ->
+                    usedTagIds.contains(tag.id)
+                }
 
             // 检查是否需要更新
             val needUpdateAssistants = cleanedAssistants != settings.assistants
@@ -151,10 +174,11 @@ class AssistantDetailVM(
 
             if (needUpdateAssistants || needUpdateTags) {
                 settingsStore.update(
-                    settings = settings.copy(
-                        assistants = cleanedAssistants,
-                        assistantTags = cleanedTags
-                    )
+                    settings =
+                        settings.copy(
+                            assistants = cleanedAssistants,
+                            assistantTags = cleanedTags,
+                        ),
                 )
             }
         }
@@ -164,16 +188,19 @@ class AssistantDetailVM(
         viewModelScope.launch {
             val settings = settings.value
             settingsStore.update(
-                settings = settings.copy(
-                    assistants = settings.assistants.map {
-                        if (it.id == assistant.id) {
-                            checkAvatarDelete(old = it, new = assistant) // 删除旧头像
-                            checkBackgroundDelete(old = it, new = assistant) // 删除旧背景
-                            assistant
-                        } else {
-                            it
-                        }
-                    })
+                settings =
+                    settings.copy(
+                        assistants =
+                            settings.assistants.map {
+                                if (it.id == assistant.id) {
+                                    checkAvatarDelete(old = it, new = assistant) // 删除旧头像
+                                    checkBackgroundDelete(old = it, new = assistant) // 删除旧背景
+                                    assistant
+                                } else {
+                                    it
+                                }
+                            },
+                    ),
             )
         }
     }
@@ -191,15 +218,17 @@ class AssistantDetailVM(
     fun updateAssistant(transform: (Assistant) -> Assistant) {
         viewModelScope.launch {
             settingsStore.update { current ->
-                val prior = current.assistants.firstOrNull { it.id == assistantId }
-                    ?: return@update current
+                val prior =
+                    current.assistants.firstOrNull { it.id == assistantId }
+                        ?: return@update current
                 val next = transform(prior)
                 checkAvatarDelete(old = prior, new = next)
                 checkBackgroundDelete(old = prior, new = next)
                 current.copy(
-                    assistants = current.assistants.map {
-                        if (it.id == assistantId) next else it
-                    }
+                    assistants =
+                        current.assistants.map {
+                            if (it.id == assistantId) next else it
+                        },
                 )
             }
         }
@@ -207,14 +236,15 @@ class AssistantDetailVM(
 
     fun addMemory(memory: AssistantMemory) {
         viewModelScope.launch {
-            val memoryAssistantId = if (assistant.value.useGlobalMemory) {
-                MemoryRepository.GLOBAL_MEMORY_ID
-            } else {
-                assistantId.toString()
-            }
+            val memoryAssistantId =
+                if (assistant.value.useGlobalMemory) {
+                    MemoryRepository.GLOBAL_MEMORY_ID
+                } else {
+                    assistantId.toString()
+                }
             memoryRepository.addMemory(
                 assistantId = memoryAssistantId,
-                content = memory.content
+                content = memory.content,
             )
         }
     }
@@ -237,13 +267,19 @@ class AssistantDetailVM(
         }
     }
 
-    fun checkAvatarDelete(old: Assistant, new: Assistant) {
+    fun checkAvatarDelete(
+        old: Assistant,
+        new: Assistant,
+    ) {
         if (old.avatar is Avatar.Image && old.avatar != new.avatar) {
             filesManager.deleteChatFiles(listOf(old.avatar.url.toUri()))
         }
     }
 
-    fun checkBackgroundDelete(old: Assistant, new: Assistant) {
+    fun checkBackgroundDelete(
+        old: Assistant,
+        new: Assistant,
+    ) {
         val oldBackground = old.background
         val newBackground = new.background
 

@@ -25,68 +25,86 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
 
     override fun parameters(options: SearchServiceOptions.CustomJsOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.CustomJsOptions): InputSchema? {
         if (options.scrapeScript.isBlank()) return null
         return InputSchema.Obj(
-            properties = buildJsonObject {
-                put("urls", buildJsonObject {
-                    put("type", "array")
-                    put("description", "urls to scrape")
-                    put("items", buildJsonObject {
-                        put("type", "string")
-                    })
-                })
-            },
-            required = listOf("urls")
+            properties =
+                buildJsonObject {
+                    put(
+                        "urls",
+                        buildJsonObject {
+                            put("type", "array")
+                            put("description", "urls to scrape")
+                            put(
+                                "items",
+                                buildJsonObject {
+                                    put("type", "string")
+                                },
+                            )
+                        },
+                    )
+                },
+            required = listOf("urls"),
         )
     }
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.CustomJsOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val script = serviceOptions.searchScript.ifBlank { error("Search script is empty") }
+        serviceOptions: SearchServiceOptions.CustomJsOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+                val script = serviceOptions.searchScript.ifBlank { error("Search script is empty") }
 
-            val resultJson = executeScript(
-                userScript = script,
-                invocation = "search(${quoteJsString(query)}, ${commonOptions.resultSize})"
-            )
+                val resultJson =
+                    executeScript(
+                        userScript = script,
+                        invocation = "search(${quoteJsString(query)}, ${commonOptions.resultSize})",
+                    )
 
-            json.decodeFromString<SearchResult>(resultJson)
+                json.decodeFromString<SearchResult>(resultJson)
+            }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.CustomJsOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val script = serviceOptions.scrapeScript.ifBlank { error("Scrape script is empty") }
-            val urlsJson = params["urls"]?.toString() ?: error("urls is required")
+        serviceOptions: SearchServiceOptions.CustomJsOptions,
+    ): Result<ScrapedResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val script = serviceOptions.scrapeScript.ifBlank { error("Scrape script is empty") }
+                val urlsJson = params["urls"]?.toString() ?: error("urls is required")
 
-            val resultJson = executeScript(
-                userScript = script,
-                invocation = "scrape($urlsJson)"
-            )
+                val resultJson =
+                    executeScript(
+                        userScript = script,
+                        invocation = "scrape($urlsJson)",
+                    )
 
-            json.decodeFromString<ScrapedResult>(resultJson)
+                json.decodeFromString<ScrapedResult>(resultJson)
+            }
         }
-    }
 
-    private fun executeScript(userScript: String, invocation: String): String {
+    private fun executeScript(
+        userScript: String,
+        invocation: String,
+    ): String {
         val context = QuickJSContext.create()
         try {
             context.injectFetch(httpClient)
@@ -114,5 +132,4 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         sb.append("\"")
         return sb.toString()
     }
-
 }

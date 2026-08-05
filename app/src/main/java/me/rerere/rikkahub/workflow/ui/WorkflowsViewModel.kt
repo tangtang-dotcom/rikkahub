@@ -16,15 +16,22 @@ class WorkflowsViewModel(
     private val repository: WorkflowRepository,
     private val engine: WorkflowEngine,
 ) : ViewModel() {
+    val workflows: StateFlow<List<Loaded>> =
+        repository
+            .observeAll()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val workflows: StateFlow<List<Loaded>> = repository.observeAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    fun setEnabled(id: String, enabled: Boolean) {
+    fun setEnabled(
+        id: String,
+        enabled: Boolean,
+    ) {
         viewModelScope.launch(Dispatchers.IO) { repository.setEnabled(id, enabled) }
     }
 
-    fun delete(id: String, onDone: () -> Unit = {}) {
+    fun delete(
+        id: String,
+        onDone: () -> Unit = {},
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteCascading(id)
             onDone()
@@ -33,8 +40,10 @@ class WorkflowsViewModel(
 
     suspend fun runNow(id: String): WorkflowEngine.FireOutcome = engine.fire(id)
 
-    suspend fun history(id: String, limit: Int = 20): List<WorkflowRun> =
-        repository.lastRuns(id, limit)
+    suspend fun history(
+        id: String,
+        limit: Int = 20,
+    ): List<WorkflowRun> = repository.lastRuns(id, limit)
 
     suspend fun get(id: String): Loaded? = repository.getById(id)
 }

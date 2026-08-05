@@ -12,8 +12,16 @@ import me.rerere.rikkahub.utils.toCssHex
  * - Mermaid diagrams
  * - Syntax highlighting via highlight.js
  */
-fun buildMarkdownPreviewHtml(context: Context, markdown: String, colorScheme: ColorScheme): String {
-    val htmlTemplate = context.assets.open("html/mark.html").bufferedReader().use { it.readText() }
+fun buildMarkdownPreviewHtml(
+    context: Context,
+    markdown: String,
+    colorScheme: ColorScheme,
+): String {
+    val htmlTemplate =
+        context.assets
+            .open("html/mark.html")
+            .bufferedReader()
+            .use { it.readText() }
 
     return htmlTemplate
         .replace("{{MARKDOWN_BASE64}}", markdown.base64Encode())

@@ -27,7 +27,7 @@ class McpOAuthCallbackActivity : ComponentActivity() {
                         state = uri.getQueryParameter("state"),
                         code = uri.getQueryParameter("code"),
                         error = uri.getQueryParameter("error"),
-                    )
+                    ),
                 )
             }
         }

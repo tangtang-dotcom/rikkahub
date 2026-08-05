@@ -42,32 +42,35 @@ internal fun PermissionRationaleDialog(
     onProceed: () -> Unit,
     onCancel: () -> Unit,
     onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Dialog(
         onDismissRequest = onCancel,
     ) {
         Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // 标题图标
                 Icon(
                     imageVector = HugeIcons.AlertCircle,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -78,21 +81,22 @@ internal fun PermissionRationaleDialog(
                     text = stringResource(R.string.permission_diaog_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 说明文字
                 Text(
-                    text = if (hasPermanentlyDenied) {
-                        stringResource(R.string.permission_desc_goto_setting)
-                    } else {
-                        stringResource(R.string.permission_desc_require_permission)
-                    },
+                    text =
+                        if (hasPermanentlyDenied) {
+                            stringResource(R.string.permission_desc_goto_setting)
+                        } else {
+                            stringResource(R.string.permission_desc_require_permission)
+                        },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -100,13 +104,13 @@ internal fun PermissionRationaleDialog(
                 // 权限列表
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(permissions) { permissionInfo ->
                         PermissionItem(
                             permissionInfo = permissionInfo,
                             isPermanentlyDenied = permanentlyDeniedPermissions.contains(permissionInfo),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
@@ -118,18 +122,18 @@ internal fun PermissionRationaleDialog(
                     // 有永久拒绝的权限，只显示前往设置和取消按钮
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         OutlinedButton(
                             onClick = onCancel,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(stringResource(R.string.cancel))
                         }
 
                         Button(
                             onClick = onProceed, // 这里会跳转到设置
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(stringResource(R.string.permission_go_to_settings))
                         }
@@ -138,18 +142,18 @@ internal fun PermissionRationaleDialog(
                     // 没有永久拒绝的权限，显示正常的授权按钮
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         OutlinedButton(
                             onClick = onCancel,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(stringResource(R.string.cancel))
                         }
 
                         Button(
                             onClick = onProceed,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(stringResource(R.string.confirm))
                         }
@@ -171,19 +175,21 @@ private fun PermissionItem(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        shape = RoundedCornerShape(8.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            ),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             // 权限名称
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     ProvideTextStyle(value = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium)) {
@@ -192,36 +198,38 @@ private fun PermissionItem(
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     if (permissionInfo.required) {
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            ),
-                            shape = RoundedCornerShape(4.dp)
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                ),
+                            shape = RoundedCornerShape(4.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.permission_required),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
                     }
 
                     if (isPermanentlyDenied) {
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                            ),
-                            shape = RoundedCornerShape(4.dp)
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                ),
+                            shape = RoundedCornerShape(4.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.permission_permanently_denied),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onError,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
                     }

@@ -48,10 +48,11 @@ class RegexesTest {
 
     @Test
     fun `renumbers backreferences when expressions are joined`() {
-        val joined = rewriteBackreferences(
-            listOf("""(['"]).*?\1""", """(\w)-\1"""),
-            joinWith = "|",
-        )
+        val joined =
+            rewriteBackreferences(
+                listOf("""(['"]).*?\1""", """(\w)-\1"""),
+                joinWith = "|",
+            )
 
         // Each expression gains a wrapping group, so the backreferences shift accordingly.
         assertEquals("""((['"]).*?\2)|((\w)-\4)""", joined)

@@ -73,7 +73,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
@@ -138,7 +138,7 @@ android {
 
 composeCompiler {
     stabilityConfigurationFiles.add(
-        project.layout.projectDirectory.file("compose_compiler_config.conf")
+        project.layout.projectDirectory.file("compose_compiler_config.conf"),
     )
 }
 

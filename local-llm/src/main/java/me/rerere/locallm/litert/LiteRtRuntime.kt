@@ -44,7 +44,10 @@ const val ROLE_ASSISTANT = "assistant"
  * the collision rate negligible; a collision would only cause a (correct) cold reload, never
  * wrong output.
  */
-fun turnSignature(role: String, text: String): String = "$role|${text.length}|${text.hashCode()}"
+fun turnSignature(
+    role: String,
+    text: String,
+): String = "$role|${text.length}|${text.hashCode()}"
 
 /**
  * One rendered conversation turn handed from [LiteRtProvider] to [LiteRtRuntime].
@@ -54,7 +57,10 @@ fun turnSignature(role: String, text: String): String = "$role|${text.length}|${
  * chat template applies the role wrapping (the same path Gallery uses). The marker-prefixed
  * cold blob is built separately by the provider for the rebuild-from-scratch path.
  */
-data class Turn(val role: String, val rawText: String) {
+data class Turn(
+    val role: String,
+    val rawText: String,
+) {
     val signature: String get() = turnSignature(role, rawText)
 }
 
@@ -64,7 +70,9 @@ data class Turn(val role: String, val rawText: String) {
 sealed interface TurnPlan {
     /** Reuse the warm Conversation; send only `history[sendFromIndex]` (guaranteed exactly
      *  one new turn). The KV cache already holds every turn before [sendFromIndex]. */
-    data class Warm(val sendFromIndex: Int) : TurnPlan
+    data class Warm(
+        val sendFromIndex: Int,
+    ) : TurnPlan
 
     /** Recreate the Conversation (clearing the KV cache) and send the full cold blob. */
     data object Cold : TurnPlan
@@ -80,9 +88,9 @@ class LiteRtModelCorruptException(
     val modelPath: String,
     cause: Throwable,
 ) : RuntimeException(
-    "LiteRT model file appears corrupt or incompatible: ${cause.message}",
-    cause,
-)
+        "LiteRT model file appears corrupt or incompatible: ${cause.message}",
+        cause,
+    )
 
 /**
  * Thrown when engine init fails specifically inside the vision executor — the model file
@@ -101,9 +109,9 @@ class LiteRtVisionUnavailableException(
     val modelPath: String,
     cause: Throwable,
 ) : RuntimeException(
-    "LiteRT vision encoder failed to initialise on this device's GPU: ${cause.message}",
-    cause,
-)
+        "LiteRT vision encoder failed to initialise on this device's GPU: ${cause.message}",
+        cause,
+    )
 
 /**
  * Wraps Google's LiteRT-LM runtime (com.google.ai.edge.litertlm:litertlm-android:0.11.0)
@@ -145,8 +153,9 @@ class LiteRtVisionUnavailableException(
  * A single [mutex] serialises all access. The mutex is held for the full duration of each
  * inference, so [LoadedModel.processed] is only ever touched by one coroutine at a time.
  */
-class LiteRtRuntime(private val context: Context) {
-
+class LiteRtRuntime(
+    private val context: Context,
+) {
     private val mutex = Mutex()
     private var loaded: LoadedModel? = null
 
@@ -177,10 +186,18 @@ class LiteRtRuntime(private val context: Context) {
         val outputCharCount: Int,
         val specDecodingEngaged: Boolean,
     ) {
-        val prefillTps: Double = if (prefillMs > 0)
-            (inputCharCount.toDouble() / CHARS_PER_TOKEN) * 1000.0 / prefillMs else 0.0
-        val decodeTps: Double = if (decodeMs > 0)
-            (outputCharCount.toDouble() / CHARS_PER_TOKEN) * 1000.0 / decodeMs else 0.0
+        val prefillTps: Double =
+            if (prefillMs > 0) {
+                (inputCharCount.toDouble() / CHARS_PER_TOKEN) * 1000.0 / prefillMs
+            } else {
+                0.0
+            }
+        val decodeTps: Double =
+            if (decodeMs > 0) {
+                (outputCharCount.toDouble() / CHARS_PER_TOKEN) * 1000.0 / decodeMs
+            } else {
+                0.0
+            }
 
         companion object {
             /** Conservative estimate. Underestimates speed for English (true rate ~3.5
@@ -204,9 +221,10 @@ class LiteRtRuntime(private val context: Context) {
     @Volatile
     private var idleTeardownJob: kotlinx.coroutines.Job? = null
 
-    private val idleScope = kotlinx.coroutines.CoroutineScope(
-        kotlinx.coroutines.SupervisorJob() + Dispatchers.IO
-    )
+    private val idleScope =
+        kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + Dispatchers.IO,
+        )
 
     /** Set the idle window. 0 disables the watchdog (engine stays warm until manually
      *  closed). Negative values are clamped to 0. Honored on the next idle event. */
@@ -222,23 +240,30 @@ class LiteRtRuntime(private val context: Context) {
         idleTeardownJob?.cancel()
         val delay = idleTeardownDelayMs
         if (delay <= 0L || loaded == null) return
-        idleTeardownJob = idleScope.launch {
-            kotlinx.coroutines.delay(delay)
-            mutex.withLock {
-                val current = loaded ?: return@withLock
-                val sinceLastUseMs = android.os.SystemClock.elapsedRealtime() - current.lastUseAtMs
-                if (sinceLastUseMs >= delay) {
-                    android.util.Log.i(
-                        "LiteRtRuntime",
-                        "armIdleTeardown: idle ${sinceLastUseMs}ms >= ${delay}ms; closing engine",
-                    )
-                    try { current.conversation.close() } catch (_: Throwable) {}
-                    try { current.engine.close() } catch (_: Throwable) {}
-                    loaded = null
-                    lastTelemetry = null
+        idleTeardownJob =
+            idleScope.launch {
+                kotlinx.coroutines.delay(delay)
+                mutex.withLock {
+                    val current = loaded ?: return@withLock
+                    val sinceLastUseMs = android.os.SystemClock.elapsedRealtime() - current.lastUseAtMs
+                    if (sinceLastUseMs >= delay) {
+                        android.util.Log.i(
+                            "LiteRtRuntime",
+                            "armIdleTeardown: idle ${sinceLastUseMs}ms >= ${delay}ms; closing engine",
+                        )
+                        try {
+                            current.conversation.close()
+                        } catch (_: Throwable) {
+                        }
+                        try {
+                            current.engine.close()
+                        } catch (_: Throwable) {
+                        }
+                        loaded = null
+                        lastTelemetry = null
+                    }
                 }
             }
-        }
     }
 
     /**
@@ -309,24 +334,32 @@ class LiteRtRuntime(private val context: Context) {
      * accelerators or retrying. Returns the original throwable unchanged for transient /
      * hardware errors so the GPU→CPU fallback still works.
      */
-    private fun classifyEngineError(modelPath: String, t: Throwable): Throwable {
+    private fun classifyEngineError(
+        modelPath: String,
+        t: Throwable,
+    ): Throwable {
         // Walk the cause chain — the SDK's native exception is typically the innermost
         // cause; surrounding wrappers add their own (less specific) messages.
-        val msg = generateSequence<Throwable>(t) { it.cause }
-            .map { it.message.orEmpty() }
-            .joinToString("\n")
+        val msg =
+            generateSequence<Throwable>(t) { it.cause }
+                .map { it.message.orEmpty() }
+                .joinToString("\n")
         if (isVisionExecutorError(msg)) {
             return LiteRtVisionUnavailableException(modelPath, t)
         }
         val isCorrupt =
             msg.contains("Invalid magic number", ignoreCase = true) ||
-            msg.contains("Failed to decompress", ignoreCase = true) ||
-            msg.contains("No KV cache inputs found", ignoreCase = true) ||
-            msg.contains("FAILED_PRECONDITION", ignoreCase = true) ||
-            (msg.contains("INVALID_ARGUMENT", ignoreCase = true) &&
-                (msg.contains("tokenizer", ignoreCase = true) ||
-                 msg.contains("Section not found", ignoreCase = true) ||
-                 msg.contains("Uncompressed size", ignoreCase = true)))
+                msg.contains("Failed to decompress", ignoreCase = true) ||
+                msg.contains("No KV cache inputs found", ignoreCase = true) ||
+                msg.contains("FAILED_PRECONDITION", ignoreCase = true) ||
+                (
+                    msg.contains("INVALID_ARGUMENT", ignoreCase = true) &&
+                        (
+                            msg.contains("tokenizer", ignoreCase = true) ||
+                                msg.contains("Section not found", ignoreCase = true) ||
+                                msg.contains("Uncompressed size", ignoreCase = true)
+                        )
+                )
         return if (isCorrupt) LiteRtModelCorruptException(modelPath, t) else t
     }
 
@@ -336,11 +369,12 @@ class LiteRtRuntime(private val context: Context) {
      * NPU/TPU both map to `Backend.NPU` with the app's native library dir, matching
      * Gallery's `LlmChatModelHelper.kt`: both labels share the QNN delegate loader path.
      */
-    private fun acceleratorToBackend(accel: String): Backend = when (accel) {
-        "QNN", "NPU", "TPU" -> Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
-        "GPU" -> Backend.GPU()
-        else -> Backend.CPU()
-    }
+    private fun acceleratorToBackend(accel: String): Backend =
+        when (accel) {
+            "QNN", "NPU", "TPU" -> Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
+            "GPU" -> Backend.GPU()
+            else -> Backend.CPU()
+        }
 
     /**
      * Configure the engine + conversation for the next [streamTurns] call.
@@ -374,54 +408,86 @@ class LiteRtRuntime(private val context: Context) {
         topK: Int = 64,
         topP: Double = 0.95,
         temperature: Double = 1.0,
-    ): LoadOutcome = mutex.withLock {
-        // Use in-session fallback if a prior GPU→CPU retry already succeeded this session.
-        // forceCpu wins over a non-null preferredAccel.
-        val accel = if (forceCpu) "CPU"
-        else sessionFallbackAccelerator
-            ?: preferredAccel
-            ?: AcceleratorProbe.probeLiteRt(context)
+    ): LoadOutcome =
+        mutex.withLock {
+            // Use in-session fallback if a prior GPU→CPU retry already succeeded this session.
+            // forceCpu wins over a non-null preferredAccel.
+            val accel =
+                if (forceCpu) {
+                    "CPU"
+                } else {
+                    sessionFallbackAccelerator
+                        ?: preferredAccel
+                        ?: AcceleratorProbe.probeLiteRt(context)
+                }
 
-        // Probe the file for speculative-decoding support BEFORE building the engine.
-        val supportsSpeculativeDecoding = try {
-            Capabilities(modelPath).use { it.hasSpeculativeDecodingSupport() }
-        } catch (_: Throwable) {
-            false
-        }
-        val effectiveSpeculativeDecoding = speculativeDecoding && supportsSpeculativeDecoding
+            // Probe the file for speculative-decoding support BEFORE building the engine.
+            val supportsSpeculativeDecoding =
+                try {
+                    Capabilities(modelPath).use { it.hasSpeculativeDecodingSupport() }
+                } catch (_: Throwable) {
+                    false
+                }
+            val effectiveSpeculativeDecoding = speculativeDecoding && supportsSpeculativeDecoding
 
-        val desiredEngineKey = EngineKey(
-            modelPath = modelPath,
-            accelerator = accel,
-            maxNumTokens = maxNumTokens,
-            supportImage = supportImage,
-            supportAudio = supportAudio,
-            speculativeDecoding = effectiveSpeculativeDecoding,
-            visionAccelerator = visionAccelerator,
-        )
-        val systemInstruction: Contents? =
-            if (!systemInstructionText.isNullOrBlank()) Contents.of(systemInstructionText) else null
-        val desiredConversationKey = ConversationKey(
-            systemInstructionText = systemInstructionText?.takeIf { it.isNotBlank() },
-            constrainedDecoding = constrainedDecoding,
-            topK = topK,
-            topP = topP,
-            temperature = temperature,
-        )
-        val desiredConversationSpec = ConversationSpec(
-            systemInstruction = systemInstruction,
-            tools = tools,
-            constrainedDecoding = constrainedDecoding,
-            topK = topK,
-            topP = topP,
-            temperature = temperature,
-        )
+            val desiredEngineKey =
+                EngineKey(
+                    modelPath = modelPath,
+                    accelerator = accel,
+                    maxNumTokens = maxNumTokens,
+                    supportImage = supportImage,
+                    supportAudio = supportAudio,
+                    speculativeDecoding = effectiveSpeculativeDecoding,
+                    visionAccelerator = visionAccelerator,
+                )
+            val systemInstruction: Contents? =
+                if (!systemInstructionText.isNullOrBlank()) Contents.of(systemInstructionText) else null
+            val desiredConversationKey =
+                ConversationKey(
+                    systemInstructionText = systemInstructionText?.takeIf { it.isNotBlank() },
+                    constrainedDecoding = constrainedDecoding,
+                    topK = topK,
+                    topP = topP,
+                    temperature = temperature,
+                )
+            val desiredConversationSpec =
+                ConversationSpec(
+                    systemInstruction = systemInstruction,
+                    tools = tools,
+                    constrainedDecoding = constrainedDecoding,
+                    topK = topK,
+                    topP = topP,
+                    temperature = temperature,
+                )
 
-        val current = loaded
-        if (current != null && current.engineKey == desiredEngineKey) {
-            if (current.conversationKey == desiredConversationKey) {
-                // Full reuse — Engine AND Conversation kept. The KV cache (and therefore
-                // [processed]) is left intact so the next streamTurns can warm-continue.
+            val current = loaded
+            if (current != null && current.engineKey == desiredEngineKey) {
+                if (current.conversationKey == desiredConversationKey) {
+                    // Full reuse — Engine AND Conversation kept. The KV cache (and therefore
+                    // [processed]) is left intact so the next streamTurns can warm-continue.
+                    return@withLock LoadOutcome(
+                        accelerator = accel,
+                        visionEnabled = current.engineKey.supportImage,
+                        visionFellBackToTextOnly = false,
+                        fileSupportsSpeculativeDecoding = current.fileSupportsSpeculativeDecoding,
+                        speculativeDecodingEngaged = current.speculativeDecodingEngaged,
+                    )
+                }
+                // Engine kept, Conversation config changed — recreate just the Conversation.
+                // The KV cache is gone, so [processed] must be cleared.
+                try {
+                    current.conversation.close()
+                } catch (_: Throwable) {
+                }
+                current.conversation =
+                    createConversationWithFlags(
+                        engine = current.engine,
+                        backend = acceleratorToBackend(current.engineKey.accelerator),
+                        spec = desiredConversationSpec,
+                    )
+                current.conversationKey = desiredConversationKey
+                current.conversationSpec = desiredConversationSpec
+                current.processed.clear()
                 return@withLock LoadOutcome(
                     accelerator = accel,
                     visionEnabled = current.engineKey.supportImage,
@@ -430,168 +496,160 @@ class LiteRtRuntime(private val context: Context) {
                     speculativeDecodingEngaged = current.speculativeDecodingEngaged,
                 )
             }
-            // Engine kept, Conversation config changed — recreate just the Conversation.
-            // The KV cache is gone, so [processed] must be cleared.
-            try { current.conversation.close() } catch (_: Throwable) {}
-            current.conversation = createConversationWithFlags(
-                engine = current.engine,
-                backend = acceleratorToBackend(current.engineKey.accelerator),
-                spec = desiredConversationSpec,
-            )
-            current.conversationKey = desiredConversationKey
-            current.conversationSpec = desiredConversationSpec
-            current.processed.clear()
-            return@withLock LoadOutcome(
-                accelerator = accel,
-                visionEnabled = current.engineKey.supportImage,
-                visionFellBackToTextOnly = false,
-                fileSupportsSpeculativeDecoding = current.fileSupportsSpeculativeDecoding,
-                speculativeDecodingEngaged = current.speculativeDecodingEngaged,
-            )
-        }
 
-        // Engine swap path: tear down any prior Engine + Conversation.
-        try { current?.conversation?.close() } catch (_: Throwable) {}
-        try { current?.engine?.close() } catch (_: Throwable) {}
-        loaded = null
+            // Engine swap path: tear down any prior Engine + Conversation.
+            try {
+                current?.conversation?.close()
+            } catch (_: Throwable) {
+            }
+            try {
+                current?.engine?.close()
+            } catch (_: Throwable) {
+            }
+            loaded = null
 
-        // Try the preferred accelerator first; fall back to CPU if it isn't already CPU.
-        val firstAttempt = runCatching {
-            tryLoadWithBackend(desiredEngineKey, accel, desiredConversationSpec)
-        }
-        val loadResult = firstAttempt.getOrElse { firstError ->
-            val classified = classifyEngineError(modelPath, firstError)
-            // Vision executor failed (typically Adreno 7xx + OEM linker namespace blocking
-            // libvndksupport.so → OpenCL discovery fails → OpenGL fallback hits the 0.11
-            // `CreateSharedMemoryManager` UNIMPLEMENTED stub; upstream issue #2292). The
-            // text path is fine on this device, so retry once with the vision backend off.
-            // The provider catches the typed exception we surface after the retry and
-            // persists the "vision unavailable" flag so subsequent loads skip the doomed
-            // GPU vision attempt entirely.
-            if (classified is LiteRtVisionUnavailableException && desiredEngineKey.supportImage) {
-                android.util.Log.w(
-                    "LiteRtRuntime",
-                    "Vision executor failed on $accel (${firstError.message}); " +
-                        "retrying without vision backend (text-only)",
-                )
-                val textOnlyKey = desiredEngineKey.copy(supportImage = false)
-                try {
-                    tryLoadWithBackend(textOnlyKey, accel, desiredConversationSpec).also {
-                        // The retry succeeded text-only — record this on the LoadedModel
-                        // so the provider can see it via the resolved engine key and
-                        // persist the per-model decision. We still throw a typed signal
-                        // up after the LoadedModel is committed, see below.
-                    }
-                } catch (retryError: Throwable) {
-                    // Text-only retry ALSO failed → the model just won't load on this
-                    // device. Surface the original vision-unavailable error so the
-                    // user message names the right root cause.
-                    throw classifyEngineError(
-                        modelPath,
-                        RuntimeException(
-                            "LiteRT engine could not load this model even with vision " +
-                                "disabled. Underlying: ${retryError.message}",
-                            retryError,
-                        )
-                    )
+            // Try the preferred accelerator first; fall back to CPU if it isn't already CPU.
+            val firstAttempt =
+                runCatching {
+                    tryLoadWithBackend(desiredEngineKey, accel, desiredConversationSpec)
                 }
-            } else if (accel == "CPU") {
-                throw classifyEngineError(
-                    modelPath,
-                    RuntimeException(
-                        "LiteRT engine could not load this model on this device's GPU OR CPU. " +
-                        "This usually means the model file is packaged for a different runtime version. " +
-                        "Try a different model from the Gallery allowlist (tap Install default, or " +
-                        "paste a litert-community/ HuggingFace URL). " +
-                        "Underlying: ${firstError.message}",
-                        firstError,
-                    )
-                )
-            } else {
-                if (classified is LiteRtModelCorruptException) throw classified
-
-                android.util.Log.w(
-                    "LiteRtRuntime",
-                    "Engine init failed on $accel (${firstError.message}); retrying on CPU",
-                )
-                try {
-                    tryLoadWithBackend(
-                        desiredEngineKey.copy(accelerator = "CPU"),
-                        "CPU",
-                        desiredConversationSpec,
-                    )
-                } catch (cpuError: Throwable) {
-                    val cpuClassified = classifyEngineError(modelPath, cpuError)
-                    // Vision-side error even on CPU main backend → text-only retry too.
-                    if (cpuClassified is LiteRtVisionUnavailableException &&
-                        desiredEngineKey.supportImage
-                    ) {
+            val loadResult =
+                firstAttempt.getOrElse { firstError ->
+                    val classified = classifyEngineError(modelPath, firstError)
+                    // Vision executor failed (typically Adreno 7xx + OEM linker namespace blocking
+                    // libvndksupport.so → OpenCL discovery fails → OpenGL fallback hits the 0.11
+                    // `CreateSharedMemoryManager` UNIMPLEMENTED stub; upstream issue #2292). The
+                    // text path is fine on this device, so retry once with the vision backend off.
+                    // The provider catches the typed exception we surface after the retry and
+                    // persists the "vision unavailable" flag so subsequent loads skip the doomed
+                    // GPU vision attempt entirely.
+                    if (classified is LiteRtVisionUnavailableException && desiredEngineKey.supportImage) {
                         android.util.Log.w(
                             "LiteRtRuntime",
-                            "Vision executor failed on CPU too; retrying without vision backend",
+                            "Vision executor failed on $accel (${firstError.message}); " +
+                                "retrying without vision backend (text-only)",
                         )
-                        val textOnlyCpuKey = desiredEngineKey
-                            .copy(accelerator = "CPU", supportImage = false)
+                        val textOnlyKey = desiredEngineKey.copy(supportImage = false)
                         try {
-                            tryLoadWithBackend(textOnlyCpuKey, "CPU", desiredConversationSpec)
-                        } catch (lastError: Throwable) {
+                            tryLoadWithBackend(textOnlyKey, accel, desiredConversationSpec).also {
+                                // The retry succeeded text-only — record this on the LoadedModel
+                                // so the provider can see it via the resolved engine key and
+                                // persist the per-model decision. We still throw a typed signal
+                                // up after the LoadedModel is committed, see below.
+                            }
+                        } catch (retryError: Throwable) {
+                            // Text-only retry ALSO failed → the model just won't load on this
+                            // device. Surface the original vision-unavailable error so the
+                            // user message names the right root cause.
                             throw classifyEngineError(
                                 modelPath,
                                 RuntimeException(
-                                    "LiteRT engine could not load this model on this device " +
-                                        "even with vision disabled. Underlying: ${lastError.message}",
-                                    lastError,
-                                )
+                                    "LiteRT engine could not load this model even with vision " +
+                                        "disabled. Underlying: ${retryError.message}",
+                                    retryError,
+                                ),
                             )
                         }
-                    } else {
+                    } else if (accel == "CPU") {
                         throw classifyEngineError(
                             modelPath,
                             RuntimeException(
                                 "LiteRT engine could not load this model on this device's GPU OR CPU. " +
-                                "This usually means the model file is packaged for a different runtime version. " +
-                                "Try a different model from the Gallery allowlist (tap Install default, or " +
-                                "paste a litert-community/ HuggingFace URL). " +
-                                "Underlying: ${cpuError.message}",
-                                cpuError,
-                            )
+                                    "This usually means the model file is packaged for a different runtime version. " +
+                                    "Try a different model from the Gallery allowlist (tap Install default, or " +
+                                    "paste a litert-community/ HuggingFace URL). " +
+                                    "Underlying: ${firstError.message}",
+                                firstError,
+                            ),
                         )
+                    } else {
+                        if (classified is LiteRtModelCorruptException) throw classified
+
+                        android.util.Log.w(
+                            "LiteRtRuntime",
+                            "Engine init failed on $accel (${firstError.message}); retrying on CPU",
+                        )
+                        try {
+                            tryLoadWithBackend(
+                                desiredEngineKey.copy(accelerator = "CPU"),
+                                "CPU",
+                                desiredConversationSpec,
+                            )
+                        } catch (cpuError: Throwable) {
+                            val cpuClassified = classifyEngineError(modelPath, cpuError)
+                            // Vision-side error even on CPU main backend → text-only retry too.
+                            if (cpuClassified is LiteRtVisionUnavailableException &&
+                                desiredEngineKey.supportImage
+                            ) {
+                                android.util.Log.w(
+                                    "LiteRtRuntime",
+                                    "Vision executor failed on CPU too; retrying without vision backend",
+                                )
+                                val textOnlyCpuKey =
+                                    desiredEngineKey
+                                        .copy(accelerator = "CPU", supportImage = false)
+                                try {
+                                    tryLoadWithBackend(textOnlyCpuKey, "CPU", desiredConversationSpec)
+                                } catch (lastError: Throwable) {
+                                    throw classifyEngineError(
+                                        modelPath,
+                                        RuntimeException(
+                                            "LiteRT engine could not load this model on this device " +
+                                                "even with vision disabled. Underlying: ${lastError.message}",
+                                            lastError,
+                                        ),
+                                    )
+                                }
+                            } else {
+                                throw classifyEngineError(
+                                    modelPath,
+                                    RuntimeException(
+                                        "LiteRT engine could not load this model on this device's GPU OR CPU. " +
+                                            "This usually means the model file is packaged for a different runtime version. " +
+                                            "Try a different model from the Gallery allowlist (tap Install default, or " +
+                                            "paste a litert-community/ HuggingFace URL). " +
+                                            "Underlying: ${cpuError.message}",
+                                        cpuError,
+                                    ),
+                                )
+                            }
+                        }
                     }
                 }
+
+            // If we fell back to CPU from a non-CPU accelerator, cache that decision in-session.
+            if (loadResult.accelerator != accel) {
+                sessionFallbackAccelerator = loadResult.accelerator
             }
-        }
 
-        // If we fell back to CPU from a non-CPU accelerator, cache that decision in-session.
-        if (loadResult.accelerator != accel) {
-            sessionFallbackAccelerator = loadResult.accelerator
-        }
-
-        loaded = LoadedModel(
-            engineKey = desiredEngineKey.copy(
+            loaded =
+                LoadedModel(
+                    engineKey =
+                        desiredEngineKey.copy(
+                            accelerator = loadResult.accelerator,
+                            supportImage = loadResult.supportImage,
+                        ),
+                    conversationKey = desiredConversationKey,
+                    conversationSpec = desiredConversationSpec,
+                    engine = loadResult.engine,
+                    conversation = loadResult.conversation,
+                    fileSupportsSpeculativeDecoding = supportsSpeculativeDecoding,
+                    speculativeDecodingEngaged = effectiveSpeculativeDecoding,
+                )
+            android.util.Log.i(
+                "LiteRtRuntime",
+                "ensureLoaded: accel=${loadResult.accelerator} visionEnabled=${loadResult.supportImage} " +
+                    "fileSupportsSpecDecoding=$supportsSpeculativeDecoding " +
+                    "specDecodingEngaged=$effectiveSpeculativeDecoding",
+            )
+            LoadOutcome(
                 accelerator = loadResult.accelerator,
-                supportImage = loadResult.supportImage,
-            ),
-            conversationKey = desiredConversationKey,
-            conversationSpec = desiredConversationSpec,
-            engine = loadResult.engine,
-            conversation = loadResult.conversation,
-            fileSupportsSpeculativeDecoding = supportsSpeculativeDecoding,
-            speculativeDecodingEngaged = effectiveSpeculativeDecoding,
-        )
-        android.util.Log.i(
-            "LiteRtRuntime",
-            "ensureLoaded: accel=${loadResult.accelerator} visionEnabled=${loadResult.supportImage} " +
-                "fileSupportsSpecDecoding=$supportsSpeculativeDecoding " +
-                "specDecodingEngaged=$effectiveSpeculativeDecoding",
-        )
-        LoadOutcome(
-            accelerator = loadResult.accelerator,
-            visionEnabled = loadResult.supportImage,
-            visionFellBackToTextOnly = desiredEngineKey.supportImage && !loadResult.supportImage,
-            fileSupportsSpeculativeDecoding = supportsSpeculativeDecoding,
-            speculativeDecodingEngaged = effectiveSpeculativeDecoding,
-        )
-    }
+                visionEnabled = loadResult.supportImage,
+                visionFellBackToTextOnly = desiredEngineKey.supportImage && !loadResult.supportImage,
+                fileSupportsSpeculativeDecoding = supportsSpeculativeDecoding,
+                speculativeDecodingEngaged = effectiveSpeculativeDecoding,
+            )
+        }
 
     private class LoadResult(
         val engine: Engine,
@@ -644,13 +702,16 @@ class LiteRtRuntime(private val context: Context) {
         // Vision backend mirrors Gallery's `LlmChatModelHelper`: configurable per model
         // via the visionAccelerator label. GPU is default (Gemma 3n / 4 train with GPU
         // vision); CPU and NPU are valid alternates the SDK accepts.
-        val visionBackend: Backend? = if (engineKey.supportImage) {
-            when (engineKey.visionAccelerator) {
-                "cpu" -> Backend.CPU()
-                "npu", "tpu" -> Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
-                else -> Backend.GPU()
+        val visionBackend: Backend? =
+            if (engineKey.supportImage) {
+                when (engineKey.visionAccelerator) {
+                    "cpu" -> Backend.CPU()
+                    "npu", "tpu" -> Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
+                    else -> Backend.GPU()
+                }
+            } else {
+                null
             }
-        } else null
         val audioBackend: Backend? = if (engineKey.supportAudio) Backend.CPU() else null
 
         // cacheDir: matches Google AI Edge Gallery's LlmChatModelHelper exactly. Only set
@@ -658,42 +719,52 @@ class LiteRtRuntime(private val context: Context) {
         // installed models (filesDir/local-models/...) the SDK does its own cache
         // management internally; passing a non-null cacheDir for those paths diverges
         // from Gallery's reference build with unknown side effects on vision-backend init.
-        val engineConfig = EngineConfig(
-            modelPath = engineKey.modelPath,
-            backend = backend,
-            visionBackend = visionBackend,
-            audioBackend = audioBackend,
-            maxNumTokens = engineKey.maxNumTokens,
-            cacheDir = if (engineKey.modelPath.startsWith("/data/local/tmp"))
-                context.getExternalFilesDir(null)?.absolutePath
-            else null,
-        )
+        val engineConfig =
+            EngineConfig(
+                modelPath = engineKey.modelPath,
+                backend = backend,
+                visionBackend = visionBackend,
+                audioBackend = audioBackend,
+                maxNumTokens = engineKey.maxNumTokens,
+                cacheDir =
+                    if (engineKey.modelPath.startsWith("/data/local/tmp")) {
+                        context.getExternalFilesDir(null)?.absolutePath
+                    } else {
+                        null
+                    },
+            )
 
-        val engine = withContext(Dispatchers.IO) {
-            // The flag dance: set BEFORE constructing the Engine, reset AFTER initialize().
-            ExperimentalFlags.enableSpeculativeDecoding = engineKey.speculativeDecoding
-            val e = try {
-                Engine(engineConfig).also { built ->
+        val engine =
+            withContext(Dispatchers.IO) {
+                // The flag dance: set BEFORE constructing the Engine, reset AFTER initialize().
+                ExperimentalFlags.enableSpeculativeDecoding = engineKey.speculativeDecoding
+                val e =
                     try {
-                        built.initialize()
-                    } catch (t: Throwable) {
-                        // Close the partially-constructed engine to release its native
-                        // handle before propagating.
-                        try { built.close() } catch (_: Throwable) {}
-                        throw t
+                        Engine(engineConfig).also { built ->
+                            try {
+                                built.initialize()
+                            } catch (t: Throwable) {
+                                // Close the partially-constructed engine to release its native
+                                // handle before propagating.
+                                try {
+                                    built.close()
+                                } catch (_: Throwable) {
+                                }
+                                throw t
+                            }
+                        }
+                    } finally {
+                        ExperimentalFlags.enableSpeculativeDecoding = false
                     }
-                }
-            } finally {
-                ExperimentalFlags.enableSpeculativeDecoding = false
+                e
             }
-            e
-        }
 
-        val conv = createConversationWithFlags(
-            engine = engine,
-            backend = backend,
-            spec = conversationSpec,
-        )
+        val conv =
+            createConversationWithFlags(
+                engine = engine,
+                backend = backend,
+                spec = conversationSpec,
+            )
         return LoadResult(engine, conv, accel, engineKey.supportImage)
     }
 
@@ -714,18 +785,19 @@ class LiteRtRuntime(private val context: Context) {
         return try {
             engine.createConversation(
                 ConversationConfig(
-                    samplerConfig = if (backend is Backend.NPU) {
-                        null
-                    } else {
-                        SamplerConfig(
-                            topK = spec.topK,
-                            topP = spec.topP,
-                            temperature = spec.temperature,
-                        )
-                    },
+                    samplerConfig =
+                        if (backend is Backend.NPU) {
+                            null
+                        } else {
+                            SamplerConfig(
+                                topK = spec.topK,
+                                topP = spec.topP,
+                                temperature = spec.temperature,
+                            )
+                        },
                     systemInstruction = spec.systemInstruction,
                     tools = spec.tools,
-                )
+                ),
             )
         } finally {
             ExperimentalFlags.enableConversationConstrainedDecoding = false
@@ -735,12 +807,16 @@ class LiteRtRuntime(private val context: Context) {
     /** Close + rebuild the live Conversation in place, clearing its KV cache. Caller must
      *  hold [mutex] and must clear [LoadedModel.processed] itself. */
     private fun recreateConversationLocked(instance: LoadedModel) {
-        try { instance.conversation.close() } catch (_: Throwable) {}
-        instance.conversation = createConversationWithFlags(
-            engine = instance.engine,
-            backend = acceleratorToBackend(instance.engineKey.accelerator),
-            spec = instance.conversationSpec,
-        )
+        try {
+            instance.conversation.close()
+        } catch (_: Throwable) {
+        }
+        instance.conversation =
+            createConversationWithFlags(
+                engine = instance.engine,
+                backend = acceleratorToBackend(instance.engineKey.accelerator),
+                spec = instance.conversationSpec,
+            )
     }
 
     /**
@@ -769,132 +845,158 @@ class LiteRtRuntime(private val context: Context) {
         images: List<Bitmap> = emptyList(),
         audioClips: List<ByteArray> = emptyList(),
         onThinking: ((String) -> Unit)? = null,
-    ): Flow<String> = callbackFlow {
-        // GPU-boost the inference. Three levers, in order of effectiveness:
-        //   1. PerformanceHintManager (API 33+). Opens a hint session for this thread
-        //      with a 50ms target — the OS scheduler treats the process as doing
-        //      sustained compute and refuses to downclock GPU/CPU like it would for a
-        //      productivity app. This is exactly what Android game engines use.
-        //   2. THREAD_PRIORITY_URGENT_DISPLAY on the calling thread. LiteRT's native
-        //      worker threads inherit nice values from their creator; boosting our
-        //      thread propagates a higher scheduling priority into the compute work.
-        //   3. (Manifest) game_mode_config.xml declares we accept PERFORMANCE mode,
-        //      so OEM game-mode frameworks (Adreno GPP, Mali frame rate control,
-        //      Tensor Game Mode) also bump GPU clocks + relax DCVS throttling.
-        // All cleaned up in the finally so an idle app doesn't keep the boost.
-        val callerTid = Process.myTid()
-        val originalPriority = runCatching {
-            Process.getThreadPriority(callerTid)
-        }.getOrDefault(Process.THREAD_PRIORITY_DEFAULT)
-        val hintSession = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            runCatching {
-                val phm = context.getSystemService(PerformanceHintManager::class.java)
-                phm?.createHintSession(intArrayOf(callerTid), 50_000_000L)  // 50 ms target
-            }.getOrNull()
-        } else null
-        runCatching {
-            Process.setThreadPriority(callerTid, Process.THREAD_PRIORITY_URGENT_DISPLAY)
-        }
-
-        try { mutex.withLock {
-            val instance = loaded
-                ?: throw IllegalStateException("Call ensureLoaded(...) before streamTurns()")
-
-            val hasMedia = images.isNotEmpty() || audioClips.isNotEmpty()
-            val historySignatures = history.map { it.signature }
-            val plan = planTurns(instance.processed, historySignatures, hasMedia)
-
-            val inputText: String = when (plan) {
-                is TurnPlan.Warm -> history[plan.sendFromIndex].rawText
-                TurnPlan.Cold -> {
-                    // ensureLoaded may have kept a warm Conversation that this turn cannot
-                    // reuse (a /new, an edit, a regeneration, a tool round-trip, or media).
-                    // Recreate it to clear the KV cache, then send the full history.
-                    recreateConversationLocked(instance)
-                    instance.processed.clear()
-                    coldBlob
+    ): Flow<String> =
+        callbackFlow {
+            // GPU-boost the inference. Three levers, in order of effectiveness:
+            //   1. PerformanceHintManager (API 33+). Opens a hint session for this thread
+            //      with a 50ms target — the OS scheduler treats the process as doing
+            //      sustained compute and refuses to downclock GPU/CPU like it would for a
+            //      productivity app. This is exactly what Android game engines use.
+            //   2. THREAD_PRIORITY_URGENT_DISPLAY on the calling thread. LiteRT's native
+            //      worker threads inherit nice values from their creator; boosting our
+            //      thread propagates a higher scheduling priority into the compute work.
+            //   3. (Manifest) game_mode_config.xml declares we accept PERFORMANCE mode,
+            //      so OEM game-mode frameworks (Adreno GPP, Mali frame rate control,
+            //      Tensor Game Mode) also bump GPU clocks + relax DCVS throttling.
+            // All cleaned up in the finally so an idle app doesn't keep the boost.
+            val callerTid = Process.myTid()
+            val originalPriority =
+                runCatching {
+                    Process.getThreadPriority(callerTid)
+                }.getOrDefault(Process.THREAD_PRIORITY_DEFAULT)
+            val hintSession =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    runCatching {
+                        val phm = context.getSystemService(PerformanceHintManager::class.java)
+                        phm?.createHintSession(intArrayOf(callerTid), 50_000_000L) // 50 ms target
+                    }.getOrNull()
+                } else {
+                    null
                 }
+            runCatching {
+                Process.setThreadPriority(callerTid, Process.THREAD_PRIORITY_URGENT_DISPLAY)
             }
 
-            val conv = instance.conversation
-            // Build Contents in Gallery's order: images and audio first, text last.
-            val contentList = mutableListOf<Content>()
-            for (image in images) contentList.add(Content.ImageBytes(image.toPngByteArray()))
-            for (clip in audioClips) contentList.add(Content.AudioBytes(clip))
-            if (inputText.trim().isNotEmpty()) contentList.add(Content.Text(inputText))
+            try {
+                mutex.withLock {
+                    val instance =
+                        loaded
+                            ?: throw IllegalStateException("Call ensureLoaded(...) before streamTurns()")
 
-            // Telemetry. We measure character counts as a proxy for token counts (the SDK
-            // does not surface a per-call tokenizer counter). The cold-path text input
-            // includes the full history + system prompt; the warm path is just the new
-            // turn's raw text. Either way `inputText.length` is the prefill character
-            // budget for this call.
-            val telemetryInputChars = inputText.length
-            val callStartedNs = System.nanoTime()
-            var firstMessageNs: Long = 0L
-            var lastCumulative = ""
-            conv.sendMessageAsync(
-                Contents.of(contentList),
-                object : MessageCallback {
-                    override fun onMessage(message: Message) {
-                        if (firstMessageNs == 0L) firstMessageNs = System.nanoTime()
-                        message.channels["thought"]?.let { thinking ->
-                            if (thinking.isNotEmpty()) onThinking?.invoke(thinking)
+                    val hasMedia = images.isNotEmpty() || audioClips.isNotEmpty()
+                    val historySignatures = history.map { it.signature }
+                    val plan = planTurns(instance.processed, historySignatures, hasMedia)
+
+                    val inputText: String =
+                        when (plan) {
+                            is TurnPlan.Warm -> {
+                                history[plan.sendFromIndex].rawText
+                            }
+
+                            TurnPlan.Cold -> {
+                                // ensureLoaded may have kept a warm Conversation that this turn cannot
+                                // reuse (a /new, an edit, a regeneration, a tool round-trip, or media).
+                                // Recreate it to clear the KV cache, then send the full history.
+                                recreateConversationLocked(instance)
+                                instance.processed.clear()
+                                coldBlob
+                            }
                         }
-                        val text = message.toString()
-                        if (text.isNotEmpty()) {
-                            lastCumulative = text
-                            trySend(text)
-                        }
-                    }
-                    override fun onDone() {
-                        // The Conversation's KV cache now holds [history…] + the assistant
-                        // turn just generated. Record that so the NEXT call can warm-continue
-                        // if it is a clean single-turn append. Mutating [processed] here is
-                        // safe: the mutex is held for this whole streamTurns invocation.
-                        instance.processed.clear()
-                        instance.processed.addAll(historySignatures)
-                        instance.processed.add(turnSignature(ROLE_ASSISTANT, lastCumulative))
-                        // Stamp telemetry for the provider to read + persist.
-                        val endNs = System.nanoTime()
-                        val prefillMs = if (firstMessageNs > 0L)
-                            (firstMessageNs - callStartedNs) / 1_000_000L else 0L
-                        val decodeMs = if (firstMessageNs > 0L)
-                            (endNs - firstMessageNs) / 1_000_000L else 0L
-                        lastTelemetry = StreamTelemetry(
-                            prefillMs = prefillMs,
-                            decodeMs = decodeMs,
-                            inputCharCount = telemetryInputChars,
-                            outputCharCount = lastCumulative.length,
-                            specDecodingEngaged = instance.speculativeDecodingEngaged,
-                        )
-                        instance.lastUseAtMs = android.os.SystemClock.elapsedRealtime()
-                        close()
-                    }
-                    override fun onError(throwable: Throwable) {
-                        // The KV-cache state is now unknown — force the next turn cold.
-                        instance.processed.clear()
-                        instance.lastUseAtMs = android.os.SystemClock.elapsedRealtime()
-                        if (throwable is CancellationException) close() else close(throwable)
-                    }
-                },
-                emptyMap(),
-            )
-            awaitClose { /* SDK callback already closed the channel above. */ }
-        } } finally {
-            runCatching { hintSession?.close() }
-            runCatching { Process.setThreadPriority(callerTid, originalPriority) }
-            // Arm (or re-arm) the idle teardown. A new turn cancels the prior schedule and
-            // starts a fresh window from now; no turn keeps the existing one ticking.
-            armIdleTeardown()
-        }
-    }.flowOn(Dispatchers.IO)
+
+                    val conv = instance.conversation
+                    // Build Contents in Gallery's order: images and audio first, text last.
+                    val contentList = mutableListOf<Content>()
+                    for (image in images) contentList.add(Content.ImageBytes(image.toPngByteArray()))
+                    for (clip in audioClips) contentList.add(Content.AudioBytes(clip))
+                    if (inputText.trim().isNotEmpty()) contentList.add(Content.Text(inputText))
+
+                    // Telemetry. We measure character counts as a proxy for token counts (the SDK
+                    // does not surface a per-call tokenizer counter). The cold-path text input
+                    // includes the full history + system prompt; the warm path is just the new
+                    // turn's raw text. Either way `inputText.length` is the prefill character
+                    // budget for this call.
+                    val telemetryInputChars = inputText.length
+                    val callStartedNs = System.nanoTime()
+                    var firstMessageNs: Long = 0L
+                    var lastCumulative = ""
+                    conv.sendMessageAsync(
+                        Contents.of(contentList),
+                        object : MessageCallback {
+                            override fun onMessage(message: Message) {
+                                if (firstMessageNs == 0L) firstMessageNs = System.nanoTime()
+                                message.channels["thought"]?.let { thinking ->
+                                    if (thinking.isNotEmpty()) onThinking?.invoke(thinking)
+                                }
+                                val text = message.toString()
+                                if (text.isNotEmpty()) {
+                                    lastCumulative = text
+                                    trySend(text)
+                                }
+                            }
+
+                            override fun onDone() {
+                                // The Conversation's KV cache now holds [history…] + the assistant
+                                // turn just generated. Record that so the NEXT call can warm-continue
+                                // if it is a clean single-turn append. Mutating [processed] here is
+                                // safe: the mutex is held for this whole streamTurns invocation.
+                                instance.processed.clear()
+                                instance.processed.addAll(historySignatures)
+                                instance.processed.add(turnSignature(ROLE_ASSISTANT, lastCumulative))
+                                // Stamp telemetry for the provider to read + persist.
+                                val endNs = System.nanoTime()
+                                val prefillMs =
+                                    if (firstMessageNs > 0L) {
+                                        (firstMessageNs - callStartedNs) / 1_000_000L
+                                    } else {
+                                        0L
+                                    }
+                                val decodeMs =
+                                    if (firstMessageNs > 0L) {
+                                        (endNs - firstMessageNs) / 1_000_000L
+                                    } else {
+                                        0L
+                                    }
+                                lastTelemetry =
+                                    StreamTelemetry(
+                                        prefillMs = prefillMs,
+                                        decodeMs = decodeMs,
+                                        inputCharCount = telemetryInputChars,
+                                        outputCharCount = lastCumulative.length,
+                                        specDecodingEngaged = instance.speculativeDecodingEngaged,
+                                    )
+                                instance.lastUseAtMs = android.os.SystemClock.elapsedRealtime()
+                                close()
+                            }
+
+                            override fun onError(throwable: Throwable) {
+                                // The KV-cache state is now unknown — force the next turn cold.
+                                instance.processed.clear()
+                                instance.lastUseAtMs = android.os.SystemClock.elapsedRealtime()
+                                if (throwable is CancellationException) close() else close(throwable)
+                            }
+                        },
+                        emptyMap(),
+                    )
+                    awaitClose { /* SDK callback already closed the channel above. */ }
+                }
+            } finally {
+                runCatching { hintSession?.close() }
+                runCatching { Process.setThreadPriority(callerTid, originalPriority) }
+                // Arm (or re-arm) the idle teardown. A new turn cancels the prior schedule and
+                // starts a fresh window from now; no turn keeps the existing one ticking.
+                armIdleTeardown()
+            }
+        }.flowOn(Dispatchers.IO)
 
     /**
      * Cancel the currently-running generation, if any. Safe to call when nothing is
      * generating. Does NOT tear down the Engine or Conversation; the runtime stays warm.
      */
     fun stop() {
-        try { loaded?.conversation?.cancelProcess() } catch (_: Throwable) {}
+        try {
+            loaded?.conversation?.cancelProcess()
+        } catch (_: Throwable) {
+        }
     }
 
     /**
@@ -904,8 +1006,14 @@ class LiteRtRuntime(private val context: Context) {
         idleTeardownJob?.cancel()
         idleTeardownJob = null
         mutex.withLock {
-            try { loaded?.conversation?.close() } catch (_: Throwable) {}
-            try { loaded?.engine?.close() } catch (_: Throwable) {}
+            try {
+                loaded?.conversation?.close()
+            } catch (_: Throwable) {
+            }
+            try {
+                loaded?.engine?.close()
+            } catch (_: Throwable) {
+            }
             loaded = null
             lastTelemetry = null
         }

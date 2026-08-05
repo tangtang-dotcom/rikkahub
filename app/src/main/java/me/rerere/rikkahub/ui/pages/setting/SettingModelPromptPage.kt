@@ -39,7 +39,6 @@ import me.rerere.rikkahub.data.ai.prompts.DEFAULT_SUGGESTION_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TITLE_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TRANSLATION_PROMPT
 import me.rerere.rikkahub.data.datastore.Settings
-
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.CardGroupScope
@@ -47,7 +46,11 @@ import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.utils.plus
 
 @Composable
-internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPadding: PaddingValues) {
+internal fun PromptSettingsPage(
+    settings: Settings,
+    vm: SettingVM,
+    contentPadding: PaddingValues,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
@@ -61,7 +64,11 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                 onPromptChange = { vm.updateSettings(settings.copy(translatePrompt = it)) },
                 onResetPrompt = { vm.updateSettings(settings.copy(translatePrompt = DEFAULT_TRANSLATION_PROMPT)) },
                 reasoningLevel = ReasoningLevel.fromBudgetTokens(settings.translateThinkingBudget),
-                onUpdateReasoningLevel = { vm.updateSettings(settings.copy(translateThinkingBudget = it.budgetTokens)) },
+                onUpdateReasoningLevel = {
+                    vm.updateSettings(
+                        settings.copy(translateThinkingBudget = it.budgetTokens),
+                    )
+                },
             )
         }
         item {
@@ -100,8 +107,8 @@ internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPaddin
                 onResetPrompt = { vm.updateSettings(settings.copy(compressPrompt = DEFAULT_COMPRESS_PROMPT)) },
             )
         }
-        }
     }
+}
 
 @Composable
 private fun PromptSettingItem(
@@ -147,10 +154,11 @@ private fun PromptSettingItem(
             onDismissRequest = { showEditor = false },
         ) {
             Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
-                    .imePadding(),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                        .imePadding(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(

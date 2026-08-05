@@ -118,41 +118,51 @@ fun WorkspaceFileEditorPage(
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         when {
-            loading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
+            loading -> {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
             }
 
-            loadError != null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
-            ) {
-                Text(
-                    text = loadError ?: "",
-                    color = MaterialTheme.colorScheme.error,
+            loadError != null -> {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(16.dp),
+                ) {
+                    Text(
+                        text = loadError ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
+            else -> {
+                TextField(
+                    state = textState,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .imePadding(),
+                    readOnly = !editable,
+                    lineLimits = TextFieldLineLimits.MultiLine(),
+                    textStyle =
+                        LocalTextStyle.current.copy(
+                            fontFamily = JetbrainsMono,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                        ),
                 )
             }
-
-            else -> TextField(
-                state = textState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .imePadding(),
-                readOnly = !editable,
-                lineLimits = TextFieldLineLimits.MultiLine(),
-                textStyle = LocalTextStyle.current.copy(
-                    fontFamily = JetbrainsMono,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                ),
-            )
         }
     }
 }

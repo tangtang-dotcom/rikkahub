@@ -24,7 +24,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Play
@@ -122,15 +122,19 @@ fun SettingTelegramPage() {
                 },
                 text = {
                     Text(
-                        if (cfg.enabled) stringResource(R.string.setting_page_telegram_stop)
-                        else stringResource(R.string.setting_page_telegram_start)
+                        if (cfg.enabled) {
+                            stringResource(R.string.setting_page_telegram_stop)
+                        } else {
+                            stringResource(R.string.setting_page_telegram_start)
+                        },
                     )
                 },
-                containerColor = if (cfg.enabled) {
-                    MaterialTheme.colorScheme.errorContainer
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                },
+                containerColor =
+                    if (cfg.enabled) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -143,9 +147,10 @@ fun SettingTelegramPage() {
         ) {
             item {
                 CardGroup(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
                 ) {
                     item(
                         headlineContent = { Text(stringResource(R.string.setting_page_telegram_token)) },
@@ -173,11 +178,12 @@ fun SettingTelegramPage() {
                                 modifier = Modifier.width(220.dp),
                                 enabled = !cfg.enabled,
                                 shape = CircleShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         },
                     )
@@ -199,11 +205,12 @@ fun SettingTelegramPage() {
                                 singleLine = true,
                                 modifier = Modifier.width(160.dp),
                                 shape = CircleShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         },
                     )
@@ -215,9 +222,11 @@ fun SettingTelegramPage() {
                                 value = whitelistText,
                                 onValueChange = { value ->
                                     whitelistText = value
-                                    val ids = value.split(",")
-                                        .mapNotNull { it.trim().toLongOrNull() }
-                                        .toSet()
+                                    val ids =
+                                        value
+                                            .split(",")
+                                            .mapNotNull { it.trim().toLongOrNull() }
+                                            .toSet()
                                     scope.launch {
                                         prefs.update { it.copy(whitelist = ids) }
                                     }
@@ -226,28 +235,33 @@ fun SettingTelegramPage() {
                                 singleLine = true,
                                 modifier = Modifier.width(220.dp),
                                 shape = CircleShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         },
                     )
                     item(
                         headlineContent = {
                             Text(
-                                text = if (cfg.enabled && serviceRunning)
-                                    stringResource(R.string.setting_page_telegram_status_running)
-                                else if (cfg.enabled)
-                                    stringResource(R.string.setting_page_telegram_status_starting)
-                                else
-                                    stringResource(R.string.setting_page_telegram_status_stopped),
+                                text =
+                                    if (cfg.enabled && serviceRunning) {
+                                        stringResource(R.string.setting_page_telegram_status_running)
+                                    } else if (cfg.enabled) {
+                                        stringResource(R.string.setting_page_telegram_status_starting)
+                                    } else {
+                                        stringResource(R.string.setting_page_telegram_status_stopped)
+                                    },
                                 style = MaterialTheme.typography.titleSmall,
-                                color = if (cfg.enabled && serviceRunning)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                color =
+                                    if (cfg.enabled && serviceRunning) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                             )
                         },
                         supportingContent = {
@@ -282,25 +296,29 @@ private fun BatteryOptimizationCard() {
     var resumeTick by remember { mutableStateOf(0) }
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
-        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) resumeTick++
-        }
+        val obs =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) resumeTick++
+            }
         lifecycleOwner.lifecycle.addObserver(obs)
         onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
     }
-    val whitelisted = remember(resumeTick) {
-        me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
-            .ignoresBatteryOptimizations(ctx)
-    }
+    val whitelisted =
+        remember(resumeTick) {
+            me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
+                .ignoresBatteryOptimizations(ctx)
+        }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { /* result ignored - re-checked via ON_RESUME */ }
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) { /* result ignored - re-checked via ON_RESUME */ }
 
     CardGroup(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
     ) {
         item(
             onClick = {
@@ -308,8 +326,9 @@ private fun BatteryOptimizationCard() {
                     toaster.show(ctx.getString(R.string.setting_page_telegram_battery_already_ok))
                     return@item
                 }
-                val intent = me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
-                    .requestIgnoreBatteryOptimizationsIntent(ctx)
+                val intent =
+                    me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
+                        .requestIgnoreBatteryOptimizationsIntent(ctx)
                 try {
                     launcher.launch(intent)
                 } catch (_: Throwable) {
@@ -317,21 +336,25 @@ private fun BatteryOptimizationCard() {
                     // to the system-wide list page where the user can find the app manually.
                     launcher.launch(
                         me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
-                            .batteryOptimizationsListIntent()
+                            .batteryOptimizationsListIntent(),
                     )
                 }
             },
             headlineContent = {
                 Text(
-                    text = if (whitelisted)
-                        stringResource(R.string.setting_page_telegram_battery_ok)
-                    else
-                        stringResource(R.string.setting_page_telegram_battery_needed),
+                    text =
+                        if (whitelisted) {
+                            stringResource(R.string.setting_page_telegram_battery_ok)
+                        } else {
+                            stringResource(R.string.setting_page_telegram_battery_needed)
+                        },
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (whitelisted)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.error,
+                    color =
+                        if (whitelisted) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
                 )
             },
             supportingContent = {

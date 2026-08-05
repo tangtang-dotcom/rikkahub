@@ -25,7 +25,7 @@ fun FormItem(
     label: @Composable () -> Unit,
     description: @Composable (() -> Unit)? = null,
     tail: @Composable () -> Unit = {},
-    content: @Composable ColumnScope.() -> Unit = {}
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -34,17 +34,18 @@ fun FormItem(
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = modifier.weight(1f)
+            modifier = modifier.weight(1f),
         ) {
             ProvideTextStyle(
-                value = MaterialTheme.typography.titleMedium
+                value = MaterialTheme.typography.titleMedium,
             ) {
                 label()
             }
             ProvideTextStyle(
-                value = MaterialTheme.typography.labelSmall.copy(
-                    color = LocalContentColor.current.copy(alpha = 0.6f)
-                )
+                value =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = LocalContentColor.current.copy(alpha = 0.6f),
+                    ),
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -66,7 +67,7 @@ private fun FormItemPreview() {
         content = {
             OutlinedTextField(
                 value = "",
-                onValueChange = {}
+                onValueChange = {},
             )
         },
         description = {
@@ -75,7 +76,7 @@ private fun FormItemPreview() {
         tail = {
             Switch(
                 checked = true,
-                onCheckedChange = {}
+                onCheckedChange = {},
             )
         },
         modifier = Modifier.padding(4.dp),

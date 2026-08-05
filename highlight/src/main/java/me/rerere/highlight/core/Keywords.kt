@@ -11,15 +11,17 @@ internal class Keywords private constructor(
     val pattern: String?,
     val groups: List<Group>,
 ) {
-    class Group(val scope: String, val words: List<String>)
+    class Group(
+        val scope: String,
+        val words: List<String>,
+    )
 
     companion object {
         const val DEFAULT_SCOPE = "keyword"
 
         fun of(words: String): Keywords = of(splitWords(words))
 
-        fun of(words: List<String>): Keywords =
-            Keywords(pattern = null, groups = listOf(Group(DEFAULT_SCOPE, words)))
+        fun of(words: List<String>): Keywords = Keywords(pattern = null, groups = listOf(Group(DEFAULT_SCOPE, words)))
 
         fun build(block: KeywordsBuilder.() -> Unit): Keywords {
             val builder = KeywordsBuilder().apply(block)
@@ -30,8 +32,7 @@ internal class Keywords private constructor(
          * Upstream splits on a single space; splitting on any run of whitespace additionally lets
          * grammars keep long keyword lists readable across several lines.
          */
-        fun splitWords(words: String): List<String> =
-            words.split(WHITESPACE).filter { it.isNotEmpty() }
+        fun splitWords(words: String): List<String> = words.split(WHITESPACE).filter { it.isNotEmpty() }
 
         private val WHITESPACE = Regex("""\s+""")
     }
@@ -43,11 +44,17 @@ internal class KeywordsBuilder {
 
     internal val groups = mutableListOf<Keywords.Group>()
 
-    fun scope(name: String, words: String) {
+    fun scope(
+        name: String,
+        words: String,
+    ) {
         groups += Keywords.Group(name, Keywords.splitWords(words))
     }
 
-    fun scope(name: String, words: List<String>) {
+    fun scope(
+        name: String,
+        words: List<String>,
+    ) {
         groups += Keywords.Group(name, words)
     }
 
@@ -89,12 +96,26 @@ internal fun keywords(words: List<String>): Keywords = Keywords.of(words)
 internal fun keywords(block: KeywordsBuilder.() -> Unit): Keywords = Keywords.build(block)
 
 /** A compiled keyword: the scope it should be emitted under, plus its relevance score. */
-internal class KeywordData(val scope: String, val relevance: Double)
+internal class KeywordData(
+    val scope: String,
+    val relevance: Double,
+)
 
 /** Keywords that carry no relevance by default, mirroring `COMMON_KEYWORDS` upstream. */
-private val COMMON_KEYWORDS = setOf(
-    "of", "and", "for", "in", "not", "or", "if", "then", "parent", "list", "value",
-)
+private val COMMON_KEYWORDS =
+    setOf(
+        "of",
+        "and",
+        "for",
+        "in",
+        "not",
+        "or",
+        "if",
+        "then",
+        "parent",
+        "list",
+        "value",
+    )
 
 /** Mirrors `compileKeywords()` upstream. */
 internal fun compileKeywords(
@@ -115,7 +136,10 @@ internal fun compileKeywords(
 }
 
 /** Mirrors `scoreForKeyword()` upstream: manual scores always win over common keywords. */
-private fun scoreForKeyword(keyword: String, providedScore: String?): Double {
+private fun scoreForKeyword(
+    keyword: String,
+    providedScore: String?,
+): Double {
     if (!providedScore.isNullOrEmpty()) {
         return providedScore.toDoubleOrNull() ?: 1.0
     }

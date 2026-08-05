@@ -43,15 +43,15 @@ class ProotShellRunner(
 
         context.tempDir.mkdirs()
         patcher.patch(context.linuxDir)
-        val process = ProcessBuilder(buildCommand(context, proot))
-            .directory(context.filesDir)
-            .redirectErrorStream(false)
-            .apply {
-                environment()["PROOT_LOADER"] = loader.absolutePath
-                environment()["PROOT_TMP_DIR"] = context.tempDir.absolutePath
-                environment()["TMPDIR"] = context.tempDir.absolutePath
-            }
-            .start()
+        val process =
+            ProcessBuilder(buildCommand(context, proot))
+                .directory(context.filesDir)
+                .redirectErrorStream(false)
+                .apply {
+                    environment()["PROOT_LOADER"] = loader.absolutePath
+                    environment()["PROOT_TMP_DIR"] = context.tempDir.absolutePath
+                    environment()["TMPDIR"] = context.tempDir.absolutePath
+                }.start()
 
         return process.readResult(context.timeoutMillis, context.stdin)
     }
@@ -60,18 +60,19 @@ class ProotShellRunner(
         context: WorkspaceShellContext,
         proot: File,
     ): List<String> {
-        val command = mutableListOf(
-            proot.absolutePath,
-            "--root-id",
-            "--link2symlink",
-            "--kill-on-exit",
-            "-r",
-            context.linuxDir.absolutePath,
-            "-w",
-            context.prootCwd(),
-            "-b",
-            "${context.filesDir.absolutePath}:$WORKSPACE_DIR",
-        )
+        val command =
+            mutableListOf(
+                proot.absolutePath,
+                "--root-id",
+                "--link2symlink",
+                "--kill-on-exit",
+                "-r",
+                context.linuxDir.absolutePath,
+                "-w",
+                context.prootCwd(),
+                "-b",
+                "${context.filesDir.absolutePath}:$WORKSPACE_DIR",
+            )
 
         context.bindMounts.forEach { mount ->
             if (mount.source.exists()) {
@@ -87,23 +88,24 @@ class ProotShellRunner(
             }
         }
 
-        command += listOf(
-            "/usr/bin/env",
-            "-i",
-            "HOME=/root",
-            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-            "TERM=xterm-256color",
-            "LANG=C.UTF-8",
-            "LC_ALL=C.UTF-8",
-            "/bin/bash",
-            "-l",
-            "-c",
-            // 命令通过位置参数传入, 避免任何转义; eval "$2" 对命令文本只求值一次, 等价于 bash -c "$cmd"
-            "cd -- \"\$1\" && eval \"\$2\"",
-            "rikkahub",
-            context.prootCwd(),
-            context.command,
-        )
+        command +=
+            listOf(
+                "/usr/bin/env",
+                "-i",
+                "HOME=/root",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "TERM=xterm-256color",
+                "LANG=C.UTF-8",
+                "LC_ALL=C.UTF-8",
+                "/bin/bash",
+                "-l",
+                "-c",
+                // 命令通过位置参数传入, 避免任何转义; eval "$2" 对命令文本只求值一次, 等价于 bash -c "$cmd"
+                "cd -- \"\$1\" && eval \"\$2\"",
+                "rikkahub",
+                context.prootCwd(),
+                context.command,
+            )
         return command
     }
 
@@ -116,8 +118,7 @@ class ProotShellRunner(
         }
     }
 
-    private fun File.hasUsableRootfs(): Boolean =
-        isDirectory && File(this, "bin/sh").isFile
+    private fun File.hasUsableRootfs(): Boolean = isDirectory && File(this, "bin/sh").isFile
 
     private companion object {
         private const val PROOT_EXEC = "libproot_exec.so"

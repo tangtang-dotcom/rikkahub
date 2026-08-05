@@ -23,7 +23,10 @@ internal fun concat(vararg args: String): String = args.joinToString(separator =
  *
  * [capture] wraps the alternation in a capturing group instead of a non capturing one.
  */
-internal fun either(vararg args: String, capture: Boolean = false): String =
+internal fun either(
+    vararg args: String,
+    capture: Boolean = false,
+): String =
     buildString {
         append('(')
         if (!capture) append("?:")
@@ -31,8 +34,10 @@ internal fun either(vararg args: String, capture: Boolean = false): String =
         append(')')
     }
 
-internal fun either(args: List<String>, capture: Boolean = false): String =
-    either(args = args.toTypedArray(), capture = capture)
+internal fun either(
+    args: List<String>,
+    capture: Boolean = false,
+): String = either(args = args.toTypedArray(), capture = capture)
 
 /**
  * Matches an open parenthesis, a backreference, a character class or any other escape sequence.
@@ -46,7 +51,10 @@ private val BACKREF_RE = Regex("""\[(?:[^\\\]]|\\.)*]|\(\??|\\([1-9][0-9]*)|\\."
  * Logically computes `regexps.join(joinWith)` while fixing up backreferences so they keep
  * matching, and places every individual expression into its own capture group.
  */
-internal fun rewriteBackreferences(regexes: List<String>, joinWith: String): String {
+internal fun rewriteBackreferences(
+    regexes: List<String>,
+    joinWith: String,
+): String {
     var numCaptures = 0
     return regexes.joinToString(separator = joinWith) { regex ->
         numCaptures += 1
@@ -97,7 +105,10 @@ private fun countMatchGroupsByScan(re: String): Int {
     return count
 }
 
-private fun isCapturingGroupStart(re: String, parenIndex: Int): Boolean {
+private fun isCapturingGroupStart(
+    re: String,
+    parenIndex: Int,
+): Boolean {
     if (re.getOrNull(parenIndex + 1) != '?') return true
     // `(?<name>` captures, `(?<=` and `(?<!` do not.
     if (re.getOrNull(parenIndex + 2) != '<') return false
@@ -105,8 +116,10 @@ private fun isCapturingGroupStart(re: String, parenIndex: Int): Boolean {
 }
 
 /** Does [lexeme] start with a match of [pattern]? Mirrors `startsWith()` upstream. */
-internal fun startsWith(pattern: Pattern?, lexeme: String): Boolean =
-    pattern != null && pattern.matcher(lexeme).lookingAt()
+internal fun startsWith(
+    pattern: Pattern?,
+    lexeme: String,
+): Boolean = pattern != null && pattern.matcher(lexeme).lookingAt()
 
 /**
  * Compiles a JavaScript flavoured regular expression source into a [Pattern].
@@ -205,14 +218,22 @@ internal fun translateJsRegex(source: String): String {
  *
  * `\p{…}` and `\P{…}` are passed through under the name [java.util.regex] knows them by.
  */
-private fun appendEscape(source: String, index: Int, out: StringBuilder): Int {
+private fun appendEscape(
+    source: String,
+    index: Int,
+    out: StringBuilder,
+): Int {
     val escaped = source[index + 1]
     if ((escaped == 'p' || escaped == 'P') && source.getOrNull(index + 2) == '{') {
         val close = source.indexOf('}', startIndex = index + 3)
         if (close != -1) {
             val name = source.substring(index + 3, close)
-            out.append('\\').append(escaped).append('{')
-                .append(UNICODE_PROPERTY_NAMES[name] ?: name).append('}')
+            out
+                .append('\\')
+                .append(escaped)
+                .append('{')
+                .append(UNICODE_PROPERTY_NAMES[name] ?: name)
+                .append('}')
             return close + 1
         }
     }
@@ -227,13 +248,17 @@ private fun appendEscape(source: String, index: Int, out: StringBuilder): Int {
  * which describes the same characters bar the identifier-ignorable ones — control and format
  * characters that no source file uses inside a name anyway.
  */
-private val UNICODE_PROPERTY_NAMES = mapOf(
-    "XID_Start" to "javaUnicodeIdentifierStart",
-    "XID_Continue" to "javaUnicodeIdentifierPart",
-)
+private val UNICODE_PROPERTY_NAMES =
+    mapOf(
+        "XID_Start" to "javaUnicodeIdentifierStart",
+        "XID_Continue" to "javaUnicodeIdentifierPart",
+    )
 
 /** Is the `{` at [braceIndex] the start of a `{n}`, `{n,}` or `{n,m}` quantifier? */
-private fun opensQuantifier(source: String, braceIndex: Int): Boolean {
+private fun opensQuantifier(
+    source: String,
+    braceIndex: Int,
+): Boolean {
     var index = braceIndex + 1
     val digitsStart = index
     while (index < source.length && source[index].isDigit()) index++

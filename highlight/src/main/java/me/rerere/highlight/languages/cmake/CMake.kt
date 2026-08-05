@@ -9,29 +9,33 @@ import me.rerere.highlight.core.keywords
 import me.rerere.highlight.core.mode
 
 /** CMake, ported from `lib/languages/cmake.js` of `highlight.js` 11.11.1. */
-internal fun cmake(): Language = Language(
-    name = "CMake",
-    aliases = setOf("cmake", "cmake.in"),
-    caseInsensitive = true,
-    root = mode {
-        keywords = keywords { keyword(CMAKE_KEYWORDS) }
-        contains = listOf(
+internal fun cmake(): Language =
+    Language(
+        name = "CMake",
+        aliases = setOf("cmake", "cmake.in"),
+        caseInsensitive = true,
+        root =
             mode {
-                scope = "variable"
-                begin = """\$\{"""
-                end = """\}"""
+                keywords = keywords { keyword(CMAKE_KEYWORDS) }
+                contains =
+                    listOf(
+                        mode {
+                            scope = "variable"
+                            begin = """\$\{"""
+                            end = """\}"""
+                        },
+                        comment("""#\[\[""", "]]"),
+                        HASH_COMMENT_MODE,
+                        QUOTE_STRING_MODE,
+                        NUMBER_MODE,
+                    )
             },
-            comment("""#\[\[""", "]]"),
-            HASH_COMMENT_MODE,
-            QUOTE_STRING_MODE,
-            NUMBER_MODE,
-        )
-    },
-)
+    )
 
-private val CMAKE_KEYWORDS = listOf(
-    // scripting commands
-    """
+private val CMAKE_KEYWORDS =
+    listOf(
+        // scripting commands
+        """
     break cmake_host_system_information cmake_minimum_required cmake_parse_arguments
     cmake_policy configure_file continue elseif else endforeach endfunction endif endmacro
     endwhile execute_process file find_file find_library find_package find_path
@@ -40,8 +44,8 @@ private val CMAKE_KEYWORDS = listOf(
     mark_as_advanced math message option return separate_arguments
     set_directory_properties set_property set site_name string unset variable_watch while
     """,
-    // project commands
-    """
+        // project commands
+        """
     add_compile_definitions add_compile_options add_custom_command add_custom_target
     add_definitions add_dependencies add_executable add_library add_link_options
     add_subdirectory add_test aux_source_directory build_command create_test_sourcelist
@@ -54,24 +58,24 @@ private val CMAKE_KEYWORDS = listOf(
     target_include_directories target_link_directories target_link_libraries
     target_link_options target_sources try_compile try_run
     """,
-    // CTest commands
-    """
+        // CTest commands
+        """
     ctest_build ctest_configure ctest_coverage ctest_empty_binary_directory ctest_memcheck
     ctest_read_custom_files ctest_run_script ctest_sleep ctest_start ctest_submit
     ctest_test ctest_update ctest_upload
     """,
-    // deprecated commands
-    """
+        // deprecated commands
+        """
     build_name exec_program export_library_dependencies install_files install_programs
     install_targets load_command make_directory output_required_files remove
     subdir_depends subdirs use_mangled_mesa utility_source variable_requires write_file
     qt5_use_modules qt5_use_package qt5_wrap_cpp
     """,
-    // core keywords
-    """
+        // core keywords
+        """
     on off true false and or not command policy target test exists is_newer_than
     is_directory is_symlink is_absolute matches less greater equal less_equal
     greater_equal strless strgreater strequal strless_equal strgreater_equal version_less
     version_greater version_equal version_less_equal version_greater_equal in_list defined
     """,
-).joinToString(separator = " ")
+    ).joinToString(separator = " ")

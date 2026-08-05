@@ -8,16 +8,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.workspace.RootfsInstallProgress
 import me.rerere.workspace.RootfsInstallStage
-import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceCommandResult
+import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceStorageArea
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 
 class WorkspaceDetailVM(
     private val id: String,
@@ -111,7 +111,10 @@ class WorkspaceDetailVM(
         }
     }
 
-    fun importFile(inputStream: InputStream, fileName: String) {
+    fun importFile(
+        inputStream: InputStream,
+        fileName: String,
+    ) {
         viewModelScope.launch {
             runCatching {
                 repository.importFile(
@@ -129,7 +132,10 @@ class WorkspaceDetailVM(
         }
     }
 
-    fun exportFile(entry: WorkspaceFileEntry, outputStream: OutputStream) {
+    fun exportFile(
+        entry: WorkspaceFileEntry,
+        outputStream: OutputStream,
+    ) {
         viewModelScope.launch {
             runCatching {
                 repository.exportFile(
@@ -148,7 +154,11 @@ class WorkspaceDetailVM(
      * 把当前区域下的文件导出到 cacheDir 的临时文件, 完成后回调 [onReady].
      * 供分享 / 图片预览 / 交给系统应用打开等复用 (它们都需要一个 FileProvider 可访问的真实 File).
      */
-    fun exportToCacheFile(entry: WorkspaceFileEntry, cacheDir: File, onReady: (File) -> Unit) {
+    fun exportToCacheFile(
+        entry: WorkspaceFileEntry,
+        cacheDir: File,
+        onReady: (File) -> Unit,
+    ) {
         viewModelScope.launch {
             runCatching {
                 val dir = File(cacheDir, "workspace_share").apply { mkdirs() }
@@ -168,7 +178,10 @@ class WorkspaceDetailVM(
         }
     }
 
-    fun setToolApproval(toolName: String, needsApproval: Boolean) {
+    fun setToolApproval(
+        toolName: String,
+        needsApproval: Boolean,
+    ) {
         viewModelScope.launch {
             val workspace = state.value.workspace ?: return@launch
             repository.setToolApproval(workspace.id, toolName, needsApproval)
@@ -205,17 +218,18 @@ class WorkspaceDetailVM(
         val trimmed = command.trim()
         if (trimmed.isBlank()) return
         // 原子地完成「检查 running」与「置 running=true」, 避免两次快速提交并发启动两条命令
-        val previous = _terminalState.getAndUpdate { state ->
-            if (state.running) {
-                state
-            } else {
-                state.copy(
-                    running = true,
-                    input = "",
-                    history = state.history + WorkspaceTerminalEntry.Command(trimmed),
-                )
+        val previous =
+            _terminalState.getAndUpdate { state ->
+                if (state.running) {
+                    state
+                } else {
+                    state.copy(
+                        running = true,
+                        input = "",
+                        history = state.history + WorkspaceTerminalEntry.Command(trimmed),
+                    )
+                }
             }
-        }
         if (previous.running) return
         viewModelScope.launch {
             runCatching {
@@ -270,7 +284,15 @@ data class WorkspaceTerminalState(
 )
 
 sealed interface WorkspaceTerminalEntry {
-    data class Command(val command: String) : WorkspaceTerminalEntry
-    data class Result(val result: WorkspaceCommandResult) : WorkspaceTerminalEntry
-    data class Error(val message: String) : WorkspaceTerminalEntry
+    data class Command(
+        val command: String,
+    ) : WorkspaceTerminalEntry
+
+    data class Result(
+        val result: WorkspaceCommandResult,
+    ) : WorkspaceTerminalEntry
+
+    data class Error(
+        val message: String,
+    ) : WorkspaceTerminalEntry
 }

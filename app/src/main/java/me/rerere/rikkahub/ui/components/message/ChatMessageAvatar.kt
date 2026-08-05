@@ -30,7 +30,9 @@ fun ChatMessageUserAvatar(
     modifier: Modifier = Modifier,
 ) {
     val settings = LocalSettings.current
-    if (message.role == MessageRole.USER && !message.parts.isEmptyUIMessage() && settings.displaySetting.showUserAvatar) {
+    if (message.role == MessageRole.USER && !message.parts.isEmptyUIMessage() &&
+        settings.displaySetting.showUserAvatar
+    ) {
         Row(
             modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
@@ -66,7 +68,7 @@ fun ChatMessageAssistantAvatar(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
+            modifier = modifier,
         ) {
             if (useAssistantAvatar) {
                 if (showIcon) {
@@ -95,7 +97,7 @@ fun ChatMessageAssistantAvatar(
                     AutoAIIcon(
                         name = model.modelId,
                         modifier = Modifier.size(28.dp),
-                        loading = loading
+                        loading = loading,
                     )
                 }
                 Row(

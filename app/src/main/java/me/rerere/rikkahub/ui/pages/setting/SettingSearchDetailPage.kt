@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Play
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,6 +44,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.highlight.LocalCodeHighlighter
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.Play
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
@@ -66,7 +66,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun SettingSearchDetailPage(
     serviceId: Uuid,
-    vm: SettingVM = koinViewModel()
+    vm: SettingVM = koinViewModel(),
 ) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -100,50 +100,53 @@ fun SettingSearchDetailPage(
                                 newServices.removeAt(serviceIndex)
                                 vm.updateSettings(settings.copy(searchServices = newServices))
                                 nav.popBackStack()
-                            }
+                            },
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.delete)
+                                contentDescription = stringResource(R.string.delete),
                             )
                         }
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .imePadding(),
             contentPadding = padding + PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item("config") {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = CustomColors.listItemColors.containerColor
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = CustomColors.listItemColors.containerColor,
+                        ),
                 ) {
                     Column(
-                        modifier = Modifier
-                            .animateContentSize()
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier =
+                            Modifier
+                                .animateContentSize()
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.setting_page_search_config),
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
 
                         SearchServiceOptionsEditor(
                             options = options,
-                            onUpdateOptions = { save(it) }
+                            onUpdateOptions = { save(it) },
                         )
 
                         ProvideTextStyle(MaterialTheme.typography.labelMedium) {
@@ -156,7 +159,7 @@ fun SettingSearchDetailPage(
             item("test") {
                 SearchTestSection(
                     options = options,
-                    commonOptions = settings.searchCommonOptions
+                    commonOptions = settings.searchCommonOptions,
                 )
             }
         }
@@ -167,58 +170,75 @@ fun SettingSearchDetailPage(
 @Composable
 private fun SearchServiceOptionsEditor(
     options: SearchServiceOptions,
-    onUpdateOptions: (SearchServiceOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions) -> Unit,
 ) {
     when (options) {
         is SearchServiceOptions.TavilyOptions -> {
             TavilyOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.ExaOptions -> {
             ExaOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.ZhipuOptions -> {
             ZhipuOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.SearXNGOptions -> {
             SearXNGOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.LinkUpOptions -> {
             SearchLinkUpOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.BraveOptions -> {
             BraveOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.MetasoOptions -> {
             MetasoOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.OllamaOptions -> {
             OllamaOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.PerplexityOptions -> {
             PerplexityOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.BingLocalOptions -> {}
+
         is SearchServiceOptions.FirecrawlOptions -> {
             FirecrawlOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.JinaOptions -> {
             JinaOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.BochaOptions -> {
             BochaOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.RikkaHubOptions -> {
             RikkaHubOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.GrokOptions -> {
             GrokOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.TinyfishOptions -> {
             TinyfishOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.SerperOptions -> {
             SerperOptions(options) { onUpdateOptions(it) }
         }
+
         is SearchServiceOptions.CustomJsOptions -> {
             CustomJsOptions(options) { onUpdateOptions(it) }
         }
@@ -228,7 +248,7 @@ private fun SearchServiceOptionsEditor(
 @Composable
 private fun SearchTestSection(
     options: SearchServiceOptions,
-    commonOptions: SearchCommonOptions
+    commonOptions: SearchCommonOptions,
 ) {
     var query by remember { mutableStateOf("") }
     var testing by remember { mutableStateOf(false) }
@@ -236,32 +256,34 @@ private fun SearchTestSection(
     val scope = rememberCoroutineScope()
 
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = CustomColors.listItemColors.containerColor
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .animateContentSize()
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .animateContentSize()
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text = stringResource(R.string.setting_page_search_test),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
             )
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text(stringResource(R.string.setting_page_search_test_query_hint)) },
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 IconButton(
@@ -271,25 +293,26 @@ private fun SearchTestSection(
                             result = null
                             scope.launch {
                                 val service = SearchService.getService(options)
-                                val params = JsonObject(
-                                    mapOf("query" to JsonPrimitive(query))
-                                )
+                                val params =
+                                    JsonObject(
+                                        mapOf("query" to JsonPrimitive(query)),
+                                    )
                                 result = service.search(params, commonOptions, options)
                                 testing = false
                             }
                         }
                     },
-                    enabled = query.isNotBlank() && !testing
+                    enabled = query.isNotBlank() && !testing,
                 ) {
                     if (testing) {
                         CircularProgressIndicator(
                             modifier = Modifier.padding(4.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
                         )
                     } else {
                         Icon(
                             imageVector = HugeIcons.Play,
-                            contentDescription = stringResource(R.string.setting_page_search_test_run)
+                            contentDescription = stringResource(R.string.setting_page_search_test_run),
                         )
                     }
                 }
@@ -301,34 +324,36 @@ private fun SearchTestSection(
                         Text(
                             text = answer,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     searchResult.items.forEachIndexed { index, item ->
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                ),
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 Text(
                                     text = "${index + 1}. ${item.title}",
-                                    style = MaterialTheme.typography.titleSmall
+                                    style = MaterialTheme.typography.titleSmall,
                                 )
                                 Text(
                                     text = item.url,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                                 Text(
                                     text = item.text.take(200),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -338,7 +363,7 @@ private fun SearchTestSection(
                     Text(
                         text = error.message ?: stringResource(R.string.search_detail_unknown_error),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -349,30 +374,30 @@ private fun SearchTestSection(
 @Composable
 internal fun TavilyOptions(
     options: SearchServiceOptions.TavilyOptions,
-    onUpdateOptions: (SearchServiceOptions.TavilyOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.TavilyOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_depth))
-        }
+        },
     ) {
         val depthOptions = listOf("basic", "advanced")
         SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             depthOptions.forEachIndexed { index, depth ->
                 SegmentedButton(
@@ -380,7 +405,7 @@ internal fun TavilyOptions(
                     onClick = {
                         onUpdateOptions(options.copy(depth = depth))
                     },
-                    selected = options.depth == depth
+                    selected = options.depth == depth,
                 ) {
                     Text(depth.replaceFirstChar { it.uppercase() })
                 }
@@ -392,19 +417,19 @@ internal fun TavilyOptions(
 @Composable
 internal fun ExaOptions(
     options: SearchServiceOptions.ExaOptions,
-    onUpdateOptions: (SearchServiceOptions.ExaOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.ExaOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -412,19 +437,19 @@ internal fun ExaOptions(
 @Composable
 internal fun ZhipuOptions(
     options: SearchServiceOptions.ZhipuOptions,
-    onUpdateOptions: (SearchServiceOptions.ZhipuOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.ZhipuOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -432,75 +457,75 @@ internal fun ZhipuOptions(
 @Composable
 internal fun SearXNGOptions(
     options: SearchServiceOptions.SearXNGOptions,
-    onUpdateOptions: (SearchServiceOptions.SearXNGOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.SearXNGOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_url))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.url,
             onValueChange = {
                 onUpdateOptions(options.copy(url = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_engines))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.engines,
             onValueChange = {
                 onUpdateOptions(options.copy(engines = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_language))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.language,
             onValueChange = {
                 onUpdateOptions(options.copy(language = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_username))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.username,
             onValueChange = {
                 onUpdateOptions(options.copy(username = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_password))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.password,
             onValueChange = {
                 onUpdateOptions(options.copy(password = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -508,30 +533,30 @@ internal fun SearXNGOptions(
 @Composable
 internal fun SearchLinkUpOptions(
     options: SearchServiceOptions.LinkUpOptions,
-    onUpdateOptions: (SearchServiceOptions.LinkUpOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.LinkUpOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_depth))
-        }
+        },
     ) {
         val depthOptions = listOf("standard", "deep")
         SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             depthOptions.forEachIndexed { index, depth ->
                 SegmentedButton(
@@ -539,7 +564,7 @@ internal fun SearchLinkUpOptions(
                     onClick = {
                         onUpdateOptions(options.copy(depth = depth))
                     },
-                    selected = options.depth == depth
+                    selected = options.depth == depth,
                 ) {
                     Text(depth.replaceFirstChar { it.uppercase() })
                 }
@@ -551,19 +576,19 @@ internal fun SearchLinkUpOptions(
 @Composable
 internal fun BraveOptions(
     options: SearchServiceOptions.BraveOptions,
-    onUpdateOptions: (SearchServiceOptions.BraveOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.BraveOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -571,19 +596,19 @@ internal fun BraveOptions(
 @Composable
 internal fun SerperOptions(
     options: SearchServiceOptions.SerperOptions,
-    onUpdateOptions: (SearchServiceOptions.SerperOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.SerperOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -591,19 +616,19 @@ internal fun SerperOptions(
 @Composable
 internal fun MetasoOptions(
     options: SearchServiceOptions.MetasoOptions,
-    onUpdateOptions: (SearchServiceOptions.MetasoOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.MetasoOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -611,19 +636,19 @@ internal fun MetasoOptions(
 @Composable
 internal fun OllamaOptions(
     options: SearchServiceOptions.OllamaOptions,
-    onUpdateOptions: (SearchServiceOptions.OllamaOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.OllamaOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -631,26 +656,26 @@ internal fun OllamaOptions(
 @Composable
 internal fun PerplexityOptions(
     options: SearchServiceOptions.PerplexityOptions,
-    onUpdateOptions: (SearchServiceOptions.PerplexityOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.PerplexityOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_max_tokens))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.maxTokens?.takeIf { it > 0 }?.toString() ?: "",
@@ -658,14 +683,14 @@ internal fun PerplexityOptions(
                 onUpdateOptions(options.copy(maxTokens = value.toIntOrNull()))
             },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_max_tokens_per_page))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.maxTokensPerPage?.takeIf { it > 0 }?.toString() ?: "",
@@ -673,7 +698,7 @@ internal fun PerplexityOptions(
                 onUpdateOptions(options.copy(maxTokensPerPage = value.toIntOrNull()))
             },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }
 }
@@ -681,19 +706,19 @@ internal fun PerplexityOptions(
 @Composable
 internal fun FirecrawlOptions(
     options: SearchServiceOptions.FirecrawlOptions,
-    onUpdateOptions: (SearchServiceOptions.FirecrawlOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.FirecrawlOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -701,26 +726,26 @@ internal fun FirecrawlOptions(
 @Composable
 internal fun JinaOptions(
     options: SearchServiceOptions.JinaOptions,
-    onUpdateOptions: (SearchServiceOptions.JinaOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.JinaOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_search_url))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.searchUrl,
@@ -730,14 +755,14 @@ internal fun JinaOptions(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text("https://s.jina.ai/")
-            }
+            },
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_scrape_url))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.scrapeUrl,
@@ -747,7 +772,7 @@ internal fun JinaOptions(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text("https://r.jina.ai/")
-            }
+            },
         )
     }
 }
@@ -755,19 +780,19 @@ internal fun JinaOptions(
 @Composable
 internal fun BochaOptions(
     options: SearchServiceOptions.BochaOptions,
-    onUpdateOptions: (SearchServiceOptions.BochaOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.BochaOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -783,39 +808,39 @@ internal fun BochaOptions(
                 checked = options.summary,
                 onCheckedChange = { checked ->
                     onUpdateOptions(options.copy(summary = checked))
-                }
+                },
             )
-        }
+        },
     )
 }
 
 @Composable
 internal fun RikkaHubOptions(
     options: SearchServiceOptions.RikkaHubOptions,
-    onUpdateOptions: (SearchServiceOptions.RikkaHubOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.RikkaHubOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_depth))
-        }
+        },
     ) {
         val depthOptions = listOf("standard", "deep")
         SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             depthOptions.forEachIndexed { index, depth ->
                 SegmentedButton(
@@ -823,7 +848,7 @@ internal fun RikkaHubOptions(
                     onClick = {
                         onUpdateOptions(options.copy(depth = depth))
                     },
-                    selected = options.depth == depth
+                    selected = options.depth == depth,
                 ) {
                     Text(depth.replaceFirstChar { it.uppercase() })
                 }
@@ -835,19 +860,19 @@ internal fun RikkaHubOptions(
 @Composable
 internal fun TinyfishOptions(
     options: SearchServiceOptions.TinyfishOptions,
-    onUpdateOptions: (SearchServiceOptions.TinyfishOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.TinyfishOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -855,54 +880,54 @@ internal fun TinyfishOptions(
 @Composable
 internal fun GrokOptions(
     options: SearchServiceOptions.GrokOptions,
-    onUpdateOptions: (SearchServiceOptions.GrokOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.GrokOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_api_key))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.apiKey,
             onValueChange = {
                 onUpdateOptions(options.copy(apiKey = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_model))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.model,
             onValueChange = {
                 onUpdateOptions(options.copy(model = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_custom_url))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.customUrl,
             onValueChange = {
                 onUpdateOptions(options.copy(customUrl = it))
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_system_prompt))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.systemPrompt,
@@ -910,7 +935,7 @@ internal fun GrokOptions(
                 onUpdateOptions(options.copy(systemPrompt = it))
             },
             minLines = 3,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -918,12 +943,12 @@ internal fun GrokOptions(
 @Composable
 internal fun CustomJsOptions(
     options: SearchServiceOptions.CustomJsOptions,
-    onUpdateOptions: (SearchServiceOptions.CustomJsOptions) -> Unit
+    onUpdateOptions: (SearchServiceOptions.CustomJsOptions) -> Unit,
 ) {
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_name))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.name,
@@ -931,7 +956,7 @@ internal fun CustomJsOptions(
                 onUpdateOptions(options.copy(name = it))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.search_detail_custom_search_placeholder)) }
+            placeholder = { Text(stringResource(R.string.search_detail_custom_search_placeholder)) },
         )
     }
 
@@ -941,7 +966,7 @@ internal fun CustomJsOptions(
     FormItem(
         label = {
             Text(stringResource(R.string.search_detail_search_script))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.searchScript,
@@ -951,11 +976,12 @@ internal fun CustomJsOptions(
             modifier = Modifier.fillMaxWidth(),
             minLines = 8,
             maxLines = 20,
-            visualTransformation = HighlightCodeVisualTransformation(
-                language = "javascript",
-                highlighter = highlighter,
-                darkMode = darkMode
-            ),
+            visualTransformation =
+                HighlightCodeVisualTransformation(
+                    language = "javascript",
+                    highlighter = highlighter,
+                    darkMode = darkMode,
+                ),
             textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = JetbrainsMono),
         )
     }
@@ -966,7 +992,7 @@ internal fun CustomJsOptions(
         },
         description = {
             Text(stringResource(R.string.search_detail_scrape_script_desc))
-        }
+        },
     ) {
         OutlinedTextField(
             value = options.scrapeScript,
@@ -983,11 +1009,12 @@ internal fun CustomJsOptions(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 )
             },
-            visualTransformation = HighlightCodeVisualTransformation(
-                language = "javascript",
-                highlighter = highlighter,
-                darkMode = darkMode
-            ),
+            visualTransformation =
+                HighlightCodeVisualTransformation(
+                    language = "javascript",
+                    highlighter = highlighter,
+                    darkMode = darkMode,
+                ),
             textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = JetbrainsMono),
         )
     }

@@ -1,17 +1,6 @@
 package me.rerere.rikkahub.ui.pages.setting
 
 import android.net.Uri
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.rikkahub.ui.pages.setting.components.ProviderRequirement
-import me.rerere.hugeicons.stroke.Camera01
-import me.rerere.hugeicons.stroke.DragDropHorizontal
-import me.rerere.hugeicons.stroke.Image02
-import me.rerere.hugeicons.stroke.FileImport
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.Search01
-import me.rerere.hugeicons.stroke.Sparkles
-import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.hugeicons.stroke.Replay
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -75,6 +64,16 @@ import io.github.g00fy2.quickie.ScanQRCode
 import me.rerere.ai.provider.AICORE_PROVIDER_ID
 import me.rerere.ai.provider.LITERT_PROVIDER_ID
 import me.rerere.ai.provider.ProviderSetting
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.Camera01
+import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.DragDropHorizontal
+import me.rerere.hugeicons.stroke.FileImport
+import me.rerere.hugeicons.stroke.Image02
+import me.rerere.hugeicons.stroke.Replay
+import me.rerere.hugeicons.stroke.Search01
+import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
@@ -88,6 +87,7 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
+import me.rerere.rikkahub.ui.pages.setting.components.ProviderRequirement
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.plus
@@ -104,22 +104,25 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
     var searchQuery by remember { mutableStateOf("") }
     val lazyListState = rememberLazyListState()
     var providerToDelete by remember { mutableStateOf<ProviderSetting?>(null) }
-    val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        val newProviders = settings.providers.toMutableList().apply {
-            add(to.index, removeAt(from.index))
+    val reorderableState =
+        rememberReorderableLazyListState(lazyListState) { from, to ->
+            val newProviders =
+                settings.providers.toMutableList().apply {
+                    add(to.index, removeAt(from.index))
+                }
+            vm.updateSettings(settings.copy(providers = newProviders))
         }
-        vm.updateSettings(settings.copy(providers = newProviders))
-    }
 
-    val filteredProviders = remember(settings.providers, searchQuery) {
-        if (searchQuery.isBlank()) {
-            settings.providers
-        } else {
-            settings.providers.filter { provider ->
-                provider.name.contains(searchQuery, ignoreCase = true)
+    val filteredProviders =
+        remember(settings.providers, searchQuery) {
+            if (searchQuery.isBlank()) {
+                settings.providers
+            } else {
+                settings.providers.filter { provider ->
+                    provider.name.contains(searchQuery, ignoreCase = true)
+                }
             }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -134,22 +137,22 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                     RecommendProviderButton { provider ->
                         vm.updateSettings(
                             settings.copy(
-                                providers = listOf(provider.copyProvider(Uuid.random())) + settings.providers
-                            )
+                                providers = listOf(provider.copyProvider(Uuid.random())) + settings.providers,
+                            ),
                         )
                     }
                     ImportProviderButton {
                         vm.updateSettings(
                             settings.copy(
-                                providers = listOf(it.copyProvider(Uuid.random())) + settings.providers
-                            )
+                                providers = listOf(it.copyProvider(Uuid.random())) + settings.providers,
+                            ),
                         )
                     }
                     AddButton {
                         vm.updateSettings(
                             settings.copy(
-                                providers = listOf(it) + settings.providers
-                            )
+                                providers = listOf(it) + settings.providers,
+                            ),
                         )
                     }
                     RestoreLocalLLMButton {
@@ -159,31 +162,33 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                         if (missing.isNotEmpty()) {
                             vm.updateSettings(
                                 settings.copy(
-                                    providers = missing + settings.providers
-                                )
+                                    providers = missing + settings.providers,
+                                ),
                             )
                         }
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding()),
         ) {
             // Search bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text(stringResource(R.string.setting_provider_page_search_providers)) },
                 leadingIcon = {
                     Icon(HugeIcons.Search01, contentDescription = null)
@@ -199,53 +204,60 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                 shape = CircleShape,
             )
 
-
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .imePadding(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp) +
-                    PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .imePadding(),
+                contentPadding =
+                    PaddingValues(horizontal = 16.dp, vertical = 8.dp) +
+                        PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 state = lazyListState,
             ) {
                 items(filteredProviders, key = { it.id }) { provider ->
                     ReorderableItem(
                         state = reorderableState,
-                        key = provider.id
+                        key = provider.id,
                     ) { isDragging ->
                         ProviderItem(
-                            modifier = Modifier
-                                .scale(if (isDragging) 0.95f else 1f)
-                                .fillMaxWidth(),
+                            modifier =
+                                Modifier
+                                    .scale(if (isDragging) 0.95f else 1f)
+                                    .fillMaxWidth(),
                             provider = provider,
                             dragHandle = {
                                 val haptic = LocalHapticFeedback.current
                                 IconButton(
                                     onClick = {},
-                                    modifier = Modifier
-                                        .longPressDraggableHandle(
-                                            onDragStarted = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                            },
-                                            onDragStopped = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                            }
-                                        )
+                                    modifier =
+                                        Modifier
+                                            .longPressDraggableHandle(
+                                                onDragStarted = {
+                                                    haptic.performHapticFeedback(
+                                                        HapticFeedbackType.GestureThresholdActivate,
+                                                    )
+                                                },
+                                                onDragStopped = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                                },
+                                            ),
                                 ) {
                                     Icon(
                                         imageVector = HugeIcons.DragDropHorizontal,
-                                        contentDescription = null
+                                        contentDescription = null,
                                     )
                                 }
                             },
                             onClick = {
-                                navController.navigate(Screen.SettingProviderDetail(providerId = provider.id.toString()))
+                                navController.navigate(
+                                    Screen.SettingProviderDetail(providerId = provider.id.toString()),
+                                )
                             },
                             onLongClick = {
                                 providerToDelete = provider
-                            }
+                            },
                         )
                     }
                 }
@@ -270,12 +282,15 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                                     // resurrect it. Without this gate the row just bobs to
                                     // the bottom of the list on next reload.
                                     deletedBuiltInProviderIds =
-                                        if (target.builtIn) settings.deletedBuiltInProviderIds + target.id
-                                        else settings.deletedBuiltInProviderIds,
-                                )
+                                        if (target.builtIn) {
+                                            settings.deletedBuiltInProviderIds + target.id
+                                        } else {
+                                            settings.deletedBuiltInProviderIds
+                                        },
+                                ),
                             )
                             providerToDelete = null
-                        }
+                        },
                     ) {
                         Text(
                             text = stringResource(R.string.setting_provider_delete_confirm),
@@ -294,15 +309,13 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
 }
 
 @Composable
-private fun RecommendProviderButton(
-    onAdd: (ProviderSetting) -> Unit
-) {
+private fun RecommendProviderButton(onAdd: (ProviderSetting) -> Unit) {
     val toaster = LocalToaster.current
     var showSheet by remember { mutableStateOf(false) }
     val importSuccessMessage = stringResource(R.string.setting_provider_page_import_success)
 
     IconButton(
-        onClick = { showSheet = true }
+        onClick = { showSheet = true },
     ) {
         Icon(HugeIcons.Sparkles, contentDescription = stringResource(R.string.setting_provider_page_recommend))
     }
@@ -310,22 +323,24 @@ private fun RecommendProviderButton(
     if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
-            sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-            )
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = stringResource(R.string.setting_provider_page_recommend),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp),
                 )
                 RECOMMENDED_PROVIDERS.forEach { provider ->
                     RecommendProviderItem(
@@ -334,9 +349,9 @@ private fun RecommendProviderButton(
                             onAdd(provider)
                             toaster.show(
                                 importSuccessMessage,
-                                type = ToastType.Success
+                                type = ToastType.Success,
                             )
-                        }
+                        },
                     )
                 }
             }
@@ -347,23 +362,25 @@ private fun RecommendProviderButton(
 @Composable
 private fun RecommendProviderItem(
     provider: ProviderSetting,
-    onAdd: () -> Unit
+    onAdd: () -> Unit,
 ) {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = CustomColors.listItemColors.containerColor
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AutoAIIcon(
                 name = provider.name,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(40.dp),
             )
             Column(
                 modifier = Modifier.weight(1f),
@@ -373,7 +390,7 @@ private fun RecommendProviderItem(
                     text = provider.name,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                     CompositionLocalProvider(LocalContentColor provides LocalContentColor.current.copy(alpha = 0.7f)) {
@@ -389,29 +406,29 @@ private fun RecommendProviderItem(
 }
 
 @Composable
-private fun ImportProviderButton(
-    onAdd: (ProviderSetting) -> Unit
-) {
+private fun ImportProviderButton(onAdd: (ProviderSetting) -> Unit) {
     val toaster = LocalToaster.current
     val context = LocalContext.current
     var showImportDialog by remember { mutableStateOf(false) }
 
-    val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
-        handleQRResult(result, onAdd, toaster, context)
-    }
-
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        uri?.let {
-            handleImageQRCode(it, onAdd, toaster, context)
+    val scanQrCodeLauncher =
+        rememberLauncherForActivityResult(ScanQRCode()) { result ->
+            handleQRResult(result, onAdd, toaster, context)
         }
-    }
+
+    val pickImageLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri?.let {
+                handleImageQRCode(it, onAdd, toaster, context)
+            }
+        }
 
     IconButton(
         onClick = {
             showImportDialog = true
-        }
+        },
     ) {
         Icon(HugeIcons.FileImport, null)
     }
@@ -422,22 +439,22 @@ private fun ImportProviderButton(
             title = {
                 Text(
                     text = stringResource(R.string.setting_provider_page_import_dialog_title),
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.setting_provider_page_import_dialog_message),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         // 主要操作：扫描二维码
                         Button(
@@ -445,25 +462,26 @@ private fun ImportProviderButton(
                                 showImportDialog = false
                                 scanQrCodeLauncher.launch(null)
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = MaterialTheme.shapes.large
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                            shape = MaterialTheme.shapes.large,
                         ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Icon(
                                     imageVector = HugeIcons.Camera01,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = stringResource(R.string.setting_provider_page_scan_qr_code),
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.labelLarge,
                                 )
                             }
                         }
@@ -474,29 +492,30 @@ private fun ImportProviderButton(
                                 showImportDialog = false
                                 pickImageLauncher.launch(
                                     androidx.activity.result.PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly,
+                                    ),
                                 )
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = MaterialTheme.shapes.large
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                            shape = MaterialTheme.shapes.large,
                         ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Icon(
                                     imageVector = HugeIcons.Image02,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = stringResource(R.string.setting_provider_page_select_from_gallery),
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.labelLarge,
                                 )
                             }
                         }
@@ -507,14 +526,14 @@ private fun ImportProviderButton(
             dismissButton = {
                 TextButton(
                     onClick = { showImportDialog = false },
-                    shape = MaterialTheme.shapes.large
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     Text(
                         text = stringResource(R.string.cancel),
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
-            }
+            },
         )
     }
 }
@@ -523,7 +542,7 @@ private fun handleQRResult(
     result: QRResult,
     onAdd: (ProviderSetting) -> Unit,
     toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
+    context: android.content.Context,
 ) {
     runCatching {
         when (result) {
@@ -531,15 +550,16 @@ private fun handleQRResult(
                 toaster.show(
                     context.getString(
                         R.string.setting_provider_page_scan_error,
-                        result
-                    ), type = ToastType.Error
+                        result,
+                    ),
+                    type = ToastType.Error,
                 )
             }
 
             QRResult.QRMissingPermission -> {
                 toaster.show(
                     context.getString(R.string.setting_provider_page_no_permission),
-                    type = ToastType.Error
+                    type = ToastType.Error,
                 )
             }
 
@@ -548,7 +568,7 @@ private fun handleQRResult(
                 onAdd(setting)
                 toaster.show(
                     context.getString(R.string.setting_provider_page_import_success),
-                    type = ToastType.Success
+                    type = ToastType.Success,
                 )
             }
 
@@ -557,7 +577,7 @@ private fun handleQRResult(
     }.onFailure { error ->
         toaster.show(
             context.getString(R.string.setting_provider_page_qr_decode_failed, error.message ?: ""),
-            type = ToastType.Error
+            type = ToastType.Error,
         )
     }
 }
@@ -566,7 +586,7 @@ private fun handleImageQRCode(
     uri: Uri,
     onAdd: (ProviderSetting) -> Unit,
     toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
+    context: android.content.Context,
 ) {
     runCatching {
         // 使用ImageUtils解析二维码
@@ -575,7 +595,7 @@ private fun handleImageQRCode(
         if (qrContent.isNullOrEmpty()) {
             toaster.show(
                 context.getString(R.string.setting_provider_page_no_qr_found),
-                type = ToastType.Error
+                type = ToastType.Error,
             )
             return
         }
@@ -584,37 +604,37 @@ private fun handleImageQRCode(
         onAdd(setting)
         toaster.show(
             context.getString(R.string.setting_provider_page_import_success),
-            type = ToastType.Success
+            type = ToastType.Success,
         )
     }.onFailure { error ->
         toaster.show(
             context.getString(R.string.setting_provider_page_image_qr_decode_failed, error.message ?: ""),
-            type = ToastType.Error
+            type = ToastType.Error,
         )
     }
 }
-
 
 @Composable
 private fun RestoreLocalLLMButton(onRestore: () -> Unit) {
     IconButton(onClick = onRestore) {
         Icon(
             HugeIcons.Replay,
-            contentDescription = stringResource(R.string.setting_provider_page_restore_local_llm)
+            contentDescription = stringResource(R.string.setting_provider_page_restore_local_llm),
         )
     }
 }
 
 @Composable
 private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
-    val dialogState = useEditState<ProviderSetting> {
-        onAdd(it)
-    }
+    val dialogState =
+        useEditState<ProviderSetting> {
+            onAdd(it)
+        }
 
     IconButton(
         onClick = {
             dialogState.open(ProviderSetting.OpenAI())
-        }
+        },
     ) {
         Icon(HugeIcons.Add01, "Add")
     }
@@ -638,7 +658,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                 TextButton(
                     onClick = {
                         dialogState.confirm()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.setting_provider_page_add))
                 }
@@ -647,7 +667,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                 TextButton(
                     onClick = {
                         dialogState.dismiss()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.cancel))
                 }
@@ -666,15 +686,20 @@ private fun ProviderItem(
     onLongClick: () -> Unit = {},
 ) {
     Card(
-        modifier = modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick,
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (provider.enabled) {
-                CustomColors.listItemColors.containerColor
-            } else MaterialTheme.colorScheme.errorContainer,
-        ),
+        modifier =
+            modifier.combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (provider.enabled) {
+                        CustomColors.listItemColors.containerColor
+                    } else {
+                        MaterialTheme.colorScheme.errorContainer
+                    },
+            ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -683,7 +708,7 @@ private fun ProviderItem(
         ) {
             AutoAIIcon(
                 name = provider.name,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(40.dp),
             )
             Column(
                 modifier = Modifier.weight(1f),
@@ -693,7 +718,7 @@ private fun ProviderItem(
                     text = provider.name,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 ProvideTextStyle(MaterialTheme.typography.labelSmall) {
                     CompositionLocalProvider(LocalContentColor provides LocalContentColor.current.copy(alpha = 0.7f)) {
@@ -702,17 +727,21 @@ private fun ProviderItem(
                 }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Tag(type = if (provider.enabled) TagType.SUCCESS else TagType.WARNING) {
-                        Text(stringResource(if (provider.enabled) R.string.setting_provider_page_enabled else R.string.setting_provider_page_disabled))
+                        Text(
+                            stringResource(
+                                if (provider.enabled) R.string.setting_provider_page_enabled else R.string.setting_provider_page_disabled,
+                            ),
+                        )
                     }
                     Tag(type = TagType.INFO) {
                         Text(
                             stringResource(
                                 R.string.setting_provider_page_model_count,
-                                provider.models.size
-                            )
+                                provider.models.size,
+                            ),
                         )
                     }
                     if (provider.name == "AiHubMix") {

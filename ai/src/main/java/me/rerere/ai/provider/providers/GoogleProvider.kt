@@ -32,8 +32,6 @@ import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.provider.BuiltInTools
 import me.rerere.ai.provider.ImageGenerationParams
-import me.rerere.ai.ui.ImageAspectRatio
-import me.rerere.ai.ui.ImageGenerationItem
 import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
@@ -44,6 +42,8 @@ import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.provider.providers.vertex.ServiceAccountTokenProvider
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.GoogleThoughtMetadata
+import me.rerere.ai.ui.ImageAspectRatio
+import me.rerere.ai.ui.ImageGenerationItem
 import me.rerere.ai.ui.MessageChunk
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageAnnotation
@@ -77,58 +77,74 @@ import kotlin.uuid.Uuid
 
 private const val TAG = "GoogleProvider"
 
-class GoogleProvider(private val client: OkHttpClient, context: Context? = null) : Provider<ProviderSetting.Google> {
+class GoogleProvider(
+    private val client: OkHttpClient,
+    context: Context? = null,
+) : Provider<ProviderSetting.Google> {
     private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
     private val serviceAccountTokenProvider by lazy {
         ServiceAccountTokenProvider(client)
     }
 
-    private fun buildUrl(providerSetting: ProviderSetting.Google, path: String): HttpUrl {
-        return if (!providerSetting.vertexAI) {
+    private fun buildUrl(
+        providerSetting: ProviderSetting.Google,
+        path: String,
+    ): HttpUrl =
+        if (!providerSetting.vertexAI) {
             "${providerSetting.baseUrl}/$path".toHttpUrl()
         } else if (providerSetting.useServiceAccount) {
-            "https://aiplatform.googleapis.com/v1/projects/${providerSetting.projectId}/locations/${providerSetting.location}/$path".toHttpUrl()
+            "https://aiplatform.googleapis.com/v1/projects/${providerSetting.projectId}/locations/${providerSetting.location}/$path"
+                .toHttpUrl()
         } else {
             "https://aiplatform.googleapis.com/v1/$path".toHttpUrl()
         }
-    }
 
     private suspend fun transformRequest(
         providerSetting: ProviderSetting.Google,
-        request: Request
-    ): Request {
-        return if (providerSetting.vertexAI && providerSetting.useServiceAccount) {
-            val accessToken = serviceAccountTokenProvider.fetchAccessToken(
-                serviceAccountEmail = providerSetting.serviceAccountEmail.trim(),
-                privateKeyPem = StringEscapeUtils.unescapeJson(providerSetting.privateKey.trim()),
-            )
-            request.newBuilder()
+        request: Request,
+    ): Request =
+        if (providerSetting.vertexAI && providerSetting.useServiceAccount) {
+            val accessToken =
+                serviceAccountTokenProvider.fetchAccessToken(
+                    serviceAccountEmail = providerSetting.serviceAccountEmail.trim(),
+                    privateKeyPem = StringEscapeUtils.unescapeJson(providerSetting.privateKey.trim()),
+                )
+            request
+                .newBuilder()
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
         } else {
             val key = keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())
             if (providerSetting.vertexAI) {
-                request.newBuilder()
-                    .url(request.url.newBuilder().addQueryParameter("key", key).build())
-                    .build()
+                request
+                    .newBuilder()
+                    .url(
+                        request.url
+                            .newBuilder()
+                            .addQueryParameter("key", key)
+                            .build(),
+                    ).build()
             } else {
-                request.newBuilder()
+                request
+                    .newBuilder()
                     .addHeader("x-goog-api-key", key)
                     .build()
             }
         }
-    }
 
     override suspend fun listModels(providerSetting: ProviderSetting.Google): List<Model> =
         withContext(Dispatchers.IO) {
             val url = buildUrl(providerSetting = providerSetting, path = "models?pageSize=100")
-            val request = transformRequest(
-                providerSetting = providerSetting,
-                request = Request.Builder()
-                    .url(url)
-                    .get()
-                    .build()
-            )
+            val request =
+                transformRequest(
+                    providerSetting = providerSetting,
+                    request =
+                        Request
+                            .Builder()
+                            .url(url)
+                            .get()
+                            .build(),
+                )
             val response = client.newCall(request).await()
             if (response.isSuccessful) {
                 val body = response.body.string()
@@ -141,16 +157,26 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
 
                     // 忽略非chat/embedding模型
                     val supportedGenerationMethods =
-                        modelObject["supportedGenerationMethods"]!!.jsonArray
+                        modelObject["supportedGenerationMethods"]!!
+                            .jsonArray
                             .map { method -> method.jsonPrimitive.content }
-                    if ("generateContent" !in supportedGenerationMethods && "embedContent" !in supportedGenerationMethods) {
+                    if ("generateContent" !in supportedGenerationMethods &&
+                        "embedContent" !in supportedGenerationMethods
+                    ) {
                         return@mapNotNull null
                     }
 
                     Model(
                         modelId = modelObject["name"]!!.jsonPrimitive.content.substringAfter("/"),
                         displayName = modelObject["displayName"]!!.jsonPrimitive.content,
-                        type = if ("generateContent" in supportedGenerationMethods) ModelType.CHAT else ModelType.EMBEDDING,
+                        type =
+                            if ("generateContent" in
+                                supportedGenerationMethods
+                            ) {
+                                ModelType.CHAT
+                            } else {
+                                ModelType.EMBEDDING
+                            },
                     )
                 }
             } else {
@@ -162,369 +188,446 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
         providerSetting: ProviderSetting.Google,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): MessageChunk = withContext(Dispatchers.IO) {
-        val requestBody = buildCompletionRequestBody(messages, params)
+    ): MessageChunk =
+        withContext(Dispatchers.IO) {
+            val requestBody = buildCompletionRequestBody(messages, params)
 
-        val url = buildUrl(
-            providerSetting = providerSetting,
-            path = if (providerSetting.vertexAI) {
-                "publishers/google/models/${params.model.modelId}:generateContent"
-            } else {
-                "models/${params.model.modelId}:generateContent"
+            val url =
+                buildUrl(
+                    providerSetting = providerSetting,
+                    path =
+                        if (providerSetting.vertexAI) {
+                            "publishers/google/models/${params.model.modelId}:generateContent"
+                        } else {
+                            "models/${params.model.modelId}:generateContent"
+                        },
+                )
+
+            val request =
+                transformRequest(
+                    providerSetting = providerSetting,
+                    request =
+                        Request
+                            .Builder()
+                            .url(url)
+                            .headers(params.customHeaders.toHeaders())
+                            .post(
+                                json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()),
+                            ).configureReferHeaders(providerSetting.baseUrl)
+                            .build(),
+                )
+
+            val response = client.newCall(request).await()
+            if (!response.isSuccessful) {
+                throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
             }
-        )
 
-        val request = transformRequest(
-            providerSetting = providerSetting,
-            request = Request.Builder()
-                .url(url)
-                .headers(params.customHeaders.toHeaders())
-                .post(
-                    json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
+            val bodyStr = response.body.string()
+            val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
+
+            val candidates = bodyJson["candidates"]!!.jsonArray
+            val usage = bodyJson["usageMetadata"]!!.jsonObject
+
+            val messageChunk =
+                MessageChunk(
+                    id = Uuid.random().toString(),
+                    model = params.model.modelId,
+                    choices =
+                        candidates.map { candidate ->
+                            UIMessageChoice(
+                                message = parseMessage(candidate.jsonObject),
+                                index = 0,
+                                finishReason = null,
+                                delta = null,
+                            )
+                        },
+                    usage = parseUsageMeta(usage),
                 )
-                .configureReferHeaders(providerSetting.baseUrl)
-                .build()
-        )
 
-        val response = client.newCall(request).await()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
+            messageChunk
         }
-
-        val bodyStr = response.body.string()
-        val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-
-        val candidates = bodyJson["candidates"]!!.jsonArray
-        val usage = bodyJson["usageMetadata"]!!.jsonObject
-
-        val messageChunk = MessageChunk(
-            id = Uuid.random().toString(),
-            model = params.model.modelId,
-            choices = candidates.map { candidate ->
-                UIMessageChoice(
-                    message = parseMessage(candidate.jsonObject),
-                    index = 0,
-                    finishReason = null,
-                    delta = null
-                )
-            },
-            usage = parseUsageMeta(usage)
-        )
-
-        messageChunk
-    }
 
     override suspend fun streamText(
         providerSetting: ProviderSetting.Google,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): Flow<MessageChunk> = callbackFlow {
-        val requestBody = buildCompletionRequestBody(messages, params)
+    ): Flow<MessageChunk> =
+        callbackFlow {
+            val requestBody = buildCompletionRequestBody(messages, params)
 
-        val url = buildUrl(
-            providerSetting = providerSetting,
-            path = if (providerSetting.vertexAI) {
-                "publishers/google/models/${params.model.modelId}:streamGenerateContent"
-            } else {
-                "models/${params.model.modelId}:streamGenerateContent"
-            }
-        ).newBuilder().addQueryParameter("alt", "sse").build()
-
-        val request = transformRequest(
-            providerSetting = providerSetting,
-            request = Request.Builder()
-                .url(url)
-                .headers(params.customHeaders.toHeaders())
-                .post(
-                    json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                )
-                .configureReferHeaders(providerSetting.baseUrl)
-                .build()
-        )
-
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
-
-        val listener = object : EventSourceListener() {
-            override fun onEvent(
-                eventSource: EventSource,
-                id: String?,
-                type: String?,
-                data: String
-            ) {
-                Log.i(TAG, "onEvent: $data")
-
-                try {
-                    val jsonData = json.parseToJsonElement(data).jsonObject
-                    val reason =
-                        jsonData["promptFeedback"]?.jsonObject?.get("blockReason")?.jsonPrimitiveOrNull?.contentOrNull
-                    if (reason != null) {
-                        close(RuntimeException("Prompt feedback: $reason"))
-                    }
-                    val candidates = jsonData["candidates"]?.jsonArray ?: return
-                    if (candidates.isEmpty()) return
-                    val usage = parseUsageMeta(jsonData["usageMetadata"] as? JsonObject)
-                    val messageChunk = MessageChunk(
-                        id = Uuid.random().toString(),
-                        model = params.model.modelId,
-                        choices = candidates.mapIndexed { index, candidate ->
-                            val candidateObj = candidate.jsonObject
-                            val content = candidateObj["content"]?.jsonObject
-                            val groundingMetadata = candidateObj["groundingMetadata"]?.jsonObject
-                            val finishReason =
-                                candidateObj["finishReason"]?.jsonPrimitive?.contentOrNull
-
-                            val message = content?.let {
-                                parseMessage(buildJsonObject {
-                                    put("role", JsonPrimitive("model"))
-                                    put("content", it)
-                                    groundingMetadata?.let { groundingMetadata ->
-                                        put("groundingMetadata", groundingMetadata)
-                                    }
-                                })
-                            }
-
-                            UIMessageChoice(
-                                index = index,
-                                delta = message,
-                                message = null,
-                                finishReason = finishReason
-                            )
-                        },
-                        usage = usage
-                    )
-
-                    trySend(messageChunk).onFailure { e ->
-                        Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "onEvent: failed to parse $data", e)
-                }
-            }
-
-            override fun onFailure(
-                eventSource: EventSource,
-                t: Throwable?,
-                response: Response?
-            ) {
-                var exception = t
-
-                Log.w(TAG, "onFailure: ${t?.message}", t)
-
-                try {
-                    if (t == null && response != null) {
-                        val bodyStr = response.body.stringSafe()
-                        if (!bodyStr.isNullOrEmpty()) {
-                            val bodyElement = json.parseToJsonElement(bodyStr)
-                            Log.d(TAG, "onFailure: error body $bodyElement")
-                            if (bodyElement is JsonObject) {
-                                exception = Exception(
-                                    bodyElement["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
-                                        ?: "unknown"
-                                )
-                            }
+            val url =
+                buildUrl(
+                    providerSetting = providerSetting,
+                    path =
+                        if (providerSetting.vertexAI) {
+                            "publishers/google/models/${params.model.modelId}:streamGenerateContent"
                         } else {
-                            exception = Exception("Unknown error: ${response.code}")
+                            "models/${params.model.modelId}:streamGenerateContent"
+                        },
+                ).newBuilder().addQueryParameter("alt", "sse").build()
+
+            val request =
+                transformRequest(
+                    providerSetting = providerSetting,
+                    request =
+                        Request
+                            .Builder()
+                            .url(url)
+                            .headers(params.customHeaders.toHeaders())
+                            .post(
+                                json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()),
+                            ).configureReferHeaders(providerSetting.baseUrl)
+                            .build(),
+                )
+
+            Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+
+            val listener =
+                object : EventSourceListener() {
+                    override fun onEvent(
+                        eventSource: EventSource,
+                        id: String?,
+                        type: String?,
+                        data: String,
+                    ) {
+                        Log.i(TAG, "onEvent: $data")
+
+                        try {
+                            val jsonData = json.parseToJsonElement(data).jsonObject
+                            val reason =
+                                jsonData["promptFeedback"]
+                                    ?.jsonObject
+                                    ?.get("blockReason")
+                                    ?.jsonPrimitiveOrNull
+                                    ?.contentOrNull
+                            if (reason != null) {
+                                close(RuntimeException("Prompt feedback: $reason"))
+                            }
+                            val candidates = jsonData["candidates"]?.jsonArray ?: return
+                            if (candidates.isEmpty()) return
+                            val usage = parseUsageMeta(jsonData["usageMetadata"] as? JsonObject)
+                            val messageChunk =
+                                MessageChunk(
+                                    id = Uuid.random().toString(),
+                                    model = params.model.modelId,
+                                    choices =
+                                        candidates.mapIndexed { index, candidate ->
+                                            val candidateObj = candidate.jsonObject
+                                            val content = candidateObj["content"]?.jsonObject
+                                            val groundingMetadata = candidateObj["groundingMetadata"]?.jsonObject
+                                            val finishReason =
+                                                candidateObj["finishReason"]?.jsonPrimitive?.contentOrNull
+
+                                            val message =
+                                                content?.let {
+                                                    parseMessage(
+                                                        buildJsonObject {
+                                                            put("role", JsonPrimitive("model"))
+                                                            put("content", it)
+                                                            groundingMetadata?.let { groundingMetadata ->
+                                                                put("groundingMetadata", groundingMetadata)
+                                                            }
+                                                        },
+                                                    )
+                                                }
+
+                                            UIMessageChoice(
+                                                index = index,
+                                                delta = message,
+                                                message = null,
+                                                finishReason = finishReason,
+                                            )
+                                        },
+                                    usage = usage,
+                                )
+
+                            trySend(messageChunk).onFailure { e ->
+                                Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "onEvent: failed to parse $data", e)
                         }
                     }
-                } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse error body", e)
-                    exception = e
-                } finally {
-                    close(exception ?: Exception("Stream failed"))
+
+                    override fun onFailure(
+                        eventSource: EventSource,
+                        t: Throwable?,
+                        response: Response?,
+                    ) {
+                        var exception = t
+
+                        Log.w(TAG, "onFailure: ${t?.message}", t)
+
+                        try {
+                            if (t == null && response != null) {
+                                val bodyStr = response.body.stringSafe()
+                                if (!bodyStr.isNullOrEmpty()) {
+                                    val bodyElement = json.parseToJsonElement(bodyStr)
+                                    Log.d(TAG, "onFailure: error body $bodyElement")
+                                    if (bodyElement is JsonObject) {
+                                        exception =
+                                            Exception(
+                                                bodyElement["error"]
+                                                    ?.jsonObject
+                                                    ?.get("message")
+                                                    ?.jsonPrimitive
+                                                    ?.content
+                                                    ?: "unknown",
+                                            )
+                                    }
+                                } else {
+                                    exception = Exception("Unknown error: ${response.code}")
+                                }
+                            }
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "onFailure: failed to parse error body", e)
+                            exception = e
+                        } finally {
+                            close(exception ?: Exception("Stream failed"))
+                        }
+                    }
+
+                    override fun onClosed(eventSource: EventSource) {
+                        println("[onClosed] 连接已关闭")
+                        close()
+                    }
                 }
+
+            val eventSource =
+                EventSources
+                    .createFactory(client)
+                    .newEventSource(request, listener)
+
+            awaitClose {
+                println("[awaitClose] 关闭eventSource")
+                eventSource.cancel()
             }
-
-            override fun onClosed(eventSource: EventSource) {
-                println("[onClosed] 连接已关闭")
-                close()
-            }
-        }
-
-        val eventSource = EventSources.createFactory(client)
-                .newEventSource(request, listener)
-
-        awaitClose {
-            println("[awaitClose] 关闭eventSource")
-            eventSource.cancel()
-        }
-        // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
-    }.buffer(Channel.UNLIMITED)
+            // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
+        }.buffer(Channel.UNLIMITED)
 
     private fun buildCompletionRequestBody(
         messages: List<UIMessage>,
-        params: TextGenerationParams
-    ): JsonObject = buildJsonObject {
-        // System message if available
-        val systemMessage = messages.firstOrNull { it.role == MessageRole.SYSTEM }
-        if (systemMessage != null && !params.model.outputModalities.contains(Modality.IMAGE)) {
-            put("systemInstruction", buildJsonObject {
-                putJsonArray("parts") {
-                    add(buildJsonObject {
+        params: TextGenerationParams,
+    ): JsonObject =
+        buildJsonObject {
+            // System message if available
+            val systemMessage = messages.firstOrNull { it.role == MessageRole.SYSTEM }
+            if (systemMessage != null && !params.model.outputModalities.contains(Modality.IMAGE)) {
+                put(
+                    "systemInstruction",
+                    buildJsonObject {
+                        putJsonArray("parts") {
+                            add(
+                                buildJsonObject {
+                                    put(
+                                        "text",
+                                        systemMessage.parts
+                                            .filterIsInstance<UIMessagePart.Text>()
+                                            .joinToString { it.text },
+                                    )
+                                },
+                            )
+                        }
+                    },
+                )
+            }
+
+            // Generation config
+            put(
+                "generationConfig",
+                buildJsonObject {
+                    if (params.temperature != null) put("temperature", params.temperature)
+                    if (params.topP != null) put("topP", params.topP)
+                    if (params.maxTokens != null) put("maxOutputTokens", params.maxTokens)
+                    if (params.model.outputModalities.contains(Modality.IMAGE)) {
                         put(
-                            "text",
-                            systemMessage.parts.filterIsInstance<UIMessagePart.Text>()
-                                .joinToString { it.text })
-                    })
-                }
-            })
-        }
+                            "responseModalities",
+                            buildJsonArray {
+                                add(JsonPrimitive("TEXT"))
+                                add(JsonPrimitive("IMAGE"))
+                            },
+                        )
+                    }
+                    if (params.model.abilities.contains(ModelAbility.REASONING)) {
+                        put(
+                            "thinkingConfig",
+                            buildJsonObject {
+                                put("includeThoughts", true)
 
-        // Generation config
-        put("generationConfig", buildJsonObject {
-            if (params.temperature != null) put("temperature", params.temperature)
-            if (params.topP != null) put("topP", params.topP)
-            if (params.maxTokens != null) put("maxOutputTokens", params.maxTokens)
-            if (params.model.outputModalities.contains(Modality.IMAGE)) {
-                put("responseModalities", buildJsonArray {
-                    add(JsonPrimitive("TEXT"))
-                    add(JsonPrimitive("IMAGE"))
-                })
-            }
-            if (params.model.abilities.contains(ModelAbility.REASONING)) {
-                put("thinkingConfig", buildJsonObject {
-                    put("includeThoughts", true)
+                                val isGeminiPro =
+                                    params.model.modelId.contains(Regex("2\\.5.*pro", RegexOption.IGNORE_CASE))
 
-                    val isGeminiPro =
-                        params.model.modelId.contains(Regex("2\\.5.*pro", RegexOption.IGNORE_CASE))
-
-                    when (params.reasoningLevel) {
-                        ReasoningLevel.AUTO -> {} // 自动模式，不设置参数
-
-                        ReasoningLevel.OFF -> {
-                            if (ModelRegistry.GEMINI_3_SERIES.match(modelId = params.model.modelId)) {
-                                put("thinkingLevel", "minimal")
-                            } else if (!isGeminiPro) {
-                                put("thinkingBudget", 0)
-                                put("includeThoughts", false)
-                            }
-                        }
-
-                        else -> {
-                            if (ModelRegistry.GEMINI_3_SERIES.match(modelId = params.model.modelId)) {
                                 when (params.reasoningLevel) {
-                                    ReasoningLevel.LOW -> put("thinkingLevel", "low")
-                                    ReasoningLevel.MEDIUM -> put("thinkingLevel", "medium")
-                                    else -> put("thinkingLevel", "high") // HIGH, XHIGH
+                                    ReasoningLevel.AUTO -> {}
+
+                                    // 自动模式，不设置参数
+
+                                    ReasoningLevel.OFF -> {
+                                        if (ModelRegistry.GEMINI_3_SERIES.match(modelId = params.model.modelId)) {
+                                            put("thinkingLevel", "minimal")
+                                        } else if (!isGeminiPro) {
+                                            put("thinkingBudget", 0)
+                                            put("includeThoughts", false)
+                                        }
+                                    }
+
+                                    else -> {
+                                        if (ModelRegistry.GEMINI_3_SERIES.match(modelId = params.model.modelId)) {
+                                            when (params.reasoningLevel) {
+                                                ReasoningLevel.LOW -> put("thinkingLevel", "low")
+                                                ReasoningLevel.MEDIUM -> put("thinkingLevel", "medium")
+                                                else -> put("thinkingLevel", "high") // HIGH, XHIGH
+                                            }
+                                        } else {
+                                            put("thinkingBudget", params.reasoningLevel.budgetTokens)
+                                        }
+                                    }
                                 }
-                            } else {
-                                put("thinkingBudget", params.reasoningLevel.budgetTokens)
+                            },
+                        )
+                    }
+                },
+            )
+
+            // Contents (user messages)
+            put(
+                "contents",
+                buildContents(messages),
+            )
+
+            // Tools
+            if (params.tools.isNotEmpty() && params.model.abilities.contains(ModelAbility.TOOL)) {
+                put(
+                    "tools",
+                    buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put(
+                                    "functionDeclarations",
+                                    buildJsonArray {
+                                        params.tools.forEach { tool ->
+                                            add(
+                                                buildJsonObject {
+                                                    put("name", JsonPrimitive(tool.name))
+                                                    put("description", JsonPrimitive(tool.description))
+                                                    put(
+                                                        key = "parameters",
+                                                        element =
+                                                            json
+                                                                .encodeToJsonElement(tool.parameters())
+                                                                .removeElements(
+                                                                    listOf(
+                                                                        "const",
+                                                                        "exclusiveMaximum",
+                                                                        "exclusiveMinimum",
+                                                                        "format",
+                                                                        "additionalProperties",
+                                                                        "enum",
+                                                                    ),
+                                                                ),
+                                                    )
+                                                },
+                                            )
+                                        }
+                                    },
+                                )
+                            },
+                        )
+                    },
+                )
+            }
+            // Model BuiltIn Tools
+            // 目前不能和工具调用兼容
+            if (params.model.tools.isNotEmpty()) {
+                put(
+                    "tools",
+                    buildJsonArray {
+                        params.model.tools.forEach { builtInTool ->
+                            when (builtInTool) {
+                                BuiltInTools.Search -> {
+                                    add(
+                                        buildJsonObject {
+                                            put("googleSearch", buildJsonObject {})
+                                        },
+                                    )
+                                }
+
+                                BuiltInTools.UrlContext -> {
+                                    add(
+                                        buildJsonObject {
+                                            put("urlContext", buildJsonObject {})
+                                        },
+                                    )
+                                }
+
+                                else -> {}
                             }
                         }
-                    }
-                })
+                    },
+                )
             }
-        })
 
-        // Contents (user messages)
-        put(
-            "contents",
-            buildContents(messages)
-        )
+            // Safety Settings
+            putJsonArray("safetySettings") {
+                add(
+                    buildJsonObject {
+                        put("category", "HARM_CATEGORY_HARASSMENT")
+                        put("threshold", "OFF")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("category", "HARM_CATEGORY_HATE_SPEECH")
+                        put("threshold", "OFF")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT")
+                        put("threshold", "OFF")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("category", "HARM_CATEGORY_DANGEROUS_CONTENT")
+                        put("threshold", "OFF")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("category", "HARM_CATEGORY_CIVIC_INTEGRITY")
+                        put("threshold", "OFF")
+                    },
+                )
+            }
+        }.mergeCustomBody(params.customBody)
 
-        // Tools
-        if (params.tools.isNotEmpty() && params.model.abilities.contains(ModelAbility.TOOL)) {
-            put("tools", buildJsonArray {
-                add(buildJsonObject {
-                    put("functionDeclarations", buildJsonArray {
-                        params.tools.forEach { tool ->
-                            add(buildJsonObject {
-                                put("name", JsonPrimitive(tool.name))
-                                put("description", JsonPrimitive(tool.description))
-                                put(
-                                    key = "parameters",
-                                    element = json.encodeToJsonElement(tool.parameters())
-                                        .removeElements(
-                                            listOf(
-                                                "const",
-                                                "exclusiveMaximum",
-                                                "exclusiveMinimum",
-                                                "format",
-                                                "additionalProperties",
-                                                "enum",
-                                            )
-                                        )
-                                )
-                            })
-                        }
-                    })
-                })
-            })
-        }
-        // Model BuiltIn Tools
-        // 目前不能和工具调用兼容
-        if (params.model.tools.isNotEmpty()) {
-            put("tools", buildJsonArray {
-                params.model.tools.forEach { builtInTool ->
-                    when (builtInTool) {
-                        BuiltInTools.Search -> {
-                            add(buildJsonObject {
-                                put("googleSearch", buildJsonObject {})
-                            })
-                        }
-
-                        BuiltInTools.UrlContext -> {
-                            add(buildJsonObject {
-                                put("urlContext", buildJsonObject {})
-                            })
-                        }
-
-                        else -> {}
-                    }
-                }
-            })
-        }
-
-        // Safety Settings
-        putJsonArray("safetySettings") {
-            add(buildJsonObject {
-                put("category", "HARM_CATEGORY_HARASSMENT")
-                put("threshold", "OFF")
-            })
-            add(buildJsonObject {
-                put("category", "HARM_CATEGORY_HATE_SPEECH")
-                put("threshold", "OFF")
-            })
-            add(buildJsonObject {
-                put("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT")
-                put("threshold", "OFF")
-            })
-            add(buildJsonObject {
-                put("category", "HARM_CATEGORY_DANGEROUS_CONTENT")
-                put("threshold", "OFF")
-            })
-            add(buildJsonObject {
-                put("category", "HARM_CATEGORY_CIVIC_INTEGRITY")
-                put("threshold", "OFF")
-            })
-        }
-    }.mergeCustomBody(params.customBody)
-
-    private fun commonRoleToGoogleRole(role: MessageRole): String {
-        return when (role) {
+    private fun commonRoleToGoogleRole(role: MessageRole): String =
+        when (role) {
             MessageRole.USER -> "user"
             MessageRole.SYSTEM -> "system"
             MessageRole.ASSISTANT -> "model"
             MessageRole.TOOL -> "user" // google api中, tool结果是用户role发送的
         }
-    }
 
-    private fun googleRoleToCommonRole(role: String): MessageRole {
-        return when (role) {
+    private fun googleRoleToCommonRole(role: String): MessageRole =
+        when (role) {
             "user" -> MessageRole.USER
             "system" -> MessageRole.SYSTEM
             "model" -> MessageRole.ASSISTANT
             else -> error("Unknown role $role")
         }
-    }
 
     private fun parseMessage(message: JsonObject): UIMessage {
-        val role = googleRoleToCommonRole(
-            message["role"]?.jsonPrimitive?.contentOrNull ?: "model"
-        )
+        val role =
+            googleRoleToCommonRole(
+                message["role"]?.jsonPrimitive?.contentOrNull ?: "model",
+            )
         val content = message["content"]?.jsonObject ?: error("No content")
-        val parts = content["parts"]?.jsonArray?.map { part ->
-            parseMessagePart(part.jsonObject)
-        } ?: emptyList()
+        val parts =
+            content["parts"]?.jsonArray?.map { part ->
+                parseMessagePart(part.jsonObject)
+            } ?: emptyList()
 
         val groundingMetadata = message["groundingMetadata"]?.jsonObject
         Log.i(TAG, "parseMessage: $groundingMetadata")
@@ -533,22 +636,23 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
         return UIMessage(
             role = role,
             parts = parts,
-            annotations = annotations
+            annotations = annotations,
         )
     }
 
     private fun parseSearchGroundingMetadata(jsonObject: JsonObject?): List<UIMessageAnnotation> {
         if (jsonObject == null) return emptyList()
         val groundingChunks = jsonObject["groundingChunks"]?.jsonArray ?: emptyList()
-        val chunks = groundingChunks.mapNotNull { chunk ->
-            val web = chunk.jsonObject["web"]?.jsonObject ?: return@mapNotNull null
-            val uri = web["uri"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-            val title = web["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-            UIMessageAnnotation.UrlCitation(
-                title = title,
-                url = uri
-            )
-        }
+        val chunks =
+            groundingChunks.mapNotNull { chunk ->
+                val web = chunk.jsonObject["web"]?.jsonObject ?: return@mapNotNull null
+                val uri = web["uri"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val title = web["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                UIMessageAnnotation.UrlCitation(
+                    title = title,
+                    url = uri,
+                )
+            }
         Log.i(TAG, "parseSearchGroundingMetadata: $chunks")
         return chunks
     }
@@ -559,14 +663,19 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 val thought = jsonObject["thought"]?.jsonPrimitive?.booleanOrNull ?: false
                 val thoughtSignature = jsonObject["thoughtSignature"]?.jsonPrimitive?.contentOrNull
                 val text = jsonObject["text"]?.jsonPrimitive?.content ?: ""
-                if (thought) UIMessagePart.Reasoning(
-                    reasoning = text,
-                    createdAt = Clock.System.now(),
-                    finishedAt = null,
-                    metadata = thoughtSignature?.let {
-                        buildJsonObject { put("thoughtSignature", JsonPrimitive(it)) }
-                    },
-                ) else UIMessagePart.Text(text)
+                if (thought) {
+                    UIMessagePart.Reasoning(
+                        reasoning = text,
+                        createdAt = Clock.System.now(),
+                        finishedAt = null,
+                        metadata =
+                            thoughtSignature?.let {
+                                buildJsonObject { put("thoughtSignature", JsonPrimitive(it)) }
+                            },
+                    )
+                } else {
+                    UIMessagePart.Text(text)
+                }
             }
 
             jsonObject.containsKey("functionCall") -> {
@@ -575,9 +684,10 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     toolName = jsonObject["functionCall"]!!.jsonObject["name"]!!.jsonPrimitive.content,
                     input = json.encodeToString(jsonObject["functionCall"]!!.jsonObject["args"]),
                     output = emptyList(),
-                    metadata = GoogleThoughtMetadata(
-                        thoughtSignature = jsonObject["thoughtSignature"]?.jsonPrimitive?.contentOrNull
-                    ).toMetadata()
+                    metadata =
+                        GoogleThoughtMetadata(
+                            thoughtSignature = jsonObject["thoughtSignature"]?.jsonPrimitive?.contentOrNull,
+                        ).toMetadata(),
                 )
             }
 
@@ -595,21 +705,23 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     return UIMessagePart.Reasoning(
                         reasoning = "[Draft Image]\n",
                         createdAt = Clock.System.now(),
-                        finishedAt = null
+                        finishedAt = null,
                     )
                 }
                 UIMessagePart.Image(
                     url = data,
-                    metadata = GoogleThoughtMetadata(thoughtSignature = thoughtSignature).toMetadata()
+                    metadata = GoogleThoughtMetadata(thoughtSignature = thoughtSignature).toMetadata(),
                 )
             }
 
-            else -> error("unknown message part type: $jsonObject")
+            else -> {
+                error("unknown message part type: $jsonObject")
+            }
         }
     }
 
-    private fun buildContents(messages: List<UIMessage>): JsonArray {
-        return buildJsonArray {
+    private fun buildContents(messages: List<UIMessage>): JsonArray =
+        buildJsonArray {
             messages
                 .filter { it.role != MessageRole.SYSTEM && it.isValidToUpload() }
                 .forEach { message ->
@@ -620,7 +732,6 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     }
                 }
         }
-    }
 
     private fun JsonArrayBuilder.addModelMessage(message: UIMessage) {
         val groups = groupPartsByToolBoundary(message.parts)
@@ -641,8 +752,10 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     // Track most recent reasoning signature for the next tool group.
                     group.parts.forEach { part ->
                         if (part is UIMessagePart.Reasoning) {
-                            part.metadata?.get("thoughtSignature")
-                                ?.jsonPrimitive?.contentOrNull
+                            part.metadata
+                                ?.get("thoughtSignature")
+                                ?.jsonPrimitive
+                                ?.contentOrNull
                                 ?.takeIf { it.isNotBlank() }
                                 ?.let { carriedSig = it }
                         }
@@ -653,169 +766,221 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 is PartGroup.Tools -> {
                     // 添加 functionCall 到 parts 缓冲
                     group.tools.forEach { tool ->
-                        val effective = if (
-                            tool.metadata?.get("thoughtSignature")?.jsonPrimitive?.contentOrNull.isNullOrBlank()
-                            && carriedSig != null
-                        ) {
-                            tool.copy(metadata = buildJsonObject {
-                                put("thoughtSignature", JsonPrimitive(carriedSig))
-                            })
-                        } else tool
+                        val effective =
+                            if (
+                                tool.metadata
+                                    ?.get("thoughtSignature")
+                                    ?.jsonPrimitive
+                                    ?.contentOrNull
+                                    .isNullOrBlank() &&
+                                carriedSig != null
+                            ) {
+                                tool.copy(
+                                    metadata =
+                                        buildJsonObject {
+                                            put("thoughtSignature", JsonPrimitive(carriedSig))
+                                        },
+                                )
+                            } else {
+                                tool
+                            }
                         partsBuffer.add(effective.toFunctionCallPart())
                     }
-                    carriedSig = null  // consumed by this tool group
+                    carriedSig = null // consumed by this tool group
 
                     // 输出 model 消息
-                    add(buildJsonObject {
-                        put("role", "model")
-                        putJsonArray("parts") { partsBuffer.forEach { add(it) } }
-                    })
+                    add(
+                        buildJsonObject {
+                            put("role", "model")
+                            putJsonArray("parts") { partsBuffer.forEach { add(it) } }
+                        },
+                    )
                     partsBuffer.clear()
 
                     // 紧跟 functionResponse
-                    add(buildJsonObject {
-                        put("role", "user")
-                        putJsonArray("parts") {
-                            group.tools.forEach { add(it.toFunctionResponsePart()) }
-                        }
-                    })
+                    add(
+                        buildJsonObject {
+                            put("role", "user")
+                            putJsonArray("parts") {
+                                group.tools.forEach { add(it.toFunctionResponsePart()) }
+                            }
+                        },
+                    )
                 }
             }
         }
 
         // 输出剩余内容
         if (partsBuffer.isNotEmpty()) {
-            add(buildJsonObject {
-                put("role", "model")
-                putJsonArray("parts") { partsBuffer.forEach { add(it) } }
-            })
+            add(
+                buildJsonObject {
+                    put("role", "model")
+                    putJsonArray("parts") { partsBuffer.forEach { add(it) } }
+                },
+            )
         }
     }
 
     private fun JsonArrayBuilder.addUserMessage(message: UIMessage) {
-        add(buildJsonObject {
-            put("role", commonRoleToGoogleRole(message.role))
-            putJsonArray("parts") {
-                message.parts.mapNotNull { it.toGooglePart() }.forEach { add(it) }
-            }
-        })
+        add(
+            buildJsonObject {
+                put("role", commonRoleToGoogleRole(message.role))
+                putJsonArray("parts") {
+                    message.parts.mapNotNull { it.toGooglePart() }.forEach { add(it) }
+                }
+            },
+        )
     }
 
-    private fun UIMessagePart.toGooglePart(): JsonObject? = when (this) {
-        is UIMessagePart.Text -> buildJsonObject {
-            put("text", text)
-        }
-
-        is UIMessagePart.Image -> {
-            encodeBase64(false).getOrNull()?.let { encoded ->
+    private fun UIMessagePart.toGooglePart(): JsonObject? =
+        when (this) {
+            is UIMessagePart.Text -> {
                 buildJsonObject {
-                    put("inlineData", buildJsonObject {
-                        put("mimeType", encoded.mimeType)
-                        put("data", encoded.base64)
-                    })
-                    metadataAs<GoogleThoughtMetadata>()?.thoughtSignature?.let {
-                        put("thoughtSignature", it)
-                    }
+                    put("text", text)
                 }
             }
-        }
 
-        is UIMessagePart.Video -> {
-            encodeBase64(false).getOrNull()?.let { base64Data ->
-                buildJsonObject {
-                    put("inlineData", buildJsonObject {
-                        put("mimeType", "video/mp4")
-                        put("data", base64Data)
-                    })
-                }
-            }
-        }
-
-        is UIMessagePart.Audio -> {
-            encodeBase64(false).getOrNull()?.let { base64Data ->
-                buildJsonObject {
-                    put("inlineData", buildJsonObject {
-                        put("mimeType", "audio/mp3")
-                        put("data", base64Data)
-                    })
-                }
-            }
-        }
-
-        else -> null
-    }
-
-    private fun UIMessagePart.Tool.toFunctionCallPart() = buildJsonObject {
-        put("functionCall", buildJsonObject {
-            put("name", toolName)
-            put("args", inputAsJson())
-        })
-        metadataAs<GoogleThoughtMetadata>()?.thoughtSignature?.let {
-            put("thoughtSignature", it)
-        }
-    }
-
-    private fun UIMessagePart.Tool.toFunctionResponsePart() = buildJsonObject {
-            put("functionResponse", buildJsonObject {
-                put("name", toolName)
-
-                // 1. 拆分出纯文本部分
-                val textParts = output.filterIsInstance<UIMessagePart.Text>()
-                
-                // 2. 提取所有的多模态(图片/视频/音频)，并直接转为 Google 要求的格式
-                // 过滤出最终包含 inlineData 的数据块
-                val mediaGoogleParts = output
-                    .filter { it !is UIMessagePart.Text }
-                    .mapNotNull { it.toGooglePart() }
-                    .filter { it.containsKey("inlineData") } 
-
-                // 3. 构建给模型看的结构化 response 节点
-                put("response", buildJsonObject {
-                    // 处理文本结果
-                    if (textParts.isNotEmpty()) {
+            is UIMessagePart.Image -> {
+                encodeBase64(false).getOrNull()?.let { encoded ->
+                    buildJsonObject {
                         put(
-                            "result", 
-                            textParts.joinToString("\n") { it.text }
+                            "inlineData",
+                            buildJsonObject {
+                                put("mimeType", encoded.mimeType)
+                                put("data", encoded.base64)
+                            },
                         )
-                    } else if (mediaGoogleParts.isEmpty()) {
-                        // 如果工具啥都没返回，给个兜底成功状态
-                        put("result", " ")
-                    }
-
-                    // 处理媒体数据（图片、音频、视频），打上 $ref 标签
-                    mediaGoogleParts.forEachIndexed { index, _ ->
-                        val refName = "media_ref_$index"
-                        put(refName, buildJsonObject {
-                            put("\$ref", refName)
-                        })
-                    }
-                })
-
-                // 4. 将真实的 Base64 多媒体数据挂载到 parts 中，并建立指针绑定
-                if (mediaGoogleParts.isNotEmpty()) {
-                    putJsonArray("parts") {
-                        mediaGoogleParts.forEachIndexed { index, googlePart ->
-                            val refName = "media_ref_$index"
-                            val inlineData = googlePart["inlineData"]!!.jsonObject
-
-                            add(buildJsonObject {
-                                // 重新组装 inlineData，并在内部注入 displayName
-                                put("inlineData", buildJsonObject {
-                                    // 复制原有的 mimeType 和 data
-                                    inlineData.forEach { (k, v) -> put(k, v) }
-                                    // 添加能够让 $ref 认出它的唯一名称
-                                    put("displayName", refName)
-                                })
-                                
-                                // 保留可能存在的其他字段
-                                googlePart.forEach { (k, v) ->
-                                    if (k != "inlineData") put(k, v)
-                                }
-                            })
+                        metadataAs<GoogleThoughtMetadata>()?.thoughtSignature?.let {
+                            put("thoughtSignature", it)
                         }
                     }
                 }
-            })
+            }
+
+            is UIMessagePart.Video -> {
+                encodeBase64(false).getOrNull()?.let { base64Data ->
+                    buildJsonObject {
+                        put(
+                            "inlineData",
+                            buildJsonObject {
+                                put("mimeType", "video/mp4")
+                                put("data", base64Data)
+                            },
+                        )
+                    }
+                }
+            }
+
+            is UIMessagePart.Audio -> {
+                encodeBase64(false).getOrNull()?.let { base64Data ->
+                    buildJsonObject {
+                        put(
+                            "inlineData",
+                            buildJsonObject {
+                                put("mimeType", "audio/mp3")
+                                put("data", base64Data)
+                            },
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                null
+            }
+        }
+
+    private fun UIMessagePart.Tool.toFunctionCallPart() =
+        buildJsonObject {
+            put(
+                "functionCall",
+                buildJsonObject {
+                    put("name", toolName)
+                    put("args", inputAsJson())
+                },
+            )
+            metadataAs<GoogleThoughtMetadata>()?.thoughtSignature?.let {
+                put("thoughtSignature", it)
+            }
+        }
+
+    private fun UIMessagePart.Tool.toFunctionResponsePart() =
+        buildJsonObject {
+            put(
+                "functionResponse",
+                buildJsonObject {
+                    put("name", toolName)
+
+                    // 1. 拆分出纯文本部分
+                    val textParts = output.filterIsInstance<UIMessagePart.Text>()
+
+                    // 2. 提取所有的多模态(图片/视频/音频)，并直接转为 Google 要求的格式
+                    // 过滤出最终包含 inlineData 的数据块
+                    val mediaGoogleParts =
+                        output
+                            .filter { it !is UIMessagePart.Text }
+                            .mapNotNull { it.toGooglePart() }
+                            .filter { it.containsKey("inlineData") }
+
+                    // 3. 构建给模型看的结构化 response 节点
+                    put(
+                        "response",
+                        buildJsonObject {
+                            // 处理文本结果
+                            if (textParts.isNotEmpty()) {
+                                put(
+                                    "result",
+                                    textParts.joinToString("\n") { it.text },
+                                )
+                            } else if (mediaGoogleParts.isEmpty()) {
+                                // 如果工具啥都没返回，给个兜底成功状态
+                                put("result", " ")
+                            }
+
+                            // 处理媒体数据（图片、音频、视频），打上 $ref 标签
+                            mediaGoogleParts.forEachIndexed { index, _ ->
+                                val refName = "media_ref_$index"
+                                put(
+                                    refName,
+                                    buildJsonObject {
+                                        put("\$ref", refName)
+                                    },
+                                )
+                            }
+                        },
+                    )
+
+                    // 4. 将真实的 Base64 多媒体数据挂载到 parts 中，并建立指针绑定
+                    if (mediaGoogleParts.isNotEmpty()) {
+                        putJsonArray("parts") {
+                            mediaGoogleParts.forEachIndexed { index, googlePart ->
+                                val refName = "media_ref_$index"
+                                val inlineData = googlePart["inlineData"]!!.jsonObject
+
+                                add(
+                                    buildJsonObject {
+                                        // 重新组装 inlineData，并在内部注入 displayName
+                                        put(
+                                            "inlineData",
+                                            buildJsonObject {
+                                                // 复制原有的 mimeType 和 data
+                                                inlineData.forEach { (k, v) -> put(k, v) }
+                                                // 添加能够让 $ref 认出它的唯一名称
+                                                put("displayName", refName)
+                                            },
+                                        )
+
+                                        // 保留可能存在的其他字段
+                                        googlePart.forEach { (k, v) ->
+                                            if (k != "inlineData") put(k, v)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                },
+            )
         }
 
     private fun parseUsageMeta(jsonObject: JsonObject?): TokenUsage? {
@@ -831,87 +996,100 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             promptTokens = promptTokens,
             completionTokens = candidatesTokens + thoughtTokens,
             totalTokens = totalTokens,
-            cachedTokens = cachedTokens
+            cachedTokens = cachedTokens,
         )
     }
 
     override suspend fun generateImage(
         providerSetting: ProviderSetting,
-        params: ImageGenerationParams
-    ): Flow<ImageGenerationItem> = flow {
-        require(providerSetting is ProviderSetting.Google) {
-            "Expected Google provider setting"
-        }
+        params: ImageGenerationParams,
+    ): Flow<ImageGenerationItem> =
+        flow {
+            require(providerSetting is ProviderSetting.Google) {
+                "Expected Google provider setting"
+            }
 
-        val items = withContext(Dispatchers.IO) {
-            val requestBody = buildJsonObject {
-                putJsonArray("instances") {
-                    add(buildJsonObject {
-                        put("prompt", params.prompt)
-                    })
-                }
-                putJsonObject("parameters") {
-                    put("sampleCount", params.numOfImages)
-                    put(
-                        "aspectRatio", when (params.aspectRatio) {
-                            ImageAspectRatio.SQUARE -> "1:1"
-                            ImageAspectRatio.LANDSCAPE -> "16:9"
-                            ImageAspectRatio.PORTRAIT -> "9:16"
+            val items =
+                withContext(Dispatchers.IO) {
+                    val requestBody =
+                        buildJsonObject {
+                            putJsonArray("instances") {
+                                add(
+                                    buildJsonObject {
+                                        put("prompt", params.prompt)
+                                    },
+                                )
+                            }
+                            putJsonObject("parameters") {
+                                put("sampleCount", params.numOfImages)
+                                put(
+                                    "aspectRatio",
+                                    when (params.aspectRatio) {
+                                        ImageAspectRatio.SQUARE -> "1:1"
+                                        ImageAspectRatio.LANDSCAPE -> "16:9"
+                                        ImageAspectRatio.PORTRAIT -> "9:16"
+                                    },
+                                )
+                            }
+                        }.mergeCustomBody(params.customBody)
+
+                    val url =
+                        buildUrl(
+                            providerSetting = providerSetting,
+                            path =
+                                if (providerSetting.vertexAI) {
+                                    "publishers/google/models/${params.model.modelId}:predict"
+                                } else {
+                                    "models/${params.model.modelId}:predict"
+                                },
+                        )
+
+                    val request =
+                        transformRequest(
+                            providerSetting = providerSetting,
+                            request =
+                                Request
+                                    .Builder()
+                                    .url(url)
+                                    .headers(params.customHeaders.toHeaders())
+                                    .post(
+                                        json
+                                            .encodeToString(
+                                                requestBody,
+                                            ).toRequestBody("application/json".toMediaType()),
+                                    ).configureReferHeaders(providerSetting.baseUrl)
+                                    .build(),
+                        )
+
+                    val response = client.newCall(request).await()
+                    if (!response.isSuccessful) {
+                        error("Failed to generate image: ${response.code} ${response.body.string()}")
+                    }
+
+                    val bodyStr = response.body.string()
+                    val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
+
+                    val predictions = bodyJson["predictions"]?.jsonArray ?: error("No predictions in response")
+
+                    predictions.mapNotNull { prediction ->
+                        val predictionObj = prediction.jsonObject
+                        val bytesBase64Encoded = predictionObj["bytesBase64Encoded"]?.jsonPrimitive?.contentOrNull
+
+                        if (bytesBase64Encoded != null) {
+                            ImageGenerationItem(
+                                data = bytesBase64Encoded,
+                                mimeType = "image/png",
+                            )
+                        } else {
+                            null
                         }
-                    )
+                    }
                 }
-            }.mergeCustomBody(params.customBody)
 
-            val url = buildUrl(
-                providerSetting = providerSetting,
-                path = if (providerSetting.vertexAI) {
-                    "publishers/google/models/${params.model.modelId}:predict"
-                } else {
-                    "models/${params.model.modelId}:predict"
-                }
-            )
+            if (items.isEmpty()) error("No images in response (the model may have refused the prompt).")
 
-            val request = transformRequest(
-                providerSetting = providerSetting,
-                request = Request.Builder()
-                    .url(url)
-                    .headers(params.customHeaders.toHeaders())
-                    .post(
-                        json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                    )
-                    .configureReferHeaders(providerSetting.baseUrl)
-                    .build()
-            )
-
-            val response = client.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("Failed to generate image: ${response.code} ${response.body.string()}")
-            }
-
-            val bodyStr = response.body.string()
-            val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-
-            val predictions = bodyJson["predictions"]?.jsonArray ?: error("No predictions in response")
-
-            predictions.mapNotNull { prediction ->
-                val predictionObj = prediction.jsonObject
-                val bytesBase64Encoded = predictionObj["bytesBase64Encoded"]?.jsonPrimitive?.contentOrNull
-
-                if (bytesBase64Encoded != null) {
-                    ImageGenerationItem(
-                        data = bytesBase64Encoded,
-                        mimeType = "image/png"
-                    )
-                } else {
-                    null
-                }
+            items.forEach { item ->
+                emit(item)
             }
         }
-
-        if (items.isEmpty()) error("No images in response (the model may have refused the prompt).")
-
-        items.forEach { item ->
-            emit(item)
-        }
-    }
 }

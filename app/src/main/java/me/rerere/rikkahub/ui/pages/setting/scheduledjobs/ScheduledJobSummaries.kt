@@ -18,17 +18,22 @@ import java.util.Locale
  *   every Mon, Wed, Fri 09:00  (cron "0 9 * * MON,WED,FRI")
  *   custom: <expr>              (cron we couldn't pretty-print)
  */
-fun summariseSchedule(job: ScheduledJobEntity): String = when (job.scheduleType) {
-    "once" -> {
-        val ms = job.atUnixMs ?: return "once (no time set)"
-        "once at ${formatAbsoluteTime(ms)}"
+fun summariseSchedule(job: ScheduledJobEntity): String =
+    when (job.scheduleType) {
+        "once" -> {
+            val ms = job.atUnixMs ?: return "once (no time set)"
+            "once at ${formatAbsoluteTime(ms)}"
+        }
+
+        "cron" -> {
+            val expr = job.cronExpression?.trim().orEmpty()
+            prettyCron(expr) ?: "custom: $expr"
+        }
+
+        else -> {
+            job.scheduleType
+        }
     }
-    "cron" -> {
-        val expr = job.cronExpression?.trim().orEmpty()
-        prettyCron(expr) ?: "custom: $expr"
-    }
-    else -> job.scheduleType
-}
 
 private fun formatAbsoluteTime(ms: Long): String {
     val now = System.currentTimeMillis()
@@ -94,12 +99,24 @@ private fun prettyCron(expr: String): String? {
     return null
 }
 
-private val DOW_NAMES = mapOf(
-    "0" to "Sun", "7" to "Sun", "1" to "Mon", "2" to "Tue",
-    "3" to "Wed", "4" to "Thu", "5" to "Fri", "6" to "Sat",
-    "SUN" to "Sun", "MON" to "Mon", "TUE" to "Tue",
-    "WED" to "Wed", "THU" to "Thu", "FRI" to "Fri", "SAT" to "Sat",
-)
+private val DOW_NAMES =
+    mapOf(
+        "0" to "Sun",
+        "7" to "Sun",
+        "1" to "Mon",
+        "2" to "Tue",
+        "3" to "Wed",
+        "4" to "Thu",
+        "5" to "Fri",
+        "6" to "Sat",
+        "SUN" to "Sun",
+        "MON" to "Mon",
+        "TUE" to "Tue",
+        "WED" to "Wed",
+        "THU" to "Thu",
+        "FRI" to "Fri",
+        "SAT" to "Sat",
+    )
 
 private fun parseDows(spec: String): List<String>? {
     if (spec.contains("/") || spec.contains("-")) return null
@@ -111,11 +128,12 @@ private fun parseDows(spec: String): List<String>? {
 /**
  * Returns "llm" or "direct" + a short human label. Used to render the mode chip / row label.
  */
-fun modeLabel(job: ScheduledJobEntity): String = when (job.mode) {
-    "llm" -> "LLM-driven"
-    "direct" -> "direct (no LLM)"
-    else -> job.mode
-}
+fun modeLabel(job: ScheduledJobEntity): String =
+    when (job.mode) {
+        "llm" -> "LLM-driven"
+        "direct" -> "direct (no LLM)"
+        else -> job.mode
+    }
 
 fun formatAbsoluteForDetail(ms: Long): String =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(ms))

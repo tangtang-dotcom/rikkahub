@@ -24,7 +24,7 @@ enum class TagType {
     SUCCESS,
     ERROR,
     WARNING,
-    INFO
+    INFO,
 }
 
 @Composable
@@ -32,35 +32,37 @@ fun Tag(
     modifier: Modifier = Modifier,
     type: TagType = TagType.DEFAULT,
     onClick: (() -> Unit)? = null,
-    children: @Composable RowScope.() -> Unit
+    children: @Composable RowScope.() -> Unit,
 ) {
-    val background = when (type) {
-        TagType.SUCCESS -> MaterialTheme.extendColors.green2
-        TagType.ERROR -> MaterialTheme.extendColors.red2
-        TagType.WARNING -> MaterialTheme.extendColors.orange2
-        TagType.INFO -> MaterialTheme.extendColors.blue2
-        else -> MaterialTheme.colorScheme.tertiaryContainer
-    }
-    val textColor = when (type) {
-        TagType.SUCCESS -> MaterialTheme.extendColors.gray8
-        TagType.ERROR -> MaterialTheme.extendColors.red8
-        TagType.WARNING -> MaterialTheme.extendColors.orange8
-        TagType.INFO -> MaterialTheme.extendColors.blue8
-        else -> MaterialTheme.colorScheme.onTertiaryContainer
-    }
+    val background =
+        when (type) {
+            TagType.SUCCESS -> MaterialTheme.extendColors.green2
+            TagType.ERROR -> MaterialTheme.extendColors.red2
+            TagType.WARNING -> MaterialTheme.extendColors.orange2
+            TagType.INFO -> MaterialTheme.extendColors.blue2
+            else -> MaterialTheme.colorScheme.tertiaryContainer
+        }
+    val textColor =
+        when (type) {
+            TagType.SUCCESS -> MaterialTheme.extendColors.gray8
+            TagType.ERROR -> MaterialTheme.extendColors.red8
+            TagType.WARNING -> MaterialTheme.extendColors.orange8
+            TagType.INFO -> MaterialTheme.extendColors.blue8
+            else -> MaterialTheme.colorScheme.onTertiaryContainer
+        }
     ProvideTextStyle(MaterialTheme.typography.labelSmall.copy(color = textColor)) {
         Row(
-            modifier = modifier
-                .clip(RoundedCornerShape(50))
-                .background(background)
-                .let {
-                    if (onClick != null) {
-                        it.clickable { onClick() }
-                    } else {
-                        it
-                    }
-                }
-                .padding(horizontal = 6.dp, vertical = 1.dp),
+            modifier =
+                modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(background)
+                    .let {
+                        if (onClick != null) {
+                            it.clickable { onClick() }
+                        } else {
+                            it
+                        }
+                    }.padding(horizontal = 6.dp, vertical = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             children()
@@ -73,7 +75,7 @@ fun Tag(
 private fun TagPreview() {
     Column(
         modifier = Modifier.padding(32.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Tag(type = TagType.SUCCESS) {
             Text("测试")

@@ -48,7 +48,7 @@ private const val MAX_WEBSOCKET_QUEUE_BYTES = 100_000L
 class VolcengineASRController(
     private val context: Context,
     private val httpClient: OkHttpClient,
-    private val provider: ASRProviderSetting.Volcengine
+    private val provider: ASRProviderSetting.Volcengine,
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -65,7 +65,7 @@ class VolcengineASRController(
         if (state.value.isRecording) return
         if (ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.RECORD_AUDIO,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             setError("Microphone permission is required")
@@ -77,49 +77,70 @@ class VolcengineASRController(
         _state.update {
             ASRState(
                 status = ASRStatus.Connecting,
-                isAvailable = true
+                isAvailable = true,
             )
         }
 
-        val request = Request.Builder()
-            .url(provider.websocketUrl)
-            .addHeader("X-Api-Key", provider.apiKey)
-            .addHeader("X-Api-Resource-Id", provider.resourceId)
-            .addHeader("X-Api-Request-Id", Uuid.random().toString())
-            .addHeader("X-Api-Sequence", "-1")
-            .build()
+        val request =
+            Request
+                .Builder()
+                .url(provider.websocketUrl)
+                .addHeader("X-Api-Key", provider.apiKey)
+                .addHeader("X-Api-Resource-Id", provider.resourceId)
+                .addHeader("X-Api-Request-Id", Uuid.random().toString())
+                .addHeader("X-Api-Sequence", "-1")
+                .build()
 
-        webSocket = httpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                val payload = buildFullClientRequestPayload()
-                val compressed = gzipCompress(payload)
-                val frame = buildFrame(
-                    messageType = MSG_FULL_CLIENT_REQUEST,
-                    flags = 0x00,
-                    serialization = SER_JSON,
-                    compression = COMP_GZIP,
-                    payload = compressed
-                )
-                webSocket.send(frame.toByteString())
-                _state.update { it.copy(status = ASRStatus.Listening, errorMessage = null) }
-                startRecorder(webSocket)
-            }
+        webSocket =
+            httpClient.newWebSocket(
+                request,
+                object : WebSocketListener() {
+                    override fun onOpen(
+                        webSocket: WebSocket,
+                        response: Response,
+                    ) {
+                        val payload = buildFullClientRequestPayload()
+                        val compressed = gzipCompress(payload)
+                        val frame =
+                            buildFrame(
+                                messageType = MSG_FULL_CLIENT_REQUEST,
+                                flags = 0x00,
+                                serialization = SER_JSON,
+                                compression = COMP_GZIP,
+                                payload = compressed,
+                            )
+                        webSocket.send(frame.toByteString())
+                        _state.update { it.copy(status = ASRStatus.Listening, errorMessage = null) }
+                        startRecorder(webSocket)
+                    }
 
-            override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                handleBinaryResponse(bytes.toByteArray())
-            }
+                    override fun onMessage(
+                        webSocket: WebSocket,
+                        bytes: ByteString,
+                    ) {
+                        handleBinaryResponse(bytes.toByteArray())
+                    }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "Volcengine ASR websocket failed", t)
-                releaseRecorder()
-                setError(t.message ?: "ASR websocket failed")
-            }
+                    override fun onFailure(
+                        webSocket: WebSocket,
+                        t: Throwable,
+                        response: Response?,
+                    ) {
+                        Log.e(TAG, "Volcengine ASR websocket failed", t)
+                        releaseRecorder()
+                        setError(t.message ?: "ASR websocket failed")
+                    }
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                releaseRecorder()
-                _state.update { it.copy(status = ASRStatus.Idle, errorMessage = null) }
-            }
-        })
+                    override fun onClosed(
+                        webSocket: WebSocket,
+                        code: Int,
+                        reason: String,
+                    ) {
+                        releaseRecorder()
+                        _state.update { it.copy(status = ASRStatus.Idle, errorMessage = null) }
+                    }
+                },
+            )
     }
 
     override fun stop() {
@@ -128,13 +149,14 @@ class VolcengineASRController(
         val socket = webSocket
         if (socket != null) {
             _state.update { it.copy(status = ASRStatus.Stopping) }
-            val lastFrame = buildFrame(
-                messageType = MSG_AUDIO_ONLY,
-                flags = FLAG_LAST_PACKET,
-                serialization = SER_NONE,
-                compression = COMP_NONE,
-                payload = ByteArray(0)
-            )
+            val lastFrame =
+                buildFrame(
+                    messageType = MSG_AUDIO_ONLY,
+                    flags = FLAG_LAST_PACKET,
+                    serialization = SER_NONE,
+                    compression = COMP_NONE,
+                    payload = ByteArray(0),
+                )
             socket.send(lastFrame.toByteString())
             scope.launch {
                 delay(1000)
@@ -155,26 +177,29 @@ class VolcengineASRController(
     }
 
     private fun buildFullClientRequestPayload(): ByteArray {
-        val audio = JSONObject()
-            .put("format", "pcm")
-            .put("rate", SAMPLE_RATE)
-            .put("bits", 16)
-            .put("channel", 1)
+        val audio =
+            JSONObject()
+                .put("format", "pcm")
+                .put("rate", SAMPLE_RATE)
+                .put("bits", 16)
+                .put("channel", 1)
         if (provider.language.isNotBlank()) {
             audio.put("language", provider.language)
         }
 
-        val json = JSONObject()
-            .put("user", JSONObject().put("uid", "rikkahub"))
-            .put("audio", audio)
-            .put(
-                "request", JSONObject()
-                    .put("model_name", "bigmodel")
-                    .put("enable_itn", true)
-                    .put("enable_punc", true)
-                    .put("show_utterances", true)
-                    .put("result_type", "full")
-            )
+        val json =
+            JSONObject()
+                .put("user", JSONObject().put("uid", "rikkahub"))
+                .put("audio", audio)
+                .put(
+                    "request",
+                    JSONObject()
+                        .put("model_name", "bigmodel")
+                        .put("enable_itn", true)
+                        .put("enable_punc", true)
+                        .put("show_utterances", true)
+                        .put("result_type", "full"),
+                )
         return json.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -195,26 +220,31 @@ class VolcengineASRController(
                 if (hasSequence) offset += 4
 
                 if (offset + 4 > data.size) return
-                val payloadSize = ByteBuffer.wrap(data, offset, 4)
-                    .order(ByteOrder.BIG_ENDIAN).int
+                val payloadSize =
+                    ByteBuffer
+                        .wrap(data, offset, 4)
+                        .order(ByteOrder.BIG_ENDIAN)
+                        .int
                 offset += 4
 
                 if (payloadSize <= 0 || offset + payloadSize > data.size) return
 
                 var payload = data.copyOfRange(offset, offset + payloadSize)
                 if (compression == COMP_GZIP) {
-                    payload = runCatching { gzipDecompress(payload) }.getOrElse {
-                        Log.w(TAG, "Gzip decompression failed", it)
-                        return
-                    }
+                    payload =
+                        runCatching { gzipDecompress(payload) }.getOrElse {
+                            Log.w(TAG, "Gzip decompression failed", it)
+                            return
+                        }
                 }
 
-                val json = runCatching {
-                    JSONObject(String(payload, Charsets.UTF_8))
-                }.getOrElse {
-                    Log.w(TAG, "Failed to parse response JSON", it)
-                    return
-                }
+                val json =
+                    runCatching {
+                        JSONObject(String(payload, Charsets.UTF_8))
+                    }.getOrElse {
+                        Log.w(TAG, "Failed to parse response JSON", it)
+                        return
+                    }
 
                 val text = json.optJSONObject("result")?.optString("text", "") ?: ""
                 if (text.isNotEmpty() && text != lastText) {
@@ -229,74 +259,84 @@ class VolcengineASRController(
                 offset += 4 // skip error code
 
                 if (offset + 4 > data.size) return
-                val msgSize = ByteBuffer.wrap(data, offset, 4)
-                    .order(ByteOrder.BIG_ENDIAN).int
+                val msgSize =
+                    ByteBuffer
+                        .wrap(data, offset, 4)
+                        .order(ByteOrder.BIG_ENDIAN)
+                        .int
                 offset += 4
 
-                val errorMsg = if (msgSize > 0 && offset + msgSize <= data.size) {
-                    String(data, offset, msgSize, Charsets.UTF_8)
-                } else {
-                    "Volcengine ASR error"
-                }
+                val errorMsg =
+                    if (msgSize > 0 && offset + msgSize <= data.size) {
+                        String(data, offset, msgSize, Charsets.UTF_8)
+                    } else {
+                        "Volcengine ASR error"
+                    }
                 Log.e(TAG, "Volcengine ASR error: $errorMsg")
                 setError(errorMsg)
             }
 
-            else -> Log.v(TAG, "Ignored message type: $messageType")
+            else -> {
+                Log.v(TAG, "Ignored message type: $messageType")
+            }
         }
     }
 
     @SuppressLint("MissingPermission")
     private fun startRecorder(socket: WebSocket) {
         recorderJob?.cancel()
-        recorderJob = scope.launch(Dispatchers.IO) {
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val chunkSize = (SAMPLE_RATE * 2 * 200 / 1000).coerceAtLeast(minBufferSize)
+        recorderJob =
+            scope.launch(Dispatchers.IO) {
+                val minBufferSize =
+                    AudioRecord.getMinBufferSize(
+                        SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                    )
+                val chunkSize = (SAMPLE_RATE * 2 * 200 / 1000).coerceAtLeast(minBufferSize)
 
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                chunkSize * 2
-            )
-            audioRecord = recorder
+                val recorder =
+                    AudioRecord(
+                        MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                        SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        chunkSize * 2,
+                    )
+                audioRecord = recorder
 
-            try {
-                recorder.startRecording()
-                val buffer = ByteArray(chunkSize)
-                while (isActive) {
-                    val read = recorder.read(buffer, 0, buffer.size)
-                    if (read > 0) {
-                        val amplitude = calculateRmsAmplitude(buffer, read)
-                        _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
-                        if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
-                            val frame = buildFrame(
-                                messageType = MSG_AUDIO_ONLY,
-                                flags = 0x00,
-                                serialization = SER_NONE,
-                                compression = COMP_NONE,
-                                payload = buffer.copyOfRange(0, read)
-                            )
-                            socket.send(frame.toByteString())
-                        } else {
-                            Log.w(TAG, "WebSocket queue full, dropping audio frame")
+                try {
+                    recorder.startRecording()
+                    val buffer = ByteArray(chunkSize)
+                    while (isActive) {
+                        val read = recorder.read(buffer, 0, buffer.size)
+                        if (read > 0) {
+                            val amplitude = calculateRmsAmplitude(buffer, read)
+                            _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
+                            if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
+                                val frame =
+                                    buildFrame(
+                                        messageType = MSG_AUDIO_ONLY,
+                                        flags = 0x00,
+                                        serialization = SER_NONE,
+                                        compression = COMP_NONE,
+                                        payload = buffer.copyOfRange(0, read),
+                                    )
+                                socket.send(frame.toByteString())
+                            } else {
+                                Log.w(TAG, "WebSocket queue full, dropping audio frame")
+                            }
+                        } else if (read < 0) {
+                            throw IllegalStateException("AudioRecord read error: $read")
                         }
-                    } else if (read < 0) {
-                        throw IllegalStateException("AudioRecord read error: $read")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Audio recording failed", e)
+                    setError(e.message ?: "Audio recording failed")
+                } finally {
+                    releaseRecorder()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio recording failed", e)
-                setError(e.message ?: "Audio recording failed")
-            } finally {
-                releaseRecorder()
             }
-        }
     }
 
     private fun setError(message: String) {
@@ -325,18 +365,21 @@ class VolcengineASRController(
             flags: Int,
             serialization: Int,
             compression: Int,
-            payload: ByteArray
+            payload: ByteArray,
         ): ByteArray {
-            val header = byteArrayOf(
-                0x11.toByte(),
-                ((messageType shl 4) or (flags and 0x0F)).toByte(),
-                ((serialization shl 4) or (compression and 0x0F)).toByte(),
-                0x00
-            )
-            val size = ByteBuffer.allocate(4)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putInt(payload.size)
-                .array()
+            val header =
+                byteArrayOf(
+                    0x11.toByte(),
+                    ((messageType shl 4) or (flags and 0x0F)).toByte(),
+                    ((serialization shl 4) or (compression and 0x0F)).toByte(),
+                    0x00,
+                )
+            val size =
+                ByteBuffer
+                    .allocate(4)
+                    .order(ByteOrder.BIG_ENDIAN)
+                    .putInt(payload.size)
+                    .array()
             return header + size + payload
         }
 
@@ -346,8 +389,7 @@ class VolcengineASRController(
             return bos.toByteArray()
         }
 
-        private fun gzipDecompress(data: ByteArray): ByteArray {
-            return GZIPInputStream(data.inputStream()).use { it.readBytes() }
-        }
+        private fun gzipDecompress(data: ByteArray): ByteArray =
+            GZIPInputStream(data.inputStream()).use { it.readBytes() }
     }
 }

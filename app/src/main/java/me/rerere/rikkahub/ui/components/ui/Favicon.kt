@@ -28,17 +28,19 @@ fun Favicon(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(25),
 ) {
-    val faviconUrl = remember(url) {
-        url.toHttpUrlOrNull()?.host?.let { host ->
-            "https://favicone.com/$host"
+    val faviconUrl =
+        remember(url) {
+            url.toHttpUrlOrNull()?.host?.let { host ->
+                "https://favicone.com/$host"
+            }
         }
-    }
     AsyncImage(
         model = faviconUrl,
-        modifier = modifier
-            .size(20.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+        modifier =
+            modifier
+                .size(20.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceContainer),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         placeholder = rememberVectorPainter(HugeIcons.Link01),
@@ -50,38 +52,42 @@ fun Favicon(
 fun FaviconRow(
     urls: List<String>,
     modifier: Modifier = Modifier,
-    size: Dp = 20.dp
+    size: Dp = 20.dp,
 ) {
-    val displayUrls = remember(urls) {
-        urls.distinctBy { it.toHttpUrlOrNull()?.host }
-    }.take(3)
+    val displayUrls =
+        remember(urls) {
+            urls.distinctBy { it.toHttpUrlOrNull()?.host }
+        }.take(3)
     Layout(
         modifier = modifier,
         content = {
             displayUrls.forEachIndexed { index, url ->
                 Favicon(
                     url = url,
-                    modifier = Modifier
-                        .shadow(1.dp, CircleShape)
-                        .zIndex(index.toFloat())
-                        .size(size),
+                    modifier =
+                        Modifier
+                            .shadow(1.dp, CircleShape)
+                            .zIndex(index.toFloat())
+                            .size(size),
                     shape = CircleShape,
                 )
             }
-        }
+        },
     ) { measurables, constraints ->
-        val placeables = measurables.map { measurable ->
-            measurable.measure(constraints)
-        }
+        val placeables =
+            measurables.map { measurable ->
+                measurable.measure(constraints)
+            }
         val faviconSize = size.roundToPx()
         val overlap = 4.dp.roundToPx()
         val step = faviconSize - overlap
 
-        val width = if (placeables.isEmpty()) {
-            0
-        } else {
-            faviconSize + (placeables.size - 1) * step
-        }
+        val width =
+            if (placeables.isEmpty()) {
+                0
+            } else {
+                faviconSize + (placeables.size - 1) * step
+            }
         val height = if (placeables.isEmpty()) 0 else placeables.maxOfOrNull { it.height } ?: 0
 
         layout(width, height) {

@@ -36,7 +36,6 @@ class TelegramPollStallChecker(
     private val checkIntervalMs: Long = CHECK_INTERVAL_MS,
     private val stallThresholdMs: Long = TelegramPollStallTracker.DEFAULT_STALL_THRESHOLD_MS,
 ) {
-
     /** What the checker should do on a given tick. */
     enum class Action {
         /** Poll loop is healthy — nothing to do. */
@@ -53,11 +52,15 @@ class TelegramPollStallChecker(
      * Pure decision: given whether the loop is stalled and how many times it has already
      * been restarted within the flap window, decide what to do. No side effects.
      */
-    fun decide(stalled: Boolean, restartCountInWindow: Int): Action = when {
-        !stalled -> Action.NONE
-        restartCountInWindow >= TelegramPollStallTracker.FLAP_RESTART_CEILING -> Action.ESCALATE
-        else -> Action.RESTART_POLL_LOOP
-    }
+    fun decide(
+        stalled: Boolean,
+        restartCountInWindow: Int,
+    ): Action =
+        when {
+            !stalled -> Action.NONE
+            restartCountInWindow >= TelegramPollStallTracker.FLAP_RESTART_CEILING -> Action.ESCALATE
+            else -> Action.RESTART_POLL_LOOP
+        }
 
     /**
      * The monitor loop. Runs until its coroutine is cancelled (FGS teardown). Tracks the
@@ -78,12 +81,15 @@ class TelegramPollStallChecker(
             }
             val stalled = tracker.isStalled(stallThresholdMs)
             when (decide(stalled, restartsInWindow)) {
-                Action.NONE -> Unit
+                Action.NONE -> {
+                    Unit
+                }
+
                 Action.RESTART_POLL_LOOP -> {
                     logSafe {
                         Log.w(
                             TAG,
-                            "monitor: poll stalled for ${tracker.millisSinceLastUpdate()}ms — restarting poll loop"
+                            "monitor: poll stalled for ${tracker.millisSinceLastUpdate()}ms — restarting poll loop",
                         )
                     }
                     tracker.onPollLoopRestarted()
@@ -94,11 +100,12 @@ class TelegramPollStallChecker(
                     // same stall while the fresh poll loop is warming up.
                     tracker.markUpdate()
                 }
+
                 Action.ESCALATE -> {
                     logSafe {
                         Log.w(
                             TAG,
-                            "monitor: poll loop flapping (${restartsInWindow} restarts in window) — escalating to FGS restart"
+                            "monitor: poll loop flapping ($restartsInWindow restarts in window) — escalating to FGS restart",
                         )
                     }
                     runCatching { onEscalate() }

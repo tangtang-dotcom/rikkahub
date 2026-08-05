@@ -50,20 +50,22 @@ fun ConversationSystemPromptButton(
             )
             Spacer(Modifier.size(4.dp))
             Text(
-                text = if (!customSystemPrompt.isNullOrBlank()) {
-                    stringResource(R.string.chat_page_conversation_system_prompt) + " ✎"
-                } else {
-                    stringResource(R.string.chat_page_conversation_system_prompt)
-                },
+                text =
+                    if (!customSystemPrompt.isNullOrBlank()) {
+                        stringResource(R.string.chat_page_conversation_system_prompt) + " ✎"
+                    } else {
+                        stringResource(R.string.chat_page_conversation_system_prompt)
+                    },
                 style = MaterialTheme.typography.labelSmall,
             )
         }
 
         AnimatedVisibility(visible = expanded) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 OutlinedTextField(

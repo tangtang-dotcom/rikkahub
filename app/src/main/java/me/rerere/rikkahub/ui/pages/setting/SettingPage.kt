@@ -45,18 +45,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.AiMagic
 import me.rerere.hugeicons.stroke.Alert01
-import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.hugeicons.stroke.Book01
 import me.rerere.hugeicons.stroke.Book03
 import me.rerere.hugeicons.stroke.Bookshelf01
 import me.rerere.hugeicons.stroke.Brain02
 import me.rerere.hugeicons.stroke.Clapping01
 import me.rerere.hugeicons.stroke.Clock02
-import me.rerere.hugeicons.stroke.Database02
+import me.rerere.hugeicons.stroke.Connect
 import me.rerere.hugeicons.stroke.Console
-import me.rerere.hugeicons.stroke.Earth
-import me.rerere.hugeicons.stroke.Wrench01
+import me.rerere.hugeicons.stroke.Database02
 import me.rerere.hugeicons.stroke.Developer
+import me.rerere.hugeicons.stroke.Earth
 import me.rerere.hugeicons.stroke.GlobalSearch
 import me.rerere.hugeicons.stroke.ImageUpload
 import me.rerere.hugeicons.stroke.InLove
@@ -64,19 +63,21 @@ import me.rerere.hugeicons.stroke.LookTop
 import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.Megaphone01
 import me.rerere.hugeicons.stroke.Package
-import me.rerere.hugeicons.stroke.Connect
 import me.rerere.hugeicons.stroke.ServerStack01
-import me.rerere.hugeicons.stroke.Shield01
-import me.rerere.hugeicons.stroke.Telegram
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Share04
+import me.rerere.hugeicons.stroke.Shield01
 import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Sun01
+import me.rerere.hugeicons.stroke.Telegram
+import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.hugeicons.stroke.WavingHand01
+import me.rerere.hugeicons.stroke.Wrench01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.isNotConfigured
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.skills.js.SkillSecretsStore
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.Select
@@ -99,6 +100,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
     val navController = LocalNavController.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val filesManager: FilesManager = koinInject()
+    val secretsStore: SkillSecretsStore = koinInject()
 
     if (settings.launchCount > 100 && (settings.launchCount - settings.sponsorAlertDismissedAt) >= 50) {
         AlertDialog(
@@ -136,22 +138,22 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 actions = {
-                    if(settings.developerMode) {
+                    if (settings.developerMode) {
                         IconButton(
                             onClick = {
                                 navController.navigate(Screen.Developer)
-                            }
+                            },
                         ) {
                             Icon(HugeIcons.Developer, "Developer")
                         }
                     }
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -164,13 +166,20 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                 }
             }
 
+            if (secretsStore.isSecurityDegraded()) {
+                item {
+                    SecurityDegradedWarningCard()
+                }
+            }
+
             item("generalSettings") {
                 var colorMode by rememberColorMode()
-                val selectedColorModeText = when (colorMode) {
-                    ColorMode.SYSTEM -> stringResource(R.string.setting_page_color_mode_system)
-                    ColorMode.LIGHT -> stringResource(R.string.setting_page_color_mode_light)
-                    ColorMode.DARK -> stringResource(R.string.setting_page_color_mode_dark)
-                }
+                val selectedColorModeText =
+                    when (colorMode) {
+                        ColorMode.SYSTEM -> stringResource(R.string.setting_page_color_mode_system)
+                        ColorMode.LIGHT -> stringResource(R.string.setting_page_color_mode_light)
+                        ColorMode.DARK -> stringResource(R.string.setting_page_color_mode_dark)
+                    }
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),
                     title = { Text(stringResource(R.string.setting_page_general_settings)) },
@@ -196,7 +205,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                                         ColorMode.DARK -> stringResource(R.string.setting_page_color_mode_dark)
                                     }
                                 },
-                                modifier = Modifier.width(150.dp)
+                                modifier = Modifier.width(150.dp),
                             )
                         },
                         headlineContent = { Text(stringResource(R.string.setting_page_color_mode)) },
@@ -352,8 +361,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                                     stringResource(
                                         R.string.setting_page_chat_storage_desc,
                                         storageState.first,
-                                        storageState.second / 1024 / 1024.0
-                                    )
+                                        storageState.second / 1024 / 1024.0,
+                                    ),
                                 )
                             }
                         },
@@ -378,32 +387,32 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         trailingContent = {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 var showQQGroupSheet by remember { mutableStateOf(false) }
                                 IconButton(
-                                    onClick = { showQQGroupSheet = true }
+                                    onClick = { showQQGroupSheet = true },
                                 ) {
                                     Icon(
                                         imageVector = TencentQQIcon,
                                         contentDescription = "QQ",
-                                        tint = MaterialTheme.colorScheme.secondary
+                                        tint = MaterialTheme.colorScheme.secondary,
                                     )
                                 }
                                 if (showQQGroupSheet) {
                                     QQGroupBottomSheet(
-                                        onDismiss = { showQQGroupSheet = false }
+                                        onDismiss = { showQQGroupSheet = false },
                                     )
                                 }
                                 IconButton(
                                     onClick = {
                                         context.openUrl("https://discord.gg/9weBqxe5c4")
-                                    }
+                                    },
                                 ) {
                                     Icon(
                                         imageVector = DiscordIcon,
                                         contentDescription = "Discord",
-                                        tint = MaterialTheme.colorScheme.secondary
+                                        tint = MaterialTheme.colorScheme.secondary,
                                     )
                                 }
                             }
@@ -412,11 +421,15 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                     )
                     item(
                         onClick = {
-                            val docUrl = if (java.util.Locale.getDefault().language == "zh") {
-                                "https://docs.rikka-ai.com/zh/introduction"
-                            } else {
-                                "https://docs.rikka-ai.com/introduction"
-                            }
+                            val docUrl =
+                                if (java.util.Locale
+                                        .getDefault()
+                                        .language == "zh"
+                                ) {
+                                    "https://docs.rikka-ai.com/zh/introduction"
+                                } else {
+                                    "https://docs.rikka-ai.com/introduction"
+                                }
                             context.openUrl(docUrl)
                         },
                         leadingContent = { Icon(HugeIcons.Book01, null) },
@@ -460,15 +473,17 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
 private fun ProviderConfigWarningCard(navController: Navigator) {
     Card(
         modifier = Modifier.padding(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.End
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+            horizontalAlignment = Alignment.End,
         ) {
             ListItem(
                 headlineContent = {
@@ -480,19 +495,51 @@ private fun ProviderConfigWarningCard(navController: Navigator) {
                 leadingContent = {
                     Icon(HugeIcons.Alert01, null)
                 },
-                colors = ListItemDefaults.colors(
-                    containerColor = Color.Transparent
-                )
+                colors =
+                    ListItemDefaults.colors(
+                        containerColor = Color.Transparent,
+                    ),
             )
 
             TextButton(
                 onClick = {
                     navController.navigate(Screen.SettingProvider)
-                }
+                },
             ) {
                 Text(stringResource(R.string.setting_page_config))
             }
         }
+    }
+}
+
+@Composable
+private fun SecurityDegradedWarningCard() {
+    Card(
+        modifier = Modifier.padding(8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
+    ) {
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.setting_page_security_degraded_title))
+            },
+            supportingContent = {
+                Text(stringResource(R.string.setting_page_security_degraded_desc))
+            },
+            leadingContent = {
+                Icon(HugeIcons.Shield01, null)
+            },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = Color.Transparent,
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+        )
     }
 }
 
@@ -501,20 +548,22 @@ private data class QQGroup(
     val key: String,
 )
 
-private val QQ_GROUPS = listOf(
-    QQGroup("RikkaHub 一群", "4POE46u9e_zoy1TkNfWdCvueR9CKFJdk"),
-    QQGroup("RikkaHub 二群", "Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0"),
-    QQGroup("RikkaHub 三群", "Qc9oP-9tXioZeQEvEvI2_owWtBAIx3lS"),
-)
+private val QQ_GROUPS =
+    listOf(
+        QQGroup("RikkaHub 一群", "4POE46u9e_zoy1TkNfWdCvueR9CKFJdk"),
+        QQGroup("RikkaHub 二群", "Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0"),
+        QQGroup("RikkaHub 三群", "Qc9oP-9tXioZeQEvEvI2_owWtBAIx3lS"),
+    )
 
 @Composable
 private fun QQGroupBottomSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             QQ_GROUPS.forEach { group ->
@@ -524,13 +573,14 @@ private fun QQGroupBottomSheet(onDismiss: () -> Unit) {
                         Icon(
                             imageVector = TencentQQIcon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary
+                            tint = MaterialTheme.colorScheme.secondary,
                         )
                     },
-                    modifier = Modifier.clickable {
-                        context.joinQQGroup(group.key)
-                        onDismiss()
-                    }
+                    modifier =
+                        Modifier.clickable {
+                            context.joinQQGroup(group.key)
+                            onDismiss()
+                        },
                 )
             }
         }

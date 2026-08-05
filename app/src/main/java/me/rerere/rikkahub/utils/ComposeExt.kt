@@ -17,12 +17,14 @@ import androidx.compose.ui.unit.dp
 operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
     val layoutDirection = LocalLayoutDirection.current
     return PaddingValues(
-        start = this.calculateStartPadding(layoutDirection) + other.calculateStartPadding(
-            layoutDirection
-        ),
+        start =
+            this.calculateStartPadding(layoutDirection) +
+                other.calculateStartPadding(
+                    layoutDirection,
+                ),
         top = this.calculateTopPadding() + other.calculateTopPadding(),
         end = this.calculateEndPadding(layoutDirection) + other.calculateEndPadding(layoutDirection),
-        bottom = this.calculateBottomPadding() + other.calculateBottomPadding()
+        bottom = this.calculateBottomPadding() + other.calculateBottomPadding(),
     )
 }
 
@@ -35,15 +37,17 @@ fun Color.toCssHex(): String {
 }
 
 @Composable
-fun Dp.toSp(): TextUnit = with(LocalDensity.current) {
-    this@toSp.toSp()
-}
+fun Dp.toSp(): TextUnit =
+    with(LocalDensity.current) {
+        this@toSp.toSp()
+    }
 
 @Composable
-fun TextUnit.toDp(): Dp = with(LocalDensity.current) {
-    // Density.toDp(TextUnit) 仅支持 Sp 单位，Em/Unspecified 会抛 "Only Sp can convert to Px"
-    if (this@toDp.isSp) this@toDp.toDp() else 0.dp
-}
+fun TextUnit.toDp(): Dp =
+    with(LocalDensity.current) {
+        // Density.toDp(TextUnit) 仅支持 Sp 单位，Em/Unspecified 会抛 "Only Sp can convert to Px"
+        if (this@toDp.isSp) this@toDp.toDp() else 0.dp
+    }
 
 fun TextFieldState.insertAtCursor(text: String) {
     this.edit {

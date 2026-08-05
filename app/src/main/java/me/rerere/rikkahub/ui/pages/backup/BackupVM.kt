@@ -11,12 +11,12 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.data.sync.S3BackupItem
+import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.data.sync.importer.ChatboxImporter
 import me.rerere.rikkahub.data.sync.importer.CherryStudioProviderImporter
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
-import me.rerere.rikkahub.data.sync.S3BackupItem
-import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.utils.UiState
 import java.io.File
 
@@ -28,11 +28,12 @@ class BackupVM(
     private val s3Sync: S3Sync,
     private val conversationRepository: ConversationRepository,
 ) : ViewModel() {
-    val settings = settingsStore.settingsFlow.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = Settings.dummy()
-    )
+    val settings =
+        settingsStore.settingsFlow.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = Settings.dummy(),
+        )
 
     val webDavBackupItems = MutableStateFlow<UiState<List<WebDavBackupItem>>>(UiState.Idle)
     val s3BackupItems = MutableStateFlow<UiState<List<S3BackupItem>>>(UiState.Idle)
@@ -53,11 +54,14 @@ class BackupVM(
             runCatching {
                 webDavBackupItems.emit(UiState.Loading)
                 webDavBackupItems.emit(
-                    value = UiState.Success(
-                        data = webDavSync.listBackupFiles(
-                            config = settings.value.webDavConfig
-                        ).sortedByDescending { it.lastModified }
-                    )
+                    value =
+                        UiState.Success(
+                            data =
+                                webDavSync
+                                    .listBackupFiles(
+                                        config = settings.value.webDavConfig,
+                                    ).sortedByDescending { it.lastModified },
+                        ),
                 )
             }.onFailure {
                 webDavBackupItems.emit(UiState.Error(it))
@@ -83,9 +87,10 @@ class BackupVM(
     }
 
     suspend fun exportToFile(): File {
-        val file = webDavSync.prepareBackupFile(
-            settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries)
-        )
+        val file =
+            webDavSync.prepareBackupFile(
+                settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries),
+            )
         recordBackupTime()
         return file
     }
@@ -100,39 +105,41 @@ class BackupVM(
     suspend fun restoreFromChatBox(file: File): ChatboxRestoreResult {
         var importedConversations = 0
         var skippedExistingConversations = 0
-        val result = ChatboxImporter.importStreaming(
-            file = file,
-            assistantId = settings.value.assistantId,
-            providers = settings.value.providers,
-            onConversation = { conversation ->
-                if (conversationRepository.existsConversationById(conversation.id)) {
-                    skippedExistingConversations++
-                } else {
-                    conversationRepository.insertConversation(conversation)
-                    importedConversations++
-                }
-            }
-        )
+        val result =
+            ChatboxImporter.importStreaming(
+                file = file,
+                assistantId = settings.value.assistantId,
+                providers = settings.value.providers,
+                onConversation = { conversation ->
+                    if (conversationRepository.existsConversationById(conversation.id)) {
+                        skippedExistingConversations++
+                    } else {
+                        conversationRepository.insertConversation(conversation)
+                        importedConversations++
+                    }
+                },
+            )
 
         val targetAssistantId = settings.value.assistantId
         settingsStore.update(
             settings.value.copy(
                 providers = result.providers + settings.value.providers,
-                assistants = settings.value.assistants.map { assistant ->
-                    if (result.hasConversationSystemPrompt && assistant.id == targetAssistantId) {
-                        assistant.copy(allowConversationSystemPrompt = true)
-                    } else {
-                        assistant
-                    }
-                }
-            )
+                assistants =
+                    settings.value.assistants.map { assistant ->
+                        if (result.hasConversationSystemPrompt && assistant.id == targetAssistantId) {
+                            assistant.copy(allowConversationSystemPrompt = true)
+                        } else {
+                            assistant
+                        }
+                    },
+            ),
         )
 
         Log.i(
             TAG,
             "restoreFromChatBox: import ${result.providers.size} providers, " +
                 "$importedConversations conversations, skip $skippedExistingConversations existing, " +
-                "drop ${result.skippedImageParts} images"
+                "drop ${result.skippedImageParts} images",
         )
         return ChatboxRestoreResult(
             importedProviders = result.providers.size,
@@ -155,7 +162,7 @@ class BackupVM(
         updateSettings(
             settings.value.copy(
                 providers = importProviders + settings.value.providers,
-            )
+            ),
         )
     }
 
@@ -165,11 +172,13 @@ class BackupVM(
             runCatching {
                 s3BackupItems.emit(UiState.Loading)
                 s3BackupItems.emit(
-                    value = UiState.Success(
-                        data = s3Sync.listBackupFiles(
-                            config = settings.value.s3Config
-                        )
-                    )
+                    value =
+                        UiState.Success(
+                            data =
+                                s3Sync.listBackupFiles(
+                                    config = settings.value.s3Config,
+                                ),
+                        ),
                 )
             }.onFailure {
                 s3BackupItems.emit(UiState.Error(it))
@@ -197,9 +206,10 @@ class BackupVM(
     private suspend fun recordBackupTime() {
         settingsStore.update { settings ->
             settings.copy(
-                backupReminderConfig = settings.backupReminderConfig.copy(
-                    lastBackupTime = System.currentTimeMillis()
-                )
+                backupReminderConfig =
+                    settings.backupReminderConfig.copy(
+                        lastBackupTime = System.currentTimeMillis(),
+                    ),
             )
         }
     }

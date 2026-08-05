@@ -8,7 +8,7 @@ data class TTSResponse(
     val format: AudioFormat,
     val sampleRate: Int? = null,
     val duration: Float? = null,
-    val metadata: Map<String, String> = emptyMap()
+    val metadata: Map<String, String> = emptyMap(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -41,7 +41,7 @@ data class AudioChunk(
     val format: AudioFormat,
     val sampleRate: Int? = null,
     val isLast: Boolean = false,
-    val metadata: Map<String, String> = emptyMap()
+    val metadata: Map<String, String> = emptyMap(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -67,4 +67,3 @@ data class AudioChunk(
         return result
     }
 }
-

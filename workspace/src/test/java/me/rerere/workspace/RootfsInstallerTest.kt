@@ -10,7 +10,6 @@ import java.io.OutputStream
 import java.util.zip.GZIPOutputStream
 
 class RootfsInstallerTest {
-
     @get:Rule
     val tmp = TemporaryFolder()
 
@@ -51,11 +50,18 @@ class RootfsInstallerTest {
 
     private fun createInstaller() = RootfsInstaller(WorkspaceManager(tmp.newFolder()))
 
-    private fun OutputStream.writeTarEntry(name: String, type: Char, data: ByteArray) {
+    private fun OutputStream.writeTarEntry(
+        name: String,
+        type: Char,
+        data: ByteArray,
+    ) {
         val header = ByteArray(TAR_BLOCK)
         name.toByteArray(Charsets.UTF_8).copyInto(header, 0)
         "0000755".toByteArray().copyInto(header, 100)
-        data.size.toLong().toOctalField().copyInto(header, 124)
+        data.size
+            .toLong()
+            .toOctalField()
+            .copyInto(header, 124)
         header[156] = type.code.toByte()
         write(header)
         write(data)
@@ -63,8 +69,7 @@ class RootfsInstallerTest {
         write(ByteArray(padding))
     }
 
-    private fun Long.toOctalField(): ByteArray =
-        toString(8).padStart(11, '0').toByteArray(Charsets.UTF_8)
+    private fun Long.toOctalField(): ByteArray = toString(8).padStart(11, '0').toByteArray(Charsets.UTF_8)
 
     companion object {
         private const val TAR_BLOCK = 512

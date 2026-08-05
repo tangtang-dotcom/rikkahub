@@ -30,10 +30,12 @@ data class EditorInfoBundle(
     val selectionStart: Int,
     val selectionEnd: Int,
 ) : Parcelable {
-
     override fun describeContents(): Int = 0
 
-    override fun writeToParcel(dest: Parcel, flags: Int) {
+    override fun writeToParcel(
+        dest: Parcel,
+        flags: Int,
+    ) {
         dest.writeString(packageName)
         dest.writeString(fieldHint)
         dest.writeInt(inputType)
@@ -46,19 +48,21 @@ data class EditorInfoBundle(
 
     companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<EditorInfoBundle> = object : Parcelable.Creator<EditorInfoBundle> {
-            override fun createFromParcel(source: Parcel): EditorInfoBundle = EditorInfoBundle(
-                packageName = source.readString(),
-                fieldHint = source.readString(),
-                inputType = source.readInt(),
-                imeOptions = source.readInt(),
-                isPassword = source.readInt() != 0,
-                isMultiLine = source.readInt() != 0,
-                selectionStart = source.readInt(),
-                selectionEnd = source.readInt(),
-            )
+        val CREATOR: Parcelable.Creator<EditorInfoBundle> =
+            object : Parcelable.Creator<EditorInfoBundle> {
+                override fun createFromParcel(source: Parcel): EditorInfoBundle =
+                    EditorInfoBundle(
+                        packageName = source.readString(),
+                        fieldHint = source.readString(),
+                        inputType = source.readInt(),
+                        imeOptions = source.readInt(),
+                        isPassword = source.readInt() != 0,
+                        isMultiLine = source.readInt() != 0,
+                        selectionStart = source.readInt(),
+                        selectionEnd = source.readInt(),
+                    )
 
-            override fun newArray(size: Int): Array<EditorInfoBundle?> = arrayOfNulls(size)
-        }
+                override fun newArray(size: Int): Array<EditorInfoBundle?> = arrayOfNulls(size)
+            }
     }
 }

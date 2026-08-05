@@ -29,7 +29,9 @@ data class DoctorCheck(
 
 enum class Severity { OK, INFO, WARN, FAIL }
 
-enum class DoctorCategory(val displayName: String) {
+enum class DoctorCategory(
+    val displayName: String,
+) {
     Permissions("权限"),
     Services("后台服务"),
     AssistantInfo("当前助手"),
@@ -77,4 +79,7 @@ enum class AppRouteKey {
     Assistant,
 }
 
-data class AutoFixResult(val ok: Boolean, val message: String)
+data class AutoFixResult(
+    val ok: Boolean,
+    val message: String,
+)

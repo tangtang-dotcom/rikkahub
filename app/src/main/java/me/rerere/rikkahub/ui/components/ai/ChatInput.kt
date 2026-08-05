@@ -94,9 +94,8 @@ import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
 import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
-import me.rerere.rikkahub.costguards.TokenBudgetTracker
-import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
@@ -141,7 +140,7 @@ fun ChatInput(
     onSendClick: () -> Unit,
     onLongSendClick: () -> Unit,
 ) {
-    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+    @Suppress("DEPRECATION") // 与项目现有 LocalClipboardManager 用法保持一致
     val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
     val assistant = settings.getCurrentAssistant()
@@ -153,14 +152,15 @@ fun ChatInput(
 
     // 键盘弹出时让底部两角变直角，贴合 IME
     val imeVisible = WindowInsets.isImeVisible
-    val containerShape = if (imeVisible) {
-        MaterialTheme.shapes.largeIncreased.copy(
-            bottomStart = CornerSize(0.dp),
-            bottomEnd = CornerSize(0.dp),
-        )
-    } else {
-        MaterialTheme.shapes.largeIncreased
-    }
+    val containerShape =
+        if (imeVisible) {
+            MaterialTheme.shapes.largeIncreased.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            )
+        } else {
+            MaterialTheme.shapes.largeIncreased
+        }
 
     fun sendMessage() {
         focusManager.clearFocus(force = true)
@@ -209,27 +209,32 @@ fun ChatInput(
         color = Color.Transparent,
     ) {
         Column(
-            modifier = modifier
-                .imePadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 8.dp)
-                .padding(bottom = if (imeVisible) 0.dp else 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier =
+                modifier
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = if (imeVisible) 0.dp else 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(containerShape)
-                    .then(
-                        if (settings.displaySetting.enableBlurEffect) Modifier.hazeEffect(
-                            state = hazeState
-                        ) {
-                            blurEffect {
-                                style = inputHazeStyle
-                            }
-                        }
-                        else Modifier
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(containerShape)
+                        .then(
+                            if (settings.displaySetting.enableBlurEffect) {
+                                Modifier.hazeEffect(
+                                    state = hazeState,
+                                ) {
+                                    blurEffect {
+                                        style = inputHazeStyle
+                                    }
+                                }
+                            } else {
+                                Modifier
+                            },
+                        ),
                 shape = containerShape,
                 tonalElevation = 0.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
@@ -237,7 +242,7 @@ fun ChatInput(
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     if (state.messageContent.isNotEmpty()) {
                         MediaFileInputRow(state = state)
@@ -247,21 +252,23 @@ fun ChatInput(
                         state = state,
                         completionProviders = completionProviders,
                         sessionTotals = sessionTotals,
-                        onSendMessage = { sendMessage() }
+                        onSendMessage = { sendMessage() },
                     )
 
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             // Model Picker
                             ModelSelector(
@@ -287,11 +294,12 @@ fun ChatInput(
                                     toaster.show(
                                         message = if (enabled) enableSearchMsg else disableSearchMsg,
                                         duration = 1.seconds,
-                                        type = if (enabled) {
-                                            ToastType.Success
-                                        } else {
-                                            ToastType.Normal
-                                        }
+                                        type =
+                                            if (enabled) {
+                                                ToastType.Success
+                                            } else {
+                                                ToastType.Normal
+                                            },
                                     )
                                 },
                                 onUpdateSearchService = onUpdateSearchService,
@@ -309,24 +317,23 @@ fun ChatInput(
                                     onlyIcon = true,
                                 )
                             }
-
                         }
 
                         ActionIconButton(
-                            onClick = onAutoClick
+                            onClick = onAutoClick,
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Zap,
-                                contentDescription = "自动任务"
+                                contentDescription = "自动任务",
                             )
                         }
 
                         ActionIconButton(
-                            onClick = onMoreClick
+                            onClick = onMoreClick,
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Add01,
-                                contentDescription = stringResource(R.string.more_options)
+                                contentDescription = stringResource(R.string.more_options),
                             )
                         }
 
@@ -335,7 +342,10 @@ fun ChatInput(
                                 state = asrState,
                                 onClick = {
                                     when (asrState.status) {
-                                        ASRStatus.Listening -> asr.stop()
+                                        ASRStatus.Listening -> {
+                                            asr.stop()
+                                        }
+
                                         ASRStatus.Idle, ASRStatus.Error -> {
                                             if (!asrPermission.allRequiredPermissionsGranted) {
                                                 asrPermission.requestPermissions()
@@ -351,7 +361,7 @@ fun ChatInput(
 
                                         ASRStatus.Connecting, ASRStatus.Stopping -> {}
                                     }
-                                }
+                                },
                             )
                         }
 
@@ -362,48 +372,53 @@ fun ChatInput(
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .testTag("chat_send_button")
-                                    .clip(CircleShape)
-                                    .combinedClickable(
-                                        enabled = loading || !state.isEmpty(),
-                                        onClick = {
-                                            sendMessage()
-                                        }, onLongClick = {
-                                            sendMessageWithoutAnswer()
-                                        }
-                                    )
+                                modifier =
+                                    Modifier
+                                        .size(30.dp)
+                                        .testTag("chat_send_button")
+                                        .clip(CircleShape)
+                                        .combinedClickable(
+                                            enabled = loading || !state.isEmpty(),
+                                            onClick = {
+                                                sendMessage()
+                                            },
+                                            onLongClick = {
+                                                sendMessageWithoutAnswer()
+                                            },
+                                        ),
                             ) {
-                                val containerColor = when {
-                                    loading -> MaterialTheme.colorScheme.errorContainer
-                                    state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                    else -> MaterialTheme.colorScheme.primary
-                                }
-                                val contentColor = when {
-                                    loading -> MaterialTheme.colorScheme.onErrorContainer
-                                    state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    else -> MaterialTheme.colorScheme.onPrimary
-                                }
+                                val containerColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.errorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                        else -> MaterialTheme.colorScheme.primary
+                                    }
+                                val contentColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.onErrorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        else -> MaterialTheme.colorScheme.onPrimary
+                                    }
                                 Surface(
                                     modifier = Modifier.fillMaxSize(),
                                     shape = CircleShape,
                                     color = containerColor,
-                                    content = {})
+                                    content = {},
+                                )
                                 if (loading) {
                                     KeepScreenOn()
                                     Icon(
                                         imageVector = HugeIcons.Cancel01,
                                         contentDescription = stringResource(R.string.stop),
                                         tint = contentColor,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 } else {
                                     Icon(
                                         imageVector = HugeIcons.ArrowUp02,
                                         contentDescription = stringResource(R.string.send),
                                         tint = contentColor,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
@@ -411,7 +426,6 @@ fun ChatInput(
                     }
                 }
             }
-
         }
     }
 }
@@ -429,7 +443,8 @@ private fun ActionIconButton(
         color = Color.Transparent,
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
         ) {
             content()
         }
@@ -444,17 +459,19 @@ private fun TextInputRow(
     onSendMessage: () -> Unit,
 ) {
     val settings = LocalSettings.current
-    @Suppress("DEPRECATION")  // 与项目现有 LocalClipboardManager 用法保持一致
+
+    @Suppress("DEPRECATION") // 与项目现有 LocalClipboardManager 用法保持一致
     val clipboardManager = LocalClipboardManager.current
     val filesManager: FilesManager = koinInject()
     val assistant = settings.getCurrentAssistant()
-    val quickMessages = remember(settings.quickMessages, assistant.quickMessageIds) {
-        settings.getQuickMessagesOfAssistant(assistant)
-    }
+    val quickMessages =
+        remember(settings.quickMessages, assistant.quickMessageIds) {
+            settings.getQuickMessagesOfAssistant(assistant)
+        }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (state.isEditing()) {
             Surface(
@@ -462,17 +479,18 @@ private fun TextInputRow(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(text = stringResource(R.string.editing))
                     Spacer(Modifier.weight(1f))
                     Icon(
                         imageVector = HugeIcons.Cancel01,
                         contentDescription = stringResource(R.string.cancel_edit),
-                        modifier = Modifier.clickable { state.clearInput() }
+                        modifier = Modifier.clickable { state.clearInput() },
                     )
                 }
             }
@@ -481,42 +499,50 @@ private fun TextInputRow(
         var isFocused by remember { mutableStateOf(false) }
         var isFullScreen by remember { mutableStateOf(false) }
         var completionList by remember { mutableStateOf<ChatCompletionList?>(null) }
-        val receiveContentListener = remember(
-            settings.displaySetting.pasteLongTextAsFile, settings.displaySetting.pasteLongTextThreshold
-        ) {
-            ReceiveContentListener { transferableContent ->
-                when {
-                    transferableContent.hasMediaType(MediaType.Image) -> {
-                        transferableContent.consume { item ->
-                            val uri = item.uri
-                            if (uri != null) {
-                                state.addImages(
-                                    filesManager.createChatFilesByContents(
-                                        listOf(uri)
+        val receiveContentListener =
+            remember(
+                settings.displaySetting.pasteLongTextAsFile,
+                settings.displaySetting.pasteLongTextThreshold,
+            ) {
+                ReceiveContentListener { transferableContent ->
+                    when {
+                        transferableContent.hasMediaType(MediaType.Image) -> {
+                            transferableContent.consume { item ->
+                                val uri = item.uri
+                                if (uri != null) {
+                                    state.addImages(
+                                        filesManager.createChatFilesByContents(
+                                            listOf(uri),
+                                        ),
                                     )
-                                )
-                            }
-                            uri != null
-                        }
-                    }
-
-                    settings.displaySetting.pasteLongTextAsFile && transferableContent.hasMediaType(MediaType.Text) -> {
-                        transferableContent.consume { item ->
-                            val text = item.text?.toString()
-                            if (text != null && text.length > settings.displaySetting.pasteLongTextThreshold) {
-                                val document = filesManager.createChatTextFile(text)
-                                state.addFiles(listOf(document))
-                                true
-                            } else {
-                                false
+                                }
+                                uri != null
                             }
                         }
-                    }
 
-                    else -> transferableContent
+                        settings.displaySetting.pasteLongTextAsFile &&
+                            transferableContent.hasMediaType(
+                                MediaType.Text,
+                            )
+                        -> {
+                            transferableContent.consume { item ->
+                                val text = item.text?.toString()
+                                if (text != null && text.length > settings.displaySetting.pasteLongTextThreshold) {
+                                    val document = filesManager.createChatTextFile(text)
+                                    state.addFiles(listOf(document))
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                        }
+
+                        else -> {
+                            transferableContent
+                        }
+                    }
                 }
             }
-        }
 
         LaunchedEffect(completionProviders, isFocused) {
             if (!isFocused || completionProviders.isEmpty()) {
@@ -530,30 +556,33 @@ private fun TextInputRow(
                     selection = state.textContent.selection,
                 )
             }.collectLatest { context ->
-                val lists = completionProviders.mapNotNull { provider ->
-                    try {
-                        provider.complete(context)
-                            ?.takeIf { it.items.isNotEmpty() }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (_: Exception) {
-                        null
+                val lists =
+                    completionProviders.mapNotNull { provider ->
+                        try {
+                            provider
+                                .complete(context)
+                                ?.takeIf { it.items.isNotEmpty() }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            null
+                        }
                     }
-                }
                 val primary = lists.firstOrNull()
-                completionList = primary?.let { list ->
-                    val mergedItems = lists
-                        .filter { it.replacementRange == list.replacementRange }
-                        .flatMap { it.items }
-                        .distinctBy { it.label to it.insertText }
-                        .sortedWith(
-                            compareByDescending<ChatCompletionItem> { it.sortScore }
-                                .thenBy { it.label.length }
-                                .thenBy { it.label.lowercase() }
-                        )
-                        .take(8)
-                    list.copy(items = mergedItems)
-                }
+                completionList =
+                    primary?.let { list ->
+                        val mergedItems =
+                            lists
+                                .filter { it.replacementRange == list.replacementRange }
+                                .flatMap { it.items }
+                                .distinctBy { it.label to it.insertText }
+                                .sortedWith(
+                                    compareByDescending<ChatCompletionItem> { it.sortScore }
+                                        .thenBy { it.label.length }
+                                        .thenBy { it.label.lowercase() },
+                                ).take(8)
+                        list.copy(items = mergedItems)
+                    }
             }
         }
 
@@ -569,55 +598,61 @@ private fun TextInputRow(
 
         TextField(
             state = state.textContent,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("chat_input")
-                .contentReceiver(receiveContentListener)
-                .onFocusChanged {
-                    isFocused = it.isFocused
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag("chat_input")
+                    .contentReceiver(receiveContentListener)
+                    .onFocusChanged {
+                        isFocused = it.isFocused
+                    },
             shape = MaterialTheme.shapes.largeIncreased,
             placeholder = {
                 Text(stringResource(R.string.chat_input_placeholder))
             },
             lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
-            keyboardOptions = KeyboardOptions(
-                imeAction = if (settings.displaySetting.sendOnEnter) ImeAction.Send else ImeAction.Default
-            ),
+            keyboardOptions =
+                KeyboardOptions(
+                    imeAction = if (settings.displaySetting.sendOnEnter) ImeAction.Send else ImeAction.Default,
+                ),
             onKeyboardAction = {
                 if (settings.displaySetting.sendOnEnter && !state.isEmpty()) {
                     onSendMessage()
                 }
             },
-            colors = TextFieldDefaults.colors().copy(
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-            ),
+            colors =
+                TextFieldDefaults.colors().copy(
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                ),
             trailingIcon = {
                 if (isFocused) {
-                    IconButton(
-                        onClick = {
-                            isFullScreen = !isFullScreen
-                        }) {
+                    IconButton(onClick = {
+                        isFullScreen = !isFullScreen
+                    }) {
                         Icon(HugeIcons.FullScreen, null)
                     }
                 }
             },
-            leadingIcon = if (quickMessages.isNotEmpty()) {
-                {
-                    QuickMessageButton(quickMessages = quickMessages, state = state)
-                }
-            } else null,
+            leadingIcon =
+                if (quickMessages.isNotEmpty()) {
+                    {
+                        QuickMessageButton(quickMessages = quickMessages, state = state)
+                    }
+                } else {
+                    null
+                },
         )
         // 显示累计 token 统计（底部输入栏）
         if (sessionTotals != null && settings.displaySetting.showTokenUsage) {
             var pendingSessionTotalsCopy by remember { mutableStateOf("") }
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -625,26 +660,29 @@ private fun TextInputRow(
                     imageVector = HugeIcons.Upload02,
                     contentDescription = "累计输入",
                     tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(12.dp),
                 )
                 Text(
                     text = "↑${sessionTotals.inputTokens.toInt().formatNumber()} 输入 (${sessionTotals.cachedTokens.toInt().formatNumber()} 命中缓存) ↓${sessionTotals.outputTokens.toInt().formatNumber()} 输出",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
-                    )
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                        ),
                 )
                 Box(
-                    modifier = Modifier
-                        .clickable(onClick = {
-                            pendingSessionTotalsCopy = "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
-                        })
-                        .padding(2.dp)
+                    modifier =
+                        Modifier
+                            .clickable(onClick = {
+                                pendingSessionTotalsCopy =
+                                    "↑${sessionTotals.inputTokens.toInt().formatNumber()} tokens (${sessionTotals.cachedTokens.toInt().formatNumber()} cached) ↓${sessionTotals.outputTokens.toInt().formatNumber()} tokens"
+                            })
+                            .padding(2.dp),
                 ) {
                     Icon(
                         imageVector = HugeIcons.Copy01,
                         contentDescription = "复制累计统计",
                         tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(14.dp),
                     )
                 }
                 LaunchedEffect(pendingSessionTotalsCopy) {
@@ -668,18 +706,20 @@ private fun CompletionPopup(
     onItemClick: (ChatCompletionItem) -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 280.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 280.dp),
         shape = RoundedCornerShape(18.dp),
         tonalElevation = 2.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
         ) {
             items(
                 items = completionList.items,
@@ -749,16 +789,16 @@ private fun QuickMessageButton(
     state: ChatInputState,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    IconButton(
-        onClick = {
-            expanded = !expanded
-        }) {
+    IconButton(onClick = {
+        expanded = !expanded
+    }) {
         Icon(HugeIcons.Zap, null)
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .widthIn(min = 200.dp, max = 360.dp)
+            modifier =
+                Modifier
+                    .widthIn(min = 200.dp, max = 360.dp),
         ) {
             quickMessages.forEach { quickMessage ->
                 Surface(
@@ -770,7 +810,7 @@ private fun QuickMessageButton(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(8.dp),
                     ) {
                         Text(
                             text = quickMessage.title,
@@ -793,59 +833,66 @@ private fun QuickMessageButton(
 
 @Composable
 private fun FullScreenEditor(
-    state: ChatInputState, onDone: () -> Unit
+    state: ChatInputState,
+    onDone: () -> Unit,
 ) {
     BasicAlertDialog(
         onDismissRequest = {
             onDone()
         },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false, decorFitsSystemWindows = false
-        ),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .imePadding(),
-            verticalArrangement = Arrangement.Bottom
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .imePadding(),
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Surface(
-                modifier = Modifier
-                    .widthIn(max = 800.dp)
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                modifier =
+                    Modifier
+                        .widthIn(max = 800.dp)
+                        .fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxSize(),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row {
-                        TextButton(
-                            onClick = {
-                                onDone()
-                            }) {
+                        TextButton(onClick = {
+                            onDone()
+                        }) {
                             Text(stringResource(R.string.chat_page_save))
                         }
                     }
                     TextField(
                         state = state.textContent,
-                        modifier = Modifier
-                            .padding(bottom = 2.dp)
-                            .fillMaxSize(),
+                        modifier =
+                            Modifier
+                                .padding(bottom = 2.dp)
+                                .fillMaxSize(),
                         shape = RoundedCornerShape(32.dp),
                         placeholder = {
                             Text(stringResource(R.string.chat_input_placeholder))
                         },
-                        colors = TextFieldDefaults.colors().copy(
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                        ),
+                        colors =
+                            TextFieldDefaults.colors().copy(
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                            ),
                     )
                 }
             }

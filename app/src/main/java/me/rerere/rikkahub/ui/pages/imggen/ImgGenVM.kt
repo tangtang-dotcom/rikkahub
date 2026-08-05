@@ -39,7 +39,7 @@ data class GeneratedImage(
     val prompt: String,
     val filePath: String,
     val timestamp: Long,
-    val model: String
+    val model: String,
 )
 
 private fun GenMediaEntity.toGeneratedImage(filesManager: FilesManager): GeneratedImage {
@@ -51,7 +51,7 @@ private fun GenMediaEntity.toGeneratedImage(filesManager: FilesManager): Generat
         prompt = this.prompt,
         filePath = fullPath,
         timestamp = this.createAt,
-        model = this.modelId
+        model = this.modelId,
     )
 }
 
@@ -84,15 +84,16 @@ class ImgGenVM(
     private val _referenceImages = MutableStateFlow<List<String>>(emptyList())
     val referenceImages: StateFlow<List<String>> = _referenceImages
 
-    val pager = Pager(
-        config = PagingConfig(pageSize = 20, enablePlaceholders = false),
-        pagingSourceFactory = { genMediaRepository.getAllMedia() }
-    )
-    val generatedImages: Flow<PagingData<GeneratedImage>> = pager.flow
-        .map { pagingData ->
-            pagingData.map { entity -> entity.toGeneratedImage(filesManager) }
-        }
-        .cachedIn(viewModelScope)
+    val pager =
+        Pager(
+            config = PagingConfig(pageSize = 20, enablePlaceholders = false),
+            pagingSourceFactory = { genMediaRepository.getAllMedia() },
+        )
+    val generatedImages: Flow<PagingData<GeneratedImage>> =
+        pager.flow
+            .map { pagingData ->
+                pagingData.map { entity -> entity.toGeneratedImage(filesManager) }
+            }.cachedIn(viewModelScope)
 
     fun updatePrompt(prompt: String) {
         _prompt.value = prompt
@@ -134,101 +135,115 @@ class ImgGenVM(
     }
 
     fun generateImage() {
-        if(prompt.value.isBlank()) return
+        if (prompt.value.isBlank()) return
         cancelJob?.cancel()
-        cancelJob = viewModelScope.launch {
-            try {
-                _isGenerating.value = true
-                _error.value = null
-                _currentGeneratedImages.value = emptyList()
+        cancelJob =
+            viewModelScope.launch {
+                try {
+                    _isGenerating.value = true
+                    _error.value = null
+                    _currentGeneratedImages.value = emptyList()
 
-                val settings = settingsStore.settingsFlow.first()
-                val model = settings.findModelById(settings.imageGenerationModelId)
-                    ?: throw IllegalStateException("No model selected")
+                    val settings = settingsStore.settingsFlow.first()
+                    val model =
+                        settings.findModelById(settings.imageGenerationModelId)
+                            ?: throw IllegalStateException("No model selected")
 
-                val provider = model.findProvider(settings.providers)
-                    ?: throw IllegalStateException("Provider not found")
+                    val provider =
+                        model.findProvider(settings.providers)
+                            ?: throw IllegalStateException("Provider not found")
 
-                val providerSetting = settings.providers.find { it.id == provider.id }
-                    ?: throw IllegalStateException("Provider setting not found")
+                    val providerSetting =
+                        settings.providers.find { it.id == provider.id }
+                            ?: throw IllegalStateException("Provider setting not found")
 
-                val requestPrompt = _prompt.value
-                val params = ImageGenerationParams(
-                    model = model,
-                    prompt = requestPrompt,
-                    numOfImages = _numberOfImages.value,
-                    aspectRatio = _aspectRatio.value,
-                    customHeaders = model.customHeaders,
-                    customBody = model.customBodies
-                )
+                    val requestPrompt = _prompt.value
+                    val params =
+                        ImageGenerationParams(
+                            model = model,
+                            prompt = requestPrompt,
+                            numOfImages = _numberOfImages.value,
+                            aspectRatio = _aspectRatio.value,
+                            customHeaders = model.customHeaders,
+                            customBody = model.customBodies,
+                        )
 
-                val images = providerManager.getProviderByType(provider)
-                    .generateImage(providerSetting, params)
+                    val images =
+                        providerManager
+                            .getProviderByType(provider)
+                            .generateImage(providerSetting, params)
 
-                collectImageGeneration(
-                    images = images,
-                    prompt = requestPrompt,
-                    modelName = model.displayName,
-                )
-            } catch (e: Exception) {
-                if(e is CancellationException) return@launch
-                Log.e(TAG, "Failed to generate image", e)
-                _error.value = e.message ?: "Unknown error occurred"
-            } finally {
-                _isGenerating.value = false
+                    collectImageGeneration(
+                        images = images,
+                        prompt = requestPrompt,
+                        modelName = model.displayName,
+                    )
+                } catch (e: Exception) {
+                    if (e is CancellationException) return@launch
+                    Log.e(TAG, "Failed to generate image", e)
+                    _error.value = e.message ?: "Unknown error occurred"
+                } finally {
+                    _isGenerating.value = false
+                }
             }
-        }
     }
 
     fun editImage() {
         if (prompt.value.isBlank() || referenceImages.value.isEmpty()) return
         cancelJob?.cancel()
-        cancelJob = viewModelScope.launch {
-            try {
-                _isGenerating.value = true
-                _error.value = null
-                _currentGeneratedImages.value = emptyList()
+        cancelJob =
+            viewModelScope.launch {
+                try {
+                    _isGenerating.value = true
+                    _error.value = null
+                    _currentGeneratedImages.value = emptyList()
 
-                val settings = settingsStore.settingsFlow.first()
-                val model = settings.findModelById(settings.imageGenerationModelId)
-                    ?: throw IllegalStateException("No model selected")
+                    val settings = settingsStore.settingsFlow.first()
+                    val model =
+                        settings.findModelById(settings.imageGenerationModelId)
+                            ?: throw IllegalStateException("No model selected")
 
-                val provider = model.findProvider(settings.providers)
-                    ?: throw IllegalStateException("Provider not found")
+                    val provider =
+                        model.findProvider(settings.providers)
+                            ?: throw IllegalStateException("Provider not found")
 
-                val providerSetting = settings.providers.find { it.id == provider.id }
-                    ?: throw IllegalStateException("Provider setting not found")
+                    val providerSetting =
+                        settings.providers.find { it.id == provider.id }
+                            ?: throw IllegalStateException("Provider setting not found")
 
-                val requestPrompt = _prompt.value
-                val sourceImages = _referenceImages.value
-                val params = ImageEditParams(
-                    model = model,
-                    prompt = requestPrompt,
-                    images = sourceImages,
-                    numOfImages = _numberOfImages.value,
-                    aspectRatio = _aspectRatio.value,
-                    customHeaders = model.customHeaders,
-                    customBody = model.customBodies
-                )
+                    val requestPrompt = _prompt.value
+                    val sourceImages = _referenceImages.value
+                    val params =
+                        ImageEditParams(
+                            model = model,
+                            prompt = requestPrompt,
+                            images = sourceImages,
+                            numOfImages = _numberOfImages.value,
+                            aspectRatio = _aspectRatio.value,
+                            customHeaders = model.customHeaders,
+                            customBody = model.customBodies,
+                        )
 
-                val images = providerManager.getProviderByType(provider)
-                    .editImage(providerSetting, params)
+                    val images =
+                        providerManager
+                            .getProviderByType(provider)
+                            .editImage(providerSetting, params)
 
-                collectImageGeneration(
-                    images = images,
-                    prompt = requestPrompt,
-                    modelName = model.displayName,
-                    type = GenMediaEntity.TYPE_IMAGE_EDIT,
-                    sourcePaths = sourceImages.joinToString("\n"),
-                )
-            } catch (e: Exception) {
-                if (e is CancellationException) return@launch
-                Log.e(TAG, "Failed to edit image", e)
-                _error.value = e.message ?: "Unknown error occurred"
-            } finally {
-                _isGenerating.value = false
+                    collectImageGeneration(
+                        images = images,
+                        prompt = requestPrompt,
+                        modelName = model.displayName,
+                        type = GenMediaEntity.TYPE_IMAGE_EDIT,
+                        sourcePaths = sourceImages.joinToString("\n"),
+                    )
+                } catch (e: Exception) {
+                    if (e is CancellationException) return@launch
+                    Log.e(TAG, "Failed to edit image", e)
+                    _error.value = e.message ?: "Unknown error occurred"
+                } finally {
+                    _isGenerating.value = false
+                }
             }
-        }
     }
 
     fun cancelGeneration() {
@@ -249,38 +264,41 @@ class ImgGenVM(
         images.collect { item ->
             if (item.partial) {
                 previewFile?.delete()
-                val imageFile = saveImagePreview(
-                    item = item,
-                    modelName = modelName,
-                    index = item.partialImageIndex ?: finalIndex,
-                )
+                val imageFile =
+                    saveImagePreview(
+                        item = item,
+                        modelName = modelName,
+                        index = item.partialImageIndex ?: finalIndex,
+                    )
                 previewFile = imageFile
-                _currentGeneratedImages.value = finalImages + GeneratedImage(
-                    id = 0,
-                    prompt = prompt,
-                    filePath = imageFile.absolutePath,
-                    timestamp = System.currentTimeMillis(),
-                    model = modelName
-                )
+                _currentGeneratedImages.value = finalImages +
+                    GeneratedImage(
+                        id = 0,
+                        prompt = prompt,
+                        filePath = imageFile.absolutePath,
+                        timestamp = System.currentTimeMillis(),
+                        model = modelName,
+                    )
             } else {
                 previewFile?.delete()
                 previewFile = null
-                val imageFile = saveImageToStorage(
-                    item = item,
-                    prompt = prompt,
-                    modelName = modelName,
-                    index = finalIndex,
-                    type = type,
-                    sourcePaths = sourcePaths,
-                )
+                val imageFile =
+                    saveImageToStorage(
+                        item = item,
+                        prompt = prompt,
+                        modelName = modelName,
+                        index = finalIndex,
+                        type = type,
+                        sourcePaths = sourcePaths,
+                    )
                 finalImages.add(
                     GeneratedImage(
                         id = 0, // Will be updated after database insertion
                         prompt = prompt,
                         filePath = imageFile.absolutePath,
                         timestamp = System.currentTimeMillis(),
-                        model = modelName
-                    )
+                        model = modelName,
+                    ),
                 )
                 finalIndex++
                 _currentGeneratedImages.value = finalImages.toList()
@@ -316,14 +334,15 @@ class ImgGenVM(
 
         // Save to database with relative path
         val relativePath = "images/${imageFile.name}"
-        val entity = GenMediaEntity(
-            path = relativePath,
-            modelId = modelName,
-            prompt = prompt,
-            createAt = timestamp,
-            type = type,
-            sourcePaths = sourcePaths,
-        )
+        val entity =
+            GenMediaEntity(
+                path = relativePath,
+                modelId = modelName,
+                prompt = prompt,
+                createAt = timestamp,
+                type = type,
+                sourcePaths = sourcePaths,
+            )
         genMediaRepository.insertMedia(entity)
 
         return createdFile

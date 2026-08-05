@@ -24,8 +24,8 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,7 +74,7 @@ fun AssistantPicker(
                 Text(
                     text = state.currentAssistant.name.ifEmpty { defaultAssistantName },
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 Spacer(Modifier.weight(1f))
@@ -82,7 +82,7 @@ fun AssistantPicker(
                 UIAvatar(
                     name = state.currentAssistant.name.ifEmpty { defaultAssistantName },
                     value = state.currentAssistant.avatar,
-                    onClick = onClickSetting
+                    onClick = onClickSetting,
                 )
             }
         },
@@ -103,7 +103,7 @@ fun AssistantPicker(
             },
             onDismiss = {
                 showPicker = false
-            }
+            },
         )
     }
 }
@@ -113,9 +113,13 @@ private fun AssistantPickerSheet(
     settings: Settings,
     currentAssistant: Assistant,
     onAssistantSelected: (Assistant) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState =
+        rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        )
     val scope = rememberCoroutineScope()
     val defaultAssistantName = stringResource(R.string.assistant_page_default_assistant)
 
@@ -123,47 +127,50 @@ private fun AssistantPickerSheet(
     var selectedTagIds by remember { mutableStateOf(emptySet<Uuid>()) }
 
     // 根据选中的标签过滤助手
-    val filteredAssistants = remember(settings.assistants, selectedTagIds) {
-        if (selectedTagIds.isEmpty()) {
-            settings.assistants
-        } else {
-            settings.assistants.filter { assistant ->
-                assistant.tags.any { tagId -> tagId in selectedTagIds }
+    val filteredAssistants =
+        remember(settings.assistants, selectedTagIds) {
+            if (selectedTagIds.isEmpty()) {
+                settings.assistants
+            } else {
+                settings.assistants.filter { assistant ->
+                    assistant.tags.any { tagId -> tagId in selectedTagIds }
+                }
             }
         }
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = stringResource(R.string.assistant_page_title),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
 
             // 标签过滤器
             if (settings.assistantTags.isNotEmpty()) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 8.dp)
+                    contentPadding = PaddingValues(bottom = 8.dp),
                 ) {
                     items(settings.assistantTags, key = { tag -> tag.id }) { tag ->
                         FilterChip(
                             onClick = {
-                                selectedTagIds = if (tag.id in selectedTagIds) {
-                                    selectedTagIds - tag.id
-                                } else {
-                                    selectedTagIds + tag.id
-                                }
+                                selectedTagIds =
+                                    if (tag.id in selectedTagIds) {
+                                        selectedTagIds - tag.id
+                                    } else {
+                                        selectedTagIds + tag.id
+                                    }
                             },
                             label = { Text(tag.name) },
                             selected = tag.id in selectedTagIds,
@@ -186,10 +193,11 @@ private fun AssistantPickerSheet(
                         onClick = { onAssistantSelected(assistant) },
                         modifier = Modifier.animateItem(),
                         shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                            contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                            ),
                     ) {
                         AssistantItem(
                             assistant = assistant,
@@ -200,7 +208,7 @@ private fun AssistantPickerSheet(
                                     onDismiss()
                                     navController.navigate(Screen.AssistantDetail(assistant.id.toString()))
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -213,32 +221,32 @@ private fun AssistantPickerSheet(
 private fun AssistantItem(
     assistant: Assistant,
     defaultAssistantName: String,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = assistant.name.ifEmpty { defaultAssistantName },
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         leadingContent = {
             UIAvatar(
                 name = assistant.name.ifEmpty { defaultAssistantName },
                 value = assistant.avatar,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
         },
         trailingContent = {
             IconButton(
                 onClick = {
                     onEdit()
-                }
+                },
             ) {
                 Icon(
                     imageVector = HugeIcons.Edit03,
-                    contentDescription = null
+                    contentDescription = null,
                 )
             }
         },

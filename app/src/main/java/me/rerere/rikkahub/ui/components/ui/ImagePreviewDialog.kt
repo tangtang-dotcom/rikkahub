@@ -42,10 +42,11 @@ fun ImagePreviewDialog(
     val lifecycleOwner = LocalLifecycleOwner.current
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = false
-        )
+        properties =
+            DialogProperties(
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+            ),
     ) {
         Box {
             ImagePager(
@@ -58,11 +59,12 @@ fun ImagePreviewDialog(
             )
 
             Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .zIndex(1f)
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .zIndex(1f)
+                        .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 IconButton(
                     onClick = {
@@ -79,11 +81,11 @@ fun ImagePreviewDialog(
                                 it.printStackTrace()
                                 toaster.show(
                                     message = it.toString(),
-                                    type = ToastType.Error
+                                    type = ToastType.Error,
                                 )
                             }
                         }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Download01, null, tint = Color.White)
                 }

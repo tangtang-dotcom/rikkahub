@@ -25,44 +25,72 @@ data class CustomTheme(
         val contrastLevel = 0.0
         val colorSpec = ColorSpecs.get(specVersion)
 
-        val primaryPalette = colorSpec.getPrimaryPalette(
-            Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
-        )
-        val secondaryPalette = if (secondaryColorArgb != null) {
-            TonalPalette.fromInt(secondaryColorArgb.toInt())
-        } else {
-            colorSpec.getSecondaryPalette(
-                Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
+        val primaryPalette =
+            colorSpec.getPrimaryPalette(
+                Variant.TONAL_SPOT,
+                sourceHct,
+                dark,
+                platform,
+                contrastLevel,
             )
-        }
-        val tertiaryPalette = if (tertiaryColorArgb != null) {
-            TonalPalette.fromInt(tertiaryColorArgb.toInt())
-        } else {
-            colorSpec.getTertiaryPalette(
-                Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
-            )
-        }
+        val secondaryPalette =
+            if (secondaryColorArgb != null) {
+                TonalPalette.fromInt(secondaryColorArgb.toInt())
+            } else {
+                colorSpec.getSecondaryPalette(
+                    Variant.TONAL_SPOT,
+                    sourceHct,
+                    dark,
+                    platform,
+                    contrastLevel,
+                )
+            }
+        val tertiaryPalette =
+            if (tertiaryColorArgb != null) {
+                TonalPalette.fromInt(tertiaryColorArgb.toInt())
+            } else {
+                colorSpec.getTertiaryPalette(
+                    Variant.TONAL_SPOT,
+                    sourceHct,
+                    dark,
+                    platform,
+                    contrastLevel,
+                )
+            }
 
-        val scheme = DynamicScheme(
-            sourceHct,
-            Variant.TONAL_SPOT,
-            dark,
-            contrastLevel,
-            platform,
-            specVersion,
-            primaryPalette,
-            secondaryPalette,
-            tertiaryPalette,
-            colorSpec.getNeutralPalette(
-                Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
-            ),
-            colorSpec.getNeutralVariantPalette(
-                Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
-            ),
-            colorSpec.getErrorPalette(
-                Variant.TONAL_SPOT, sourceHct, dark, platform, contrastLevel,
-            ),
-        )
+        val scheme =
+            DynamicScheme(
+                sourceHct,
+                Variant.TONAL_SPOT,
+                dark,
+                contrastLevel,
+                platform,
+                specVersion,
+                primaryPalette,
+                secondaryPalette,
+                tertiaryPalette,
+                colorSpec.getNeutralPalette(
+                    Variant.TONAL_SPOT,
+                    sourceHct,
+                    dark,
+                    platform,
+                    contrastLevel,
+                ),
+                colorSpec.getNeutralVariantPalette(
+                    Variant.TONAL_SPOT,
+                    sourceHct,
+                    dark,
+                    platform,
+                    contrastLevel,
+                ),
+                colorSpec.getErrorPalette(
+                    Variant.TONAL_SPOT,
+                    sourceHct,
+                    dark,
+                    platform,
+                    contrastLevel,
+                ),
+            )
         return scheme.toColorScheme()
     }
 }

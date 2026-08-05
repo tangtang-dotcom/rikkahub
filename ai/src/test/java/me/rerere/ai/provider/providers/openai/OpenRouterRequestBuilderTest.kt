@@ -27,18 +27,22 @@ class OpenRouterRequestBuilderTest {
 
     @Test
     fun order_emits_allow_fallbacks() {
-        val o = buildProviderObject(
-            OpenRouterRouting(order = listOf("anthropic"), allowFallbacks = false), false
-        )!!
+        val o =
+            buildProviderObject(
+                OpenRouterRouting(order = listOf("anthropic"), allowFallbacks = false),
+                false,
+            )!!
         assertEquals(listOf("anthropic"), o["order"]!!.jsonArray.map { it.jsonPrimitive.content })
         assertFalse(o["allow_fallbacks"]!!.jsonPrimitive.boolean)
     }
 
     @Test
     fun max_price() {
-        val o = buildProviderObject(
-            OpenRouterRouting(maxPricePrompt = 1.0, maxPriceCompletion = 2.0), false
-        )!!
+        val o =
+            buildProviderObject(
+                OpenRouterRouting(maxPricePrompt = 1.0, maxPriceCompletion = 2.0),
+                false,
+            )!!
         val mp = o["max_price"]!!.jsonObject
         assertEquals(1.0, mp["prompt"]!!.jsonPrimitive.double, 0.0)
         assertEquals(2.0, mp["completion"]!!.jsonPrimitive.double, 0.0)

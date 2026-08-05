@@ -16,10 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,7 +62,7 @@ fun ReasoningButton(
         ReasoningPicker(
             reasoningLevel = reasoningLevel,
             onDismissRequest = { showPicker = false },
-            onUpdateReasoningLevel = onUpdateReasoningLevel
+            onUpdateReasoningLevel = onUpdateReasoningLevel,
         )
     }
 
@@ -74,11 +74,11 @@ fun ReasoningButton(
         Row(
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier.size(24.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ReasoningIcon(reasoningLevel)
             }
@@ -102,13 +102,18 @@ fun ReasoningPicker(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -135,18 +140,22 @@ fun ReasoningPicker(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val iconColor by animateColorAsState(
-                    if (reasoningLevel.isEnabled) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface
+                    if (reasoningLevel.isEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                 )
                 Icon(
-                    imageVector = when (reasoningLevel) {
-                        ReasoningLevel.OFF -> HugeIcons.Idea
-                        ReasoningLevel.AUTO -> HugeIcons.Idea01
-                        ReasoningLevel.LOW -> ReasoningLow
-                        ReasoningLevel.MEDIUM -> ReasoningMedium
-                        ReasoningLevel.HIGH -> ReasoningHigh
-                        ReasoningLevel.XHIGH -> ReasoningHigh
-                    },
+                    imageVector =
+                        when (reasoningLevel) {
+                            ReasoningLevel.OFF -> HugeIcons.Idea
+                            ReasoningLevel.AUTO -> HugeIcons.Idea01
+                            ReasoningLevel.LOW -> ReasoningLow
+                            ReasoningLevel.MEDIUM -> ReasoningMedium
+                            ReasoningLevel.HIGH -> ReasoningHigh
+                            ReasoningLevel.XHIGH -> ReasoningHigh
+                        },
                     contentDescription = null,
                     modifier = Modifier.size(32.dp),
                     tint = iconColor,
@@ -174,17 +183,19 @@ fun ReasoningPicker(
                     modifier = Modifier.fillMaxWidth(),
                     thumb = {
                         Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center,
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onPrimary)
+                                modifier =
+                                    Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.onPrimary),
                             )
                         }
                     },
@@ -194,7 +205,7 @@ fun ReasoningPicker(
                             drawStopIndicator = null,
                             thumbTrackGapSize = 0.dp,
                         )
-                    }
+                    },
                 )
 
                 ReasoningScale(
@@ -202,7 +213,7 @@ fun ReasoningPicker(
                     onSelect = { level ->
                         sliderValue = levels.indexOf(level).toFloat()
                         onUpdateReasoningLevel(level)
-                    }
+                    },
                 )
             }
         }
@@ -221,12 +232,18 @@ private fun ReasoningScale(
         levels.forEach { level ->
             val selected = level == selectedLevel
             val tickColor by animateColorAsState(
-                if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant
+                if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant
+                },
             )
             val labelColor by animateColorAsState(
-                if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
 
             Column(
@@ -240,18 +257,20 @@ private fun ReasoningScale(
                     modifier = Modifier,
                 ) {
                     Column(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp, vertical = 10.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 8.dp, vertical = 10.dp)
+                                .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .width(if (selected) 20.dp else 16.dp)
-                                .height(if (selected) 6.dp else 4.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(tickColor)
+                            modifier =
+                                Modifier
+                                    .width(if (selected) 20.dp else 16.dp)
+                                    .height(if (selected) 6.dp else 4.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(tickColor),
                         )
                         Text(
                             text = level.label(),
@@ -279,14 +298,15 @@ private fun ReasoningIcon(level: ReasoningLevel) {
 }
 
 @Composable
-private fun ReasoningLevel.label(): String = when (this) {
-    ReasoningLevel.OFF -> stringResource(R.string.reasoning_off)
-    ReasoningLevel.AUTO -> stringResource(R.string.reasoning_auto)
-    ReasoningLevel.LOW -> stringResource(R.string.reasoning_light)
-    ReasoningLevel.MEDIUM -> stringResource(R.string.reasoning_medium)
-    ReasoningLevel.HIGH -> stringResource(R.string.reasoning_heavy)
-    ReasoningLevel.XHIGH -> stringResource(R.string.reasoning_xhigh)
-}
+private fun ReasoningLevel.label(): String =
+    when (this) {
+        ReasoningLevel.OFF -> stringResource(R.string.reasoning_off)
+        ReasoningLevel.AUTO -> stringResource(R.string.reasoning_auto)
+        ReasoningLevel.LOW -> stringResource(R.string.reasoning_light)
+        ReasoningLevel.MEDIUM -> stringResource(R.string.reasoning_medium)
+        ReasoningLevel.HIGH -> stringResource(R.string.reasoning_heavy)
+        ReasoningLevel.XHIGH -> stringResource(R.string.reasoning_xhigh)
+    }
 
 @Composable
 @Preview(showBackground = true)
@@ -295,7 +315,7 @@ private fun ReasoningPickerPreview() {
         var level by remember { mutableStateOf(ReasoningLevel.AUTO) }
         ReasoningPicker(
             reasoningLevel = level,
-            onUpdateReasoningLevel = { level = it }
+            onUpdateReasoningLevel = { level = it },
         )
     }
 }

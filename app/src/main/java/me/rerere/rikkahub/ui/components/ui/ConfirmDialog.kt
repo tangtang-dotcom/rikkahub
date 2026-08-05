@@ -32,6 +32,6 @@ fun RikkaConfirmDialog(
             TextButton(onClick = onDismiss) {
                 Text(dismissText)
             }
-        }
+        },
     )
 }

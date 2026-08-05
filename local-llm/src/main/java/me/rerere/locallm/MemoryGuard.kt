@@ -10,7 +10,6 @@ import android.content.Context
  * working memory (KV cache, sampling buffers, intermediate tensors).
  */
 object MemoryGuard {
-
     /** Fraction of free RAM we'll spend on the model file itself. The remaining 30%
      *  buffers the runtime's own working memory (KV cache, sampling buffers, intermediate
      *  tensors). Surfaced as `requiredFreeBytes` on TooLarge so the UI can present a
@@ -19,6 +18,7 @@ object MemoryGuard {
 
     sealed class Decision {
         data object Ok : Decision()
+
         data class TooLarge(
             val modelFileBytes: Long,
             val availMemBytes: Long,
@@ -33,7 +33,10 @@ object MemoryGuard {
      * Pure decision function exposed for unit testing. The Android-aware overload
      * below reads availMem from ActivityManager and delegates here.
      */
-    fun decide(modelFileBytes: Long, availMemBytes: Long): Decision {
+    fun decide(
+        modelFileBytes: Long,
+        availMemBytes: Long,
+    ): Decision {
         val budget = (availMemBytes * MODEL_BUDGET_FRACTION).toLong()
         if (modelFileBytes <= budget) return Decision.Ok
         // Inverse of the budget formula: ceil(modelBytes / 0.7). Using ceil so the
@@ -49,7 +52,10 @@ object MemoryGuard {
     /**
      * Production entry point. Reads the live availMem from ActivityManager.
      */
-    fun canLoad(context: Context, modelFileBytes: Long): Decision {
+    fun canLoad(
+        context: Context,
+        modelFileBytes: Long,
+    ): Decision {
         val info = ActivityManager.MemoryInfo()
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         am.getMemoryInfo(info)

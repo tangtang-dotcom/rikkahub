@@ -11,26 +11,28 @@ class TTSProviderSettingFishAudioTest {
 
     @Test
     fun testFishAudioSerialization() {
-        val setting = TTSProviderSetting.FishAudio(
-            id = Uuid.parse("00000000-0000-0000-0000-000000000001"),
-            name = "Test Fish Audio",
-            apiKey = "test-key",
-            baseUrl = "https://api.fish.audio",
-            model = "s2.1-pro-free",
-            referenceId = "test-voice-id",
-            temperature = 0.7f,
-            speed = 1.0f,
-        )
+        val setting =
+            TTSProviderSetting.FishAudio(
+                id = Uuid.parse("00000000-0000-0000-0000-000000000001"),
+                name = "Test Fish Audio",
+                apiKey = "test-key",
+                baseUrl = "https://api.fish.audio",
+                model = "s2.1-pro-free",
+                referenceId = "test-voice-id",
+                temperature = 0.7f,
+                speed = 1.0f,
+            )
 
         val encoded = json.encodeToString(TTSProviderSetting.serializer(), setting)
         assertTrue(encoded.contains("\"fish-audio\""))
         assertTrue(encoded.contains("\"test-key\""))
         assertTrue(encoded.contains("\"s2.1-pro-free\""))
 
-        val decoded = json.decodeFromString(
-            TTSProviderSetting.serializer(),
-            encoded
-        ) as TTSProviderSetting.FishAudio
+        val decoded =
+            json.decodeFromString(
+                TTSProviderSetting.serializer(),
+                encoded,
+            ) as TTSProviderSetting.FishAudio
 
         assertEquals(setting.id, decoded.id)
         assertEquals(setting.apiKey, decoded.apiKey)

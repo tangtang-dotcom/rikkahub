@@ -12,7 +12,7 @@ import java.util.Calendar
 @Composable
 fun Greeting(
     modifier: Modifier = Modifier,
-    style: TextStyle = MaterialTheme.typography.headlineMedium
+    style: TextStyle = MaterialTheme.typography.headlineMedium,
 ) {
     @Composable
     fun getGreetingMessage(): String {
@@ -28,6 +28,6 @@ fun Greeting(
     Text(
         text = getGreetingMessage(),
         style = style,
-        modifier = modifier
+        modifier = modifier,
     )
 }

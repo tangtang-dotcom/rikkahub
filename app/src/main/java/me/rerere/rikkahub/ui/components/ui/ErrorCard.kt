@@ -127,9 +127,10 @@ fun ErrorCard(
         shadowElevation = 4.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -154,24 +155,27 @@ fun ErrorCard(
                 )
                 if (error.solution == ChatErrorSolution.CheckTitleModelSettings) {
                     Text(
-                        text = buildAnnotatedString {
-                            withLink(
-                                LinkAnnotation.Clickable(
-                                    tag = "check_title_model_settings",
-                                    styles = TextLinkStyles(
-                                        style = SpanStyle(
-                                            color = linkColor,
-                                            textDecoration = TextDecoration.Underline,
-                                        )
+                        text =
+                            buildAnnotatedString {
+                                withLink(
+                                    LinkAnnotation.Clickable(
+                                        tag = "check_title_model_settings",
+                                        styles =
+                                            TextLinkStyles(
+                                                style =
+                                                    SpanStyle(
+                                                        color = linkColor,
+                                                        textDecoration = TextDecoration.Underline,
+                                                    ),
+                                            ),
+                                        linkInteractionListener = {
+                                            navController.navigate(Screen.SettingModels)
+                                        },
                                     ),
-                                    linkInteractionListener = {
-                                        navController.navigate(Screen.SettingModels)
-                                    },
-                                )
-                            ) {
-                                append(checkTitleModelSettings)
-                            }
-                        },
+                                ) {
+                                    append(checkTitleModelSettings)
+                                }
+                            },
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -183,8 +187,8 @@ fun ErrorCard(
                     scope.launch {
                         clipboard.setClipEntry(
                             ClipEntry(
-                                clipData = ClipData.newPlainText("Error", error.error.message ?: "Unknown error")
-                            )
+                                clipData = ClipData.newPlainText("Error", error.error.message ?: "Unknown error"),
+                            ),
                         )
                     }
                 },

@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,10 +45,9 @@ import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Edit01
 import me.rerere.hugeicons.stroke.File02
 import me.rerere.hugeicons.stroke.MoreVertical
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
-import androidx.compose.ui.res.stringResource
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -147,9 +147,10 @@ fun WorkspacePage(vm: WorkspaceVM = koinViewModel()) {
 @Composable
 private fun EmptyWorkspaceState() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -182,18 +183,20 @@ private fun WorkspaceCard(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpen),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpen),
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -203,9 +206,10 @@ private fun WorkspaceCard(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
@@ -239,7 +243,12 @@ private fun WorkspaceCard(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.common_delete),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = HugeIcons.Delete01,
@@ -282,9 +291,12 @@ private fun EditWorkspaceDialog(
                 label = { Text(stringResource(R.string.workspace_page_name)) },
                 singleLine = true,
                 isError = isDuplicate,
-                supportingText = if (isDuplicate) {
-                    { Text(stringResource(R.string.workspace_page_name_duplicate)) }
-                } else null,
+                supportingText =
+                    if (isDuplicate) {
+                        { Text(stringResource(R.string.workspace_page_name_duplicate)) }
+                    } else {
+                        null
+                    },
             )
         },
         confirmButton = {

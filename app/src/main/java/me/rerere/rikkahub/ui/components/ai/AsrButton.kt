@@ -43,13 +43,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.asr.ASRState
-import me.rerere.rikkahub.R
 import me.rerere.asr.ASRStatus
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Voice
+import me.rerere.rikkahub.R
 
 private enum class AsrDisplayState {
-    Idle, Connecting, Active
+    Idle,
+    Connecting,
+    Active,
 }
 
 @Composable
@@ -58,43 +60,47 @@ internal fun AsrButton(
     onClick: () -> Unit,
 ) {
     val isIdle = state.status == ASRStatus.Idle
-    val targetContainerColor = when (state.status) {
-        ASRStatus.Idle -> Color.Transparent
-        ASRStatus.Connecting -> MaterialTheme.colorScheme.secondaryContainer
-        ASRStatus.Listening -> MaterialTheme.colorScheme.primaryContainer
-        ASRStatus.Stopping -> MaterialTheme.colorScheme.tertiaryContainer
-        ASRStatus.Error -> MaterialTheme.colorScheme.errorContainer
-    }
-    val targetContentColor = when (state.status) {
-        ASRStatus.Idle -> LocalContentColor.current
-        ASRStatus.Connecting -> MaterialTheme.colorScheme.onSecondaryContainer
-        ASRStatus.Listening -> MaterialTheme.colorScheme.onPrimaryContainer
-        ASRStatus.Stopping -> MaterialTheme.colorScheme.onTertiaryContainer
-        ASRStatus.Error -> MaterialTheme.colorScheme.onErrorContainer
-    }
+    val targetContainerColor =
+        when (state.status) {
+            ASRStatus.Idle -> Color.Transparent
+            ASRStatus.Connecting -> MaterialTheme.colorScheme.secondaryContainer
+            ASRStatus.Listening -> MaterialTheme.colorScheme.primaryContainer
+            ASRStatus.Stopping -> MaterialTheme.colorScheme.tertiaryContainer
+            ASRStatus.Error -> MaterialTheme.colorScheme.errorContainer
+        }
+    val targetContentColor =
+        when (state.status) {
+            ASRStatus.Idle -> LocalContentColor.current
+            ASRStatus.Connecting -> MaterialTheme.colorScheme.onSecondaryContainer
+            ASRStatus.Listening -> MaterialTheme.colorScheme.onPrimaryContainer
+            ASRStatus.Stopping -> MaterialTheme.colorScheme.onTertiaryContainer
+            ASRStatus.Error -> MaterialTheme.colorScheme.onErrorContainer
+        }
     val containerColor by animateColorAsState(
         targetValue = targetContainerColor,
         animationSpec = tween(300),
-        label = "asr_container"
+        label = "asr_container",
     )
     val contentColor by animateColorAsState(
         targetValue = targetContentColor,
         animationSpec = tween(300),
-        label = "asr_content"
+        label = "asr_content",
     )
 
-    val displayState = when (state.status) {
-        ASRStatus.Idle, ASRStatus.Error -> AsrDisplayState.Idle
-        ASRStatus.Connecting -> AsrDisplayState.Connecting
-        ASRStatus.Listening, ASRStatus.Stopping -> AsrDisplayState.Active
-    }
+    val displayState =
+        when (state.status) {
+            ASRStatus.Idle, ASRStatus.Error -> AsrDisplayState.Idle
+            ASRStatus.Connecting -> AsrDisplayState.Connecting
+            ASRStatus.Listening, ASRStatus.Stopping -> AsrDisplayState.Active
+        }
 
     Surface(
         onClick = onClick,
-        modifier = Modifier
-            .height(36.dp)
-            .widthIn(min = 36.dp)
-            .animateContentSize(animationSpec = MotionScheme.expressive().defaultSpatialSpec()),
+        modifier =
+            Modifier
+                .height(36.dp)
+                .widthIn(min = 36.dp)
+                .animateContentSize(animationSpec = MotionScheme.expressive().defaultSpatialSpec()),
         shape = CircleShape,
         tonalElevation = if (isIdle) 0.dp else 2.dp,
         color = containerColor,
@@ -105,18 +111,18 @@ internal fun AsrButton(
                 (fadeIn(tween(200)) togetherWith fadeOut(tween(200)))
                     .using(SizeTransform(clip = false))
             },
-            label = "asr_content_switch"
+            label = "asr_content_switch",
         ) { display ->
             when (display) {
                 AsrDisplayState.Idle -> {
                     Box(
                         modifier = Modifier.size(36.dp),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = HugeIcons.Voice,
                             contentDescription = stringResource(R.string.asr_button_content_description),
-                            tint = contentColor
+                            tint = contentColor,
                         )
                     }
                 }
@@ -124,35 +130,38 @@ internal fun AsrButton(
                 AsrDisplayState.Connecting -> {
                     Box(
                         modifier = Modifier.size(36.dp),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         val infiniteTransition = rememberInfiniteTransition(label = "asr_pulse")
                         val scale by infiniteTransition.animateFloat(
                             initialValue = 0.8f,
                             targetValue = 1.2f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(600, easing = LinearEasing),
-                                repeatMode = RepeatMode.Reverse
-                            ),
-                            label = "asr_pulse_scale"
+                            animationSpec =
+                                infiniteRepeatable(
+                                    animation = tween(600, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Reverse,
+                                ),
+                            label = "asr_pulse_scale",
                         )
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .scale(scale)
-                                .clip(CircleShape)
-                                .background(contentColor)
+                            modifier =
+                                Modifier
+                                    .size(8.dp)
+                                    .scale(scale)
+                                    .clip(CircleShape)
+                                    .background(contentColor),
                         )
                     }
                 }
 
                 AsrDisplayState.Active -> {
                     Row(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(horizontal = 12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxHeight()
+                                .padding(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AudioLevelDots(
                             amplitudes = state.amplitudes,
@@ -162,7 +171,7 @@ internal fun AsrButton(
                             text = stringResource(R.string.asr_button_stop),
                             color = contentColor,
                             style = MaterialTheme.typography.labelLarge,
-                            maxLines = 1
+                            maxLines = 1,
                         )
                     }
                 }
@@ -178,12 +187,13 @@ private fun AudioLevelDots(
     modifier: Modifier = Modifier,
 ) {
     val recent = amplitudes.takeLast(3)
-    val values = when {
-        recent.size >= 3 -> recent
-        recent.size == 2 -> listOf(recent[0] * 0.6f, recent[1], recent[1] * 0.8f)
-        recent.size == 1 -> listOf(recent[0] * 0.5f, recent[0], recent[0] * 0.7f)
-        else -> listOf(0f, 0f, 0f)
-    }
+    val values =
+        when {
+            recent.size >= 3 -> recent
+            recent.size == 2 -> listOf(recent[0] * 0.6f, recent[1], recent[1] * 0.8f)
+            recent.size == 1 -> listOf(recent[0] * 0.5f, recent[0], recent[0] * 0.7f)
+            else -> listOf(0f, 0f, 0f)
+        }
 
     val barWidth = 3.5.dp
     val minHeight = 4.dp
@@ -197,19 +207,21 @@ private fun AudioLevelDots(
         values.forEachIndexed { index, amp ->
             val animatedAmp by animateFloatAsState(
                 targetValue = amp.coerceIn(0f, 1f),
-                animationSpec = spring(
-                    dampingRatio = 0.6f,
-                    stiffness = 400f,
-                ),
-                label = "bar_$index"
+                animationSpec =
+                    spring(
+                        dampingRatio = 0.6f,
+                        stiffness = 400f,
+                    ),
+                label = "bar_$index",
             )
             val barHeight = minHeight + (maxHeight - minHeight) * animatedAmp
             Box(
-                modifier = Modifier
-                    .width(barWidth)
-                    .height(barHeight)
-                    .clip(RoundedCornerShape(barWidth / 2))
-                    .background(color)
+                modifier =
+                    Modifier
+                        .width(barWidth)
+                        .height(barHeight)
+                        .clip(RoundedCornerShape(barWidth / 2))
+                        .background(color),
             )
         }
     }

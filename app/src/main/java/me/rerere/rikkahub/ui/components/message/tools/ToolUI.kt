@@ -75,7 +75,10 @@ interface ToolUIRenderer {
 
     /** 点击步骤后的详情, 渲染在 BottomSheet 内 */
     @Composable
-    fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         DefaultToolPreview(context = context)
     }
 }
@@ -89,38 +92,43 @@ private object DefaultToolUIRenderer : ToolUIRenderer {
  * 工具 UI 渲染器注册表, 为新工具定制渲染时在 [renderers] 中注册即可
  */
 object ToolUIRegistry {
-    private val renderers: Map<String, ToolUIRenderer> = listOf(
-        MemoryToolUI,
-        SearchWebToolUI,
-        ScrapeWebToolUI,
-        GetTimeInfoToolUI,
-        ClipboardToolUI,
-        TextToSpeechToolUI,
-        GetScreenTimeToolUI,
-        CalendarQueryToolUI,
-        CalendarCreateToolUI,
-        UseSkillToolUI,
-        RecentChatsToolUI,
-        ConversationSearchToolUI,
-        EditFileToolUI,
-        ReadFileToolUI,
-        WriteFileToolUI,
-        ShellToolUI,
-        RunJsToolUI,
-        CreateCalendarEventToolUI,
-        CreateContactToolUI,
-        SendSmsIntentToolUI,
-        SendEmailIntentToolUI,
-        OpenWifiSettingsToolUI,
-        ShowLocationOnMapToolUI,
-    ).associateBy { it.toolName }
+    private val renderers: Map<String, ToolUIRenderer> =
+        listOf(
+            MemoryToolUI,
+            SearchWebToolUI,
+            ScrapeWebToolUI,
+            GetTimeInfoToolUI,
+            ClipboardToolUI,
+            TextToSpeechToolUI,
+            GetScreenTimeToolUI,
+            CalendarQueryToolUI,
+            CalendarCreateToolUI,
+            UseSkillToolUI,
+            RecentChatsToolUI,
+            ConversationSearchToolUI,
+            EditFileToolUI,
+            ReadFileToolUI,
+            WriteFileToolUI,
+            ShellToolUI,
+            RunJsToolUI,
+            CreateCalendarEventToolUI,
+            CreateContactToolUI,
+            SendSmsIntentToolUI,
+            SendEmailIntentToolUI,
+            OpenWifiSettingsToolUI,
+            ShowLocationOnMapToolUI,
+        ).associateBy { it.toolName }
 
     /** 查找工具对应的渲染器, 未注册时返回默认渲染器 */
     fun resolve(toolName: String): ToolUIRenderer = renderers[toolName] ?: DefaultToolUIRenderer
 }
 
 internal fun JsonElement?.getStringContent(key: String): String? =
-    this?.jsonObjectOrNull?.get(key)?.jsonPrimitiveOrNull?.contentOrNull
+    this
+        ?.jsonObjectOrNull
+        ?.get(key)
+        ?.jsonPrimitiveOrNull
+        ?.contentOrNull
 
 /**
  * 默认工具详情: 入参与输出的 JSON 高亮展示
@@ -133,59 +141,65 @@ fun DefaultToolPreview(
     headerActions: (@Composable () -> Unit)? = null,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxHeight(0.8f)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxHeight(0.8f)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.chat_message_tool_call_title),
                 style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             headerActions?.invoke()
         }
         FormItem(
             label = {
                 Text(stringResource(R.string.chat_message_tool_call_label, context.tool.toolName))
-            }
+            },
         ) {
             HighlightCodeBlock(
                 code = JsonInstantPretty.encodeToString(context.arguments),
                 language = "json",
-                style = TextStyle(fontSize = 10.sp, lineHeight = 12.sp)
+                style = TextStyle(fontSize = 10.sp, lineHeight = 12.sp),
             )
         }
         if (context.tool.output.isNotEmpty()) {
             FormItem(
                 label = {
                     Text(stringResource(R.string.chat_message_tool_call_result))
-                }
+                },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     context.tool.output.fastForEach { part ->
                         when (part) {
-                            is UIMessagePart.Text -> HighlightCodeBlock(
-                                code = runCatching {
-                                    JsonInstantPretty.encodeToString(
-                                        JsonInstant.parseToJsonElement(part.text)
-                                    )
-                                }.getOrElse { part.text },
-                                language = "json",
-                                style = TextStyle(fontSize = 10.sp, lineHeight = 12.sp)
-                            )
+                            is UIMessagePart.Text -> {
+                                HighlightCodeBlock(
+                                    code =
+                                        runCatching {
+                                            JsonInstantPretty.encodeToString(
+                                                JsonInstant.parseToJsonElement(part.text),
+                                            )
+                                        }.getOrElse { part.text },
+                                    language = "json",
+                                    style = TextStyle(fontSize = 10.sp, lineHeight = 12.sp),
+                                )
+                            }
 
-                            is UIMessagePart.Image -> ZoomableAsyncImage(
-                                model = part.url,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
+                            is UIMessagePart.Image -> {
+                                ZoomableAsyncImage(
+                                    model = part.url,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
 
                             else -> {}
                         }

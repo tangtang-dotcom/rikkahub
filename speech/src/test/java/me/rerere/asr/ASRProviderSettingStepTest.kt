@@ -28,17 +28,18 @@ class ASRProviderSettingStepTest {
 
     @Test
     fun step_copy_provider_preserves_extra_fields() {
-        val original = ASRProviderSetting.Step(
-            apiKey = "sk-test",
-            baseUrl = "https://api.stepfun.ai",
-            model = "stepaudio-2-asr-pro",
-            language = "zh",
-            sampleRate = 8000,
-            segmentDurationSec = 60,
-            enableItn = false,
-            enableTimestamp = true,
-            hotwords = listOf("热词1", "热词2"),
-        )
+        val original =
+            ASRProviderSetting.Step(
+                apiKey = "sk-test",
+                baseUrl = "https://api.stepfun.ai",
+                model = "stepaudio-2-asr-pro",
+                language = "zh",
+                sampleRate = 8000,
+                segmentDurationSec = 60,
+                enableItn = false,
+                enableTimestamp = true,
+                hotwords = listOf("热词1", "热词2"),
+            )
         val copied = original.copyProvider(id = original.id, name = "renamed")
 
         assertTrue(copied is ASRProviderSetting.Step)

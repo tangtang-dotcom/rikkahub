@@ -33,8 +33,8 @@ private const val TAG = "NetworkChangeMonitor"
  * Weak refs — the monitor doesn't keep clients alive past their natural lifecycle.
  */
 object NetworkChangeMonitor {
-
     @Volatile private var started: Boolean = false
+
     @Volatile private var callback: ConnectivityManager.NetworkCallback? = null
 
     /**
@@ -80,7 +80,10 @@ object NetworkChangeMonitor {
             val c = iter.next().get()
             when {
                 c == null -> iter.remove()
-                c === client -> return  // already registered
+
+                c === client -> return
+
+                // already registered
                 else -> Unit
             }
         }
@@ -95,39 +98,48 @@ object NetworkChangeMonitor {
      * once. Any [client]s passed are auto-registered. Idempotent — extra calls just add
      * more clients to the registry.
      */
-    fun start(context: Context, vararg client: OkHttpClient) {
+    fun start(
+        context: Context,
+        vararg client: OkHttpClient,
+    ) {
         for (c in client) register(c)
         if (started) return
         synchronized(this) {
             if (started) return
-            val cm = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
-                as? ConnectivityManager ?: return
-            val cb = object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    val handle = network.networkHandle
-                    val prev = lastDefaultHandle
-                    if (handle != prev) {
-                        Log.i(TAG, "default network changed ($prev -> $handle), evicting OkHttp pools to force DNS re-resolution")
-                        lastDefaultHandle = handle
-                        evictAll()
-                        notifyNetworkChangeListeners()
+            val cm =
+                context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+                    as? ConnectivityManager ?: return
+            val cb =
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        val handle = network.networkHandle
+                        val prev = lastDefaultHandle
+                        if (handle != prev) {
+                            Log.i(
+                                TAG,
+                                "default network changed ($prev -> $handle), evicting OkHttp pools to force DNS re-resolution",
+                            )
+                            lastDefaultHandle = handle
+                            evictAll()
+                            notifyNetworkChangeListeners()
+                        }
+                        // Same handle re-announcement: settled-down rebroadcast, no-op.
                     }
-                    // Same handle re-announcement: settled-down rebroadcast, no-op.
-                }
-                override fun onLost(network: Network) {
-                    // Clear so the next onAvailable evicts unconditionally, even when
-                    // the same physical network reappears with the same handle id (the
-                    // post-Termux-backgrounding case the monitor exists to fix).
-                    if (lastDefaultHandle == network.networkHandle) {
-                        lastDefaultHandle = null
+
+                    override fun onLost(network: Network) {
+                        // Clear so the next onAvailable evicts unconditionally, even when
+                        // the same physical network reappears with the same handle id (the
+                        // post-Termux-backgrounding case the monitor exists to fix).
+                        if (lastDefaultHandle == network.networkHandle) {
+                            lastDefaultHandle = null
+                        }
                     }
+                    // Intentionally NO override of onCapabilitiesChanged. Capability ticks
+                    // (signal strength, validation, RSSI) used to trigger eviction storms
+                    // that killed every keep-alive socket multiple times per minute. The
+                    // post-Termux DNS regression we're guarding against is a network-
+                    // handoff symptom, which onAvailable + onLost catch correctly.
                 }
-                // Intentionally NO override of onCapabilitiesChanged. Capability ticks
-                // (signal strength, validation, RSSI) used to trigger eviction storms
-                // that killed every keep-alive socket multiple times per minute. The
-                // post-Termux DNS regression we're guarding against is a network-
-                // handoff symptom, which onAvailable + onLost catch correctly.
-            }
             try {
                 cm.registerDefaultNetworkCallback(cb)
                 callback = cb

@@ -1,5 +1,6 @@
 package me.rerere.workspace
 
+import org.tukaani.xz.XZInputStream
 import java.io.BufferedInputStream
 import java.io.EOFException
 import java.io.File
@@ -10,7 +11,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.util.Locale
 import java.util.zip.GZIPInputStream
-import org.tukaani.xz.XZInputStream
 
 class RootfsInstaller(
     private val manager: WorkspaceManager,
@@ -78,7 +78,7 @@ class RootfsInstaller(
                                     stage = RootfsInstallStage.DOWNLOADING,
                                     bytesRead = bytesRead,
                                     totalBytes = totalBytes,
-                                )
+                                ),
                             )
                         }
                     }
@@ -88,7 +88,7 @@ class RootfsInstaller(
                                 stage = RootfsInstallStage.DOWNLOADING,
                                 bytesRead = 0,
                                 totalBytes = totalBytes,
-                            )
+                            ),
                         )
                     }
                 }
@@ -111,10 +111,11 @@ class RootfsInstaller(
             while (true) {
                 checkInterrupted()
                 val rawHeader = input.readTarHeader() ?: break
-                val header = rawHeader.copy(
-                    name = pendingName ?: rawHeader.name,
-                    linkName = pendingLinkName ?: rawHeader.linkName,
-                )
+                val header =
+                    rawHeader.copy(
+                        name = pendingName ?: rawHeader.name,
+                        linkName = pendingLinkName ?: rawHeader.linkName,
+                    )
                 pendingName = null
                 pendingLinkName = null
                 if (header.name.isBlank()) {
@@ -141,9 +142,18 @@ class RootfsInstaller(
                 val target = targetDir.safeResolve(header.name)
                 target.parentFile?.mkdirs()
                 when (header.type) {
-                    TarEntryType.DIRECTORY -> target.mkdirs()
-                    TarEntryType.SYMLINK -> createSymlink(targetDir, target, header.linkName)
-                    TarEntryType.HARDLINK -> createHardLink(targetDir, target, header.linkName)
+                    TarEntryType.DIRECTORY -> {
+                        target.mkdirs()
+                    }
+
+                    TarEntryType.SYMLINK -> {
+                        createSymlink(targetDir, target, header.linkName)
+                    }
+
+                    TarEntryType.HARDLINK -> {
+                        createHardLink(targetDir, target, header.linkName)
+                    }
+
                     TarEntryType.FILE -> {
                         target.outputStream().use { output ->
                             input.copyExactly(output, header.size)
@@ -156,7 +166,10 @@ class RootfsInstaller(
                     TarEntryType.LONG_NAME,
                     TarEntryType.LONG_LINK,
                     TarEntryType.PAX,
-                    TarEntryType.OTHER -> Unit
+                    TarEntryType.OTHER,
+                    -> {
+                        Unit
+                    }
                 }
                 if (header.type != TarEntryType.FILE) {
                     input.skipFully(header.size)
@@ -171,29 +184,38 @@ class RootfsInstaller(
                         stage = RootfsInstallStage.EXTRACTING,
                         entriesExtracted = entries,
                         currentEntry = header.name,
-                    )
+                    ),
                 )
             }
         }
     }
 
-    private fun createSymlink(root: File, target: File, linkName: String) {
+    private fun createSymlink(
+        root: File,
+        target: File,
+        linkName: String,
+    ) {
         if (linkName.isBlank()) return
-        val linkTarget = if (File(linkName).isAbsolute) {
-            File(linkName)
-        } else {
-            val resolved = File(target.parentFile ?: root, linkName).canonicalFile
-            val rootFile = root.canonicalFile
-            require(resolved.path == rootFile.path || resolved.path.startsWith(rootFile.path + File.separator)) {
-                "Symlink escapes rootfs: ${target.name}"
+        val linkTarget =
+            if (File(linkName).isAbsolute) {
+                File(linkName)
+            } else {
+                val resolved = File(target.parentFile ?: root, linkName).canonicalFile
+                val rootFile = root.canonicalFile
+                require(resolved.path == rootFile.path || resolved.path.startsWith(rootFile.path + File.separator)) {
+                    "Symlink escapes rootfs: ${target.name}"
+                }
+                (target.parentFile ?: root).toPath().relativize(resolved.toPath()).toFile()
             }
-            (target.parentFile ?: root).toPath().relativize(resolved.toPath()).toFile()
-        }
         target.delete()
         Files.createSymbolicLink(target.toPath(), linkTarget.toPath())
     }
 
-    private fun createHardLink(root: File, target: File, linkName: String) {
+    private fun createHardLink(
+        root: File,
+        target: File,
+        linkName: String,
+    ) {
         if (linkName.isBlank()) return
         val source = root.safeResolve(linkName)
         if (!source.exists()) return
@@ -223,24 +245,26 @@ class RootfsInstaller(
 
         val name = header.string(0, 100)
         val prefix = header.string(345, 155)
-        val fullName = listOf(prefix, name)
-            .filter { it.isNotBlank() }
-            .joinToString("/")
+        val fullName =
+            listOf(prefix, name)
+                .filter { it.isNotBlank() }
+                .joinToString("/")
         return TarHeader(
             name = normalizeTarPath(fullName),
             mode = header.octal(100, 8).toInt(),
             size = header.octal(124, 12),
             modTime = header.octal(136, 12),
-            type = when (header[156].toInt().toChar()) {
-                '0', '\u0000' -> TarEntryType.FILE
-                '5' -> TarEntryType.DIRECTORY
-                '2' -> TarEntryType.SYMLINK
-                '1' -> TarEntryType.HARDLINK
-                'L' -> TarEntryType.LONG_NAME
-                'K' -> TarEntryType.LONG_LINK
-                'x' -> TarEntryType.PAX
-                else -> TarEntryType.OTHER
-            },
+            type =
+                when (header[156].toInt().toChar()) {
+                    '0', '\u0000' -> TarEntryType.FILE
+                    '5' -> TarEntryType.DIRECTORY
+                    '2' -> TarEntryType.SYMLINK
+                    '1' -> TarEntryType.HARDLINK
+                    'L' -> TarEntryType.LONG_NAME
+                    'K' -> TarEntryType.LONG_LINK
+                    'x' -> TarEntryType.PAX
+                    else -> TarEntryType.OTHER
+                },
             linkName = header.string(157, 100),
         )
     }
@@ -271,7 +295,10 @@ class RootfsInstaller(
         }
     }
 
-    private fun InputStream.copyExactly(output: java.io.OutputStream, bytes: Long) {
+    private fun InputStream.copyExactly(
+        output: java.io.OutputStream,
+        bytes: Long,
+    ) {
         val buffer = ByteArray(BUFFER_SIZE)
         var remaining = bytes
         while (remaining > 0) {
@@ -333,35 +360,45 @@ class RootfsInstaller(
     }
 
     private fun normalizeTarPath(path: String): String {
-        val normalized = path
-            .replace('\\', '/')
-            .trim()
-            .trimStart('/')
-            .removePrefix("./")
+        val normalized =
+            path
+                .replace('\\', '/')
+                .trim()
+                .trimStart('/')
+                .removePrefix("./")
         require(normalized.isNotBlank()) { "Rootfs entry path is blank" }
         require(!normalized.contains('\u0000')) { "Rootfs entry path contains invalid character" }
         require(normalized.split('/').none { it == ".." }) { "Rootfs entry escapes target directory: $path" }
         return normalized
     }
 
-    private fun ByteArray.string(offset: Int, length: Int): String {
-        val end = (offset until offset + length)
-            .firstOrNull { this[it] == 0.toByte() }
-            ?: (offset + length)
+    private fun ByteArray.string(
+        offset: Int,
+        length: Int,
+    ): String {
+        val end =
+            (offset until offset + length)
+                .firstOrNull { this[it] == 0.toByte() }
+                ?: (offset + length)
         return copyOfRange(offset, end).toString(Charsets.UTF_8).trim()
     }
 
-    private fun ByteArray.octal(offset: Int, length: Int): Long {
-        val value = string(offset, length)
-            .trim()
-            .lowercase(Locale.US)
-            .trimEnd('\u0000')
+    private fun ByteArray.octal(
+        offset: Int,
+        length: Int,
+    ): Long {
+        val value =
+            string(offset, length)
+                .trim()
+                .lowercase(Locale.US)
+                .trimEnd('\u0000')
         return if (value.isBlank()) 0L else value.toLong(8)
     }
 
-    private fun Long.paddingSize(): Long = (TAR_BLOCK_SIZE - (this % TAR_BLOCK_SIZE)).let {
-        if (it == TAR_BLOCK_SIZE.toLong()) 0L else it
-    }
+    private fun Long.paddingSize(): Long =
+        (TAR_BLOCK_SIZE - (this % TAR_BLOCK_SIZE)).let {
+            if (it == TAR_BLOCK_SIZE.toLong()) 0L else it
+        }
 
     private fun Long.paddedTarSize(): Long = this + paddingSize()
 
@@ -385,13 +422,15 @@ class RootfsInstaller(
         OTHER,
     }
 
-    enum class ArchiveFormat(val extension: String) {
+    enum class ArchiveFormat(
+        val extension: String,
+    ) {
         TAR_GZ("tar.gz") {
             override fun wrapStream(input: InputStream): InputStream = GZIPInputStream(input)
         },
         TAR_XZ("tar.xz") {
             override fun wrapStream(input: InputStream): InputStream = XZInputStream(input)
-        };
+        }, ;
 
         abstract fun wrapStream(input: InputStream): InputStream
 

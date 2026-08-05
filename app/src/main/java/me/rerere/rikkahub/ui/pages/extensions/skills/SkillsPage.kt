@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,23 +48,23 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.text.font.FontWeight
 import com.composables.icons.lucide.Globe
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
-import me.rerere.rikkahub.R
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Download01
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Puzzle
+import me.rerere.rikkahub.R
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
 import me.rerere.rikkahub.data.files.SkillMetadata
-import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.skills.CatalogEntry
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
@@ -112,7 +112,7 @@ fun SkillsPage() {
                 SmallFloatingActionButton(onClick = { showImportDialog = true }) {
                     Icon(
                         HugeIcons.Download01,
-                        contentDescription = stringResource(R.string.skills_page_import_from_github)
+                        contentDescription = stringResource(R.string.skills_page_import_from_github),
                     )
                 }
                 FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -125,20 +125,23 @@ fun SkillsPage() {
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = innerPadding + PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 16.dp,
-                bottom = 16.dp + 72.dp,
-            ),
+            contentPadding =
+                innerPadding +
+                    PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 16.dp + 72.dp,
+                    ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (skills.isEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -189,21 +192,22 @@ fun SkillsPage() {
     // Phase 19C — local-file picker. Lifted to screen scope so the launcher survives
     // dialog dismiss/recreate (per Compose docs: `rememberLauncherForActivityResult`
     // belongs at the highest stable composable, NOT inside a dialog body).
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            vm.importFromLocalFile(uri) { success, message ->
-                showImportDialog = false
-                if (success) {
-                    toaster.show(context.getString(R.string.skills_page_import_success, message))
-                } else {
-                    val key = mapImportErrorKeyToString(context, message)
-                    toaster.show(context.getString(R.string.skills_page_import_failed, key))
+    val openDocumentLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                vm.importFromLocalFile(uri) { success, message ->
+                    showImportDialog = false
+                    if (success) {
+                        toaster.show(context.getString(R.string.skills_page_import_success, message))
+                    } else {
+                        val key = mapImportErrorKeyToString(context, message)
+                        toaster.show(context.getString(R.string.skills_page_import_failed, key))
+                    }
                 }
             }
         }
-    }
 
     if (showImportDialog) {
         ImportSkillDialog(
@@ -219,12 +223,14 @@ fun SkillsPage() {
                 }
             },
             onPickFile = {
-                openDocumentLauncher.launch(arrayOf(
-                    "text/markdown",
-                    "text/plain",
-                    "application/zip",
-                    "application/octet-stream",
-                ))
+                openDocumentLauncher.launch(
+                    arrayOf(
+                        "text/markdown",
+                        "text/plain",
+                        "application/zip",
+                        "application/octet-stream",
+                    ),
+                )
             },
         )
     }
@@ -279,10 +285,11 @@ private fun FeaturedCatalogSheet(
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.7f)
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -337,9 +344,10 @@ private fun CatalogRow(
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
@@ -360,16 +368,17 @@ private fun CatalogRow(
             FilledTonalButton(
                 onClick = onInstall,
                 enabled = !installed && !installing,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
             ) {
                 Text(
                     when {
                         installed -> stringResource(R.string.skill_catalog_installed)
                         installing -> stringResource(R.string.skill_catalog_installing)
                         else -> stringResource(R.string.skill_catalog_install)
-                    }
+                    },
                 )
             }
         }
@@ -390,9 +399,10 @@ private fun SkillCard(
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -402,9 +412,10 @@ private fun SkillCard(
                 tint = MaterialTheme.colorScheme.primary,
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -463,9 +474,10 @@ private fun AddSkillDialog(
 ) {
     var content by rememberSaveable { mutableStateOf("") }
 
-    val name = remember(content) {
-        SkillFrontmatterParser.parse(content)["name"]?.trim() ?: ""
-    }
+    val name =
+        remember(content) {
+            SkillFrontmatterParser.parse(content)["name"]?.trim() ?: ""
+        }
     val nameError = content.isNotBlank() && name.isBlank()
 
     AlertDialog(
@@ -483,12 +495,16 @@ private fun AddSkillDialog(
                     )
                 },
                 supportingText = {
-                    if (nameError) Text(
-                        stringResource(R.string.skills_page_name_error),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    else if (name.isNotBlank()) Text(stringResource(R.string.skills_page_skill_name, name))
-                    else Text(stringResource(R.string.skills_page_paste_hint))
+                    if (nameError) {
+                        Text(
+                            stringResource(R.string.skills_page_name_error),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else if (name.isNotBlank()) {
+                        Text(stringResource(R.string.skills_page_skill_name, name))
+                    } else {
+                        Text(stringResource(R.string.skills_page_paste_hint))
+                    }
                 },
                 isError = nameError,
                 minLines = 8,
@@ -559,7 +575,7 @@ private fun ImportSkillDialog(
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Text(
                             stringResource(R.string.skills_page_downloading),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
@@ -587,20 +603,36 @@ private fun ImportSkillDialog(
  * localized string. We use this rather than passing string-resource IDs out of the VM
  * because the VM has no `Context` callback path for stringResource lookups.
  */
-private fun mapImportErrorKeyToString(context: android.content.Context, key: String): String {
-    return when (key) {
-        "skill_import_unsupported_file_type" ->
+private fun mapImportErrorKeyToString(
+    context: android.content.Context,
+    key: String,
+): String =
+    when (key) {
+        "skill_import_unsupported_file_type" -> {
             context.getString(R.string.skill_import_unsupported_file_type)
-        "skill_import_missing_skill_md" ->
+        }
+
+        "skill_import_missing_skill_md" -> {
             context.getString(R.string.skill_import_missing_skill_md)
-        "skill_import_path_traversal" ->
+        }
+
+        "skill_import_path_traversal" -> {
             context.getString(R.string.skill_import_path_traversal)
-        "skill_import_zip_too_large" ->
+        }
+
+        "skill_import_zip_too_large" -> {
             context.getString(R.string.skill_import_zip_too_large)
-        "skill_import_md_too_large" ->
+        }
+
+        "skill_import_md_too_large" -> {
             context.getString(R.string.skill_import_md_too_large)
-        "skill_import_empty_file" ->
+        }
+
+        "skill_import_empty_file" -> {
             context.getString(R.string.skill_import_empty_file)
-        else -> key  // already a free-form message (e.g. importer's "html_response" detail)
+        }
+
+        else -> {
+            key
+        } // already a free-form message (e.g. importer's "html_response" detail)
     }
-}

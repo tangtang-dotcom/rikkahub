@@ -9,7 +9,10 @@ import java.io.File
 private const val TAG = "KeyRoulette"
 
 interface KeyRoulette {
-    fun next(keys: String, providerId: String = ""): String
+    fun next(
+        keys: String,
+        providerId: String = "",
+    ): String
 
     companion object {
         fun default(): KeyRoulette = DefaultKeyRoulette()
@@ -24,16 +27,18 @@ interface KeyRoulette {
 
 private val SPLIT_KEY_REGEX = "[\\s,]+".toRegex() // 空格换行和逗号
 
-private fun splitKey(key: String): List<String> {
-    return key
+private fun splitKey(key: String): List<String> =
+    key
         .split(SPLIT_KEY_REGEX)
         .map { it.trim() }
         .filter { it.isNotBlank() }
         .distinct()
-}
 
 private class DefaultKeyRoulette : KeyRoulette {
-    override fun next(keys: String, providerId: String): String {
+    override fun next(
+        keys: String,
+        providerId: String,
+    ): String {
         val keyList = splitKey(keys)
         return if (keyList.isNotEmpty()) {
             keyList.random()
@@ -55,8 +60,10 @@ private typealias LruCache = Map<String, Map<String, Long>>
 private class LruKeyRoulette(
     private val context: Context,
 ) : KeyRoulette {
-
-    override fun next(keys: String, providerId: String): String {
+    override fun next(
+        keys: String,
+        providerId: String,
+    ): String {
         val keyList = splitKey(keys)
         if (keyList.isEmpty()) return keys
 
@@ -65,13 +72,15 @@ private class LruKeyRoulette(
             val allCache = loadCache().toMutableMap()
 
             // 取本 provider 的记录，过滤掉已过期条目和不在当前 key 列表中的条目
-            val providerCache = (allCache[providerId] ?: emptyMap())
-                .filter { (k, lastUsed) -> k in keyList && now - lastUsed < EXPIRE_DURATION_MS }
-                .toMutableMap()
+            val providerCache =
+                (allCache[providerId] ?: emptyMap())
+                    .filter { (k, lastUsed) -> k in keyList && now - lastUsed < EXPIRE_DURATION_MS }
+                    .toMutableMap()
 
             // 优先选从未使用的 key，否则选最久未使用的
-            val selected = keyList.firstOrNull { it !in providerCache }
-                ?: providerCache.minByOrNull { it.value }!!.key
+            val selected =
+                keyList.firstOrNull { it !in providerCache }
+                    ?: providerCache.minByOrNull { it.value }!!.key
 
             providerCache[selected] = now
             allCache[providerId] = providerCache

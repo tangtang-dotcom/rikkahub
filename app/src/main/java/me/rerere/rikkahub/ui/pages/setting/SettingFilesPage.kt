@@ -1,13 +1,11 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Image02
-import me.rerere.hugeicons.stroke.Delete01
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,7 +14,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
@@ -39,7 +36,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,15 +43,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.Image02
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -66,9 +66,7 @@ import org.koin.compose.koinInject
 import java.io.File
 
 @Composable
-fun SettingFilesPage(
-    filesManager: FilesManager = koinInject(),
-) {
+fun SettingFilesPage(filesManager: FilesManager = koinInject()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val gridState = rememberLazyStaggeredGridState()
     val scope = rememberCoroutineScope()
@@ -104,7 +102,7 @@ fun SettingFilesPage(
                             }
                             pendingDelete = null
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.setting_files_page_delete_action))
                 }
@@ -113,7 +111,7 @@ fun SettingFilesPage(
                 TextButton(onClick = { pendingDelete = null }) {
                     Text(stringResource(R.string.setting_files_page_cancel_action))
                 }
-            }
+            },
         )
     }
 
@@ -141,7 +139,7 @@ fun SettingFilesPage(
                             selectionMode = false
                             pendingBatchDelete = false
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.setting_files_page_delete_action))
                 }
@@ -150,7 +148,7 @@ fun SettingFilesPage(
                 TextButton(onClick = { pendingBatchDelete = false }) {
                     Text(stringResource(R.string.setting_files_page_cancel_action))
                 }
-            }
+            },
         )
     }
 
@@ -160,27 +158,29 @@ fun SettingFilesPage(
                 title = { Text(stringResource(R.string.setting_files_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         val layoutDirection = LocalLayoutDirection.current
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    start = innerPadding.calculateStartPadding(layoutDirection),
-                    end = innerPadding.calculateEndPadding(layoutDirection),
-                )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = innerPadding.calculateStartPadding(layoutDirection),
+                        end = innerPadding.calculateEndPadding(layoutDirection),
+                    ),
         ) {
             if (files.isNotEmpty()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -199,7 +199,7 @@ fun SettingFilesPage(
                                 onClick = {
                                     selectionMode = false
                                     selectedIds = emptySet()
-                                }
+                                },
                             ) {
                                 Text(stringResource(R.string.setting_files_page_cancel))
                             }
@@ -210,7 +210,7 @@ fun SettingFilesPage(
                             onClick = {
                                 selectionMode = true
                                 selectedIds = files.map { it.id }.toSet()
-                            }
+                            },
                         ) {
                             Text(stringResource(R.string.setting_files_page_select_all))
                         }
@@ -221,30 +221,32 @@ fun SettingFilesPage(
             FolderRow(
                 folders = folders,
                 selectedFolder = selectedFolder,
-                onFolderSelected = { selectedFolder = it }
+                onFolderSelected = { selectedFolder = it },
             )
 
             if (files.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxSize(),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(stringResource(R.string.setting_files_page_no_files))
                 }
             } else {
                 LazyVerticalStaggeredGrid(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = innerPadding.calculateBottomPadding() + 16.dp,
-                    ),
+                    contentPadding =
+                        PaddingValues(
+                            start = 16.dp,
+                            top = 16.dp,
+                            end = 16.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                        ),
                     verticalItemSpacing = 8.dp,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     state = gridState,
-                    columns = StaggeredGridCells.Fixed(2)
+                    columns = StaggeredGridCells.Fixed(2),
                 ) {
                     items(files, key = { it.id }) { file ->
                         FileItem(
@@ -256,7 +258,7 @@ fun SettingFilesPage(
                             onToggle = {
                                 selectedIds =
                                     if (file.id in selectedIds) selectedIds - file.id else selectedIds + file.id
-                            }
+                            },
                         )
                     }
                 }
@@ -272,27 +274,29 @@ private fun FolderRow(
     onFolderSelected: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         folders.forEach { folder ->
             FilterChip(
                 selected = selectedFolder == folder,
                 onClick = { onFolderSelected(folder) },
-                label = { Text(folderDisplayName(folder)) }
+                label = { Text(folderDisplayName(folder)) },
             )
         }
     }
 }
 
 @Composable
-private fun folderDisplayName(folder: String): String = when (folder) {
-    FileFolders.UPLOAD -> stringResource(R.string.setting_files_page_folder_upload)
-    else -> folder
-}
+private fun folderDisplayName(folder: String): String =
+    when (folder) {
+        FileFolders.UPLOAD -> stringResource(R.string.setting_files_page_folder_upload)
+        else -> folder
+    }
 
 @Composable
 private fun FileItem(
@@ -304,41 +308,44 @@ private fun FileItem(
     onToggle: () -> Unit = {},
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (selectionMode) {
-                    Modifier.clickable { onToggle() }
-                } else {
-                    Modifier
-                }
-            ),
-        colors = CardDefaults.cardColors(containerColor = CustomColors.listItemColors.containerColor)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(
+                    if (selectionMode) {
+                        Modifier.clickable { onToggle() }
+                    } else {
+                        Modifier
+                    },
+                ),
+        colors = CardDefaults.cardColors(containerColor = CustomColors.listItemColors.containerColor),
     ) {
         Column {
             Box(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 if (file.mimeType.startsWith("image/")) {
                     AsyncImage(
                         model = fileOnDisk,
                         contentDescription = file.displayName,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(4f / 3f),
-                        contentScale = ContentScale.Crop
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(4f / 3f),
+                        contentScale = ContentScale.Crop,
                     )
                 } else {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(4f / 3f),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(4f / 3f),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = HugeIcons.Image02,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -347,48 +354,50 @@ private fun FileItem(
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(4.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(4.dp),
                     ) {
                         Checkbox(
                             checked = selected,
-                            onCheckedChange = { onToggle() }
+                            onCheckedChange = { onToggle() },
                         )
                     }
                 } else {
                     IconButton(
                         onClick = onDelete,
-                        modifier = Modifier.align(Alignment.TopEnd)
+                        modifier = Modifier.align(Alignment.TopEnd),
                     ) {
                         Icon(
                             HugeIcons.Delete01,
-                            contentDescription = stringResource(R.string.setting_files_page_delete_content_description)
+                            contentDescription = stringResource(R.string.setting_files_page_delete_content_description),
                         )
                     }
                 }
             }
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
             ) {
                 Text(
                     text = file.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = file.mimeType,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = file.sizeBytes.fileSizeToString(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

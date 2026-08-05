@@ -4,23 +4,23 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import me.rerere.ai.provider.LITERT_PROVIDER_ID
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.ai.provider.LITERT_PROVIDER_ID
 import me.rerere.locallm.AcceleratorProbe
 import me.rerere.locallm.LocalRuntime
 import me.rerere.locallm.LocalRuntimePreferences
-import me.rerere.locallm.litert.LiteRtModelMetadata
 import me.rerere.locallm.MemoryGuard
 import me.rerere.locallm.ModelInstall
+import me.rerere.locallm.litert.LiteRtModelMetadata
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import okhttp3.OkHttpClient
@@ -45,8 +45,11 @@ class SettingLocalLlmViewModel(
     private val httpClient: OkHttpClient,
     private val settingsStore: SettingsStore,
 ) : ViewModel() {
-
-    data class Progress(val percent: Int, val bytesRead: Long, val totalBytes: Long?)
+    data class Progress(
+        val percent: Int,
+        val bytesRead: Long,
+        val totalBytes: Long?,
+    )
 
     private val _downloadProgress = MutableStateFlow<Progress?>(null)
     val downloadProgress: StateFlow<Progress?> = _downloadProgress.asStateFlow()
@@ -60,50 +63,64 @@ class SettingLocalLlmViewModel(
     /** True (default) when the runtime is locked to CPU. Off lets the probe pick GPU/NNAPI/QNN.
      *  Auto-flipped to true by [me.rerere.rikkahub.RikkaHubApp] when the prior process exited
      *  with a native crash inside the runtime's JNI lib (see crashRecoveryAccelerator). */
-    val forceCpu: StateFlow<Boolean> = prefs.forceCpuFlow(runtime)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val forceCpu: StateFlow<Boolean> =
+        prefs
+            .forceCpuFlow(runtime)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     /** Override for `EngineConfig.maxNumTokens`. null = use the per-model curated default
      *  from `LiteRtModelDefaults`. Persisted in `LocalRuntimePreferences`. */
-    val maxNumTokensOverride: StateFlow<Int?> = prefs.maxNumTokensOverrideFlow(runtime)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val maxNumTokensOverride: StateFlow<Int?> =
+        prefs
+            .maxNumTokensOverrideFlow(runtime)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Non-null when the prior process crashed inside the runtime; carries the accelerator
      *  label that crashed so the UI banner can name it. Cleared via [dismissCrashRecovery]. */
-    val crashRecoveryAccelerator: StateFlow<String?> = prefs.crashRecoveryFlow(runtime)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val crashRecoveryAccelerator: StateFlow<String?> =
+        prefs
+            .crashRecoveryFlow(runtime)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Set of installed model filenames whose GPU vision encoder failed on this device.
      *  Surfaced in InstalledModelRow as a "Vision unavailable on this device — text-only"
      *  caption + a "Re-try vision" button that clears the flag so the next load attempts
      *  GPU vision again (useful after a GPU driver update). */
-    val visionUnavailableSet: StateFlow<Set<String>> = prefs.visionUnavailableFlow(runtime)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    val visionUnavailableSet: StateFlow<Set<String>> =
+        prefs
+            .visionUnavailableFlow(runtime)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Last-known tok/s telemetry sample per model. Provider stamps a new sample after each
      *  successful stream. Settings renders "12.4 tok/s prefill · 2.7 tok/s decode" under the
      *  installed-model row; Doctor uses this to WARN when sustained decode tps is below the
      *  device's expected band. */
     val perfTelemetry: StateFlow<Map<String, LocalRuntimePreferences.PerfSample>> =
-        prefs.perfTelemetryFlow(runtime)
+        prefs
+            .perfTelemetryFlow(runtime)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Whether the provider is currently enabled in persisted settings. */
-    val providerEnabled: StateFlow<Boolean> = settingsStore.settingsFlow
-        .map { settings ->
-            settings.providers.firstOrNull { it.id == providerIdForRuntime() }?.enabled ?: false
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val providerEnabled: StateFlow<Boolean> =
+        settingsStore.settingsFlow
+            .map { settings ->
+                settings.providers.firstOrNull { it.id == providerIdForRuntime() }?.enabled ?: false
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /** File names of every model currently registered on the provider. The catalog UI
      *  uses this to render an "Installed" badge instead of an Install button when the
      *  catalog entry's `modelFile` already lives in `provider.models` (modelId == file
      *  name in the LiteRT case). */
-    val installedModelFiles: StateFlow<Set<String>> = settingsStore.settingsFlow
-        .map { settings ->
-            settings.providers.firstOrNull { it.id == providerIdForRuntime() }?.models?.map { it.modelId }?.toSet() ?: emptySet()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    val installedModelFiles: StateFlow<Set<String>> =
+        settingsStore.settingsFlow
+            .map { settings ->
+                settings.providers
+                    .firstOrNull { it.id == providerIdForRuntime() }
+                    ?.models
+                    ?.map { it.modelId }
+                    ?.toSet()
+                    ?: emptySet()
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /**
      * The default model URL for the runtime.
@@ -120,9 +137,10 @@ class SettingLocalLlmViewModel(
 
     /** Currently only LiteRT is wired; the helper exists so a future runtime can fan out
      *  by adding a `when` arm without touching every flow above. */
-    private fun providerIdForRuntime(): kotlin.uuid.Uuid = when (runtime) {
-        LocalRuntime.LiteRT -> LITERT_PROVIDER_ID
-    }
+    private fun providerIdForRuntime(): kotlin.uuid.Uuid =
+        when (runtime) {
+            LocalRuntime.LiteRT -> LITERT_PROVIDER_ID
+        }
 
     init {
         viewModelScope.launch {
@@ -141,40 +159,48 @@ class SettingLocalLlmViewModel(
      */
     private suspend fun migrateExistingModelMetadata() {
         val targetId = providerIdForRuntime()
-        val provider = settingsStore.settingsFlow.value.providers
-            .firstOrNull { it.id == targetId } ?: return
+        val provider =
+            settingsStore.settingsFlow.value.providers
+                .firstOrNull { it.id == targetId } ?: return
         if (provider.models.isEmpty()) return
         val originals = provider.models.toList()
         var anyChange = false
-        val patched = originals.map { model ->
-            val current = LiteRtModelMetadata.Capabilities(
-                inputModalities = model.inputModalities,
-                abilities = model.abilities,
-            )
-            val target = LiteRtModelMetadata.deriveCapabilities(model.modelId)
-            val merged = LiteRtModelMetadata.mergeAdditive(current, target)
-            if (merged.inputModalities == model.inputModalities &&
-                merged.abilities == model.abilities
-            ) {
-                model
-            } else {
-                anyChange = true
-                model.copy(
-                    inputModalities = merged.inputModalities,
-                    abilities = merged.abilities,
-                )
+        val patched =
+            originals.map { model ->
+                val current =
+                    LiteRtModelMetadata.Capabilities(
+                        inputModalities = model.inputModalities,
+                        abilities = model.abilities,
+                    )
+                val target = LiteRtModelMetadata.deriveCapabilities(model.modelId)
+                val merged = LiteRtModelMetadata.mergeAdditive(current, target)
+                if (merged.inputModalities == model.inputModalities &&
+                    merged.abilities == model.abilities
+                ) {
+                    model
+                } else {
+                    anyChange = true
+                    model.copy(
+                        inputModalities = merged.inputModalities,
+                        abilities = merged.abilities,
+                    )
+                }
             }
-        }
         if (!anyChange) return
         val changedCount = patched.indices.count { patched[it] != originals[it] }
         settingsStore.update { old ->
-            old.copy(providers = old.providers.map { p ->
-                if (p.id == targetId) {
-                    var next = p
-                    patched.forEach { newModel -> next = next.editModel(newModel) }
-                    next
-                } else p
-            })
+            old.copy(
+                providers =
+                    old.providers.map { p ->
+                        if (p.id == targetId) {
+                            var next = p
+                            patched.forEach { newModel -> next = next.editModel(newModel) }
+                            next
+                        } else {
+                            p
+                        }
+                    },
+            )
         }
         android.util.Log.i(
             "SettingLocalLlmVM",
@@ -188,26 +214,28 @@ class SettingLocalLlmViewModel(
         // Scan for stale HTML files or files with invalid magic bytes masquerading as model
         // binaries. HTML files land when a previous download received an HTML error page
         // (e.g. HF viewer URL). All-zero prefixes land from the old sparse-fill resume bug.
-        val brokenFiles = installed.entries.filter { (fileName, path) ->
-            runCatching {
-                val f = java.io.File(path)
-                if (!f.exists()) return@runCatching false
-                f.inputStream().use { stream ->
-                    val buf = ByteArray(64)
-                    val n = stream.read(buf)
-                    if (n <= 0) return@runCatching false
-                    val sample = String(buf, 0, n, Charsets.UTF_8).trimStart().lowercase()
-                    val isHtml = sample.startsWith("<!doctype") ||
-                        sample.startsWith("<html") ||
-                        sample.startsWith("<head") ||
-                        sample.startsWith("<?xml")
-                    if (isHtml) return@runCatching true
-                    // Magic-byte check: file must look like a valid model for its extension.
-                    val ext = fileName.substringAfterLast('.', "").lowercase()
-                    !ModelInstall.isValidMagicForExtension(ext, buf.copyOf(n))
-                }
-            }.getOrDefault(false)
-        }
+        val brokenFiles =
+            installed.entries.filter { (fileName, path) ->
+                runCatching {
+                    val f = java.io.File(path)
+                    if (!f.exists()) return@runCatching false
+                    f.inputStream().use { stream ->
+                        val buf = ByteArray(64)
+                        val n = stream.read(buf)
+                        if (n <= 0) return@runCatching false
+                        val sample = String(buf, 0, n, Charsets.UTF_8).trimStart().lowercase()
+                        val isHtml =
+                            sample.startsWith("<!doctype") ||
+                                sample.startsWith("<html") ||
+                                sample.startsWith("<head") ||
+                                sample.startsWith("<?xml")
+                        if (isHtml) return@runCatching true
+                        // Magic-byte check: file must look like a valid model for its extension.
+                        val ext = fileName.substringAfterLast('.', "").lowercase()
+                        !ModelInstall.isValidMagicForExtension(ext, buf.copyOf(n))
+                    }
+                }.getOrDefault(false)
+            }
         if (brokenFiles.isNotEmpty()) {
             for ((fileName, path) in brokenFiles) {
                 runCatching { java.io.File(path).delete() }
@@ -228,18 +256,21 @@ class SettingLocalLlmViewModel(
         // Reconcile: any disk-side model that isn't in provider.models gets added.
         // Backfills downloads that landed before the persistence fix at commit 75ea6443.
         val targetId = providerIdForRuntime()
-        val currentProvider = settingsStore.settingsFlow.value.providers.firstOrNull { it.id == targetId }
+        val currentProvider =
+            settingsStore.settingsFlow.value.providers
+                .firstOrNull { it.id == targetId }
         if (currentProvider != null) {
             val knownModelIds = currentProvider.models.map { it.modelId }.toSet()
             val missing = finalInstalled.keys.filter { it !in knownModelIds }
             for (fileName in missing) {
                 val caps = LiteRtModelMetadata.deriveCapabilities(fileName)
-                val model = Model(
-                    modelId = fileName,
-                    displayName = fileName,
-                    inputModalities = caps.inputModalities,
-                    abilities = caps.abilities,
-                )
+                val model =
+                    Model(
+                        modelId = fileName,
+                        displayName = fileName,
+                        inputModalities = caps.inputModalities,
+                        abilities = caps.abilities,
+                    )
                 updateMyProvider { provider -> provider.addModel(model) }
             }
         }
@@ -250,9 +281,10 @@ class SettingLocalLlmViewModel(
 
     private suspend fun probeAndCache(): String {
         val forceCpuNow = prefs.forceCpu(runtime)
-        val accel = when (runtime) {
-            LocalRuntime.LiteRT -> AcceleratorProbe.probeLiteRt(context, forceCpu = forceCpuNow)
-        }
+        val accel =
+            when (runtime) {
+                LocalRuntime.LiteRT -> AcceleratorProbe.probeLiteRt(context, forceCpu = forceCpuNow)
+            }
         prefs.setAccelerator(runtime, accel)
         _accelerator.value = accel
         return accel
@@ -296,9 +328,12 @@ class SettingLocalLlmViewModel(
     private suspend fun updateMyProvider(transform: (ProviderSetting) -> ProviderSetting) {
         val targetId = providerIdForRuntime()
         settingsStore.update { old ->
-            old.copy(providers = old.providers.map { p ->
-                if (p.id == targetId) transform(p) else p
-            })
+            old.copy(
+                providers =
+                    old.providers.map { p ->
+                        if (p.id == targetId) transform(p) else p
+                    },
+            )
         }
     }
 
@@ -316,12 +351,13 @@ class SettingLocalLlmViewModel(
             val url = defaultModelUrl
             val mem = MemoryGuard.canLoad(context, modelFileBytes = estimatedSize(runtime))
             if (mem is MemoryGuard.Decision.TooLarge) {
-                _errorMessage.value = context.getString(
-                    R.string.local_llm_insufficient_memory_format,
-                    mem.requiredFreeBytes / 1_000_000,
-                    mem.modelFileBytes / 1_000_000,
-                    mem.availMemBytes / 1_000_000,
-                )
+                _errorMessage.value =
+                    context.getString(
+                        R.string.local_llm_insufficient_memory_format,
+                        mem.requiredFreeBytes / 1_000_000,
+                        mem.modelFileBytes / 1_000_000,
+                        mem.availMemBytes / 1_000_000,
+                    )
                 return@launch
             }
             executeDownload(url)
@@ -369,27 +405,39 @@ class SettingLocalLlmViewModel(
         }
     }
 
-    private suspend fun collectDownloadProgress(url: String, fileName: String, target: java.io.File) {
+    private suspend fun collectDownloadProgress(
+        url: String,
+        fileName: String,
+        target: java.io.File,
+    ) {
         ModelInstall.download(httpClient, url, target).collect { p ->
             when (p) {
-                is ModelInstall.Progress.Started ->
+                is ModelInstall.Progress.Started -> {
                     _downloadProgress.value = Progress(0, 0L, p.totalBytes)
+                }
+
                 is ModelInstall.Progress.Tick -> {
                     val total = p.totalBytes
-                    val pct = if (total != null && total > 0)
-                        ((p.bytesRead * 100) / total).toInt() else 0
+                    val pct =
+                        if (total != null && total > 0) {
+                            ((p.bytesRead * 100) / total).toInt()
+                        } else {
+                            0
+                        }
                     _downloadProgress.value = Progress(pct, p.bytesRead, total)
                 }
+
                 is ModelInstall.Progress.Done -> {
                     _downloadProgress.value = null
                     prefs.addInstalledModel(runtime, fileName, p.file.absolutePath)
                     val caps = LiteRtModelMetadata.deriveCapabilities(fileName)
-                    val model = Model(
-                        modelId = fileName,
-                        displayName = fileName,
-                        inputModalities = caps.inputModalities,
-                        abilities = caps.abilities,
-                    )
+                    val model =
+                        Model(
+                            modelId = fileName,
+                            displayName = fileName,
+                            inputModalities = caps.inputModalities,
+                            abilities = caps.abilities,
+                        )
                     updateMyProvider { provider -> provider.addModel(model) }
                     // Enable the provider automatically after the first successful download.
                     updateMyProvider { provider ->
@@ -400,6 +448,7 @@ class SettingLocalLlmViewModel(
                     }
                     refreshFromDisk()
                 }
+
                 is ModelInstall.Progress.Failed -> {
                     _downloadProgress.value = null
                     _errorMessage.value = p.cause.message.orEmpty()
@@ -418,16 +467,20 @@ class SettingLocalLlmViewModel(
      * installed-model list. Mirrors the registration done after a successful download
      * (see [collectDownloadProgress]).
      */
-    fun registerImportedModel(fileName: String, absolutePath: String) {
+    fun registerImportedModel(
+        fileName: String,
+        absolutePath: String,
+    ) {
         viewModelScope.launch {
             prefs.addInstalledModel(runtime, fileName, absolutePath)
             val caps = LiteRtModelMetadata.deriveCapabilities(fileName)
-            val model = Model(
-                modelId = fileName,
-                displayName = fileName,
-                inputModalities = caps.inputModalities,
-                abilities = caps.abilities,
-            )
+            val model =
+                Model(
+                    modelId = fileName,
+                    displayName = fileName,
+                    inputModalities = caps.inputModalities,
+                    abilities = caps.abilities,
+                )
             updateMyProvider { provider -> provider.addModel(model) }
             // Enable the provider automatically after a successful import, same as a download.
             updateMyProvider { provider ->
@@ -466,19 +519,24 @@ class SettingLocalLlmViewModel(
      * Update the display name shown in the chat model picker.
      * Does NOT change modelId or the on-disk filename — the file lookup stays intact.
      */
-    fun renameModel(modelId: String, newDisplayName: String) {
+    fun renameModel(
+        modelId: String,
+        newDisplayName: String,
+    ) {
         if (newDisplayName.isBlank()) return
         viewModelScope.launch {
             updateMyProvider { p ->
-                val current = p.models.firstOrNull { it.modelId == modelId }
-                    ?: return@updateMyProvider p
+                val current =
+                    p.models.firstOrNull { it.modelId == modelId }
+                        ?: return@updateMyProvider p
                 p.editModel(current.copy(displayName = newDisplayName.trim()))
             }
         }
     }
 
-    private fun estimatedSize(rt: LocalRuntime): Long = when (rt) {
-        // Gallery allowlist sizeInBytes = 1_597_931_520 (~1.49 GB) + 200 MB safety pad.
-        LocalRuntime.LiteRT -> 1_800_000_000L
-    }
+    private fun estimatedSize(rt: LocalRuntime): Long =
+        when (rt) {
+            // Gallery allowlist sizeInBytes = 1_597_931_520 (~1.49 GB) + 200 MB safety pad.
+            LocalRuntime.LiteRT -> 1_800_000_000L
+        }
 }

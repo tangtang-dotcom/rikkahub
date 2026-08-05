@@ -22,17 +22,16 @@ sealed class TTSProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.openai.com/v1",
         val model: String = "gpt-4o-mini-tts",
-        val voice: String = "alloy"
+        val voice: String = "alloy",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -43,17 +42,16 @@ sealed class TTSProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://generativelanguage.googleapis.com/v1beta",
         val model: String = "gemini-2.5-flash-preview-tts",
-        val voiceName: String = "Kore"
+        val voiceName: String = "Kore",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -67,12 +65,11 @@ sealed class TTSProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -84,17 +81,16 @@ sealed class TTSProviderSetting {
         val baseUrl: String = "https://api.minimaxi.com/v1",
         val model: String = "speech-2.6-turbo",
         val voiceId: String = "female-shaonv",
-        val speed: Float = 1.0f
+        val speed: Float = 1.0f,
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -106,17 +102,16 @@ sealed class TTSProviderSetting {
         val baseUrl: String = "https://dashscope.aliyuncs.com/api/v1",
         val model: String = "qwen3-tts-flash",
         val voice: String = "Cherry",
-        val languageType: String = "Auto"
+        val languageType: String = "Auto",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -127,17 +122,16 @@ sealed class TTSProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.groq.com/openai/v1",
         val model: String = "canopylabs/orpheus-v1-english",
-        val voice: String = "austin"
+        val voice: String = "austin",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -148,17 +142,16 @@ sealed class TTSProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.x.ai/v1",
         val voiceId: String = "eve",
-        val language: String = "auto"
+        val language: String = "auto",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -170,17 +163,16 @@ sealed class TTSProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.xiaomimimo.com/v1",
         val model: String = "mimo-v2.5-tts",
-        val voice: String = "mimo_default"
+        val voice: String = "mimo_default",
     ) : TTSProviderSetting() {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -198,12 +190,11 @@ sealed class TTSProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     /**
@@ -246,12 +237,11 @@ sealed class TTSProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     @Serializable
@@ -274,12 +264,11 @@ sealed class TTSProviderSetting {
         override fun copyProvider(
             id: Uuid,
             name: String,
-        ): TTSProviderSetting {
-            return this.copy(
+        ): TTSProviderSetting =
+            this.copy(
                 id = id,
                 name = name,
             )
-        }
     }
 
     companion object {

@@ -14,7 +14,6 @@ import org.junit.Test
  * Unit tests for ChatCompletionsAPI token usage parsing.
  */
 class ChatCompletionsAPIUsageTest {
-
     private lateinit var api: ChatCompletionsAPI
 
     @Before
@@ -24,10 +23,11 @@ class ChatCompletionsAPIUsageTest {
 
     // Helper to invoke private parseTokenUsage via reflection
     private fun parseTokenUsage(usage: JsonObject): TokenUsage? {
-        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
-            "parseTokenUsage",
-            JsonObject::class.java
-        )
+        val method =
+            ChatCompletionsAPI::class.java.getDeclaredMethod(
+                "parseTokenUsage",
+                JsonObject::class.java,
+            )
         method.isAccessible = true
         return method.invoke(api, usage) as TokenUsage?
     }
@@ -40,27 +40,33 @@ class ChatCompletionsAPIUsageTest {
         // OpenAI 官方嵌套格式
         assertEquals(
             12,
-            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12}}""")?.cachedTokens
+            usage(
+                """{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12}}""",
+            )?.cachedTokens,
         )
         // Moonshot 顶层 cached_tokens
         assertEquals(
             7,
-            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"cached_tokens":7}""")?.cachedTokens
+            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"cached_tokens":7}""")?.cachedTokens,
         )
         // DeepSeek 顶层 prompt_cache_hit_tokens
         assertEquals(
             5,
-            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_cache_hit_tokens":5,"prompt_cache_miss_tokens":3}""")?.cachedTokens
+            usage(
+                """{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_cache_hit_tokens":5,"prompt_cache_miss_tokens":3}""",
+            )?.cachedTokens,
         )
         // 嵌套字段优先于顶层兜底
         assertEquals(
             12,
-            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12},"cached_tokens":7}""")?.cachedTokens
+            usage(
+                """{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12},"cached_tokens":7}""",
+            )?.cachedTokens,
         )
         // 都没有时为 0
         assertEquals(
             0,
-            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}""")?.cachedTokens
+            usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}""")?.cachedTokens,
         )
     }
 }

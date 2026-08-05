@@ -15,16 +15,17 @@ import java.io.ByteArrayOutputStream
  * Bridge TTS provider flow to a single audio buffer.
  */
 class TtsSynthesizer(
-    private val ttsManager: TTSManager
+    private val ttsManager: TTSManager,
 ) {
     suspend fun synthesize(
         setting: TTSProviderSetting,
-        chunk: TtsChunk
-    ): TTSResponse = withContext(Dispatchers.IO) {
-        collectToResponse(
-            ttsManager.generateSpeech(setting, TTSRequest(text = chunk.text))
-        )
-    }
+        chunk: TtsChunk,
+    ): TTSResponse =
+        withContext(Dispatchers.IO) {
+            collectToResponse(
+                ttsManager.generateSpeech(setting, TTSRequest(text = chunk.text)),
+            )
+        }
 
     private suspend fun collectToResponse(flow: Flow<AudioChunk>): TTSResponse {
         var format: AudioFormat? = null
@@ -38,8 +39,7 @@ class TtsSynthesizer(
         return TTSResponse(
             audioData = output.toByteArray(),
             format = format ?: AudioFormat.MP3,
-            sampleRate = sampleRate
+            sampleRate = sampleRate,
         )
     }
 }
-

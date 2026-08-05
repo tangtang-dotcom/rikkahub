@@ -40,7 +40,7 @@ fun Modifier.shimmer(
     backgroundColor: Color = LocalContentColor.current.copy(alpha = 0.9f), // 较暗的背景/基础颜色
     durationMillis: Int = 1200,
     angle: Float = 20f, // 稍微倾斜的角度
-    gradientWidthRatio: Float = 0.5f // 闪光宽度为组件宽度的一半
+    gradientWidthRatio: Float = 0.5f, // 闪光宽度为组件宽度的一半
 ): Modifier {
     if (!isLoading) {
         // 如果不处于加载状态，则不应用任何效果
@@ -50,33 +50,36 @@ fun Modifier.shimmer(
         var size by remember { mutableStateOf(IntSize.Zero) }
         // 创建无限循环动画
         val transition = rememberInfiniteTransition(label = "ShimmerTransition")
-        val translateAnimation = transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f, // 动画值从 0 到 1
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = durationMillis, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart // 每次都从头开始
-            ),
-            label = "ShimmerTranslate"
-        )
+        val translateAnimation =
+            transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f, // 动画值从 0 到 1
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = durationMillis, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart, // 每次都从头开始
+                    ),
+                label = "ShimmerTranslate",
+            )
         // 将角度转换为弧度
         val angleRad = Math.toRadians(angle.toDouble()).toFloat()
         // 计算渐变颜色的列表
-        val colors = remember(shimmerColor, backgroundColor) {
-            listOf(
-                backgroundColor, // 开始的背景色
-                shimmerColor,    // 中间的亮色
-                backgroundColor  // 结束的背景色
-            )
-        }
+        val colors =
+            remember(shimmerColor, backgroundColor) {
+                listOf(
+                    backgroundColor, // 开始的背景色
+                    shimmerColor, // 中间的亮色
+                    backgroundColor, // 结束的背景色
+                )
+            }
         // 应用绘制效果
         return this
             .onGloballyPositioned { layoutCoordinates ->
                 // 获取组件的实际尺寸
                 size = layoutCoordinates.size
-            }
-            .graphicsLayer { alpha = 0.99f } // 开启混合
-            .drawWithContent { // 使用 drawWithContent 获取绘制上下文
+            }.graphicsLayer { alpha = 0.99f } // 开启混合
+            .drawWithContent {
+                // 使用 drawWithContent 获取绘制上下文
                 if (size == IntSize.Zero) {
                     // 如果尺寸未知，先绘制原始内容
                     drawContent()
@@ -100,12 +103,13 @@ fun Modifier.shimmer(
                 val endX = (currentOffset + gradientWidth) * kotlin.math.cos(angleRad)
                 val endY = (currentOffset + gradientWidth) * kotlin.math.sin(angleRad)
                 // 创建线性渐变 Brush
-                val shimmerBrush = Brush.linearGradient(
-                    colors = colors,
-                    start = Offset(startX, startY),
-                    end = Offset(endX, endY),
-                    tileMode = TileMode.Clamp // Clamp 模式确保渐变颜色在边缘处固定
-                )
+                val shimmerBrush =
+                    Brush.linearGradient(
+                        colors = colors,
+                        start = Offset(startX, startY),
+                        end = Offset(endX, endY),
+                        tileMode = TileMode.Clamp, // Clamp 模式确保渐变颜色在边缘处固定
+                    )
                 // 1. 先绘制原始内容
                 drawContent()
                 // 2. 在原始内容之上绘制一个矩形，使用 Shimmer Brush 和 DstIn 混合模式
@@ -113,7 +117,7 @@ fun Modifier.shimmer(
                 // 并且使用源的 Alpha 值。这使得渐变亮部显示内容，暗部（透明部）隐藏内容。
                 drawRect(
                     brush = shimmerBrush,
-                    blendMode = BlendMode.DstIn
+                    blendMode = BlendMode.DstIn,
                 )
             }
     }

@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WorkflowDao {
-
     @Query("SELECT * FROM workflows ORDER BY name COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<WorkflowEntity>>
 
@@ -35,9 +34,14 @@ interface WorkflowDao {
     suspend fun deleteById(id: String): Int
 
     @Query("UPDATE workflows SET enabled = :enabled, updatedAtMs = :updatedAtMs WHERE id = :id")
-    suspend fun setEnabled(id: String, enabled: Boolean, updatedAtMs: Long): Int
+    suspend fun setEnabled(
+        id: String,
+        enabled: Boolean,
+        updatedAtMs: Long,
+    ): Int
 
-    @Query("""
+    @Query(
+        """
         UPDATE workflows
         SET lastRunAtMs = :firedAtMs,
             lastRunStatus = :status,
@@ -45,7 +49,8 @@ interface WorkflowDao {
             runsTodayCount = :runsTodayCount,
             runsTodayDate = :runsTodayDate
         WHERE id = :id
-    """)
+    """,
+    )
     suspend fun recordFire(
         id: String,
         firedAtMs: Long,

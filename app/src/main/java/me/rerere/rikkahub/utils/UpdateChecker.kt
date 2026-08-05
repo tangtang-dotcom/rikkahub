@@ -25,63 +25,73 @@ class UpdateChecker(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun checkUpdate(): Flow<UiState<UpdateInfo>> = flow {
-        emit(UiState.Loading)
-        if (apiUrl.isBlank()) {
+    fun checkUpdate(): Flow<UiState<UpdateInfo>> =
+        flow {
+            emit(UiState.Loading)
+            if (apiUrl.isBlank()) {
+                emit(
+                    UiState.Success(
+                        UpdateInfo(
+                            version = currentVersionName,
+                            publishedAt = "",
+                            changelog = "",
+                            downloads = emptyList(),
+                        ),
+                    ),
+                )
+                return@flow
+            }
             emit(
                 UiState.Success(
-                    UpdateInfo(
-                        version = currentVersionName,
-                        publishedAt = "",
-                        changelog = "",
-                        downloads = emptyList()
-                    )
-                )
+                    data =
+                        try {
+                            val response =
+                                client
+                                    .newCall(
+                                        Request
+                                            .Builder()
+                                            .url(apiUrl)
+                                            .get()
+                                            .addHeader(
+                                                "User-Agent",
+                                                "RikkaHub Agents $currentVersionName #${BuildConfig.VERSION_CODE}",
+                                            ).build(),
+                                    ).await()
+                            if (response.isSuccessful) {
+                                json.decodeFromString<UpdateInfo>(response.body.string())
+                            } else {
+                                throw Exception("Failed to fetch update info")
+                            }
+                        } catch (e: Exception) {
+                            throw Exception("Failed to fetch update info", e)
+                        },
+                ),
             )
-            return@flow
-        }
-        emit(
-            UiState.Success(
-                data = try {
-                    val response = client.newCall(
-                        Request.Builder()
-                            .url(apiUrl)
-                            .get()
-                            .addHeader(
-                                "User-Agent",
-                                "RikkaHub Agents $currentVersionName #${BuildConfig.VERSION_CODE}"
-                            )
-                            .build()
-                    ).await()
-                    if (response.isSuccessful) {
-                        json.decodeFromString<UpdateInfo>(response.body.string())
-                    } else {
-                        throw Exception("Failed to fetch update info")
-                    }
-                } catch (e: Exception) {
-                    throw Exception("Failed to fetch update info", e)
-                }
-            )
-        )
-    }.catch {
-        emit(UiState.Error(it))
-    }.flowOn(Dispatchers.IO)
+        }.catch {
+            emit(UiState.Error(it))
+        }.flowOn(Dispatchers.IO)
 
-    fun downloadUpdate(context: Context, download: UpdateDownload) {
+    fun downloadUpdate(
+        context: Context,
+        download: UpdateDownload,
+    ) {
         runCatching {
-            val request = DownloadManager.Request(download.url.toUri()).apply {
-                // 设置下载时通知栏的标题和描述
-                setTitle(download.name)
-                setDescription(context.getString(R.string.update_download_description))
-                // 下载完成后通知栏可见
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                // 允许在移动网络和WiFi下下载
-                setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
-                // 设置文件保存路径
-                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, download.name)
-                // 允许下载的文件类型
-                setMimeType("application/vnd.android.package-archive")
-            }
+            val request =
+                DownloadManager.Request(download.url.toUri()).apply {
+                    // 设置下载时通知栏的标题和描述
+                    setTitle(download.name)
+                    setDescription(context.getString(R.string.update_download_description))
+                    // 下载完成后通知栏可见
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    // 允许在移动网络和WiFi下下载
+                    setAllowedNetworkTypes(
+                        DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE,
+                    )
+                    // 设置文件保存路径
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, download.name)
+                    // 允许下载的文件类型
+                    setMimeType("application/vnd.android.package-archive")
+                }
             // 获取系统的DownloadManager
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             dm.enqueue(request)
@@ -97,7 +107,7 @@ class UpdateChecker(
 data class UpdateDownload(
     val name: String,
     val url: String,
-    val size: String
+    val size: String,
 )
 
 @Serializable
@@ -105,7 +115,7 @@ data class UpdateInfo(
     val version: String,
     val publishedAt: String,
     val changelog: String,
-    val downloads: List<UpdateDownload>
+    val downloads: List<UpdateDownload>,
 )
 
 /**
@@ -118,18 +128,20 @@ data class UpdateInfo(
  * - build metadata（+号后面的部分）不影响优先级比较
  */
 @JvmInline
-value class Version(val value: String) : Comparable<Version> {
-
+value class Version(
+    val value: String,
+) : Comparable<Version> {
     private fun parse(): ParsedVersion {
         // 去掉 build metadata（+号后面的部分）
         val withoutBuild = value.split("+").first()
         // 分离主版本号和预发布标识符
         val hyphenIndex = withoutBuild.indexOf('-')
-        val (coreStr, prereleaseStr) = if (hyphenIndex >= 0) {
-            withoutBuild.substring(0, hyphenIndex) to withoutBuild.substring(hyphenIndex + 1)
-        } else {
-            withoutBuild to null
-        }
+        val (coreStr, prereleaseStr) =
+            if (hyphenIndex >= 0) {
+                withoutBuild.substring(0, hyphenIndex) to withoutBuild.substring(hyphenIndex + 1)
+            } else {
+                withoutBuild to null
+            }
         val core = coreStr.split(".").map { it.toIntOrNull() ?: 0 }
         val prerelease = prereleaseStr?.split(".")
         return ParsedVersion(core, prerelease)
@@ -158,11 +170,15 @@ value class Version(val value: String) : Comparable<Version> {
     }
 
     companion object {
-        fun compare(version1: String, version2: String): Int {
-            return Version(version1).compareTo(Version(version2))
-        }
+        fun compare(
+            version1: String,
+            version2: String,
+        ): Int = Version(version1).compareTo(Version(version2))
 
-        private fun comparePrerelease(a: List<String>, b: List<String>): Int {
+        private fun comparePrerelease(
+            a: List<String>,
+            b: List<String>,
+        ): Int {
             val maxLen = maxOf(a.size, b.size)
             for (i in 0 until maxLen) {
                 // 字段少的优先级更低：1.0.0-alpha < 1.0.0-alpha.1
@@ -172,15 +188,19 @@ value class Version(val value: String) : Comparable<Version> {
                 val aNum = a[i].toIntOrNull()
                 val bNum = b[i].toIntOrNull()
 
-                val cmp = when {
-                    // 都是字：按数值比较
-                    aNum != null && bNum != null -> aNum.compareTo(bNum)
-                    // 数字优先级低于字符串
-                    aNum != null -> -1
-                    bNum != null -> 1
-                    // 都是字符串：按字典序比较
-                    else -> a[i].compareTo(b[i])
-                }
+                val cmp =
+                    when {
+                        // 都是字：按数值比较
+                        aNum != null && bNum != null -> aNum.compareTo(bNum)
+
+                        // 数字优先级低于字符串
+                        aNum != null -> -1
+
+                        bNum != null -> 1
+
+                        // 都是字符串：按字典序比较
+                        else -> a[i].compareTo(b[i])
+                    }
                 if (cmp != 0) return cmp
             }
             return 0
@@ -195,4 +215,5 @@ private data class ParsedVersion(
 
 // 扩展操作符函数，使比较更直观
 operator fun String.compareTo(other: Version): Int = Version(this).compareTo(other)
+
 operator fun Version.compareTo(other: String): Int = this.compareTo(Version(other))

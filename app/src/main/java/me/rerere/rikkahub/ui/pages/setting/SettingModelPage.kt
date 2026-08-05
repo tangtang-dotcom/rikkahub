@@ -69,19 +69,19 @@ fun SettingModelPage(vm: SettingVM = koinViewModel()) {
         },
         bottomBar = {
             BottomAppBar(
-                containerColor = CustomColors.cardColorsOnSurfaceContainer.containerColor
+                containerColor = CustomColors.cardColorsOnSurfaceContainer.containerColor,
             ) {
                 NavigationBarItem(
                     selected = pagerState.currentPage == 0,
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
                     icon = { Icon(HugeIcons.AiBrain01, null) },
-                    label = { Text(stringResource(R.string.setting_model_page_tab_model)) }
+                    label = { Text(stringResource(R.string.setting_model_page_tab_model)) },
                 )
                 NavigationBarItem(
                     selected = pagerState.currentPage == 1,
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
                     icon = { Icon(HugeIcons.AiEditing, null) },
-                    label = { Text(stringResource(R.string.setting_model_page_tab_prompt)) }
+                    label = { Text(stringResource(R.string.setting_model_page_tab_prompt)) },
                 )
             }
         },
@@ -100,7 +100,11 @@ fun SettingModelPage(vm: SettingVM = koinViewModel()) {
 }
 
 @Composable
-private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding: PaddingValues) {
+private fun ModelSettingsPage(
+    settings: Settings,
+    vm: SettingVM,
+    contentPadding: PaddingValues,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
@@ -168,7 +172,7 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
                             checked = settings.ocrLocalEnabled,
                             onCheckedChange = {
                                 vm.updateSettings(settings.copy(ocrLocalEnabled = it))
-                            }
+                            },
                         )
                     },
                 )
@@ -192,11 +196,12 @@ private fun SuggestionModelSettingItem(
     vm: SettingVM,
 ) {
     val title = stringResource(R.string.setting_model_page_suggestion_model)
-    val state = rememberModelListState(
-        modelId = settings.suggestionModelId,
-        providers = settings.providers,
-        type = ModelType.CHAT,
-    )
+    val state =
+        rememberModelListState(
+            modelId = settings.suggestionModelId,
+            providers = settings.providers,
+            type = ModelType.CHAT,
+        )
 
     Column {
         CardGroup(title = { Text(title) }) {
@@ -207,7 +212,7 @@ private fun SuggestionModelSettingItem(
                         checked = settings.enableSuggestion,
                         onCheckedChange = {
                             vm.updateSettings(settings.copy(enableSuggestion = it))
-                        }
+                        },
                     )
                 },
             )
@@ -221,8 +226,9 @@ private fun SuggestionModelSettingItem(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                text = state.currentModel?.displayName
-                                    ?: stringResource(R.string.model_list_select_model),
+                                text =
+                                    state.currentModel?.displayName
+                                        ?: stringResource(R.string.model_list_select_model),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -267,11 +273,12 @@ private fun ModelSettingItem(
     onSelect: (Model) -> Unit,
     onClear: (() -> Unit)? = null,
 ) {
-    val state = rememberModelListState(
-        modelId = modelId,
-        providers = providers,
-        type = ModelType.CHAT,
-    )
+    val state =
+        rememberModelListState(
+            modelId = modelId,
+            providers = providers,
+            type = ModelType.CHAT,
+        )
 
     Column {
         CardGroup(title = { Text(title) }) {
@@ -284,8 +291,9 @@ private fun ModelSettingItem(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = state.currentModel?.displayName
-                                ?: stringResource(R.string.model_list_select_model),
+                            text =
+                                state.currentModel?.displayName
+                                    ?: stringResource(R.string.model_list_select_model),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

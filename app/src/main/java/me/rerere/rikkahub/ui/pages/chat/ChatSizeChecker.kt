@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Alert01
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import me.rerere.ai.core.MessageRole
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Alert01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
 
@@ -23,22 +23,30 @@ data class ConversationSizeInfo(
     val lastAssistantInputTokens: Int,
     val exceedNodeCountThreshold: Boolean,
     val exceedInputTokenThreshold: Boolean,
-    val showWarning: Boolean
+    val showWarning: Boolean,
 )
 
 @Composable
 fun rememberConversationSizeInfo(conversation: Conversation): ConversationSizeInfo {
     // Key by node count + last node's id to avoid list-reference comparison on every recomp.
-    val nodesKey = conversation.messageNodes.size.toString() +
-        (conversation.messageNodes.lastOrNull()?.id?.toString() ?: "")
+    val nodesKey =
+        conversation.messageNodes.size.toString() +
+            (
+                conversation.messageNodes
+                    .lastOrNull()
+                    ?.id
+                    ?.toString() ?: ""
+            )
     return remember(nodesKey) {
         val nodeCount = conversation.messageNodes.size
-        val lastAssistantInputTokens = conversation.messageNodes.asReversed()
-            .map { it.currentMessage }
-            .firstOrNull { it.role == MessageRole.ASSISTANT }
-            ?.usage
-            ?.promptTokens
-            ?: 0
+        val lastAssistantInputTokens =
+            conversation.messageNodes
+                .asReversed()
+                .map { it.currentMessage }
+                .firstOrNull { it.role == MessageRole.ASSISTANT }
+                ?.usage
+                ?.promptTokens
+                ?: 0
         val exceedNodeCountThreshold = nodeCount > MESSAGE_NODE_WARNING_THRESHOLD
         val exceedInputTokenThreshold = lastAssistantInputTokens > LAST_ASSISTANT_INPUT_TOKEN_WARNING_THRESHOLD
         ConversationSizeInfo(
@@ -46,7 +54,7 @@ fun rememberConversationSizeInfo(conversation: Conversation): ConversationSizeIn
             lastAssistantInputTokens = lastAssistantInputTokens,
             exceedNodeCountThreshold = exceedNodeCountThreshold,
             exceedInputTokenThreshold = exceedInputTokenThreshold,
-            showWarning = exceedNodeCountThreshold && exceedInputTokenThreshold
+            showWarning = exceedNodeCountThreshold && exceedInputTokenThreshold,
         )
     }
 }
@@ -54,7 +62,7 @@ fun rememberConversationSizeInfo(conversation: Conversation): ConversationSizeIn
 @Composable
 fun ConversationSizeWarningDialog(
     sizeInfo: ConversationSizeInfo,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -62,7 +70,7 @@ fun ConversationSizeWarningDialog(
             Icon(
                 imageVector = HugeIcons.Alert01,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.tertiary,
             )
         },
         title = {
@@ -75,6 +83,6 @@ fun ConversationSizeWarningDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.confirm))
             }
-        }
+        },
     )
 }

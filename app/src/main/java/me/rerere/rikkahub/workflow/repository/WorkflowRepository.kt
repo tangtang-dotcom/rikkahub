@@ -31,8 +31,10 @@ class WorkflowRepository(
     private val workflowDao: WorkflowDao,
     private val workflowRunDao: WorkflowRunDao,
 ) {
-
-    data class Loaded(val entity: WorkflowEntity, val definition: WorkflowDefinition)
+    data class Loaded(
+        val entity: WorkflowEntity,
+        val definition: WorkflowDefinition,
+    )
 
     /** (id, updatedAtMs) → parsed definition. */
     private val parseCache = androidx.collection.LruCache<String, Pair<Long, WorkflowDefinition>>(200)
@@ -45,13 +47,15 @@ class WorkflowRepository(
         return parsed
     }
 
-    fun observeAll(): Flow<List<Loaded>> = workflowDao.observeAll().map { rows ->
-        rows.mapNotNull { row -> parseCached(row)?.let { Loaded(row, it) } }
-    }
+    fun observeAll(): Flow<List<Loaded>> =
+        workflowDao.observeAll().map { rows ->
+            rows.mapNotNull { row -> parseCached(row)?.let { Loaded(row, it) } }
+        }
 
-    fun observeById(id: String): Flow<Loaded?> = workflowDao.observeById(id).map { row ->
-        row?.let { parseCached(it)?.let { def -> Loaded(it, def) } }
-    }
+    fun observeById(id: String): Flow<Loaded?> =
+        workflowDao.observeById(id).map { row ->
+            row?.let { parseCached(it)?.let { def -> Loaded(it, def) } }
+        }
 
     suspend fun listAll(): List<Loaded> =
         workflowDao.listAll().mapNotNull { row ->
@@ -63,36 +67,46 @@ class WorkflowRepository(
             parseCached(row)?.let { Loaded(row, it) }
         }
 
-    suspend fun getById(id: String): Loaded? = workflowDao.getById(id)?.let { row ->
-        parseCached(row)?.let { Loaded(row, it) }
-    }
+    suspend fun getById(id: String): Loaded? =
+        workflowDao.getById(id)?.let { row ->
+            parseCached(row)?.let { Loaded(row, it) }
+        }
 
     /** Insert or replace a workflow. Updates [definitionJson] from the canonical encoder. */
     suspend fun upsert(definition: WorkflowDefinition) {
-        val entity = WorkflowEntity(
-            id = definition.id,
-            name = definition.name,
-            description = definition.description,
-            enabled = definition.enabled,
-            definitionJson = WorkflowJson.encode(definition),
-            createdAtMs = definition.createdAtMs,
-            updatedAtMs = definition.updatedAtMs,
-            // Preserve last-run state across upsert by reading the current row first; a fresh
-            // create will simply find null and use defaults below.
-        )
+        val entity =
+            WorkflowEntity(
+                id = definition.id,
+                name = definition.name,
+                description = definition.description,
+                enabled = definition.enabled,
+                definitionJson = WorkflowJson.encode(definition),
+                createdAtMs = definition.createdAtMs,
+                updatedAtMs = definition.updatedAtMs,
+                // Preserve last-run state across upsert by reading the current row first; a fresh
+                // create will simply find null and use defaults below.
+            )
         val existing = workflowDao.getById(definition.id)
-        val merged = if (existing != null) entity.copy(
-            createdAtMs = existing.createdAtMs,    // creation time is immutable
-            lastRunAtMs = existing.lastRunAtMs,
-            lastRunStatus = existing.lastRunStatus,
-            lastRunError = existing.lastRunError,
-            runsTodayCount = existing.runsTodayCount,
-            runsTodayDate = existing.runsTodayDate,
-        ) else entity
+        val merged =
+            if (existing != null) {
+                entity.copy(
+                    createdAtMs = existing.createdAtMs, // creation time is immutable
+                    lastRunAtMs = existing.lastRunAtMs,
+                    lastRunStatus = existing.lastRunStatus,
+                    lastRunError = existing.lastRunError,
+                    runsTodayCount = existing.runsTodayCount,
+                    runsTodayDate = existing.runsTodayDate,
+                )
+            } else {
+                entity
+            }
         workflowDao.upsert(merged)
     }
 
-    suspend fun setEnabled(id: String, enabled: Boolean) {
+    suspend fun setEnabled(
+        id: String,
+        enabled: Boolean,
+    ) {
         workflowDao.setEnabled(id, enabled, System.currentTimeMillis())
     }
 
@@ -111,6 +125,7 @@ class WorkflowRepository(
     }
 
     @Volatile private var engineRef: me.rerere.rikkahub.workflow.execution.WorkflowEngine? = null
+
     /**
      * Set by the DI module after both singletons exist — workaround for the circular
      * Engine-needs-Repo / Repo-needs-Engine dependency. The repository owns delete; it has
@@ -134,23 +149,29 @@ class WorkflowRepository(
         zoneId: ZoneId = ZoneId.systemDefault(),
     ) {
         val truncatedErr = errorMessage?.take(WorkflowConstants.MAX_ERROR_LENGTH)
-        workflowRunDao.insert(WorkflowRunEntity(
-            workflowId = workflowId,
-            firedAtMs = firedAtMs,
-            status = status.name,
-            durationMs = durationMs,
-            errorMessage = truncatedErr,
-        ))
+        workflowRunDao.insert(
+            WorkflowRunEntity(
+                workflowId = workflowId,
+                firedAtMs = firedAtMs,
+                status = status.name,
+                durationMs = durationMs,
+                errorMessage = truncatedErr,
+            ),
+        )
         // Daily-cap counter: only counted if the fire was real (SUCCESS or FAILED). Skip
         // statuses don't count, per spec.
         val countsTowardCap = status == WorkflowRunStatus.SUCCESS || status == WorkflowRunStatus.FAILED
-        val today = LocalDate.now(zoneId).toString()  // "yyyy-MM-dd"
+        val today = LocalDate.now(zoneId).toString() // "yyyy-MM-dd"
         val current = workflowDao.getById(workflowId)
-        val newCount = when {
-            current == null -> if (countsTowardCap) 1 else 0
-            current.runsTodayDate != today -> if (countsTowardCap) 1 else 0  // rolled over
-            else -> current.runsTodayCount + (if (countsTowardCap) 1 else 0)
-        }
+        val newCount =
+            when {
+                current == null -> if (countsTowardCap) 1 else 0
+
+                current.runsTodayDate != today -> if (countsTowardCap) 1 else 0
+
+                // rolled over
+                else -> current.runsTodayCount + (if (countsTowardCap) 1 else 0)
+            }
         workflowDao.recordFire(
             id = workflowId,
             firedAtMs = firedAtMs,
@@ -167,17 +188,20 @@ class WorkflowRepository(
      * `lastRunAtMs` column is bumped on every attempt (including skips) so it can't be
      * used here without breaking cooldown semantics.
      */
-    suspend fun lastActualFireAtMs(workflowId: String): Long? =
-        workflowRunDao.lastActualFireAtMs(workflowId)
+    suspend fun lastActualFireAtMs(workflowId: String): Long? = workflowRunDao.lastActualFireAtMs(workflowId)
 
-    suspend fun lastRuns(workflowId: String, limit: Int = 20): List<WorkflowRun> =
+    suspend fun lastRuns(
+        workflowId: String,
+        limit: Int = 20,
+    ): List<WorkflowRun> =
         workflowRunDao.lastN(workflowId, limit).map { row ->
             WorkflowRun(
                 rowId = row.rowId,
                 workflowId = row.workflowId,
                 firedAtMs = row.firedAtMs,
-                status = runCatching { WorkflowRunStatus.valueOf(row.status) }
-                    .getOrDefault(WorkflowRunStatus.FAILED),
+                status =
+                    runCatching { WorkflowRunStatus.valueOf(row.status) }
+                        .getOrDefault(WorkflowRunStatus.FAILED),
                 durationMs = row.durationMs,
                 errorMessage = row.errorMessage,
             )

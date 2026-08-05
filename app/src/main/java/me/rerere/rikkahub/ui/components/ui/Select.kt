@@ -46,39 +46,40 @@ fun <T> Select(
     optionToString: @Composable (T) -> String = { it.toString() },
     optionLeading: @Composable ((T) -> Unit)? = null,
     leading: @Composable () -> Unit = {},
-    trailing: @Composable () -> Unit = {}
+    trailing: @Composable () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         modifier = modifier,
         expanded = expanded,
-        onExpandedChange = { expanded = it }
+        onExpandedChange = { expanded = it },
     ) {
         Surface(
             tonalElevation = 4.dp,
             shape = RoundedCornerShape(50),
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable { expanded = true }
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { expanded = true }
+                        .padding(vertical = 8.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 leading()
                 Text(
                     text = optionToString(selectedOption),
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 trailing()
                 Icon(
                     imageVector = if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
-                    contentDescription = "expand"
+                    contentDescription = "expand",
                 )
             }
         }
@@ -86,7 +87,7 @@ fun <T> Select(
             expanded = expanded,
             onDismissRequest = {
                 expanded = false
-            }
+            },
         ) {
             options.fastForEach { option ->
                 DropdownMenuItem(
@@ -97,9 +98,10 @@ fun <T> Select(
                     text = {
                         Text(text = optionToString(option), maxLines = 1)
                     },
-                    leadingIcon = optionLeading?.let {
-                        { it(option) }
-                    }
+                    leadingIcon =
+                        optionLeading?.let {
+                            { it(option) }
+                        },
                 )
             }
         }
@@ -135,37 +137,40 @@ fun <T> SelectTextField(
             onValueChange = onValueChange,
             readOnly = readOnly,
             placeholder = placeholder,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { anchorWidth = it.size.width },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { anchorWidth = it.size.width },
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
-                        contentDescription = "expand"
+                        contentDescription = "expand",
                     )
                 }
-            }
+            },
         )
 
         // 只读时整个输入框都可点击展开, 且不会抢焦点弹出输入法
         if (readOnly) {
             Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { expanded = !expanded }
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { expanded = !expanded },
             )
         }
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(with(density) { anchorWidth.toDp() })
-                .heightIn(max = 240.dp)
+            modifier =
+                Modifier
+                    .width(with(density) { anchorWidth.toDp() })
+                    .heightIn(max = 240.dp),
         ) {
             options.fastForEach { option ->
                 DropdownMenuItem(
@@ -173,7 +178,7 @@ fun <T> SelectTextField(
                     onClick = {
                         expanded = false
                         onOptionSelected(option)
-                    }
+                    },
                 )
             }
         }

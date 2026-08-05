@@ -1,9 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting.components
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.ArrowDown01
-import me.rerere.hugeicons.stroke.ArrowUp01
-import me.rerere.hugeicons.stroke.Refresh03
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import me.rerere.ai.provider.BalanceOption
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.http.isJsonExprValid
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.ArrowUp01
+import me.rerere.hugeicons.stroke.Refresh03
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
@@ -46,7 +46,7 @@ fun SettingProviderBalanceOption(
     var expand by remember { mutableStateOf(false) }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier
+        modifier = modifier,
     ) {
         Row(
             modifier = Modifier,
@@ -60,7 +60,7 @@ fun SettingProviderBalanceOption(
             IconButton(
                 onClick = {
                     expand = !expand
-                }
+                },
             ) {
                 if (expand) {
                     Icon(
@@ -76,7 +76,7 @@ fun SettingProviderBalanceOption(
             }
             Checkbox(
                 checked = balanceOption.enabled,
-                onCheckedChange = { onEdit(balanceOption.copy(enabled = it)) }
+                onCheckedChange = { onEdit(balanceOption.copy(enabled = it)) },
             )
         }
         AnimatedVisibility(visible = expand) {
@@ -88,7 +88,7 @@ fun SettingProviderBalanceOption(
                     onValueChange = { onEdit(balanceOption.copy(apiPath = it)) },
                     label = { Text(stringResource(R.string.setting_provider_page_balance_api_path)) },
                     isError = !balanceOption.apiPath.matches(ApiPathRegex),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = balanceOption.resultPath,
@@ -96,7 +96,7 @@ fun SettingProviderBalanceOption(
                     label = { Text(stringResource(R.string.setting_provider_page_balance_json_key)) },
                     isError = !isJsonExprValid(balanceOption.resultPath),
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = JetbrainsMono)
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = JetbrainsMono),
                 )
                 IconButton(
                     onClick = {
@@ -106,7 +106,7 @@ fun SettingProviderBalanceOption(
                         } else {
                             onEdit(BalanceOption())
                         }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Refresh03, null)
                 }

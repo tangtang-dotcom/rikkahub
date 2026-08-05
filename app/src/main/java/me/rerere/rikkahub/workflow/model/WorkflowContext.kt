@@ -10,7 +10,7 @@ package me.rerere.rikkahub.workflow.model
  */
 data class WorkflowContext(
     val nowMs: Long,
-    val batteryLevel: Int?,        // 0..100 or null if unknown
+    val batteryLevel: Int?, // 0..100 or null if unknown
     val isCharging: Boolean,
     val wifiSsid: String?,
     val foregroundPackage: String?,

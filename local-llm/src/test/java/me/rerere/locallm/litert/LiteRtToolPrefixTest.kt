@@ -13,23 +13,27 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LiteRtToolPrefixTest {
-
-    private val sampleTool = Tool(
-        name = "set_brightness",
-        description = "Set the screen brightness to a specific value.",
-        parameters = {
-            InputSchema.Obj(
-                properties = buildJsonObject {
-                    put("value", buildJsonObject {
-                        put("type", "integer")
-                        put("description", "Brightness value 1..255")
-                    })
-                },
-                required = listOf("value"),
-            )
-        },
-        execute = { _ -> emptyList() },
-    )
+    private val sampleTool =
+        Tool(
+            name = "set_brightness",
+            description = "Set the screen brightness to a specific value.",
+            parameters = {
+                InputSchema.Obj(
+                    properties =
+                        buildJsonObject {
+                            put(
+                                "value",
+                                buildJsonObject {
+                                    put("type", "integer")
+                                    put("description", "Brightness value 1..255")
+                                },
+                            )
+                        },
+                    required = listOf("value"),
+                )
+            },
+            execute = { _ -> emptyList() },
+        )
 
     @Test fun `buildPrefix mentions the tool name and the required argument`() {
         val prefix = LiteRtToolPrefix.buildPrefix(listOf(sampleTool))
@@ -56,10 +60,11 @@ class LiteRtToolPrefixTest {
     }
 
     @Test fun `extractToolCalls handles multiple calls in one response`() {
-        val response = """
+        val response =
+            """
             Step 1. <tool_call>{"name": "tap", "arguments": {"x": 100, "y": 200}}</tool_call>
             Step 2. <tool_call>{"name": "wait", "arguments": {"ms": 500}}</tool_call>
-        """.trimIndent()
+            """.trimIndent()
         val calls = LiteRtToolPrefix.extractToolCalls(response)
         assertEquals(2, calls.size)
         assertEquals("tap", calls[0].name)

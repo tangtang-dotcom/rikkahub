@@ -60,14 +60,19 @@ internal fun EditedFilesList(
     assistant: Assistant?,
 ) {
     val workspaceId = assistant?.workspaceId?.toString() ?: return
-    val editedFiles = remember(parts) {
-        parts.filterIsInstance<UIMessagePart.Tool>()
-            .filter { it.toolName in WORKSPACE_FILE_TOOL_NAMES && it.isExecuted }
-            .mapNotNull { tool ->
-                tool.inputAsJson().jsonObject["path"]?.jsonPrimitive?.contentOrNull
-            }
-            .distinct()
-    }
+    val editedFiles =
+        remember(parts) {
+            parts
+                .filterIsInstance<UIMessagePart.Tool>()
+                .filter { it.toolName in WORKSPACE_FILE_TOOL_NAMES && it.isExecuted }
+                .mapNotNull { tool ->
+                    tool
+                        .inputAsJson()
+                        .jsonObject["path"]
+                        ?.jsonPrimitive
+                        ?.contentOrNull
+                }.distinct()
+        }
     if (editedFiles.isEmpty()) return
 
     val context = LocalContext.current
@@ -79,21 +84,22 @@ internal fun EditedFilesList(
     val visibleFiles = if (expanded) editedFiles else editedFiles.take(DEFAULT_VISIBLE_COUNT)
     val hasMore = editedFiles.size > DEFAULT_VISIBLE_COUNT
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*"),
-    ) { uri ->
-        val path = selectedPath.also { selectedPath = null } ?: return@rememberLauncherForActivityResult
-        if (uri == null) return@rememberLauncherForActivityResult
-        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
-        scope.launch {
-            runCatching {
-                val (area, relativePath) = resolveWorkspacePath(path)
-                outputStream.use { output ->
-                    workspaceRepository.exportFile(workspaceId, area, relativePath, output)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("*/*"),
+        ) { uri ->
+            val path = selectedPath.also { selectedPath = null } ?: return@rememberLauncherForActivityResult
+            if (uri == null) return@rememberLauncherForActivityResult
+            val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
+            scope.launch {
+                runCatching {
+                    val (area, relativePath) = resolveWorkspacePath(path)
+                    outputStream.use { output ->
+                        workspaceRepository.exportFile(workspaceId, area, relativePath, output)
+                    }
                 }
             }
         }
-    }
 
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -146,15 +152,17 @@ internal fun EditedFilesList(
         val fileName = remember(path) { path.substringAfterLast('/') }
         ModalBottomSheet(
             onDismissRequest = { selectedPath = null },
-            sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
-            ),
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
@@ -173,9 +181,10 @@ internal fun EditedFilesList(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = HugeIcons.FileImport,
@@ -200,16 +209,18 @@ internal fun EditedFilesList(
                                 file.outputStream().use { output ->
                                     workspaceRepository.exportFile(workspaceId, area, relativePath, output)
                                 }
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    file,
-                                )
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/octet-stream"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
+                                val uri =
+                                    FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        file,
+                                    )
+                                val intent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/octet-stream"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
                                 context.startActivity(Intent.createChooser(intent, null))
                             }
                         }
@@ -219,9 +230,10 @@ internal fun EditedFilesList(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = HugeIcons.Share08,

@@ -48,13 +48,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -116,7 +116,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun ImageGenPage(
     modifier: Modifier = Modifier,
-    vm: ImgGenVM = koinViewModel()
+    vm: ImgGenVM = koinViewModel(),
 ) {
     val pagerState = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
@@ -132,7 +132,7 @@ fun ImageGenPage(
             onConfirm = {
                 showCancelDialog = false
                 vm.cancelGeneration()
-            }
+            },
         )
     }
 
@@ -149,10 +149,10 @@ fun ImageGenPage(
                     IconButton(onClick = vm::startNewSession) {
                         Icon(
                             imageVector = HugeIcons.Add01,
-                            contentDescription = "New session"
+                            contentDescription = "New session",
                         )
                     }
-                }
+                },
             )
         },
         bottomBar = {
@@ -161,9 +161,10 @@ fun ImageGenPage(
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
-            modifier = modifier
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
+            modifier =
+                modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
         ) { page ->
             when (page) {
                 0 -> ImageGenScreen(vm = vm)
@@ -176,7 +177,7 @@ fun ImageGenPage(
 @Composable
 private fun CancelDialog(
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -191,14 +192,14 @@ private fun CancelDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.imggen_page_cancel))
             }
-        }
+        },
     )
 }
 
 @Composable
 private fun BottomBar(
     pagerState: PagerState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) {
     NavigationBar {
         NavigationBarItem(
@@ -213,7 +214,7 @@ private fun BottomBar(
                 scope.launch {
                     pagerState.animateScrollToPage(0)
                 }
-            }
+            },
         )
 
         NavigationBarItem(
@@ -228,15 +229,13 @@ private fun BottomBar(
                 scope.launch {
                     pagerState.animateScrollToPage(1)
                 }
-            }
+            },
         )
     }
 }
 
 @Composable
-private fun ImageGenScreen(
-    vm: ImgGenVM,
-) {
+private fun ImageGenScreen(vm: ImgGenVM) {
     val prompt by vm.prompt.collectAsStateWithLifecycle()
     val numberOfImages by vm.numberOfImages.collectAsStateWithLifecycle()
     val aspectRatio by vm.aspectRatio.collectAsStateWithLifecycle()
@@ -259,19 +258,21 @@ private fun ImageGenScreen(
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .imePadding()
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .imePadding(),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 (0 until minOf(2, currentGeneratedImages.size)).forEach { index ->
                     val image = currentGeneratedImages[index]
@@ -279,12 +280,13 @@ private fun ImageGenScreen(
                     AsyncImage(
                         model = File(image.filePath),
                         contentDescription = null,
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showPreview = true },
-                        contentScale = ContentScale.Crop
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showPreview = true },
+                        contentScale = ContentScale.Crop,
                     )
 
                     if (showPreview) {
@@ -297,7 +299,7 @@ private fun ImageGenScreen(
             }
             if (isGenerating) {
                 ContainedLoadingIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
                 )
             }
         }
@@ -308,7 +310,7 @@ private fun ImageGenScreen(
             referenceImages = referenceImages,
             settings = settings,
             onShowSettings = { showSettingsSheet = true },
-            modifier = Modifier
+            modifier = Modifier,
         )
     }
 
@@ -320,7 +322,7 @@ private fun ImageGenScreen(
             aspectRatio = aspectRatio,
             scope = scope,
             sheetState = sheetState,
-            onDismiss = { showSettingsSheet = false }
+            onDismiss = { showSettingsSheet = false },
         )
     }
 }
@@ -333,7 +335,7 @@ private fun InputBar(
     referenceImages: List<String>,
     settings: Settings,
     onShowSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -341,19 +343,21 @@ private fun InputBar(
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
             if (selectedUris.isNotEmpty()) {
                 scope.launch {
-                    val paths = selectedUris.mapNotNull { uri ->
-                        withContext(Dispatchers.IO) {
-                            runCatching {
-                                val bitmap = ImageUtils.loadOptimizedBitmap(context, uri, maxSize = 2048)
-                                    ?: error("Failed to decode image")
-                                val pngBytes = FileUtils.compressBitmapToPng(bitmap)
-                                bitmap.recycle()
-                                val file = File(context.appTempFolder, "imggen_ref_${Uuid.random()}.png")
-                                file.writeBytes(pngBytes)
-                                file.absolutePath
-                            }.getOrNull()
+                    val paths =
+                        selectedUris.mapNotNull { uri ->
+                            withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val bitmap =
+                                        ImageUtils.loadOptimizedBitmap(context, uri, maxSize = 2048)
+                                            ?: error("Failed to decode image")
+                                    val pngBytes = FileUtils.compressBitmapToPng(bitmap)
+                                    bitmap.recycle()
+                                    val file = File(context.appTempFolder, "imggen_ref_${Uuid.random()}.png")
+                                    file.writeBytes(pngBytes)
+                                    file.absolutePath
+                                }.getOrNull()
+                            }
                         }
-                    }
                     vm.addReferenceImages(paths)
                 }
             }
@@ -366,7 +370,7 @@ private fun InputBar(
         if (referenceImages.isNotEmpty()) {
             ReferenceImagesRow(
                 images = referenceImages,
-                onRemove = vm::removeReferenceImage
+                onRemove = vm::removeReferenceImage,
             )
         }
 
@@ -374,9 +378,10 @@ private fun InputBar(
             value = prompt,
             onValueChange = vm::updatePrompt,
             placeholder = { Text(stringResource(R.string.imggen_page_prompt_placeholder)) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 140.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 140.dp),
             minLines = 1,
             maxLines = 5,
             shape = MaterialTheme.shapes.large,
@@ -399,21 +404,21 @@ private fun InputBar(
                             oldSettings.copy(imageGenerationModelId = model.id)
                         }
                     }
-                }
+                },
             )
 
             IconButton(
-                onClick = onShowSettings
+                onClick = onShowSettings,
             ) {
                 Icon(HugeIcons.Tools, null)
             }
 
             IconButton(
-                onClick = { imagePickerLauncher.launch("image/*") }
+                onClick = { imagePickerLauncher.launch("image/*") },
             ) {
                 Icon(
                     imageVector = HugeIcons.Add01,
-                    contentDescription = "Add reference image"
+                    contentDescription = "Add reference image",
                 )
             }
 
@@ -435,11 +440,12 @@ private fun InputBar(
                 enabled = isGenerating || canSend,
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = when {
-                    isGenerating -> MaterialTheme.colorScheme.errorContainer
-                    !canSend -> MaterialTheme.colorScheme.surfaceContainerHigh
-                    else -> MaterialTheme.colorScheme.primary
-                },
+                color =
+                    when {
+                        isGenerating -> MaterialTheme.colorScheme.errorContainer
+                        !canSend -> MaterialTheme.colorScheme.surfaceContainerHigh
+                        else -> MaterialTheme.colorScheme.primary
+                    },
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -448,12 +454,13 @@ private fun InputBar(
                     Icon(
                         imageVector = if (isGenerating) HugeIcons.Cancel01 else HugeIcons.ArrowUp02,
                         contentDescription = stringResource(R.string.imggen_page_generate_image),
-                        tint = when {
-                            isGenerating -> MaterialTheme.colorScheme.onErrorContainer
-                            !canSend -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            else -> MaterialTheme.colorScheme.onPrimary
-                        },
-                        modifier = Modifier.size(20.dp)
+                        tint =
+                            when {
+                                isGenerating -> MaterialTheme.colorScheme.onErrorContainer
+                                !canSend -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                else -> MaterialTheme.colorScheme.onPrimary
+                            },
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -467,9 +474,10 @@ private fun ReferenceImagesRow(
     onRemove: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         images.forEach { image ->
@@ -484,15 +492,16 @@ private fun ReferenceImagesRow(
                         model = File(image),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
                     )
 
                     Surface(
                         onClick = { onRemove(image) },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(3.dp)
-                            .size(20.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(3.dp)
+                                .size(20.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
                     ) {
@@ -501,7 +510,7 @@ private fun ReferenceImagesRow(
                                 imageVector = HugeIcons.Delete01,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.inverseOnSurface,
-                                modifier = Modifier.size(12.dp)
+                                modifier = Modifier.size(12.dp),
                             )
                         }
                     }
@@ -512,13 +521,12 @@ private fun ReferenceImagesRow(
 }
 
 @Composable
-private fun ImageGalleryScreen(
-    vm: ImgGenVM,
-) {
+private fun ImageGalleryScreen(vm: ImgGenVM) {
     val generatedImages = vm.generatedImages.collectAsLazyPagingItems()
     val context = LocalContext.current
     val filesManager: FilesManager = koinInject()
-    @Suppress("DEPRECATION")  // LocalClipboard requires a suspend-friendly callsite refactor
+
+    @Suppress("DEPRECATION") // LocalClipboard requires a suspend-friendly callsite refactor
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -527,28 +535,28 @@ private fun ImageGalleryScreen(
     PullToRefreshBox(
         isRefreshing = false,
         onRefresh = { generatedImages.refresh() },
-        state = pullToRefreshState
+        state = pullToRefreshState,
     ) {
         if (generatedImages.itemCount == 0) {
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
                         imageVector = HugeIcons.Image03,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = stringResource(R.string.imggen_page_no_generated_images),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -563,43 +571,45 @@ private fun ImageGalleryScreen(
                 items(
                     count = generatedImages.itemCount,
                     key = generatedImages.itemKey { it.id },
-                    contentType = generatedImages.itemContentType { "GeneratedImage" }
+                    contentType = generatedImages.itemContentType { "GeneratedImage" },
                 ) { index ->
                     val image = generatedImages[index]
                     image?.let {
                         var showPreview by remember { mutableStateOf(false) }
 
                         Card(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Column {
                                 AsyncImage(
                                     model = File(it.filePath),
                                     contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f)
-                                        .clickable { showPreview = true },
-                                    contentScale = ContentScale.Crop
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(1f)
+                                            .clickable { showPreview = true },
+                                    contentScale = ContentScale.Crop,
                                 )
 
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
                                     Column {
                                         Text(
                                             text = it.model,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = MaterialTheme.colorScheme.primary,
                                         )
                                         Text(
                                             text = it.prompt.take(20) + if (it.prompt.length > 20) "..." else "",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2
+                                            maxLines = 2,
                                         )
                                     }
 
@@ -609,15 +619,15 @@ private fun ImageGalleryScreen(
                                                 clipboardManager.setText(AnnotatedString(it.prompt))
                                                 toaster.show(
                                                     message = "Prompt copied to clipboard",
-                                                    type = ToastType.Success
+                                                    type = ToastType.Success,
                                                 )
                                             },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(32.dp),
                                         ) {
                                             Icon(
                                                 imageVector = HugeIcons.Copy01,
                                                 contentDescription = "Copy prompt",
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         }
 
@@ -627,38 +637,42 @@ private fun ImageGalleryScreen(
                                                     try {
                                                         filesManager.saveMessageImage(context, "file://${it.filePath}")
                                                         toaster.show(
-                                                            message = context.getString(R.string.imggen_page_image_saved_success),
-                                                            type = ToastType.Success
+                                                            message =
+                                                                context.getString(
+                                                                    R.string.imggen_page_image_saved_success,
+                                                                ),
+                                                            type = ToastType.Success,
                                                         )
                                                     } catch (e: Exception) {
                                                         toaster.show(
-                                                            message = context.getString(
-                                                                R.string.imggen_page_save_failed,
-                                                                e.message
-                                                            ),
-                                                            type = ToastType.Error
+                                                            message =
+                                                                context.getString(
+                                                                    R.string.imggen_page_save_failed,
+                                                                    e.message,
+                                                                ),
+                                                            type = ToastType.Error,
                                                         )
                                                     }
                                                 }
                                             },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(32.dp),
                                         ) {
                                             Icon(
                                                 imageVector = HugeIcons.FloppyDisk,
                                                 contentDescription = stringResource(R.string.imggen_page_save),
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         }
 
                                         IconButton(
                                             onClick = { vm.deleteImage(it) },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(32.dp),
                                         ) {
                                             Icon(
                                                 imageVector = HugeIcons.Delete01,
                                                 contentDescription = stringResource(R.string.imggen_page_delete),
                                                 modifier = Modifier.size(16.dp),
-                                                tint = MaterialTheme.colorScheme.error
+                                                tint = MaterialTheme.colorScheme.error,
                                             )
                                         }
                                     }
@@ -669,7 +683,7 @@ private fun ImageGalleryScreen(
                         if (showPreview) {
                             ImagePreviewDialog(
                                 images = listOf(it.filePath),
-                                onDismissRequest = { showPreview = false }
+                                onDismissRequest = { showPreview = false },
                             )
                         }
                     }
@@ -688,29 +702,30 @@ private fun SettingsBottomSheet(
     aspectRatio: ImageAspectRatio,
     scope: CoroutineScope,
     sheetState: SheetState,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = stringResource(R.string.imggen_page_settings_title),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
 
             FormItem(
                 label = { Text(stringResource(R.string.imggen_page_model_selection)) },
-                description = { Text(stringResource(R.string.imggen_page_model_selection_desc)) }
+                description = { Text(stringResource(R.string.imggen_page_model_selection_desc)) },
             ) {
                 ModelSelector(
                     modelId = settings.imageGenerationModelId,
@@ -723,28 +738,28 @@ private fun SettingsBottomSheet(
                                 oldSettings.copy(imageGenerationModelId = model.id)
                             }
                         }
-                    }
+                    },
                 )
             }
 
             FormItem(
                 label = { Text(stringResource(R.string.imggen_page_generation_count)) },
-                description = { Text(stringResource(R.string.imggen_page_generation_count_desc)) }
+                description = { Text(stringResource(R.string.imggen_page_generation_count_desc)) },
             ) {
                 OutlinedNumberInput(
                     value = numberOfImages,
                     onValueChange = vm::updateNumberOfImages,
-                    modifier = Modifier.width(120.dp)
+                    modifier = Modifier.width(120.dp),
                 )
             }
 
             FormItem(
                 label = { Text(stringResource(R.string.imggen_page_aspect_ratio)) },
-                description = { Text(stringResource(R.string.imggen_page_aspect_ratio_desc)) }
+                description = { Text(stringResource(R.string.imggen_page_aspect_ratio_desc)) },
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     ImageAspectRatio.entries.forEach { ratio ->
                         FilterChip(
@@ -757,10 +772,10 @@ private fun SettingsBottomSheet(
                                             ImageAspectRatio.SQUARE -> R.string.imggen_page_aspect_ratio_square
                                             ImageAspectRatio.LANDSCAPE -> R.string.imggen_page_aspect_ratio_landscape
                                             ImageAspectRatio.PORTRAIT -> R.string.imggen_page_aspect_ratio_portrait
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                     }
                 }

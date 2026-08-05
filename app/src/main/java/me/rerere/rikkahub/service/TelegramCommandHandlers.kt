@@ -57,18 +57,57 @@ internal suspend fun TelegramBotService.handleBuiltInCommand(
     val cmd = tokens[0].lowercase()
     val arg = tokens.getOrNull(1)?.trim().orEmpty()
 
-    val handled = when (cmd) {
-        "/start" -> { sendStart(m.chatId); true }
-        "/help", "/?" -> { sendHelp(m.chatId); true }
-        "/new", "/reset", "/clear" -> { handleResetCommand(m.chatId); true }
-        "/stop", "/cancel" -> { handleStopCommand(m.chatId); true }
-        "/status" -> { handleStatusCommand(m.chatId); true }
-        "/model" -> { handleModelCommand(m.chatId, arg); true }
-        "/ratelimit" -> { handleRateLimitCommand(m.chatId, arg); true }
-        "/doctor" -> { handleDoctorCommand(m.chatId); true }
-        "/stream" -> { handleStreamCommand(m.chatId, arg); true }
-        else -> false
-    }
+    val handled =
+        when (cmd) {
+            "/start" -> {
+                sendStart(m.chatId)
+                true
+            }
+
+            "/help", "/?" -> {
+                sendHelp(m.chatId)
+                true
+            }
+
+            "/new", "/reset", "/clear" -> {
+                handleResetCommand(m.chatId)
+                true
+            }
+
+            "/stop", "/cancel" -> {
+                handleStopCommand(m.chatId)
+                true
+            }
+
+            "/status" -> {
+                handleStatusCommand(m.chatId)
+                true
+            }
+
+            "/model" -> {
+                handleModelCommand(m.chatId, arg)
+                true
+            }
+
+            "/ratelimit" -> {
+                handleRateLimitCommand(m.chatId, arg)
+                true
+            }
+
+            "/doctor" -> {
+                handleDoctorCommand(m.chatId)
+                true
+            }
+
+            "/stream" -> {
+                handleStreamCommand(m.chatId, arg)
+                true
+            }
+
+            else -> {
+                false
+            }
+        }
     if (handled) {
         // Record so the next inbound user message includes this command in the LLM
         // context preamble. The model needs to know /model X switched its identity, /new
@@ -81,7 +120,8 @@ internal suspend fun TelegramBotService.handleBuiltInCommand(
 
 internal suspend fun TelegramBotService.sendStart(chatId: Long) {
     val (modelName, _) = activeModelDisplay()
-    val msg = """
+    val msg =
+        """
         👋 Hey - RikkaHub agent here, running $modelName.
 
         Just talk to me normally. Or use one of these:
@@ -92,34 +132,42 @@ internal suspend fun TelegramBotService.sendStart(chatId: Long) {
         📊 /status — show what's running right now
         ⚡ /ratelimit — set the max-output-tokens cap
         ❓ /help — full command reference
-    """.trimIndent()
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
+        """.trimIndent()
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
+    }
 }
 
 internal suspend fun TelegramBotService.sendHelp(chatId: Long) {
     // Per-command emoji prefix so the menu reads at a glance instead of as a wall of text.
-    val icons = mapOf(
-        "start" to "👋",
-        "help" to "❓",
-        "new" to "🆕",
-        "stop" to "🛑",
-        "status" to "📊",
-        "model" to "🧠",
-        "ratelimit" to "⚡",
-        "doctor" to "🩺",
-        "stream" to "🖼️",
-    )
-    val msg = buildString {
-        appendLine("📖 Built-in commands (handled by the app, no LLM cost):")
-        appendLine()
-        BUILT_IN_COMMANDS.forEach { (c, d) ->
-            val icon = icons[c] ?: "•"
-            appendLine("$icon /$c — $d")
+    val icons =
+        mapOf(
+            "start" to "👋",
+            "help" to "❓",
+            "new" to "🆕",
+            "stop" to "🛑",
+            "status" to "📊",
+            "model" to "🧠",
+            "ratelimit" to "⚡",
+            "doctor" to "🩺",
+            "stream" to "🖼️",
+        )
+    val msg =
+        buildString {
+            appendLine("📖 Built-in commands (handled by the app, no LLM cost):")
+            appendLine()
+            BUILT_IN_COMMANDS.forEach { (c, d) ->
+                val icon = icons[c] ?: "•"
+                appendLine("$icon /$c — $d")
+            }
+            appendLine()
+            append("Anything else is sent to the model as usual.")
         }
-        appendLine()
-        append("Anything else is sent to the model as usual.")
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
     }
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
 }
 
 /**
@@ -127,7 +175,10 @@ internal suspend fun TelegramBotService.sendHelp(chatId: Long) {
  * "cancelled" placeholder, so the user doesn't end up with a chat full of dead
  * keyboards after /stop or /new. Tries best-effort; failures are logged not surfaced.
  */
-internal suspend fun TelegramBotService.cancelStaleApprovalKeyboards(chatId: Long, reason: String) {
+internal suspend fun TelegramBotService.cancelStaleApprovalKeyboards(
+    chatId: Long,
+    reason: String,
+) {
     // Snapshot the entries we want to cancel before clearing, so a concurrent
     // resolve doesn't double-edit a message.
     val entries = ApprovalPromptRegistry.snapshotForChat(chatId)
@@ -161,10 +212,12 @@ internal suspend fun TelegramBotService.handleResetCommand(chatId: Long) {
             // a fresh conversation starts with a clean approval slate. "Always Allow"
             // grants persist (they live in DataStore, scoped globally — the user
             // revokes them via Settings → Tool approvals).
-            me.rerere.rikkahub.data.ai.tools.ToolApprovalAllowList.clearChat(convId)
+            me.rerere.rikkahub.data.ai.tools.ToolApprovalAllowList
+                .clearChat(convId)
             // Drop the system-prompt addendum too; the next inbound message rebuilds
             // it with the firstTurnOfChat hint set, matching a true fresh chat.
-            me.rerere.rikkahub.data.ai.tools.ConversationSystemAddendum.clear(convId)
+            me.rerere.rikkahub.data.ai.tools.ConversationSystemAddendum
+                .clear(convId)
             // Drop the in-memory ChatService session entry so a straggler can't
             // resurrect the conversation by writing back via getOrCreateSession.
             chatService.dropSession(convId)
@@ -173,8 +226,10 @@ internal suspend fun TelegramBotService.handleResetCommand(chatId: Long) {
             // the user's explicit close signal. Releases ~30 MB and unbinds the
             // BrowserController so the next browser_open starts fresh.
             runCatching {
-                me.rerere.rikkahub.browser.BrowserController.unbindHeadless(convId.toString())
-                me.rerere.rikkahub.browser.HeadlessBrowserSessionPool.release(convId.toString())
+                me.rerere.rikkahub.browser.BrowserController
+                    .unbindHeadless(convId.toString())
+                me.rerere.rikkahub.browser.HeadlessBrowserSessionPool
+                    .release(convId.toString())
             }
         }
     }
@@ -189,24 +244,41 @@ internal suspend fun TelegramBotService.handleResetCommand(chatId: Long) {
     clearClarifyForChat(chatId)
     chatRepo.deleteByChatId(chatId)
     val (modelName, _) = activeModelDisplay()
-    val msg = """
+    val msg =
+        """
         🆕 Fresh conversation started.
 
         I'm running $modelName. What's up?
-    """.trimIndent()
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
+        """.trimIndent()
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
+    }
 }
 
 internal suspend fun TelegramBotService.handleStopCommand(chatId: Long) {
     val mapping = chatRepo.getByChatId(chatId)
     if (mapping == null) {
-        try { client.sendMessage(chatId, "🛑 Nothing to stop — no active conversation in this chat.") } catch (_: Throwable) {}
+        try {
+            client.sendMessage(chatId, "🛑 Nothing to stop — no active conversation in this chat.")
+        } catch (
+            _: Throwable,
+        ) {
+        }
         return
     }
-    val convId = try { Uuid.parse(mapping.conversationId) } catch (_: Throwable) {
-        try { client.sendMessage(chatId, "🛑 Could not resolve the conversation id. Try /new.") } catch (_: Throwable) {}
-        return
-    }
+    val convId =
+        try {
+            Uuid.parse(mapping.conversationId)
+        } catch (_: Throwable) {
+            try {
+                client.sendMessage(chatId, "🛑 Could not resolve the conversation id. Try /new.")
+            } catch (
+                _: Throwable,
+            ) {
+            }
+            return
+        }
     chatService.stopGeneration(convId)
     // ALSO cancel the handleLlmTurn coroutine if it's parked waiting for a new
     // generation that won't come (typical when /stop is sent during the gap between
@@ -218,17 +290,23 @@ internal suspend fun TelegramBotService.handleStopCommand(chatId: Long) {
     clearClarifyForChat(chatId)
     // Phase 11: cascading /stop. Cancel every active sub-agent dispatched from this
     // parent conversation. Spec hard constraint 8: "every model stops" — single tick.
-    val cancelledSubAgents = runCatching {
-        org.koin.java.KoinJavaComponent.getKoin()
-            .get<me.rerere.rikkahub.subagent.SubAgentRegistry>()
-            .cancelAllForParent(convId.toString())
-    }.getOrDefault(0)
-    val msg = if (cancelledSubAgents > 0) {
-        "🛑 Generation cancelled (also stopped $cancelledSubAgents sub-agent${if (cancelledSubAgents == 1) "" else "s"}). Send a new message when you're ready."
-    } else {
-        "🛑 Generation cancelled. Send a new message when you're ready."
+    val cancelledSubAgents =
+        runCatching {
+            org.koin.java.KoinJavaComponent
+                .getKoin()
+                .get<me.rerere.rikkahub.subagent.SubAgentRegistry>()
+                .cancelAllForParent(convId.toString())
+        }.getOrDefault(0)
+    val msg =
+        if (cancelledSubAgents > 0) {
+            "🛑 Generation cancelled (also stopped $cancelledSubAgents sub-agent${if (cancelledSubAgents == 1) "" else "s"}). Send a new message when you're ready."
+        } else {
+            "🛑 Generation cancelled. Send a new message when you're ready."
+        }
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
     }
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
 }
 
 internal suspend fun TelegramBotService.handleStatusCommand(chatId: Long) {
@@ -237,25 +315,30 @@ internal suspend fun TelegramBotService.handleStatusCommand(chatId: Long) {
     val effectiveModelId = assistant.chatModelId ?: s.chatModelId
     val provider = s.providers.firstOrNull { p -> p.models.any { it.id == effectiveModelId } }
     val model = provider?.models?.firstOrNull { it.id == effectiveModelId }
-    val modelLabel = model?.displayName?.takeIf { it.isNotBlank() }
-        ?: model?.modelId?.takeIf { it.isNotBlank() }
-        ?: "(none configured)"
+    val modelLabel =
+        model?.displayName?.takeIf { it.isNotBlank() }
+            ?: model?.modelId?.takeIf { it.isNotBlank() }
+            ?: "(none configured)"
     val providerLabel = provider?.name ?: "(no provider)"
     val tokenLabel = assistant.maxTokens?.let { "$it tokens" } ?: "provider default"
     val cfg = cfgSafe()
     val whitelistCount = cfg?.whitelist?.size ?: 0
     val whitelistLabel = if (whitelistCount == 1) "1 chat" else "$whitelistCount chats"
 
-    val msg = buildString {
-        appendLine("📊 RikkaHub agent status")
-        appendLine()
-        appendLine("${if (isRunning) "🟢" else "🔴"} Service: ${if (isRunning) "running" else "stopped"}")
-        appendLine("👤 Assistant: ${assistant.name.ifBlank { "(default)" }}")
-        appendLine("🧠 Model: $modelLabel ($providerLabel)")
-        appendLine("⚡ Max output tokens: $tokenLabel")
-        append("✅ Whitelist: $whitelistLabel")
+    val msg =
+        buildString {
+            appendLine("📊 RikkaHub agent status")
+            appendLine()
+            appendLine("${if (isRunning) "🟢" else "🔴"} Service: ${if (isRunning) "running" else "stopped"}")
+            appendLine("👤 Assistant: ${assistant.name.ifBlank { "(default)" }}")
+            appendLine("🧠 Model: $modelLabel ($providerLabel)")
+            appendLine("⚡ Max output tokens: $tokenLabel")
+            append("✅ Whitelist: $whitelistLabel")
+        }
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
     }
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
 }
 
 /**
@@ -268,26 +351,35 @@ internal fun TelegramBotService.activeModelDisplay(): Pair<String, String> {
     val effectiveModelId = assistant.chatModelId ?: s.chatModelId
     val provider = s.providers.firstOrNull { p -> p.models.any { it.id == effectiveModelId } }
     val model = provider?.models?.firstOrNull { it.id == effectiveModelId }
-    val modelName = model?.displayName?.takeIf { it.isNotBlank() }
-        ?: model?.modelId?.takeIf { it.isNotBlank() }
-        ?: "the active model"
+    val modelName =
+        model?.displayName?.takeIf { it.isNotBlank() }
+            ?: model?.modelId?.takeIf { it.isNotBlank() }
+            ?: "the active model"
     val providerName = provider?.name ?: ""
     return modelName to providerName
 }
 
-internal suspend fun TelegramBotService.cfgSafe(): me.rerere.rikkahub.data.telegram.TelegramBotConfig? = try {
-    prefs.current()
-} catch (_: Throwable) { null }
+internal suspend fun TelegramBotService.cfgSafe(): me.rerere.rikkahub.data.telegram.TelegramBotConfig? =
+    try {
+        prefs.current()
+    } catch (_: Throwable) {
+        null
+    }
 
-internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: String) {
+internal suspend fun TelegramBotService.handleModelCommand(
+    chatId: Long,
+    arg: String,
+) {
     val s = settingsStore.settingsFlow.value
     val assistant = s.getCurrentAssistant()
-    val enabledProviders = s.providers
-        .filter { it.enabled }
-        .filter { p -> p.models.any { it.type == me.rerere.ai.provider.ModelType.CHAT } }
-    val allModels = enabledProviders
-        .flatMap { p -> p.models.map { p to it } }
-        .filter { (_, m) -> m.type == me.rerere.ai.provider.ModelType.CHAT }
+    val enabledProviders =
+        s.providers
+            .filter { it.enabled }
+            .filter { p -> p.models.any { it.type == me.rerere.ai.provider.ModelType.CHAT } }
+    val allModels =
+        enabledProviders
+            .flatMap { p -> p.models.map { p to it } }
+            .filter { (_, m) -> m.type == me.rerere.ai.provider.ModelType.CHAT }
 
     if (arg.isBlank()) {
         // No arg — interactive picker. Two-step when 2+ providers expose chat models
@@ -301,7 +393,8 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
                     chatId,
                     "🧠 No chat models configured. Add a provider in the app settings first.",
                 )
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
             return
         }
 
@@ -312,10 +405,15 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
 
         val effectiveModelId = assistant.chatModelId ?: s.chatModelId
         val currentPair = allModels.firstOrNull { (_, m) -> m.id == effectiveModelId }
-        val currentHeader = if (currentPair != null) {
-            val name = currentPair.second.displayName.ifBlank { currentPair.second.modelId }
-            "🧠 Current model: <b>${TelegramHtmlRenderer.escape(name)}</b> (${TelegramHtmlRenderer.escape(currentPair.first.name)})\n\n"
-        } else "🧠 Current model: <i>not set</i>\n\n"
+        val currentHeader =
+            if (currentPair != null) {
+                val name = currentPair.second.displayName.ifBlank { currentPair.second.modelId }
+                "🧠 Current model: <b>${TelegramHtmlRenderer.escape(
+                    name,
+                )}</b> (${TelegramHtmlRenderer.escape(currentPair.first.name)})\n\n"
+            } else {
+                "🧠 Current model: <i>not set</i>\n\n"
+            }
 
         if (enabledProviders.size >= 2) {
             // Step 1 — provider picker. Counts include all chat models per provider so
@@ -329,7 +427,8 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
                     parseMode = PARSE_MODE_HTML,
                     replyMarkup = keyboard,
                 )
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
             return
         }
 
@@ -339,19 +438,21 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
         val onlyProvider = enabledProviders.first()
         val providerModels = allModels.filter { (p, _) -> p.id == onlyProvider.id }
         val providerToken = ProviderPickRegistry.register(onlyProvider.id.toString())
-        val text = buildModelPickerText(
-            currentHeader = currentHeader,
-            providerName = null,  // header doesn't repeat the provider name in single-provider mode
-            modelCount = providerModels.size,
-            page = 0,
-        )
-        val keyboard = buildModelKeyboard(
-            allModels = providerModels,
-            page = 0,
-            providerToken = providerToken,
-            currentModelId = effectiveModelId,
-            showBackButton = false,
-        )
+        val text =
+            buildModelPickerText(
+                currentHeader = currentHeader,
+                providerName = null, // header doesn't repeat the provider name in single-provider mode
+                modelCount = providerModels.size,
+                page = 0,
+            )
+        val keyboard =
+            buildModelKeyboard(
+                allModels = providerModels,
+                page = 0,
+                providerToken = providerToken,
+                currentModelId = effectiveModelId,
+                showBackButton = false,
+            )
         try {
             client.sendMessage(
                 chatId = chatId,
@@ -359,20 +460,26 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
                 parseMode = PARSE_MODE_HTML,
                 replyMarkup = keyboard,
             )
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+        }
         return
     }
 
     val needle = arg.lowercase()
-    val match = allModels.firstOrNull { (_, m) ->
-        m.displayName.equals(arg, ignoreCase = true) || m.modelId.equals(arg, ignoreCase = true)
-    } ?: allModels.firstOrNull { (_, m) ->
-        m.displayName.lowercase().contains(needle) || m.modelId.lowercase().contains(needle)
-    }
+    val match =
+        allModels.firstOrNull { (_, m) ->
+            m.displayName.equals(arg, ignoreCase = true) || m.modelId.equals(arg, ignoreCase = true)
+        } ?: allModels.firstOrNull { (_, m) ->
+            m.displayName.lowercase().contains(needle) || m.modelId.lowercase().contains(needle)
+        }
     if (match == null) {
         try {
-            client.sendMessage(chatId, "🧠 No chat model matches \"$arg\". Send /model with no argument to see the list.")
-        } catch (_: Throwable) {}
+            client.sendMessage(
+                chatId,
+                "🧠 No chat model matches \"$arg\". Send /model with no argument to see the list.",
+            )
+        } catch (_: Throwable) {
+        }
         return
     }
 
@@ -380,29 +487,38 @@ internal suspend fun TelegramBotService.handleModelCommand(chatId: Long, arg: St
     // Update the assistant's chatModelId so the next turn uses this model.
     settingsStore.update { settings ->
         settings.copy(
-            assistants = settings.assistants.map {
-                if (it.id == assistant.id) it.copy(chatModelId = model.id) else it
-            }
+            assistants =
+                settings.assistants.map {
+                    if (it.id == assistant.id) it.copy(chatModelId = model.id) else it
+                },
         )
     }
     try {
         val name = model.displayName.ifBlank { model.modelId }
         client.sendMessage(chatId, "🔄 Switched to $name (${provider.name}).")
-    } catch (_: Throwable) {}
+    } catch (_: Throwable) {
+    }
 }
 
-internal suspend fun TelegramBotService.handleRateLimitCommand(chatId: Long, arg: String) {
+internal suspend fun TelegramBotService.handleRateLimitCommand(
+    chatId: Long,
+    arg: String,
+) {
     val s = settingsStore.settingsFlow.value
     val assistant = s.getCurrentAssistant()
     if (arg.isBlank()) {
         val current = assistant.maxTokens?.let { "$it tokens" } ?: "provider default (unlimited within model context)"
-        val msg = """
+        val msg =
+            """
             ⚡ Max output tokens: $current
 
             To set a cap: /ratelimit <number>
             To remove: /ratelimit clear
-        """.trimIndent()
-        try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
+            """.trimIndent()
+        try {
+            client.sendMessage(chatId, msg)
+        } catch (_: Throwable) {
+        }
         return
     }
     // Resolve the arg to either:
@@ -410,21 +526,31 @@ internal suspend fun TelegramBotService.handleRateLimitCommand(chatId: Long, arg
     //   Int   → the requested cap value
     //   -1    → parse error (unrecognised string)
     //   -2    → out of range numeric
-    val isClearKeyword = arg.equals("clear", ignoreCase = true) ||
-        arg.equals("none", ignoreCase = true) ||
-        arg.equals("off", ignoreCase = true) ||
-        arg == "0"
+    val isClearKeyword =
+        arg.equals("clear", ignoreCase = true) ||
+            arg.equals("none", ignoreCase = true) ||
+            arg.equals("off", ignoreCase = true) ||
+            arg == "0"
     val parsedInt = if (isClearKeyword) null else arg.toIntOrNull()
     val newCap: Int?
     val parseError: String?
     when {
-        isClearKeyword -> { newCap = null; parseError = null }
-        parsedInt != null && parsedInt in 1..200_000 -> { newCap = parsedInt; parseError = null }
+        isClearKeyword -> {
+            newCap = null
+            parseError = null
+        }
+
+        parsedInt != null && parsedInt in 1..200_000 -> {
+            newCap = parsedInt
+            parseError = null
+        }
+
         parsedInt != null -> {
             // Numeric but out of range.
             newCap = null
             parseError = "⚡ Value out of range. Use 1..200000, or 'clear' to remove the cap."
         }
+
         else -> {
             // Not a number, not a keyword. Truncate arg in case it's very long.
             newCap = null
@@ -432,19 +558,30 @@ internal suspend fun TelegramBotService.handleRateLimitCommand(chatId: Long, arg
         }
     }
     if (parseError != null) {
-        try { client.sendMessage(chatId, parseError) } catch (_: Throwable) {}
+        try {
+            client.sendMessage(chatId, parseError)
+        } catch (_: Throwable) {
+        }
         return
     }
     settingsStore.update { settings ->
         settings.copy(
-            assistants = settings.assistants.map {
-                if (it.id == assistant.id) it.copy(maxTokens = newCap) else it
-            }
+            assistants =
+                settings.assistants.map {
+                    if (it.id == assistant.id) it.copy(maxTokens = newCap) else it
+                },
         )
     }
-    val msg = if (newCap == null) "⚡ Max-token cap removed."
-    else "⚡ Max output tokens set to $newCap."
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
+    val msg =
+        if (newCap == null) {
+            "⚡ Max-token cap removed."
+        } else {
+            "⚡ Max output tokens set to $newCap."
+        }
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
+    }
 }
 
 /**
@@ -463,19 +600,27 @@ internal fun TelegramBotService.recentFailedRunsOf(
     baselineMessageCount: Int,
 ): Int {
     val conv = chatService.getConversationFlow(convId).value
-    val assistantTools = conv.currentMessages.drop(baselineMessageCount)
-        .flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
-        .filter { it.toolName == toolName && it.isExecuted }
+    val assistantTools =
+        conv.currentMessages
+            .drop(baselineMessageCount)
+            .flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
+            .filter { it.toolName == toolName && it.isExecuted }
     var failures = 0
     for (t in assistantTools) {
-        val outText = t.output.filterIsInstance<UIMessagePart.Text>()
-            .joinToString("") { it.text }.trim()
+        val outText =
+            t.output
+                .filterIsInstance<UIMessagePart.Text>()
+                .joinToString("") { it.text }
+                .trim()
         if (outText.isEmpty()) continue
-        val isError = runCatching {
-            val obj = kotlinx.serialization.json.Json.parseToJsonElement(outText)
-                as? kotlinx.serialization.json.JsonObject
-            obj?.containsKey("error") == true
-        }.getOrDefault(false) || outText.startsWith("{\"error\"") || outText.startsWith("error", ignoreCase = true)
+        val isError =
+            runCatching {
+                val obj =
+                    kotlinx.serialization.json.Json
+                        .parseToJsonElement(outText)
+                        as? kotlinx.serialization.json.JsonObject
+                obj?.containsKey("error") == true
+            }.getOrDefault(false) || outText.startsWith("{\"error\"") || outText.startsWith("error", ignoreCase = true)
         if (isError) failures++
     }
     return failures
@@ -510,7 +655,8 @@ internal suspend fun TelegramBotService.autoCancelStuckTurn(chatId: Long) {
     turnJobs.remove(chatId)?.let { runCatching { it.cancelAndJoin() } }
     cancelStaleApprovalKeyboards(chatId, reason = "auto-cancelled by new message")
     runCatching {
-        org.koin.java.KoinJavaComponent.getKoin()
+        org.koin.java.KoinJavaComponent
+            .getKoin()
             .get<me.rerere.rikkahub.subagent.SubAgentRegistry>()
             .cancelAllForParent(convId.toString())
     }
@@ -538,56 +684,77 @@ internal suspend fun TelegramBotService.tryRescueImageFromTurn(
     baselineMessageCount: Int,
     chatId: Long,
 ): Boolean {
-    val lastAssistant = runCatching {
-        val conv = chatService.getConversationFlow(convId).value
-        conv.currentMessages.drop(baselineMessageCount)
-            .lastOrNull { it.role == MessageRole.ASSISTANT }
-    }.getOrNull() ?: return false
+    val lastAssistant =
+        runCatching {
+            val conv = chatService.getConversationFlow(convId).value
+            conv.currentMessages
+                .drop(baselineMessageCount)
+                .lastOrNull { it.role == MessageRole.ASSISTANT }
+        }.getOrNull() ?: return false
     val tools = lastAssistant.parts.filterIsInstance<UIMessagePart.Tool>()
     if (tools.isEmpty()) return false
     // Tools that produce a single image file we can re-upload as a photo. Order
     // doesn't matter — we walk the assistant's tool calls newest-first.
-    val rescueable = setOf(
-        "take_screenshot",
-        "take_photo",
-        "browser_screenshot",
-        "show_image",
-    )
+    val rescueable =
+        setOf(
+            "take_screenshot",
+            "take_photo",
+            "browser_screenshot",
+            "show_image",
+        )
     // Walk newest-first so if the model took multiple screenshots we send the last one.
     for (tool in tools.reversed()) {
         if (tool.toolName !in rescueable) continue
-        val outText = tool.output.filterIsInstance<UIMessagePart.Text>()
-            .joinToString("") { it.text }
-        val parsed = runCatching {
-            kotlinx.serialization.json.Json.parseToJsonElement(outText)
-                as? kotlinx.serialization.json.JsonObject
-        }.getOrNull() ?: continue
+        val outText =
+            tool.output
+                .filterIsInstance<UIMessagePart.Text>()
+                .joinToString("") { it.text }
+        val parsed =
+            runCatching {
+                kotlinx.serialization.json.Json
+                    .parseToJsonElement(outText)
+                    as? kotlinx.serialization.json.JsonObject
+            }.getOrNull() ?: continue
         // Tools emit success either as a JSON boolean (`put("success", true)`) or
         // a quoted-string boolean. JsonPrimitive.booleanOrNull handles the boolean
         // case; toBooleanStrictOrNull catches the string case. Either path = ok.
-        val ok = parsed["success"]?.jsonPrimitive?.let { p ->
-            p.booleanOrNull ?: p.contentOrNull?.toBooleanStrictOrNull()
-        } == true
+        val ok =
+            parsed["success"]?.jsonPrimitive?.let { p ->
+                p.booleanOrNull ?: p.contentOrNull?.toBooleanStrictOrNull()
+            } == true
         if (!ok) continue
-        val path = parsed["gallery_path"]?.jsonPrimitive?.contentOrNull
-            ?.takeIf { it.isNotBlank() && !it.startsWith("(") }
-            ?: parsed["file_path"]?.jsonPrimitive?.contentOrNull
-            ?: parsed["path"]?.jsonPrimitive?.contentOrNull
-            ?: continue
+        val path =
+            parsed["gallery_path"]
+                ?.jsonPrimitive
+                ?.contentOrNull
+                ?.takeIf { it.isNotBlank() && !it.startsWith("(") }
+                ?: parsed["file_path"]?.jsonPrimitive?.contentOrNull
+                ?: parsed["path"]?.jsonPrimitive?.contentOrNull
+                ?: continue
         val file = java.io.File(path)
         if (!file.exists() || !file.isFile) continue
-        val caption = when (tool.toolName) {
-            "take_screenshot" ->
-                "📸 (rescued — model took the screenshot but didn't reply with a description)"
-            "take_photo" ->
-                "📸 (rescued — model captured the photo but didn't reply with a description)"
-            "browser_screenshot" ->
-                "📸 (rescued — model captured the browser page but didn't reply with a description)"
-            "show_image" ->
-                "📸 (rescued — model surfaced an image but didn't reply with a description)"
-            else ->
-                "📸 (rescued — model captured an image but didn't reply with a description)"
-        }
+        val caption =
+            when (tool.toolName) {
+                "take_screenshot" -> {
+                    "📸 (rescued — model took the screenshot but didn't reply with a description)"
+                }
+
+                "take_photo" -> {
+                    "📸 (rescued — model captured the photo but didn't reply with a description)"
+                }
+
+                "browser_screenshot" -> {
+                    "📸 (rescued — model captured the browser page but didn't reply with a description)"
+                }
+
+                "show_image" -> {
+                    "📸 (rescued — model surfaced an image but didn't reply with a description)"
+                }
+
+                else -> {
+                    "📸 (rescued — model captured an image but didn't reply with a description)"
+                }
+            }
         return runCatching {
             client.sendPhoto(chatId, file, caption)
             Log.i(TAG, "tryRescueImageFromTurn: sent ${tool.toolName} artifact to chat=$chatId path=$path")
@@ -606,21 +773,28 @@ internal suspend fun TelegramBotService.tryRescueImageFromTurn(
  * has Telegram. Runs the checks inline (so cron/foreground tools see the same Conext).
  */
 internal suspend fun TelegramBotService.handleDoctorCommand(chatId: Long) {
-    try { client.sendChatAction(chatId, "typing") } catch (_: Throwable) {}
-    val results = runCatching { doctorChecks.runAll() }.getOrElse {
-        try {
-            client.sendMessage(
-                chatId,
-                "🩺 Doctor failed to run: ${it::class.simpleName}: ${it.message ?: "(no message)"}",
-            )
-        } catch (_: Throwable) {}
-        return
+    try {
+        client.sendChatAction(chatId, "typing")
+    } catch (_: Throwable) {
     }
-    val report = me.rerere.rikkahub.ui.pages.setting.doctor.DoctorReport.format(results)
+    val results =
+        runCatching { doctorChecks.runAll() }.getOrElse {
+            try {
+                client.sendMessage(
+                    chatId,
+                    "🩺 Doctor failed to run: ${it::class.simpleName}: ${it.message ?: "(no message)"}",
+                )
+            } catch (_: Throwable) {
+            }
+            return
+        }
+    val report =
+        me.rerere.rikkahub.ui.pages.setting.doctor.DoctorReport
+            .format(results)
     // Chunk on raw text and send each chunk wrapped in <pre>...</pre> for monospace
     // rendering. Skip sendChunked's markdown→HTML pass (it would mangle the report's
     // existing layout); use the HTML parse mode directly with our own escaping.
-    val chunks = chunk(report, MAX_CHARS - 16)  // leave room for the <pre> wrapper
+    val chunks = chunk(report, MAX_CHARS - 16) // leave room for the <pre> wrapper
     for (c in chunks) {
         val html = "<pre>${TelegramHtmlRenderer.escape(c)}</pre>"
         runCatching {
@@ -639,35 +813,45 @@ internal suspend fun TelegramBotService.handleDoctorCommand(chatId: Long) {
     // would overflow — better to surface no button than ship a keyboard Telegram silently
     // rejects. Author-controlled (DoctorChecks ids) so this is future-proofing; today's
     // ids leave ~33 bytes of headroom.
-    val fixable = results.filter { c ->
-        val matchesSeverity = c.severity == me.rerere.rikkahub.ui.pages.setting.doctor.Severity.FAIL ||
-            c.severity == me.rerere.rikkahub.ui.pages.setting.doctor.Severity.WARN
-        val hasAutoFix = c.fix is me.rerere.rikkahub.ui.pages.setting.doctor.FixAction.AutoFix
-        if (!matchesSeverity || !hasAutoFix) return@filter false
-        val payloadBytes = (DOCTOR_FIX_CB_PREFIX + c.id).toByteArray(Charsets.UTF_8).size
-        if (payloadBytes > 64) {
-            android.util.Log.w(
-                TAG,
-                "handleDoctorCommand: skipping AutoFix button for check.id=${c.id} " +
-                    "($payloadBytes bytes > 64 cap)",
-            )
-            false
-        } else true
-    }
-    if (fixable.isNotEmpty()) {
-        val markup = buildJsonObject {
-            put("inline_keyboard", buildJsonArray {
-                fixable.forEach { c ->
-                    val af = c.fix as me.rerere.rikkahub.ui.pages.setting.doctor.FixAction.AutoFix
-                    add(buildJsonArray {
-                        addJsonObject {
-                            put("text", "🔧 ${af.label}")
-                            put("callback_data", "${DOCTOR_FIX_CB_PREFIX}${c.id}")
-                        }
-                    })
-                }
-            })
+    val fixable =
+        results.filter { c ->
+            val matchesSeverity =
+                c.severity == me.rerere.rikkahub.ui.pages.setting.doctor.Severity.FAIL ||
+                    c.severity == me.rerere.rikkahub.ui.pages.setting.doctor.Severity.WARN
+            val hasAutoFix = c.fix is me.rerere.rikkahub.ui.pages.setting.doctor.FixAction.AutoFix
+            if (!matchesSeverity || !hasAutoFix) return@filter false
+            val payloadBytes = (DOCTOR_FIX_CB_PREFIX + c.id).toByteArray(Charsets.UTF_8).size
+            if (payloadBytes > 64) {
+                android.util.Log.w(
+                    TAG,
+                    "handleDoctorCommand: skipping AutoFix button for check.id=${c.id} " +
+                        "($payloadBytes bytes > 64 cap)",
+                )
+                false
+            } else {
+                true
+            }
         }
+    if (fixable.isNotEmpty()) {
+        val markup =
+            buildJsonObject {
+                put(
+                    "inline_keyboard",
+                    buildJsonArray {
+                        fixable.forEach { c ->
+                            val af = c.fix as me.rerere.rikkahub.ui.pages.setting.doctor.FixAction.AutoFix
+                            add(
+                                buildJsonArray {
+                                    addJsonObject {
+                                        put("text", "🔧 ${af.label}")
+                                        put("callback_data", "${DOCTOR_FIX_CB_PREFIX}${c.id}")
+                                    }
+                                },
+                            )
+                        }
+                    },
+                )
+            }
         val body = "🩺 ${fixable.size} issue${if (fixable.size == 1) "" else "s"} with an in-app fix — tap to run:"
         runCatching {
             client.sendMessage(chatId, body, replyMarkup = markup)
@@ -695,11 +879,12 @@ internal suspend fun TelegramBotService.handleDoctorFixCallback(cq: TelegramCall
     client.answerCallbackQuery(cq.callbackQueryId, "Running…")
     val msgId = cq.messageId
     runCatching { client.editMessageText(cq.chatId, msgId, "🔧 Running fix for $checkId…") }
-    val results = runCatching { doctorChecks.runAll() }.getOrElse {
-        val msg = "🩺 Doctor re-run failed: ${it::class.simpleName}: ${it.message ?: "(no message)"}"
-        runCatching { client.editMessageText(cq.chatId, msgId, msg) }
-        return
-    }
+    val results =
+        runCatching { doctorChecks.runAll() }.getOrElse {
+            val msg = "🩺 Doctor re-run failed: ${it::class.simpleName}: ${it.message ?: "(no message)"}"
+            runCatching { client.editMessageText(cq.chatId, msgId, msg) }
+            return
+        }
     val match = results.firstOrNull { it.id == checkId }
     val af = match?.fix as? me.rerere.rikkahub.ui.pages.setting.doctor.FixAction.AutoFix
     if (af == null) {
@@ -708,15 +893,16 @@ internal suspend fun TelegramBotService.handleDoctorFixCallback(cq: TelegramCall
         return
     }
     val outcome = runCatching { af.run() }
-    val body = outcome.fold(
-        onSuccess = { r ->
-            val icon = if (r.ok) "✅" else "❌"
-            "$icon ${match.label}: ${r.message}"
-        },
-        onFailure = { t ->
-            "❌ ${match.label}: ${t::class.simpleName}: ${t.message ?: "(no message)"}"
-        },
-    )
+    val body =
+        outcome.fold(
+            onSuccess = { r ->
+                val icon = if (r.ok) "✅" else "❌"
+                "$icon ${match.label}: ${r.message}"
+            },
+            onFailure = { t ->
+                "❌ ${match.label}: ${t::class.simpleName}: ${t.message ?: "(no message)"}"
+            },
+        )
     runCatching { client.editMessageText(cq.chatId, msgId, body) }
 }
 
@@ -726,14 +912,22 @@ internal suspend fun TelegramBotService.handleDoctorFixCallback(cq: TelegramCall
  * bot config (not per-chat) since users with one Telegram account → one bot expect
  * one knob; both streamers read the same flag.
  */
-internal suspend fun TelegramBotService.handleStreamCommand(chatId: Long, arg: String) {
+internal suspend fun TelegramBotService.handleStreamCommand(
+    chatId: Long,
+    arg: String,
+) {
     val current = runCatching { prefs.current().streamScreenshots }.getOrDefault(true)
-    val target: Boolean? = when (arg.trim().lowercase()) {
-        "" -> !current  // toggle
-        "on", "true", "yes", "1", "enable", "enabled" -> true
-        "off", "false", "no", "0", "disable", "disabled" -> false
-        else -> null
-    }
+    val target: Boolean? =
+        when (arg.trim().lowercase()) {
+            "" -> !current
+
+            // toggle
+            "on", "true", "yes", "1", "enable", "enabled" -> true
+
+            "off", "false", "no", "0", "disable", "disabled" -> false
+
+            else -> null
+        }
     if (target == null) {
         try {
             client.sendMessage(
@@ -741,16 +935,21 @@ internal suspend fun TelegramBotService.handleStreamCommand(chatId: Long, arg: S
                 "🖼️ Auto-stream is currently ${if (current) "ON" else "OFF"}. " +
                     "Use /stream on or /stream off to set explicitly, or /stream alone to toggle.",
             )
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+        }
         return
     }
     runCatching { prefs.update { it.copy(streamScreenshots = target) } }
-    val msg = if (target) {
-        "🖼️ Auto-stream ON. Screenshots will be sent here after each browser action and after every interactive tool fires."
-    } else {
-        "🖼️ Auto-stream OFF. Tool screenshots will NOT be sent. Re-enable with /stream on."
+    val msg =
+        if (target) {
+            "🖼️ Auto-stream ON. Screenshots will be sent here after each browser action and after every interactive tool fires."
+        } else {
+            "🖼️ Auto-stream OFF. Tool screenshots will NOT be sent. Re-enable with /stream on."
+        }
+    try {
+        client.sendMessage(chatId, msg)
+    } catch (_: Throwable) {
     }
-    try { client.sendMessage(chatId, msg) } catch (_: Throwable) {}
 }
 
 /**
@@ -762,13 +961,18 @@ internal suspend fun TelegramBotService.handleStreamCommand(chatId: Long, arg: S
  */
 internal suspend fun TelegramBotService.registerBuiltInCommandsWithTelegram() {
     try {
-        val custom = try { prefs.current().customCommands } catch (_: Throwable) { emptyList() }
+        val custom =
+            try {
+                prefs.current().customCommands
+            } catch (_: Throwable) {
+                emptyList()
+            }
         val merged = BUILT_IN_COMMANDS + custom
         val ok = client.setMyCommands(merged)
         Log.i(
             TAG,
             "registerBuiltInCommandsWithTelegram: setMyCommands ok=$ok " +
-                "(builtins=${BUILT_IN_COMMANDS.size}, custom=${custom.size})"
+                "(builtins=${BUILT_IN_COMMANDS.size}, custom=${custom.size})",
         )
     } catch (e: Throwable) {
         Log.w(TAG, "registerBuiltInCommandsWithTelegram failed", e)

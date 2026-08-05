@@ -36,7 +36,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://app.tavily.com/home")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -44,126 +44,156 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
 
     override fun parameters(options: SearchServiceOptions.TavilyOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-                put("topic", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search topic (one of `general`, `news`, `finance`)")
-                    put("enum", buildJsonArray {
-                        add("general")
-                        add("news")
-                        add("finance")
-                    })
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                    put(
+                        "topic",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search topic (one of `general`, `news`, `finance`)")
+                            put(
+                                "enum",
+                                buildJsonArray {
+                                    add("general")
+                                    add("news")
+                                    add("finance")
+                                },
+                            )
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.TavilyOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("url", buildJsonObject {
-                    put("type", "string")
-                    put("description", "url to scrape")
-                })
-            },
-            required = listOf("url")
+            properties =
+                buildJsonObject {
+                    put(
+                        "url",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "url to scrape")
+                        },
+                    )
+                },
+            required = listOf("url"),
         )
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.TavilyOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val topic = params["topic"]?.jsonPrimitive?.contentOrNull ?: "general"
+        serviceOptions: SearchServiceOptions.TavilyOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+                val topic = params["topic"]?.jsonPrimitive?.contentOrNull ?: "general"
 
-            // Validate topic
-            if (topic !in listOf("general", "news", "finance")) {
-                error("topic must be one of `general`, `news`, `finance`")
-            }
-
-            val body = buildJsonObject {
-                put("query", query)
-                put("max_results", commonOptions.resultSize)
-                put("search_depth", serviceOptions.depth.ifEmpty { "advanced" })
-                put("topic", topic)
-                put("include_answer", "advanced")
-                put("include_images", true)
-            }
-            val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
-
-            val request = Request.Builder()
-                .url("https://api.tavily.com/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val response = response.body.string().let {
-                    json.decodeFromString<SearchResponse>(it)
+                // Validate topic
+                if (topic !in listOf("general", "news", "finance")) {
+                    error("topic must be one of `general`, `news`, `finance`")
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = response.answer,
-                        items = response.results.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.content
-                            )
-                        },
-                        images = response.images,
-                    ))
-            } else {
-                error("response failed #${response.code}")
+                val body =
+                    buildJsonObject {
+                        put("query", query)
+                        put("max_results", commonOptions.resultSize)
+                        put("search_depth", serviceOptions.depth.ifEmpty { "advanced" })
+                        put("topic", topic)
+                        put("include_answer", "advanced")
+                        put("include_images", true)
+                    }
+                val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
+
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.tavily.com/search")
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Authorization", "Bearer $apiKey")
+                        .build()
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val response =
+                        response.body.string().let {
+                            json.decodeFromString<SearchResponse>(it)
+                        }
+
+                    return@withContext Result.success(
+                        SearchResult(
+                            answer = response.answer,
+                            items =
+                                response.results.map {
+                                    SearchResultItem(
+                                        title = it.title,
+                                        url = it.url,
+                                        text = it.content,
+                                    )
+                                },
+                            images = response.images,
+                        ),
+                    )
+                } else {
+                    error("response failed #${response.code}")
+                }
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.TavilyOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
-            val body = buildJsonObject {
-                put("urls", buildJsonArray {
-                    add(url)
-                })
-            }
-            val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
-            val request = Request.Builder()
-                .url("https://api.tavily.com/extract")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val response = response.body.string().let {
-                    json.decodeFromString<ScrapeResponse>(it)
-                }
-                return@withContext Result.success(
-                    ScrapedResult(
-                        urls = response.results.map {
-                            ScrapedResultUrl(
-                                url = it.url,
-                                content = it.rawContent,
-                            )
+        serviceOptions: SearchServiceOptions.TavilyOptions,
+    ): Result<ScrapedResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
+                val body =
+                    buildJsonObject {
+                        put(
+                            "urls",
+                            buildJsonArray {
+                                add(url)
+                            },
+                        )
+                    }
+                val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://api.tavily.com/extract")
+                        .post(body.toString().toRequestBody())
+                        .addHeader("Authorization", "Bearer $apiKey")
+                        .build()
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val response =
+                        response.body.string().let {
+                            json.decodeFromString<ScrapeResponse>(it)
                         }
+                    return@withContext Result.success(
+                        ScrapedResult(
+                            urls =
+                                response.results.map {
+                                    ScrapedResultUrl(
+                                        url = it.url,
+                                        content = it.rawContent,
+                                    )
+                                },
+                        ),
                     )
-                )
-            } else {
-                error("response failed #${response.code}")
+                } else {
+                    error("response failed #${response.code}")
+                }
             }
         }
-    }
 
     @Serializable
     data class SearchResponse(
@@ -180,7 +210,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
         val url: String,
         val content: String,
         val score: Double,
-        val rawContent: String? = null
+        val rawContent: String? = null,
     )
 
     @Serializable

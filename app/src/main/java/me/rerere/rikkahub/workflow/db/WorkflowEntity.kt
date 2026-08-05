@@ -27,8 +27,8 @@ data class WorkflowEntity(
     val createdAtMs: Long,
     val updatedAtMs: Long,
     val lastRunAtMs: Long? = null,
-    val lastRunStatus: String? = null,        // SUCCESS / FAILED / SKIPPED_*
-    val lastRunError: String? = null,         // ≤500 chars truncated at write site
+    val lastRunStatus: String? = null, // SUCCESS / FAILED / SKIPPED_*
+    val lastRunError: String? = null, // ≤500 chars truncated at write site
     @ColumnInfo(defaultValue = "0")
     val runsTodayCount: Int = 0,
     /** ISO local-date "yyyy-MM-dd" for daily-cap rollover. Empty string = never run. */
@@ -48,7 +48,7 @@ data class WorkflowRunEntity(
     @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
     val workflowId: String,
     val firedAtMs: Long,
-    val status: String,                       // SUCCESS / FAILED / SKIPPED_*
+    val status: String, // SUCCESS / FAILED / SKIPPED_*
     val durationMs: Long,
     val errorMessage: String? = null,
 )

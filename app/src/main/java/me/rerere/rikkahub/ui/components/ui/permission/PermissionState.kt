@@ -18,7 +18,7 @@ import androidx.core.content.ContextCompat
 class PermissionState internal constructor(
     private val permissions: Set<PermissionInfo>,
     private val context: Context,
-    private val activity: ComponentActivity
+    private val activity: ComponentActivity,
 ) {
     // 权限状态映射
     private val _permissionStates = mutableStateMapOf<String, PermissionStatus>()
@@ -48,7 +48,7 @@ class PermissionState internal constructor(
      */
     internal fun setPermissionLaunchers(
         multiplePermissionLauncher: ActivityResultLauncher<Array<String>>,
-        singlePermissionLauncher: ActivityResultLauncher<String>
+        singlePermissionLauncher: ActivityResultLauncher<String>,
     ) {
         this.permissionLauncher = multiplePermissionLauncher
         this.singlePermissionLauncher = singlePermissionLauncher
@@ -68,23 +68,28 @@ class PermissionState internal constructor(
     /**
      * 获取单个权限状态
      */
-    private fun getPermissionStatus(permission: String, oldStatus: PermissionStatus? = null): PermissionStatus {
-        return when {
+    private fun getPermissionStatus(
+        permission: String,
+        oldStatus: PermissionStatus? = null,
+    ): PermissionStatus =
+        when {
             ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED -> {
                 PermissionStatus.Granted
             }
+
             activity.shouldShowRequestPermissionRationale(permission) -> {
                 PermissionStatus.Denied
             }
+
             // 如果之前被拒绝过（包括永久拒绝），现在又不显示rationale且未授权，说明是永久拒绝
             (oldStatus == PermissionStatus.Denied || oldStatus == PermissionStatus.DeniedPermanently) -> {
                 PermissionStatus.DeniedPermanently
             }
+
             else -> {
                 PermissionStatus.NotRequested
             }
         }
-    }
 
     /**
      * 检查是否所有权限都已授权
@@ -108,11 +113,12 @@ class PermissionState internal constructor(
      * 获取需要显示说明的权限（包括永久拒绝的权限）
      */
     private val permissionsNeedRationale: List<PermissionInfo>
-        get() = permissions.filter {
-            val status = permissionStates[it.permission]
-            status == PermissionStatus.Denied && activity.shouldShowRequestPermissionRationale(it.permission) ||
-            status == PermissionStatus.DeniedPermanently
-        }
+        get() =
+            permissions.filter {
+                val status = permissionStates[it.permission]
+                status == PermissionStatus.Denied && activity.shouldShowRequestPermissionRationale(it.permission) ||
+                    status == PermissionStatus.DeniedPermanently
+            }
 
     /**
      * 获取永久拒绝的权限
@@ -158,11 +164,13 @@ class PermissionState internal constructor(
                     singlePermissionLauncher?.launch(permission)
                 }
             }
+
             PermissionStatus.DeniedPermanently -> {
                 // 永久拒绝，显示说明对话框并引导到设置
                 currentRationalePermissions = listOf(permissionInfo)
                 showRationaleDialog = true
             }
+
             else -> {
                 // NotRequested 状态，直接请求权限
                 singlePermissionLauncher?.launch(permission)
@@ -177,9 +185,10 @@ class PermissionState internal constructor(
         showRationaleDialog = false
 
         // 检查是否有永久拒绝的权限
-        val permanentlyDenied = currentRationalePermissions.filter {
-            permissionStates[it.permission] == PermissionStatus.DeniedPermanently
-        }
+        val permanentlyDenied =
+            currentRationalePermissions.filter {
+                permissionStates[it.permission] == PermissionStatus.DeniedPermanently
+            }
 
         if (permanentlyDenied.isNotEmpty()) {
             // 有永久拒绝的权限，直接跳转到设置页面
@@ -216,9 +225,10 @@ class PermissionState internal constructor(
      * 跳转到应用设置页面
      */
     fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", context.packageName, null)
-        }
+        val intent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
         activity.startActivity(intent)
     }
 
@@ -231,26 +241,29 @@ class PermissionState internal constructor(
             val currentSystemStatus = ContextCompat.checkSelfPermission(context, permissionInfo.permission)
             val oldStatus = _permissionStates[permissionInfo.permission]
 
-            val newStatus = when {
-                // 系统显示已授权
-                currentSystemStatus == PackageManager.PERMISSION_GRANTED -> {
-                    PermissionStatus.Granted
-                }
-                // 系统显示未授权，但可以显示说明对话框
-                activity.shouldShowRequestPermissionRationale(permissionInfo.permission) -> {
-                    PermissionStatus.Denied
-                }
-                // 系统显示未授权，且不能显示说明对话框
-                else -> {
-                    // 如果之前是未请求状态，保持未请求
-                    // 如果之前是其他状态，则认为是永久拒绝
-                    if (oldStatus == PermissionStatus.NotRequested || oldStatus == null) {
-                        PermissionStatus.NotRequested
-                    } else {
-                        PermissionStatus.DeniedPermanently
+            val newStatus =
+                when {
+                    // 系统显示已授权
+                    currentSystemStatus == PackageManager.PERMISSION_GRANTED -> {
+                        PermissionStatus.Granted
+                    }
+
+                    // 系统显示未授权，但可以显示说明对话框
+                    activity.shouldShowRequestPermissionRationale(permissionInfo.permission) -> {
+                        PermissionStatus.Denied
+                    }
+
+                    // 系统显示未授权，且不能显示说明对话框
+                    else -> {
+                        // 如果之前是未请求状态，保持未请求
+                        // 如果之前是其他状态，则认为是永久拒绝
+                        if (oldStatus == PermissionStatus.NotRequested || oldStatus == null) {
+                            PermissionStatus.NotRequested
+                        } else {
+                            PermissionStatus.DeniedPermanently
+                        }
                     }
                 }
-            }
 
             _permissionStates[permissionInfo.permission] = newStatus
         }
@@ -261,22 +274,26 @@ class PermissionState internal constructor(
      */
     internal fun handlePermissionResult(results: Map<String, Boolean>) {
         results.forEach { (permission, granted) ->
-            _permissionStates[permission] = if (granted) {
-                PermissionStatus.Granted
-            } else {
-                if (activity.shouldShowRequestPermissionRationale(permission)) {
-                    PermissionStatus.Denied
+            _permissionStates[permission] =
+                if (granted) {
+                    PermissionStatus.Granted
                 } else {
-                    PermissionStatus.DeniedPermanently
+                    if (activity.shouldShowRequestPermissionRationale(permission)) {
+                        PermissionStatus.Denied
+                    } else {
+                        PermissionStatus.DeniedPermanently
+                    }
                 }
-            }
         }
     }
 
     /**
      * 处理单个权限请求结果
      */
-    internal fun handleSinglePermissionResult(permission: String, granted: Boolean) {
+    internal fun handleSinglePermissionResult(
+        permission: String,
+        granted: Boolean,
+    ) {
         handlePermissionResult(mapOf(permission to granted))
     }
 
@@ -284,18 +301,22 @@ class PermissionState internal constructor(
      * 获取权限结果
      */
     fun getPermissionResults(): MultiplePermissionResult {
-        val results = permissions.associate { permissionInfo ->
-            val status = permissionStates[permissionInfo.permission] ?: PermissionStatus.NotRequested
-            permissionInfo.permission to PermissionResult(
-                permission = permissionInfo.permission,
-                status = status
-            )
-        }
+        val results =
+            permissions.associate { permissionInfo ->
+                val status = permissionStates[permissionInfo.permission] ?: PermissionStatus.NotRequested
+                permissionInfo.permission to
+                    PermissionResult(
+                        permission = permissionInfo.permission,
+                        status = status,
+                    )
+            }
 
         return MultiplePermissionResult(
             results = results,
-            allRequiredGranted = permissions.filter { it.required }
-                .all { permissionStates[it.permission] == PermissionStatus.Granted }
+            allRequiredGranted =
+                permissions
+                    .filter { it.required }
+                    .all { permissionStates[it.permission] == PermissionStatus.Granted },
         )
     }
 }

@@ -1,12 +1,5 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Folder01
-import me.rerere.hugeicons.stroke.Forward02
-import me.rerere.hugeicons.stroke.Pin
-import me.rerere.hugeicons.stroke.PinOff
-import me.rerere.hugeicons.stroke.Refresh01
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -49,6 +42,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.Folder01
+import me.rerere.hugeicons.stroke.Forward02
+import me.rerere.hugeicons.stroke.Pin
+import me.rerere.hugeicons.stroke.PinOff
+import me.rerere.hugeicons.stroke.Refresh01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.theme.extendColors
@@ -63,11 +63,13 @@ import kotlin.uuid.Uuid
 sealed class ConversationListItem {
     data class DateHeader(
         val date: LocalDate,
-        val label: String
+        val label: String,
     ) : ConversationListItem()
+
     data object PinnedHeader : ConversationListItem()
+
     data class Item(
-        val conversation: Conversation
+        val conversation: Conversation,
     ) : ConversationListItem()
 }
 
@@ -83,15 +85,16 @@ fun ColumnScope.ConversationList(
     onRegenerateTitle: (Conversation) -> Unit = {},
     onPin: (Conversation) -> Unit = {},
     onMoveToAssistant: (Conversation) -> Unit = {},
-    onMoveToFolder: (Conversation) -> Unit = {}
+    onMoveToFolder: (Conversation) -> Unit = {},
 ) {
     var hasScrolledToCurrent by remember(current.id) { mutableStateOf(false) }
 
     LaunchedEffect(current.id, conversations.itemCount, hasScrolledToCurrent) {
         if (hasScrolledToCurrent) return@LaunchedEffect
-        val currentIndex = conversations.itemSnapshotList.items.indexOfFirst {
-            (it as? ConversationListItem.Item)?.conversation?.id == current.id
-        }
+        val currentIndex =
+            conversations.itemSnapshotList.items.indexOfFirst {
+                (it as? ConversationListItem.Item)?.conversation?.id == current.id
+            }
         if (currentIndex >= 0) {
             val isVisible = listState.layoutInfo.visibleItemsInfo.any { it.index == currentIndex }
             if (!isVisible) {
@@ -109,17 +112,18 @@ fun ColumnScope.ConversationList(
         if (conversations.itemCount == 0) {
             item {
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                 ) {
                     Text(
                         text = stringResource(id = R.string.chat_page_no_conversations),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }
@@ -127,25 +131,26 @@ fun ColumnScope.ConversationList(
 
         items(
             count = conversations.itemCount,
-            key = conversations.itemKey { item ->
-                when (item) {
-                    is ConversationListItem.DateHeader -> "date_${item.date}"
-                    is ConversationListItem.PinnedHeader -> "pinned_header"
-                    is ConversationListItem.Item -> item.conversation.id.toString()
-                }
-            }
+            key =
+                conversations.itemKey { item ->
+                    when (item) {
+                        is ConversationListItem.DateHeader -> "date_${item.date}"
+                        is ConversationListItem.PinnedHeader -> "pinned_header"
+                        is ConversationListItem.Item -> item.conversation.id.toString()
+                    }
+                },
         ) { index ->
             when (val item = conversations[index]) {
                 is ConversationListItem.DateHeader -> {
                     DateHeaderItem(
                         label = item.label,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
                     )
                 }
 
                 is ConversationListItem.PinnedHeader -> {
                     PinnedHeader(
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
                     )
                 }
 
@@ -160,7 +165,7 @@ fun ColumnScope.ConversationList(
                         onPin = onPin,
                         onMoveToAssistant = onMoveToAssistant,
                         onMoveToFolder = onMoveToFolder,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
                     )
                 }
 
@@ -175,47 +180,47 @@ fun ColumnScope.ConversationList(
 @Composable
 private fun DateHeaderItem(
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
 
 @Composable
-private fun PinnedHeader(
-    modifier: Modifier = Modifier
-) {
+private fun PinnedHeader(modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = HugeIcons.Pin,
             contentDescription = null,
             modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.size(8.dp))
         Text(
             text = stringResource(R.string.pinned_chats),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -231,40 +236,42 @@ private fun ConversationItem(
     onPin: (Conversation) -> Unit = {},
     onMoveToAssistant: (Conversation) -> Unit = {},
     onMoveToFolder: (Conversation) -> Unit = {},
-    onClick: (Conversation) -> Unit
+    onClick: (Conversation) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val backgroundColor = if (selected) {
-        MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp)
-    } else {
-        Color.Transparent
-    }
+    val backgroundColor =
+        if (selected) {
+            MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp)
+        } else {
+            Color.Transparent
+        }
     var showDropdownMenu by remember {
         mutableStateOf(false)
     }
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(50f))
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = { onClick(conversation) },
-                onLongClick = {
-                    showDropdownMenu = true
-                }
-            )
-            .background(backgroundColor),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(50f))
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = { onClick(conversation) },
+                    onLongClick = {
+                        showDropdownMenu = true
+                    },
+                ).background(backgroundColor),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = conversation.title.ifBlank { stringResource(id = R.string.chat_page_new_message) },
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.weight(1f))
 
@@ -274,18 +281,19 @@ private fun ConversationItem(
                     imageVector = HugeIcons.Pin,
                     contentDescription = "Pinned",
                     modifier = Modifier.size(12.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
             AnimatedVisibility(loading) {
                 Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.extendColors.green6)
-                        .size(4.dp)
-                        .semantics {
-                            contentDescription = "Loading"
-                        }
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.extendColors.green6)
+                            .size(4.dp)
+                            .semantics {
+                                contentDescription = "Loading"
+                            },
                 )
             }
             DropdownMenu(
@@ -295,7 +303,13 @@ private fun ConversationItem(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            if (conversation.isPinned) stringResource(R.string.unpin_chat) else stringResource(R.string.pin_chat)
+                            if (conversation.isPinned) {
+                                stringResource(
+                                    R.string.unpin_chat,
+                                )
+                            } else {
+                                stringResource(R.string.pin_chat)
+                            },
                         )
                     },
                     onClick = {
@@ -305,9 +319,9 @@ private fun ConversationItem(
                     leadingIcon = {
                         Icon(
                             if (conversation.isPinned) HugeIcons.PinOff else HugeIcons.Pin,
-                            null
+                            null,
                         )
-                    }
+                    },
                 )
 
                 DropdownMenuItem(
@@ -320,7 +334,7 @@ private fun ConversationItem(
                     },
                     leadingIcon = {
                         Icon(HugeIcons.Refresh01, null)
-                    }
+                    },
                 )
 
                 DropdownMenuItem(
@@ -333,7 +347,7 @@ private fun ConversationItem(
                     },
                     leadingIcon = {
                         Icon(HugeIcons.Forward02, null)
-                    }
+                    },
                 )
 
                 DropdownMenuItem(
@@ -346,7 +360,7 @@ private fun ConversationItem(
                     },
                     leadingIcon = {
                         Icon(HugeIcons.Folder01, null)
-                    }
+                    },
                 )
 
                 DropdownMenuItem(
@@ -359,7 +373,7 @@ private fun ConversationItem(
                     },
                     leadingIcon = {
                         Icon(HugeIcons.Delete01, null)
-                    }
+                    },
                 )
             }
         }

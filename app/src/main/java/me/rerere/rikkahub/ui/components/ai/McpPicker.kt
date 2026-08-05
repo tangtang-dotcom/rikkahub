@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -26,9 +25,9 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,53 +62,54 @@ fun McpPickerButton(
     servers: List<McpServerConfig>,
     mcpManager: McpManager,
     modifier: Modifier = Modifier,
-    onUpdateAssistant: (Assistant) -> Unit
+    onUpdateAssistant: (Assistant) -> Unit,
 ) {
     var showMcpPicker by remember { mutableStateOf(false) }
     val status by mcpManager.syncingStatus.collectAsStateWithLifecycle()
     val loading = status.values.any { it == McpStatus.Connecting }
-    val enabledServers = servers.fastFilter {
-        it.commonOptions.enable && assistant.mcpServers.contains(it.id)
-    }
+    val enabledServers =
+        servers.fastFilter {
+            it.commonOptions.enable && assistant.mcpServers.contains(it.id)
+        }
     ToggleSurface(
         modifier = modifier,
         checked = assistant.mcpServers.isNotEmpty(),
         onClick = {
             showMcpPicker = true
-        }
+        },
     ) {
         Row(
-            modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 8.dp),
+            modifier =
+                Modifier
+                    .padding(vertical = 8.dp, horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier.size(24.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 if (loading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 } else {
                     BadgedBox(
                         badge = {
                             if (enabledServers.isNotEmpty()) {
                                 Badge(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                                 ) {
                                     Text(text = enabledServers.size.toString())
                                 }
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             imageVector = HugeIcons.McpServer,
                             contentDescription = stringResource(R.string.mcp_picker_title),
                         )
                     }
-
                 }
             }
         }
@@ -116,32 +117,38 @@ fun McpPickerButton(
     if (showMcpPicker) {
         ModalBottomSheet(
             onDismissRequest = { showMcpPicker = false },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier.Companion
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.7f)
-                    .padding(16.dp),
+                modifier =
+                    Modifier.Companion
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.7f)
+                        .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
                     text = stringResource(id = R.string.mcp_picker_title),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
                 AnimatedVisibility(loading) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 4.dp),
                     ) {
                         LinearWavyProgressIndicator()
                         Text(
                             text = stringResource(id = R.string.mcp_picker_syncing),
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                     }
                 }
@@ -151,9 +158,10 @@ fun McpPickerButton(
                     onUpdateAssistant = {
                         onUpdateAssistant(it)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                 )
             }
         }
@@ -166,14 +174,15 @@ fun McpPickerListItem(
     servers: List<McpServerConfig>,
     mcpManager: McpManager,
     modifier: Modifier = Modifier,
-    onUpdateAssistant: (Assistant) -> Unit
+    onUpdateAssistant: (Assistant) -> Unit,
 ) {
     var showMcpPicker by remember { mutableStateOf(false) }
     val status by mcpManager.syncingStatus.collectAsStateWithLifecycle()
     val loading = status.values.any { it == McpStatus.Connecting }
-    val enabledServers = servers.fastFilter {
-        it.commonOptions.enable && assistant.mcpServers.contains(it.id)
-    }
+    val enabledServers =
+        servers.fastFilter {
+            it.commonOptions.enable && assistant.mcpServers.contains(it.id)
+        }
 
     ListItem(
         leadingContent = {
@@ -198,14 +207,16 @@ fun McpPickerListItem(
                 )
             }
         },
-        colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .clickable {
-                showMcpPicker = true
-            },
+        colors =
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        modifier =
+            modifier
+                .clip(MaterialTheme.shapes.large)
+                .clickable {
+                    showMcpPicker = true
+                },
     )
 
     if (showMcpPicker) {
@@ -229,32 +240,38 @@ private fun McpPickerSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.7f)
+                    .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = stringResource(id = R.string.mcp_picker_title),
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
             AnimatedVisibility(loading) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier.padding(vertical = 4.dp),
                 ) {
                     LinearWavyProgressIndicator()
                     Text(
                         text = stringResource(id = R.string.mcp_picker_syncing),
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
@@ -264,9 +281,10 @@ private fun McpPickerSheet(
                 onUpdateAssistant = {
                     onUpdateAssistant(it)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             )
         }
     }
@@ -278,7 +296,7 @@ fun McpPicker(
     servers: List<McpServerConfig>,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    onUpdateAssistant: (Assistant) -> Unit
+    onUpdateAssistant: (Assistant) -> Unit,
 ) {
     val mcpManager = koinInject<McpManager>()
     LazyColumn(
@@ -290,57 +308,79 @@ fun McpPicker(
             val status by mcpManager.getStatus(server).collectAsStateWithLifecycle(McpStatus.Idle)
             Card {
                 Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     when (status) {
-                        McpStatus.Idle -> Icon(HugeIcons.Icon1stBracket, null)
-                        McpStatus.Connecting -> CircularProgressIndicator(
-                            modifier = Modifier.size(
-                                24.dp
-                            )
-                        )
+                        McpStatus.Idle -> {
+                            Icon(HugeIcons.Icon1stBracket, null)
+                        }
 
-                        McpStatus.Connected -> Icon(HugeIcons.McpServer, null)
-                        is McpStatus.Reconnecting -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp)
-                        )
-                        is McpStatus.Error -> Icon(HugeIcons.Alert01, null)
-                        McpStatus.NeedsAuthorization -> Icon(HugeIcons.Alert01, null)
-                        McpStatus.Authorizing -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp)
-                        )
+                        McpStatus.Connecting -> {
+                            CircularProgressIndicator(
+                                modifier =
+                                    Modifier.size(
+                                        24.dp,
+                                    ),
+                            )
+                        }
+
+                        McpStatus.Connected -> {
+                            Icon(HugeIcons.McpServer, null)
+                        }
+
+                        is McpStatus.Reconnecting -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+
+                        is McpStatus.Error -> {
+                            Icon(HugeIcons.Alert01, null)
+                        }
+
+                        McpStatus.NeedsAuthorization -> {
+                            Icon(HugeIcons.Alert01, null)
+                        }
+
+                        McpStatus.Authorizing -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
                     }
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = server.commonOptions.name,
                             style = MaterialTheme.typography.titleLarge,
                         )
                         Text(
-                            text = when (val s = status) {
-                                is McpStatus.Idle -> "Idle"
-                                is McpStatus.Connecting -> "Connecting"
-                                is McpStatus.Connected -> "Connected"
-                                is McpStatus.Reconnecting -> "Reconnecting (${s.attempt}/${s.maxAttempts})"
-                                is McpStatus.Error -> "Error: ${s.message}"
-                                is McpStatus.NeedsAuthorization -> "Needs authorization"
-                                is McpStatus.Authorizing -> "Authorizing"
-                            },
+                            text =
+                                when (val s = status) {
+                                    is McpStatus.Idle -> "Idle"
+                                    is McpStatus.Connecting -> "Connecting"
+                                    is McpStatus.Connected -> "Connected"
+                                    is McpStatus.Reconnecting -> "Reconnecting (${s.attempt}/${s.maxAttempts})"
+                                    is McpStatus.Error -> "Error: ${s.message}"
+                                    is McpStatus.NeedsAuthorization -> "Needs authorization"
+                                    is McpStatus.Authorizing -> "Authorizing"
+                                },
                             style = MaterialTheme.typography.labelSmall,
                             color = LocalContentColor.current.copy(alpha = 0.8f),
-                            maxLines = 5
+                            maxLines = 5,
                         )
                         if (status == McpStatus.Connected) {
                             val tools = server.commonOptions.tools
                             val enabledTools = tools.fastFilter { it.enable }
                             Tag(
-                                type = TagType.INFO
+                                type = TagType.INFO,
                             ) {
                                 Text("${enabledTools.size}/${tools.size} tools")
                             }
@@ -355,8 +395,8 @@ fun McpPicker(
                                 newServers.removeIf { id -> servers.none { s -> s.id == id } } // remove invalid servers
                                 onUpdateAssistant(
                                     assistant.copy(
-                                        mcpServers = newServers.toSet()
-                                    )
+                                        mcpServers = newServers.toSet(),
+                                    ),
                                 )
                             } else {
                                 val newServers = assistant.mcpServers.toMutableSet()
@@ -364,11 +404,11 @@ fun McpPicker(
                                 newServers.removeIf { id -> servers.none { s -> s.id == id } } //  remove invalid servers
                                 onUpdateAssistant(
                                     assistant.copy(
-                                        mcpServers = newServers.toSet()
-                                    )
+                                        mcpServers = newServers.toSet(),
+                                    ),
                                 )
                             }
-                        }
+                        },
                     )
                 }
             }

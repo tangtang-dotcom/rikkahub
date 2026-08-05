@@ -4,14 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Book02
-import me.rerere.hugeicons.stroke.Book04
-import me.rerere.hugeicons.stroke.Earth
-import me.rerere.hugeicons.stroke.File02
-import me.rerere.hugeicons.stroke.Image02
-import me.rerere.hugeicons.stroke.Search01
-import me.rerere.hugeicons.stroke.Wrench01
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,21 +23,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import org.koin.compose.koinInject
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,15 +55,13 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
-import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.ui.context.Navigator
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.crossfade
 import com.dokar.sonner.ToastType
+import com.dokar.sonner.rememberToasterState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,10 +74,22 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyUIMessage
 import me.rerere.ai.util.encodeBase64
 import me.rerere.common.android.appTempFolder
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Book02
+import me.rerere.hugeicons.stroke.Book04
+import me.rerere.hugeicons.stroke.Download01
+import me.rerere.hugeicons.stroke.Earth
+import me.rerere.hugeicons.stroke.File02
+import me.rerere.hugeicons.stroke.FileImport
+import me.rerere.hugeicons.stroke.Image02
+import me.rerere.hugeicons.stroke.Search01
+import me.rerere.hugeicons.stroke.Wrench01
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.ui.components.message.MessagePartBlock
 import me.rerere.rikkahub.ui.components.message.ThinkingStep
 import me.rerere.rikkahub.ui.components.message.groupMessageParts
@@ -95,36 +100,27 @@ import me.rerere.rikkahub.ui.components.ui.ChainOfThought
 import me.rerere.rikkahub.ui.components.ui.ChainOfThoughtScope
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
-import com.dokar.sonner.rememberToasterState
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
-import me.rerere.rikkahub.utils.exportImage
-import me.rerere.rikkahub.utils.getActivity
-import me.rerere.hugeicons.stroke.Download01
-import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.JsonInstantPretty
+import me.rerere.rikkahub.utils.exportImage
+import me.rerere.rikkahub.utils.getActivity
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.toLocalString
+import org.koin.compose.koinInject
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.compose.rememberLauncherForActivityResult
-import me.rerere.rikkahub.data.repository.ConversationRepository
-
-
-
-
 
 @Composable
 fun ChatExportSheet(
     visible: Boolean,
     onDismissRequest: () -> Unit,
     conversation: Conversation,
-    selectedMessages: List<UIMessage>
+    selectedMessages: List<UIMessage>,
 ) {
     val context = LocalContext.current
     val toaster = LocalToaster.current
@@ -136,12 +132,17 @@ fun ChatExportSheet(
     if (visible) {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 32.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -154,11 +155,11 @@ fun ChatExportSheet(
                         exportToMarkdown(context, conversation, selectedMessages)
                         toaster.show(
                             markdownSuccessMessage,
-                            type = ToastType.Success
+                            type = ToastType.Success,
                         )
                         onDismissRequest()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     ListItem(
                         headlineContent = {
@@ -169,7 +170,7 @@ fun ChatExportSheet(
                         },
                         leadingContent = {
                             Icon(HugeIcons.File02, contentDescription = null)
-                        }
+                        },
                     )
                 }
 
@@ -181,19 +182,19 @@ fun ChatExportSheet(
                         toaster.show(jsonSuccessMessage, type = ToastType.Success)
                         onDismissRequest()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     ListItem(
                         headlineContent = { Text("JSON") },
                         supportingContent = { Text("将对话导出为 JSON 文件，可用于导入恢复") },
-                        leadingContent = { Icon(HugeIcons.Download01, contentDescription = null) }
+                        leadingContent = { Icon(HugeIcons.Download01, contentDescription = null) },
                     )
                 }
 
                 val imageSuccessMessage =
                     stringResource(id = R.string.chat_page_export_success, "Image")
                 OutlinedCard(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column {
                         ListItem(
@@ -205,28 +206,33 @@ fun ChatExportSheet(
                             },
                             leadingContent = {
                                 Icon(HugeIcons.Image02, contentDescription = null)
-                            }
+                            },
                         )
 
                         HorizontalDivider()
 
                         ListItem(
-                            headlineContent = { Text(stringResource(R.string.chat_page_export_image_expand_reasoning)) },
+                            headlineContent = {
+                                Text(
+                                    stringResource(R.string.chat_page_export_image_expand_reasoning),
+                                )
+                            },
                             trailingContent = {
                                 Switch(
                                     checked = imageExportOptions.expandReasoning,
                                     onCheckedChange = {
                                         imageExportOptions = imageExportOptions.copy(expandReasoning = it)
-                                    }
+                                    },
                                 )
-                            }
+                            },
                         )
 
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.End
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.End,
                         ) {
                             Button(
                                 onClick = {
@@ -239,22 +245,22 @@ fun ChatExportSheet(
                                                 conversation = conversation,
                                                 messages = selectedMessages,
                                                 settings = settings,
-                                                options = imageExportOptions
+                                                options = imageExportOptions,
                                             )
                                         }.onFailure {
                                             it.printStackTrace()
                                             toaster.show(
                                                 message = "Failed to export image: ${it.message}",
-                                                type = ToastType.Error
+                                                type = ToastType.Error,
                                             )
                                         }
                                     }
                                     toaster.show(
                                         imageSuccessMessage,
-                                        type = ToastType.Success
+                                        type = ToastType.Success,
                                     )
                                     onDismissRequest()
-                                }
+                                },
                             ) {
                                 Text(stringResource(R.string.mermaid_export))
                             }
@@ -264,35 +270,39 @@ fun ChatExportSheet(
 
                 // 导入
                 val importRepo = koinInject<ConversationRepository>()
-                val importLauncher = rememberLauncherForActivityResult(
-                    ActivityResultContracts.GetContent()
-                ) { uri ->
-                    uri?.let { selectedUri ->
-                        scope.launch {
-                            try {
-                                val jsonString = context.contentResolver.openInputStream(selectedUri)
-                                    ?.bufferedReader()?.use { it.readText() }
-                                if (jsonString != null) {
-                                    val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
-                                    val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
-                                    importRepo.insertConversation(newConversation)
-                                    toaster.show("导入成功", type = ToastType.Success)
-                                    onDismissRequest()
+                val importLauncher =
+                    rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent(),
+                    ) { uri ->
+                        uri?.let { selectedUri ->
+                            scope.launch {
+                                try {
+                                    val jsonString =
+                                        context.contentResolver
+                                            .openInputStream(selectedUri)
+                                            ?.bufferedReader()
+                                            ?.use { it.readText() }
+                                    if (jsonString != null) {
+                                        val conversation = JsonInstant.decodeFromString<Conversation>(jsonString)
+                                        val newConversation = conversation.copy(id = kotlin.uuid.Uuid.random())
+                                        importRepo.insertConversation(newConversation)
+                                        toaster.show("导入成功", type = ToastType.Success)
+                                        onDismissRequest()
+                                    }
+                                } catch (e: Exception) {
+                                    toaster.show("导入失败: ${e.message}", type = ToastType.Error)
                                 }
-                            } catch (e: Exception) {
-                                toaster.show("导入失败: ${e.message}", type = ToastType.Error)
                             }
                         }
                     }
-                }
                 OutlinedCard(
                     onClick = { importLauncher.launch("application/json") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     ListItem(
                         headlineContent = { Text("导入会话") },
                         supportingContent = { Text("从 JSON 文件导入对话记录") },
-                        leadingContent = { Icon(HugeIcons.FileImport, contentDescription = null) }
+                        leadingContent = { Icon(HugeIcons.FileImport, contentDescription = null) },
                     )
                 }
             }
@@ -303,115 +313,121 @@ fun ChatExportSheet(
 private fun exportToMarkdown(
     context: Context,
     conversation: Conversation,
-    messages: List<UIMessage>
+    messages: List<UIMessage>,
 ) {
-    val filename = "chat-export-${LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.md"
+    val filename = "chat-export-${LocalDateTime.now().format(
+        java.time.format.DateTimeFormatter
+            .ofPattern("yyyy-MM-dd_HH-mm-ss"),
+    )}.md"
 
-    val sb = buildAnnotatedString {
-        append("# ${conversation.title}\n\n")
-        append("*Exported on ${LocalDateTime.now().toLocalString()}*\n\n")
+    val sb =
+        buildAnnotatedString {
+            append("# ${conversation.title}\n\n")
+            append("*Exported on ${LocalDateTime.now().toLocalString()}*\n\n")
 
-        messages.forEach { message ->
-            val role = if (message.role == MessageRole.USER) "**User**" else "**Assistant**"
-            append("$role:\n\n")
-            message.parts.forEach { part ->
-                when (part) {
-                    is UIMessagePart.Text -> {
-                        append(part.text)
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Image -> {
-                        append("![Image](${part.encodeBase64().getOrNull()?.base64})")
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Reasoning -> {
-                        part.reasoning.lines()
-                            .filter { it.isNotBlank() }
-                            .map { "> $it" }
-                            .forEach {
-                                append(it)
-                            }
-                        appendLine()
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Tool -> {
-                        append("**Tool**: `${part.toolName}`")
-                        appendLine()
-                        if (part.toolCallId.isNotBlank()) {
-                            append("- Call ID: `${part.toolCallId}`")
+            messages.forEach { message ->
+                val role = if (message.role == MessageRole.USER) "**User**" else "**Assistant**"
+                append("$role:\n\n")
+                message.parts.forEach { part ->
+                    when (part) {
+                        is UIMessagePart.Text -> {
+                            append(part.text)
                             appendLine()
                         }
 
-                        append("Input:")
-                        appendLine()
-                        append("```json")
-                        appendLine()
-                        append(JsonInstantPretty.encodeToString(part.inputAsJson()))
-                        appendLine()
-                        append("```")
-                        appendLine()
-
-                        if (part.output.isNotEmpty()) {
-                            append("Output:")
+                        is UIMessagePart.Image -> {
+                            append("![Image](${part.encodeBase64().getOrNull()?.base64})")
                             appendLine()
-                            part.output.forEach { outputPart ->
-                                when (outputPart) {
-                                    is UIMessagePart.Text -> {
-                                        append("```text")
-                                        appendLine()
-                                        append(outputPart.text)
-                                        appendLine()
-                                        append("```")
-                                        appendLine()
-                                    }
+                        }
 
-                                    is UIMessagePart.Reasoning -> {
-                                        outputPart.reasoning.lines()
-                                            .filter { it.isNotBlank() }
-                                            .forEach {
-                                                append("> $it")
-                                                appendLine()
-                                            }
-                                    }
+                        is UIMessagePart.Reasoning -> {
+                            part.reasoning
+                                .lines()
+                                .filter { it.isNotBlank() }
+                                .map { "> $it" }
+                                .forEach {
+                                    append(it)
+                                }
+                            appendLine()
+                            appendLine()
+                        }
 
-                                    is UIMessagePart.Image -> {
-                                        append("![Tool Image](${outputPart.encodeBase64().getOrNull()?.base64})")
-                                        appendLine()
-                                    }
+                        is UIMessagePart.Tool -> {
+                            append("**Tool**: `${part.toolName}`")
+                            appendLine()
+                            if (part.toolCallId.isNotBlank()) {
+                                append("- Call ID: `${part.toolCallId}`")
+                                appendLine()
+                            }
 
-                                    is UIMessagePart.Document -> {
-                                        append("[Document: ${outputPart.fileName}](${outputPart.url})")
-                                        appendLine()
-                                    }
+                            append("Input:")
+                            appendLine()
+                            append("```json")
+                            appendLine()
+                            append(JsonInstantPretty.encodeToString(part.inputAsJson()))
+                            appendLine()
+                            append("```")
+                            appendLine()
 
-                                    is UIMessagePart.Video -> {
-                                        append("[Video](${outputPart.url})")
-                                        appendLine()
-                                    }
+                            if (part.output.isNotEmpty()) {
+                                append("Output:")
+                                appendLine()
+                                part.output.forEach { outputPart ->
+                                    when (outputPart) {
+                                        is UIMessagePart.Text -> {
+                                            append("```text")
+                                            appendLine()
+                                            append(outputPart.text)
+                                            appendLine()
+                                            append("```")
+                                            appendLine()
+                                        }
 
-                                    is UIMessagePart.Audio -> {
-                                        append("[Audio](${outputPart.url})")
-                                        appendLine()
-                                    }
+                                        is UIMessagePart.Reasoning -> {
+                                            outputPart.reasoning
+                                                .lines()
+                                                .filter { it.isNotBlank() }
+                                                .forEach {
+                                                    append("> $it")
+                                                    appendLine()
+                                                }
+                                        }
 
-                                    else -> {}
+                                        is UIMessagePart.Image -> {
+                                            append("![Tool Image](${outputPart.encodeBase64().getOrNull()?.base64})")
+                                            appendLine()
+                                        }
+
+                                        is UIMessagePart.Document -> {
+                                            append("[Document: ${outputPart.fileName}](${outputPart.url})")
+                                            appendLine()
+                                        }
+
+                                        is UIMessagePart.Video -> {
+                                            append("[Video](${outputPart.url})")
+                                            appendLine()
+                                        }
+
+                                        is UIMessagePart.Audio -> {
+                                            append("[Audio](${outputPart.url})")
+                                            appendLine()
+                                        }
+
+                                        else -> {}
+                                    }
                                 }
                             }
+                            appendLine()
                         }
-                        appendLine()
-                    }
 
-                    else -> {}
+                        else -> {}
+                    }
                 }
+                appendLine()
+                append("---")
+                appendLine()
             }
-            appendLine()
-            append("---")
-            appendLine()
         }
-    }
 
     try {
         val dir = context.appTempFolder
@@ -427,13 +443,13 @@ private fun exportToMarkdown(
         }
 
         // Share the file
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
         shareFile(context, uri, "text/markdown")
-
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -446,9 +462,12 @@ private suspend fun exportToImage(
     conversation: Conversation,
     messages: List<UIMessage>,
     settings: Settings,
-    options: ImageExportOptions = ImageExportOptions()
+    options: ImageExportOptions = ImageExportOptions(),
 ) {
-    val filename = "chat-export-${LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.png"
+    val filename = "chat-export-${LocalDateTime.now().format(
+        java.time.format.DateTimeFormatter
+            .ofPattern("yyyy-MM-dd_HH-mm-ss"),
+    )}.png"
     val composer = BitmapComposer(scope)
     val activity = context.getActivity()
     if (activity == null) {
@@ -458,20 +477,21 @@ private suspend fun exportToImage(
         return
     }
 
-    val bitmap = composer.composableToBitmap(
-        activity = activity,
-        width = 540.dp,
-        screenDensity = density,
-        content = {
-            CompositionLocalProvider(LocalSettings provides settings) {
-                ExportedChatImage(
-                    conversation = conversation,
-                    messages = messages,
-                    options = options
-                )
-            }
-        }
-    )
+    val bitmap =
+        composer.composableToBitmap(
+            activity = activity,
+            width = 540.dp,
+            screenDensity = density,
+            content = {
+                CompositionLocalProvider(LocalSettings provides settings) {
+                    ExportedChatImage(
+                        conversation = conversation,
+                        messages = messages,
+                        options = options,
+                    )
+                }
+            },
+        )
 
     try {
         val dir = context.appTempFolder
@@ -492,11 +512,12 @@ private suspend fun exportToImage(
             .onFailure { it.printStackTrace() }
 
         // Share the file
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
         shareFile(context, uri, "image/png")
     } catch (e: Exception) {
         e.printStackTrace()
@@ -508,13 +529,15 @@ private suspend fun exportToImage(
     }
 }
 
-data class ImageExportOptions(val expandReasoning: Boolean = false)
+data class ImageExportOptions(
+    val expandReasoning: Boolean = false,
+)
 
 @Composable
 private fun ExportedChatImage(
     conversation: Conversation,
     messages: List<UIMessage>,
-    options: ImageExportOptions = ImageExportOptions()
+    options: ImageExportOptions = ImageExportOptions(),
 ) {
     val navBackStack = remember { mutableStateListOf<NavKey>() }
     val navigator = Navigator(navBackStack)
@@ -522,33 +545,34 @@ private fun ExportedChatImage(
     RikkahubTheme {
         CompositionLocalProvider(
             LocalNavController provides navigator,
-            LocalToaster provides toasterState
+            LocalToaster provides toasterState,
         ) {
             Surface(
-                modifier = Modifier.width(540.dp) // like 1080p but with density independence
+                modifier = Modifier.width(540.dp), // like 1080p but with density independence
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
                                 text = conversation.title,
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                             )
                             Text(
                                 text = "${LocalDateTime.now().toLocalString()}  rikka-ai.com",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         // Use painterResource for the logo
@@ -556,7 +580,7 @@ private fun ExportedChatImage(
                         Image(
                             painter = painter,
                             contentDescription = "Logo",
-                            modifier = Modifier.size(60.dp)
+                            modifier = Modifier.size(60.dp),
                         )
                     }
 
@@ -565,7 +589,7 @@ private fun ExportedChatImage(
                         ExportedChatMessage(
                             message = message,
                             options = options,
-                            prevMessage = messages.getOrNull(messages.indexOf(message) - 1)
+                            prevMessage = messages.getOrNull(messages.indexOf(message) - 1),
                         )
                     }
 
@@ -588,7 +612,7 @@ private fun ExportedChatImage(
 private fun ExportedChatMessage(
     message: UIMessage,
     prevMessage: UIMessage? = null,
-    options: ImageExportOptions = ImageExportOptions()
+    options: ImageExportOptions = ImageExportOptions(),
 ) {
     if (message.parts.isEmptyUIMessage()) return
     val context = LocalContext.current
@@ -596,20 +620,28 @@ private fun ExportedChatMessage(
     val model = message.modelId?.let { settings.findModelById(it) }
     // Always show model icon for assistant messages in exported images
     val showModelIcon = message.role == MessageRole.ASSISTANT && prevMessage?.role == MessageRole.USER
-    val iconLabel = when {
-        model?.modelId?.isNotBlank() == true -> model.modelId
-        model?.displayName?.isNotBlank() == true -> model.displayName
-        else -> "AI"
-    }
-    val partsKey = message.parts.size.toString() + (message.parts.lastOrNull()?.hashCode()?.toString() ?: "")
+    val iconLabel =
+        when {
+            model?.modelId?.isNotBlank() == true -> model.modelId
+            model?.displayName?.isNotBlank() == true -> model.displayName
+            else -> "AI"
+        }
+    val partsKey =
+        message.parts.size.toString() + (
+            message.parts
+                .lastOrNull()
+                ?.hashCode()
+                ?.toString() ?: ""
+        )
     val groupedParts = remember(partsKey) { message.parts.groupMessageParts() }
     val messageContent: @Composable () -> Unit = {
         Column(
-            modifier = Modifier
-                .widthIn(max = (540 * 0.9).dp)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .widthIn(max = (540 * 0.9).dp)
+                    .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start
+            horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start,
         ) {
             groupedParts.forEach { block ->
                 when (block) {
@@ -617,19 +649,19 @@ private fun ExportedChatMessage(
                         if (block.steps.isNotEmpty()) {
                             ChainOfThought(
                                 steps = block.steps,
-                                collapsedVisibleCount = block.steps.size
+                                collapsedVisibleCount = block.steps.size,
                             ) { step ->
                                 when (step) {
                                     is ThinkingStep.ReasoningStep -> {
                                         ExportedReasoningStep(
                                             reasoning = step.reasoning,
-                                            expanded = options.expandReasoning
+                                            expanded = options.expandReasoning,
                                         )
                                     }
 
                                     is ThinkingStep.ToolStep -> {
                                         ExportedToolStep(
-                                            tool = step.tool
+                                            tool = step.tool,
                                         )
                                     }
                                 }
@@ -648,20 +680,21 @@ private fun ExportedChatMessage(
                                             ) {
                                                 MarkdownBlock(
                                                     content = part.text,
-                                                    modifier = Modifier.padding(8.dp)
+                                                    modifier = Modifier.padding(8.dp),
                                                 )
                                             }
                                         } else {
                                             if (settings.displaySetting.showAssistantBubble) {
                                                 Card(
                                                     shape = MaterialTheme.shapes.medium,
-                                                    colors = CardDefaults.cardColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                                    )
+                                                    colors =
+                                                        CardDefaults.cardColors(
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                                        ),
                                                 ) {
                                                     MarkdownBlock(
                                                         content = part.text,
-                                                        modifier = Modifier.padding(8.dp)
+                                                        modifier = Modifier.padding(8.dp),
                                                     )
                                                 }
                                             } else {
@@ -676,15 +709,18 @@ private fun ExportedChatMessage(
 
                             is UIMessagePart.Image -> {
                                 AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(part.url)
-                                        .allowHardware(false)
-                                        .crossfade(false)
-                                        .build(),
+                                    model =
+                                        ImageRequest
+                                            .Builder(context)
+                                            .data(part.url)
+                                            .allowHardware(false)
+                                            .crossfade(false)
+                                            .build(),
                                     contentDescription = "Image",
-                                    modifier = Modifier
-                                        .sizeIn(maxHeight = 300.dp)
-                                        .clip(RoundedCornerShape(12.dp)),
+                                    modifier =
+                                        Modifier
+                                            .sizeIn(maxHeight = 300.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
                                 )
                             }
 
@@ -702,19 +738,20 @@ private fun ExportedChatMessage(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp),
         ) {
             AutoAIIcon(
                 name = iconLabel,
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .size(36.dp)
+                modifier =
+                    Modifier
+                        .padding(top = 8.dp)
+                        .size(36.dp),
             )
 
             Text(
                 text = iconLabel,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
@@ -724,11 +761,15 @@ private fun ExportedChatMessage(
 @Composable
 private fun ChainOfThoughtScope.ExportedReasoningStep(
     reasoning: UIMessagePart.Reasoning,
-    expanded: Boolean
+    expanded: Boolean,
 ) {
-    val duration = reasoning.finishedAt?.let { endTime ->
-        endTime - reasoning.createdAt
-    } ?: (kotlin.time.Clock.System.now() - reasoning.createdAt)
+    val duration =
+        reasoning.finishedAt?.let { endTime ->
+            endTime - reasoning.createdAt
+        } ?: (
+            kotlin.time.Clock.System
+                .now() - reasoning.createdAt
+        )
 
     ControlledChainOfThoughtStep(
         expanded = expanded,
@@ -738,27 +779,28 @@ private fun ChainOfThoughtScope.ExportedReasoningStep(
                 painter = painterResource(R.drawable.deepthink),
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.secondary,
             )
         },
         label = {
             Text(
                 text = stringResource(R.string.deep_thinking),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
             )
         },
-        extra = if (duration > 0.seconds) {
-            {
-                Text(
-                    text = duration.toString(DurationUnit.SECONDS, 1),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        } else {
-            null
-        },
+        extra =
+            if (duration > 0.seconds) {
+                {
+                    Text(
+                        text = duration.toString(DurationUnit.SECONDS, 1),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            } else {
+                null
+            },
         contentVisible = expanded,
         content = {
             MarkdownBlock(
@@ -766,54 +808,81 @@ private fun ChainOfThoughtScope.ExportedReasoningStep(
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.fillMaxWidth(),
             )
-        }
+        },
     )
 }
 
 @Composable
-private fun ChainOfThoughtScope.ExportedToolStep(
-    tool: UIMessagePart.Tool
-) {
-    val memoryAction = runCatching {
-        tool.inputAsJson().jsonObject["action"]?.jsonPrimitiveOrNull?.contentOrNull
-    }.getOrNull()
-    val title = when (tool.toolName) {
-        "memory_tool" -> when (memoryAction) {
-            "create" -> stringResource(R.string.chat_message_tool_create_memory)
-            "edit" -> stringResource(R.string.chat_message_tool_edit_memory)
-            "delete" -> stringResource(R.string.chat_message_tool_delete_memory)
-            else -> stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
-        }
+private fun ChainOfThoughtScope.ExportedToolStep(tool: UIMessagePart.Tool) {
+    val memoryAction =
+        runCatching {
+            tool
+                .inputAsJson()
+                .jsonObject["action"]
+                ?.jsonPrimitiveOrNull
+                ?.contentOrNull
+        }.getOrNull()
+    val title =
+        when (tool.toolName) {
+            "memory_tool" -> {
+                when (memoryAction) {
+                    "create" -> stringResource(R.string.chat_message_tool_create_memory)
+                    "edit" -> stringResource(R.string.chat_message_tool_edit_memory)
+                    "delete" -> stringResource(R.string.chat_message_tool_delete_memory)
+                    else -> stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
+                }
+            }
 
-        "search_web" -> {
-            val query = runCatching {
-                tool.inputAsJson().jsonObject["query"]?.jsonPrimitiveOrNull?.contentOrNull ?: ""
-            }.getOrDefault("")
-            stringResource(R.string.chat_message_tool_search_web, query)
-        }
+            "search_web" -> {
+                val query =
+                    runCatching {
+                        tool
+                            .inputAsJson()
+                            .jsonObject["query"]
+                            ?.jsonPrimitiveOrNull
+                            ?.contentOrNull ?: ""
+                    }.getOrDefault("")
+                stringResource(R.string.chat_message_tool_search_web, query)
+            }
 
-        "scrape_web" -> stringResource(R.string.chat_message_tool_scrape_web)
-        else -> stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
-    }
+            "scrape_web" -> {
+                stringResource(R.string.chat_message_tool_scrape_web)
+            }
+
+            else -> {
+                stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
+            }
+        }
     ControlledChainOfThoughtStep(
         expanded = true,
         onExpandedChange = {},
         icon = {
             Icon(
-                imageVector = when (tool.toolName) {
-                    "memory_tool" -> when (memoryAction) {
-                        "create", "edit" -> HugeIcons.Book04
-                        "delete" -> HugeIcons.Book02
-                        else -> HugeIcons.Wrench01
-                    }
+                imageVector =
+                    when (tool.toolName) {
+                        "memory_tool" -> {
+                            when (memoryAction) {
+                                "create", "edit" -> HugeIcons.Book04
+                                "delete" -> HugeIcons.Book02
+                                else -> HugeIcons.Wrench01
+                            }
+                        }
 
-                    "search_web" -> HugeIcons.Search01
-                    "scrape_web" -> HugeIcons.Earth
-                    else -> HugeIcons.Wrench01
-                },
+                        "search_web" -> {
+                            HugeIcons.Search01
+                        }
+
+                        "scrape_web" -> {
+                            HugeIcons.Earth
+                        }
+
+                        else -> {
+                            HugeIcons.Wrench01
+                        }
+                    },
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.secondary,
             )
         },
         label = {
@@ -830,17 +899,22 @@ private fun ChainOfThoughtScope.ExportedToolStep(
     )
 }
 
-private fun shareFile(context: Context, uri: Uri, mimeType: String) {
-    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
+private fun shareFile(
+    context: Context,
+    uri: Uri,
+    mimeType: String,
+) {
+    val intent =
+        android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
     context.startActivity(
         android.content.Intent.createChooser(
             intent,
-            context.getString(R.string.chat_page_export_share_via)
-        )
+            context.getString(R.string.chat_page_export_share_via),
+        ),
     )
 }
 
@@ -849,7 +923,7 @@ private fun shareFile(context: Context, uri: Uri, mimeType: String) {
  */
 fun exportToJson(
     context: Context,
-    conversation: Conversation
+    conversation: Conversation,
 ) {
     val filename = "chat-export-${LocalDateTime.now().toLocalString()}.json"
 
@@ -868,13 +942,13 @@ fun exportToJson(
             it.write(jsonString.toByteArray())
         }
 
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
         shareFile(context, uri, "application/json")
-
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -885,10 +959,11 @@ fun exportToJson(
  */
 fun exportToShareCode(conversation: Conversation): String {
     val jsonString = JsonInstant.encodeToString(Conversation.serializer(), conversation)
-    val deflater = java.util.zip.Deflater().apply {
-        setInput(jsonString.encodeToByteArray())
-        finish()
-    }
+    val deflater =
+        java.util.zip.Deflater().apply {
+            setInput(jsonString.encodeToByteArray())
+            finish()
+        }
     val buf = java.io.ByteArrayOutputStream()
     val tmp = ByteArray(4096)
     while (!deflater.finished()) {
@@ -905,7 +980,10 @@ fun exportToShareCode(conversation: Conversation): String {
 fun importFromShareCode(code: String): Conversation? {
     if (!code.startsWith("rk://")) return null
     val compressed = android.util.Base64.decode(code.removePrefix("rk://"), android.util.Base64.NO_WRAP)
-    val inflater = java.util.zip.Inflater().apply { setInput(compressed) }
+    val inflater =
+        java.util.zip
+            .Inflater()
+            .apply { setInput(compressed) }
     val buf = java.io.ByteArrayOutputStream()
     val tmp = ByteArray(4096)
     while (!inflater.finished()) {

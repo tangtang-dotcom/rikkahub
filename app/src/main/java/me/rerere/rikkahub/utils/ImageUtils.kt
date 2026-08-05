@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
-import java.io.File
 import com.drew.imaging.ImageMetadataReader
 import com.drew.imaging.png.PngChunkType
 import com.drew.metadata.png.PngDirectory
@@ -16,13 +15,13 @@ import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
+import java.io.File
 
 /**
  * 图片处理工具类
  * 提供图片压缩、旋转修正、二维码解析等功能
  */
 object ImageUtils {
-
     /**
      * 优化的图片加载方法，避免OOM
      * 1. 先获取图片尺寸
@@ -38,13 +37,14 @@ object ImageUtils {
     fun loadOptimizedBitmap(
         context: Context,
         uri: Uri,
-        maxSize: Int = 1024
-    ): Bitmap? {
-        return runCatching {
+        maxSize: Int = 1024,
+    ): Bitmap? =
+        runCatching {
             // 第一步：获取图片的原始尺寸，不加载到内存
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
+            val options =
+                BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
 
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BitmapFactory.decodeStream(inputStream, null, options)
@@ -54,21 +54,22 @@ object ImageUtils {
             val sampleSize = calculateInSampleSize(options, maxSize, maxSize)
 
             // 第二步：使用采样率加载压缩后的图片
-            val loadOptions = BitmapFactory.Options().apply {
-                inSampleSize = sampleSize
-                inPreferredConfig = Bitmap.Config.RGB_565 // 使用RGB_565减少内存占用
-            }
+            val loadOptions =
+                BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.RGB_565 // 使用RGB_565减少内存占用
+                }
 
-            val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream, null, loadOptions)
-            }
+            val bitmap =
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream, null, loadOptions)
+                }
 
             // 第三步：处理图片旋转（如果需要）
             bitmap?.let { correctImageOrientation(context, uri, it) }
         }.onFailure {
             it.printStackTrace()
         }.getOrNull()
-    }
 
     /**
      * 计算合适的采样率
@@ -81,7 +82,7 @@ object ImageUtils {
     fun calculateInSampleSize(
         options: BitmapFactory.Options,
         reqWidth: Int,
-        reqHeight: Int
+        reqHeight: Int,
     ): Int {
         val height = options.outHeight
         val width = options.outWidth
@@ -109,16 +110,21 @@ object ImageUtils {
      * @param bitmap 原始bitmap
      * @return 旋转后的bitmap
      */
-    fun correctImageOrientation(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
+    fun correctImageOrientation(
+        context: Context,
+        uri: Uri,
+        bitmap: Bitmap,
+    ): Bitmap {
         return runCatching {
             val inputStream = context.contentResolver.openInputStream(uri)
             val exif = inputStream?.let { ExifInterface(it) }
             inputStream?.close()
 
-            val orientation = exif?.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL
-            ) ?: ExifInterface.ORIENTATION_NORMAL
+            val orientation =
+                exif?.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                ) ?: ExifInterface.ORIENTATION_NORMAL
 
             val matrix = Matrix()
             when (orientation) {
@@ -144,7 +150,10 @@ object ImageUtils {
      * 判断 uri 指向的图片是否为 HEIF/HEIC 格式
      * 优先使用 ContentResolver 的 MIME 类型，回退到读取文件头魔数嗅探
      */
-    fun isHeifImage(context: Context, uri: Uri): Boolean {
+    fun isHeifImage(
+        context: Context,
+        uri: Uri,
+    ): Boolean {
         context.contentResolver.getType(uri)?.lowercase()?.let { mime ->
             if (mime.contains("heic") || mime.contains("heif")) return true
         }
@@ -171,37 +180,49 @@ object ImageUtils {
         target: File,
         maxSize: Int = 4096,
         quality: Int = 95,
-    ): Boolean = runCatching {
-        val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(input, null, boundsOptions)
-        }
-        val loadOptions = BitmapFactory.Options().apply {
-            inSampleSize = calculateInSampleSize(boundsOptions, maxSize, maxSize)
-            inPreferredConfig = Bitmap.Config.ARGB_8888
-        }
-        val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(input, null, loadOptions)
-        } ?: return@runCatching false
-        // 将 EXIF 旋转烘焙进像素，输出的 JPEG 不再带方向信息，避免下游二次旋转
-        val oriented = correctImageOrientation(context, uri, decoded)
-        try {
-            target.outputStream().use { output ->
-                oriented.compress(Bitmap.CompressFormat.JPEG, quality, output)
+    ): Boolean =
+        runCatching {
+            val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, boundsOptions)
             }
-            true
-        } finally {
-            recycleBitmapSafely(oriented)
-        }
-    }.onFailure {
-        it.printStackTrace()
-    }.getOrDefault(false)
+            val loadOptions =
+                BitmapFactory.Options().apply {
+                    inSampleSize = calculateInSampleSize(boundsOptions, maxSize, maxSize)
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+            val decoded =
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    BitmapFactory.decodeStream(input, null, loadOptions)
+                } ?: return@runCatching false
+            // 将 EXIF 旋转烘焙进像素，输出的 JPEG 不再带方向信息，避免下游二次旋转
+            val oriented = correctImageOrientation(context, uri, decoded)
+            try {
+                target.outputStream().use { output ->
+                    oriented.compress(Bitmap.CompressFormat.JPEG, quality, output)
+                }
+                true
+            } finally {
+                recycleBitmapSafely(oriented)
+            }
+        }.onFailure {
+            it.printStackTrace()
+        }.getOrDefault(false)
 
-    private val HEIF_BRANDS = setOf(
-        "heic", "heix", "heim", "heis",
-        "hevc", "hevx", "hevm", "hevs",
-        "mif1", "msf1", "heif",
-    )
+    private val HEIF_BRANDS =
+        setOf(
+            "heic",
+            "heix",
+            "heim",
+            "heis",
+            "hevc",
+            "hevx",
+            "hevm",
+            "hevs",
+            "mif1",
+            "msf1",
+            "heif",
+        )
 
     /**
      * 从图片中解析二维码
@@ -209,8 +230,8 @@ object ImageUtils {
      * @param bitmap 要解析的图片
      * @return 二维码内容，解析失败返回null
      */
-    fun decodeQRCodeFromBitmap(bitmap: Bitmap): String? {
-        return runCatching {
+    fun decodeQRCodeFromBitmap(bitmap: Bitmap): String? =
+        runCatching {
             val width = bitmap.width
             val height = bitmap.height
             val pixels = IntArray(width * height)
@@ -226,7 +247,6 @@ object ImageUtils {
         }.onFailure {
             it.printStackTrace()
         }.getOrNull()
-    }
 
     /**
      * 从URI加载图片并解析二维码（组合方法）
@@ -239,7 +259,7 @@ object ImageUtils {
     fun decodeQRCodeFromUri(
         context: Context,
         uri: Uri,
-        maxSize: Int = 1024
+        maxSize: Int = 1024,
     ): String? {
         val bitmap = loadOptimizedBitmap(context, uri, maxSize) ?: return null
         return try {
@@ -269,11 +289,15 @@ object ImageUtils {
      * @param uri 图片URI
      * @return ImageInfo包含宽度、高度、MIME类型等信息
      */
-    fun getImageInfo(context: Context, uri: Uri): ImageInfo? {
-        return runCatching {
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
+    fun getImageInfo(
+        context: Context,
+        uri: Uri,
+    ): ImageInfo? =
+        runCatching {
+            val options =
+                BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
 
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BitmapFactory.decodeStream(inputStream, null, options)
@@ -283,13 +307,14 @@ object ImageUtils {
                 ImageInfo(
                     width = options.outWidth,
                     height = options.outHeight,
-                    mimeType = options.outMimeType
+                    mimeType = options.outMimeType,
                 )
-            } else null
+            } else {
+                null
+            }
         }.onFailure {
             it.printStackTrace()
         }.getOrNull()
-    }
 
     /**
      * 获取酒馆角色卡中的角色元数据（如果存在）
@@ -298,26 +323,37 @@ object ImageUtils {
      * @param uri 图片URI
      * @return Result<String> 包含角色元数据的Result对象
      */
-    fun getTavernCharacterMeta(context: Context, uri: Uri): Result<String> = runCatching {
-        val metadata = context.contentResolver.openInputStream(uri)?.use { ImageMetadataReader.readMetadata(it) }
-        if (metadata == null) error("Metadata is null, please check if the image is a character card")
-        if (!metadata.containsDirectoryOfType(PngDirectory::class.java)) error("No PNG directory found, please check if the image is a character card")
+    fun getTavernCharacterMeta(
+        context: Context,
+        uri: Uri,
+    ): Result<String> =
+        runCatching {
+            val metadata = context.contentResolver.openInputStream(uri)?.use { ImageMetadataReader.readMetadata(it) }
+            if (metadata == null) error("Metadata is null, please check if the image is a character card")
+            if (!metadata.containsDirectoryOfType(
+                    PngDirectory::class.java,
+                )
+            ) {
+                error("No PNG directory found, please check if the image is a character card")
+            }
 
-        val pngDirectory = metadata.getDirectoriesOfType(PngDirectory::class.java)
-            .firstOrNull { directory ->
-                directory.pngChunkType == PngChunkType.tEXt
-                    && directory.getString(PngDirectory.TAG_TEXTUAL_DATA).startsWith("[chara:")
-            } ?: error("No tEXt chunk found, please check if the image is a character card")
+            val pngDirectory =
+                metadata
+                    .getDirectoriesOfType(PngDirectory::class.java)
+                    .firstOrNull { directory ->
+                        directory.pngChunkType == PngChunkType.tEXt &&
+                            directory.getString(PngDirectory.TAG_TEXTUAL_DATA).startsWith("[chara:")
+                    } ?: error("No tEXt chunk found, please check if the image is a character card")
 
-        val value = pngDirectory.getString(PngDirectory.TAG_TEXTUAL_DATA)
+            val value = pngDirectory.getString(PngDirectory.TAG_TEXTUAL_DATA)
 
-        val regex = Regex("""\[chara:\s*(.+?)]""")
-        return Result.success(regex.find(value)?.groupValues?.get(1) ?: error("No character data found"))
-    }
+            val regex = Regex("""\[chara:\s*(.+?)]""")
+            return Result.success(regex.find(value)?.groupValues?.get(1) ?: error("No character data found"))
+        }
 
     data class ImageInfo(
         val width: Int,
         val height: Int,
-        val mimeType: String?
+        val mimeType: String?,
     )
 }

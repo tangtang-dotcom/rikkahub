@@ -9,7 +9,6 @@ import org.junit.Test
 import kotlin.time.Clock
 
 class ProviderMessageUtilsTest {
-
     // ==================== groupPartsByToolBoundary Tests ====================
 
     @Test
@@ -21,10 +20,11 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `only text parts should return single Content group`() {
-        val parts = listOf(
-            UIMessagePart.Text("Hello"),
-            UIMessagePart.Text("World")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Text("Hello"),
+                UIMessagePart.Text("World"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(1, result.size)
@@ -34,10 +34,11 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `only executed tools should return single Tools group`() {
-        val parts = listOf(
-            createExecutedTool("call1", "tool1"),
-            createExecutedTool("call2", "tool2")
-        )
+        val parts =
+            listOf(
+                createExecutedTool("call1", "tool1"),
+                createExecutedTool("call2", "tool2"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(1, result.size)
@@ -47,10 +48,11 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `unexecuted tool should be in Content group`() {
-        val parts = listOf(
-            UIMessagePart.Text("Hello"),
-            createUnexecutedTool("call1", "tool1")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Text("Hello"),
+                createUnexecutedTool("call1", "tool1"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(1, result.size)
@@ -60,10 +62,11 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `text then tool should create Content then Tools groups`() {
-        val parts = listOf(
-            UIMessagePart.Text("Hello"),
-            createExecutedTool("call1", "tool1")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Text("Hello"),
+                createExecutedTool("call1", "tool1"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(2, result.size)
@@ -73,10 +76,11 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `tool then text should create Tools then Content groups`() {
-        val parts = listOf(
-            createExecutedTool("call1", "tool1"),
-            UIMessagePart.Text("Result")
-        )
+        val parts =
+            listOf(
+                createExecutedTool("call1", "tool1"),
+                UIMessagePart.Text("Result"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(2, result.size)
@@ -87,13 +91,14 @@ class ProviderMessageUtilsTest {
     @Test
     fun `interleaved text and tools should create alternating groups`() {
         // [Text1, Tool1, Tool2, Text2, Tool3]
-        val parts = listOf(
-            UIMessagePart.Text("Text1"),
-            createExecutedTool("call1", "tool1"),
-            createExecutedTool("call2", "tool2"),
-            UIMessagePart.Text("Text2"),
-            createExecutedTool("call3", "tool3")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Text("Text1"),
+                createExecutedTool("call1", "tool1"),
+                createExecutedTool("call2", "tool2"),
+                UIMessagePart.Text("Text2"),
+                createExecutedTool("call3", "tool3"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(4, result.size)
@@ -117,11 +122,12 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `reasoning should be grouped with content`() {
-        val parts = listOf(
-            UIMessagePart.Reasoning(reasoning = "Thinking..."),
-            UIMessagePart.Text("Response"),
-            createExecutedTool("call1", "tool1")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Reasoning(reasoning = "Thinking..."),
+                UIMessagePart.Text("Response"),
+                createExecutedTool("call1", "tool1"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(2, result.size)
@@ -141,11 +147,12 @@ class ProviderMessageUtilsTest {
     fun `tool then reasoning then text should preserve order`() {
         // [Tool(executed), Reasoning, Text]
         // -> [Tools([Tool]), Content([Reasoning, Text])]
-        val parts = listOf(
-            createExecutedTool("call1", "tool1"),
-            UIMessagePart.Reasoning(reasoning = "Thinking after tool"),
-            UIMessagePart.Text("Final response")
-        )
+        val parts =
+            listOf(
+                createExecutedTool("call1", "tool1"),
+                UIMessagePart.Reasoning(reasoning = "Thinking after tool"),
+                UIMessagePart.Text("Final response"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(2, result.size)
@@ -165,15 +172,16 @@ class ProviderMessageUtilsTest {
     @Test
     fun `complex multi-round tool call scenario`() {
         // Simulate: thinking -> text -> tool1 -> reasoning -> text -> tool2 -> final text
-        val parts = listOf(
-            UIMessagePart.Reasoning(reasoning = "Initial thinking"),
-            UIMessagePart.Text("Let me search"),
-            createExecutedTool("call1", "search"),
-            UIMessagePart.Reasoning(reasoning = "Analyzing results"),
-            UIMessagePart.Text("Now calculating"),
-            createExecutedTool("call2", "calculate"),
-            UIMessagePart.Text("Final answer")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Reasoning(reasoning = "Initial thinking"),
+                UIMessagePart.Text("Let me search"),
+                createExecutedTool("call1", "search"),
+                UIMessagePart.Reasoning(reasoning = "Analyzing results"),
+                UIMessagePart.Text("Now calculating"),
+                createExecutedTool("call2", "calculate"),
+                UIMessagePart.Text("Final answer"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(5, result.size)
@@ -202,11 +210,12 @@ class ProviderMessageUtilsTest {
     @Test
     fun `parallel tool calls should stay in same Tools group`() {
         // [Tool1, Tool2, Tool3] (all executed together)
-        val parts = listOf(
-            createExecutedTool("call1", "tool1"),
-            createExecutedTool("call2", "tool2"),
-            createExecutedTool("call3", "tool3")
-        )
+        val parts =
+            listOf(
+                createExecutedTool("call1", "tool1"),
+                createExecutedTool("call2", "tool2"),
+                createExecutedTool("call3", "tool3"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(1, result.size)
@@ -216,11 +225,12 @@ class ProviderMessageUtilsTest {
 
     @Test
     fun `image parts should be grouped with content`() {
-        val parts = listOf(
-            UIMessagePart.Image(url = "http://example.com/image.png"),
-            UIMessagePart.Text("Description"),
-            createExecutedTool("call1", "tool1")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Image(url = "http://example.com/image.png"),
+                UIMessagePart.Text("Description"),
+                createExecutedTool("call1", "tool1"),
+            )
         val result = groupPartsByToolBoundary(parts)
 
         assertEquals(2, result.size)
@@ -244,11 +254,12 @@ class ProviderMessageUtilsTest {
         //   user: [tool_result]
         //   assistant: [more_text]
 
-        val parts = listOf(
-            UIMessagePart.Text("Let me help"),
-            createExecutedTool("call1", "search"),
-            UIMessagePart.Text("Based on the results")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Text("Let me help"),
+                createExecutedTool("call1", "search"),
+                UIMessagePart.Text("Based on the results"),
+            )
         val groups = groupPartsByToolBoundary(parts)
 
         // Verify the grouping supports correct output
@@ -271,11 +282,12 @@ class ProviderMessageUtilsTest {
         // Input: [Tool(executed), Reasoning, Text]
         // The Reasoning and Text should be in the same Content group AFTER the Tool
 
-        val parts = listOf(
-            createExecutedTool("call1", "tool1"),
-            UIMessagePart.Reasoning(reasoning = "Thinking about results"),
-            UIMessagePart.Text("Here's what I found")
-        )
+        val parts =
+            listOf(
+                createExecutedTool("call1", "tool1"),
+                UIMessagePart.Reasoning(reasoning = "Thinking about results"),
+                UIMessagePart.Text("Here's what I found"),
+            )
         val groups = groupPartsByToolBoundary(parts)
 
         assertEquals(2, groups.size)
@@ -296,16 +308,17 @@ class ProviderMessageUtilsTest {
         // Input: [Reasoning1, Text1, Tool1, Reasoning2, Text2, Tool2, Reasoning3, Text3]
         // Each Reasoning should stay with its following content
 
-        val parts = listOf(
-            UIMessagePart.Reasoning(reasoning = "First thought"),
-            UIMessagePart.Text("First action"),
-            createExecutedTool("call1", "tool1"),
-            UIMessagePart.Reasoning(reasoning = "Second thought"),
-            UIMessagePart.Text("Second action"),
-            createExecutedTool("call2", "tool2"),
-            UIMessagePart.Reasoning(reasoning = "Final thought"),
-            UIMessagePart.Text("Final answer")
-        )
+        val parts =
+            listOf(
+                UIMessagePart.Reasoning(reasoning = "First thought"),
+                UIMessagePart.Text("First action"),
+                createExecutedTool("call1", "tool1"),
+                UIMessagePart.Reasoning(reasoning = "Second thought"),
+                UIMessagePart.Text("Second action"),
+                createExecutedTool("call2", "tool2"),
+                UIMessagePart.Reasoning(reasoning = "Final thought"),
+                UIMessagePart.Text("Final answer"),
+            )
         val groups = groupPartsByToolBoundary(parts)
 
         assertEquals(5, groups.size)
@@ -340,21 +353,25 @@ class ProviderMessageUtilsTest {
 
     // ==================== Helper Functions ====================
 
-    private fun createExecutedTool(callId: String, name: String): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+    private fun createExecutedTool(
+        callId: String,
+        name: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = "{}",
-            output = listOf(UIMessagePart.Text("Result from $name"))
+            output = listOf(UIMessagePart.Text("Result from $name")),
         )
-    }
 
-    private fun createUnexecutedTool(callId: String, name: String): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+    private fun createUnexecutedTool(
+        callId: String,
+        name: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = "{}",
-            output = emptyList()
+            output = emptyList(),
         )
-    }
 }

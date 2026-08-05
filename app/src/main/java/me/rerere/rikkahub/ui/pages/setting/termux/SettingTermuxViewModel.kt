@@ -14,46 +14,47 @@ import me.rerere.rikkahub.data.preferences.TermuxRuntimeConfig
 class SettingTermuxViewModel(
     private val prefs: TermuxPreferences,
 ) : ViewModel() {
-
     /**
      * Combined settings state. Nested [combine] calls stay within the 5-argument typed
      * overloads to avoid the intersection-type warning from the vararg overload.
      */
-    val config: StateFlow<TermuxRuntimeConfig> = combine(
+    val config: StateFlow<TermuxRuntimeConfig> =
         combine(
-            prefs.commandTimeoutFlow(),
-            prefs.turnBudgetFlow(),
-            prefs.verifyTimeoutFlow(),
-            prefs.defaultWorkingDirFlow(),
-            prefs.maxStdoutFlow(),
-        ) { commandTimeout, turnBudget, verifyTimeout, workingDir, maxStdout ->
-            Partial(commandTimeout, turnBudget, verifyTimeout, workingDir, maxStdout)
-        },
-        prefs.maxStderrFlow(),
-        prefs.aptWrapEnabledFlow(),
-    ) { partial, maxStderr, aptWrap ->
-        TermuxRuntimeConfig(
-            commandTimeoutMs  = partial.commandTimeoutMs,
-            turnBudgetMs      = partial.turnBudgetMs,
-            verifyTimeoutMs   = partial.verifyTimeoutMs,
-            defaultWorkingDir = partial.defaultWorkingDir,
-            maxStdoutBytes    = partial.maxStdoutBytes,
-            maxStderrBytes    = maxStderr,
-            aptWrapEnabled    = aptWrap,
+            combine(
+                prefs.commandTimeoutFlow(),
+                prefs.turnBudgetFlow(),
+                prefs.verifyTimeoutFlow(),
+                prefs.defaultWorkingDirFlow(),
+                prefs.maxStdoutFlow(),
+            ) { commandTimeout, turnBudget, verifyTimeout, workingDir, maxStdout ->
+                Partial(commandTimeout, turnBudget, verifyTimeout, workingDir, maxStdout)
+            },
+            prefs.maxStderrFlow(),
+            prefs.aptWrapEnabledFlow(),
+        ) { partial, maxStderr, aptWrap ->
+            TermuxRuntimeConfig(
+                commandTimeoutMs = partial.commandTimeoutMs,
+                turnBudgetMs = partial.turnBudgetMs,
+                verifyTimeoutMs = partial.verifyTimeoutMs,
+                defaultWorkingDir = partial.defaultWorkingDir,
+                maxStdoutBytes = partial.maxStdoutBytes,
+                maxStderrBytes = maxStderr,
+                aptWrapEnabled = aptWrap,
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue =
+                TermuxRuntimeConfig(
+                    commandTimeoutMs = TermuxDefaults.DEFAULT_COMMAND_TIMEOUT_MS,
+                    turnBudgetMs = TermuxDefaults.DEFAULT_TURN_BUDGET_MS,
+                    verifyTimeoutMs = TermuxDefaults.DEFAULT_VERIFY_TIMEOUT_MS,
+                    defaultWorkingDir = TermuxDefaults.DEFAULT_WORKING_DIR,
+                    maxStdoutBytes = TermuxDefaults.DEFAULT_MAX_STDOUT,
+                    maxStderrBytes = TermuxDefaults.DEFAULT_MAX_STDERR,
+                    aptWrapEnabled = TermuxDefaults.DEFAULT_APT_WRAP_ENABLED,
+                ),
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = TermuxRuntimeConfig(
-            commandTimeoutMs  = TermuxDefaults.DEFAULT_COMMAND_TIMEOUT_MS,
-            turnBudgetMs      = TermuxDefaults.DEFAULT_TURN_BUDGET_MS,
-            verifyTimeoutMs   = TermuxDefaults.DEFAULT_VERIFY_TIMEOUT_MS,
-            defaultWorkingDir = TermuxDefaults.DEFAULT_WORKING_DIR,
-            maxStdoutBytes    = TermuxDefaults.DEFAULT_MAX_STDOUT,
-            maxStderrBytes    = TermuxDefaults.DEFAULT_MAX_STDERR,
-            aptWrapEnabled    = TermuxDefaults.DEFAULT_APT_WRAP_ENABLED,
-        ),
-    )
 
     // --- Write helpers. Unit conversion happens here so [TermuxPreferences] always receives ms/bytes. ---
 

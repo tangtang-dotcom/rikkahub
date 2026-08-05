@@ -32,9 +32,10 @@ fun rememberCustomAsrState(): CustomAsrState {
     val httpClient = koinInject<OkHttpClient>()
     val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
 
-    val asrState = remember {
-        CustomAsrStateImpl(context.applicationContext, httpClient)
-    }
+    val asrState =
+        remember {
+            CustomAsrStateImpl(context.applicationContext, httpClient)
+        }
 
     DisposableEffect(settings.selectedASRProviderId, settings.asrProviders) {
         asrState.updateProvider(settings.getSelectedASRProvider())
@@ -52,28 +53,33 @@ fun rememberCustomAsrState(): CustomAsrState {
 
 interface CustomAsrState {
     val state: StateFlow<ASRState>
+
     fun start(onTranscriptChange: (String) -> Unit)
+
     fun stop()
+
     fun cleanup()
 }
 
 private class CustomAsrStateImpl(
     private val context: Context,
-    private val httpClient: OkHttpClient
+    private val httpClient: OkHttpClient,
 ) : CustomAsrState {
     private var controller: ASRController? = null
     private val idleState = MutableStateFlow(ASRState())
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private val audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-        )
-        .setAcceptsDelayedFocusGain(false)
-        .build()
+    private val audioFocusRequest =
+        AudioFocusRequest
+            .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setAudioAttributes(
+                AudioAttributes
+                    .Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build(),
+            ).setAcceptsDelayedFocusGain(false)
+            .build()
 
     override val state: StateFlow<ASRState>
         get() = controller?.state ?: idleState

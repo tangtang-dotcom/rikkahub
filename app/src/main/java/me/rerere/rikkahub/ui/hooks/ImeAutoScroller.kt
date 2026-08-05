@@ -14,9 +14,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalDensity
 
 @Composable
-fun ImeLazyListAutoScroller(
-    lazyListState: LazyListState,
-) {
+fun ImeLazyListAutoScroller(lazyListState: LazyListState) {
     val ime = WindowInsets.ime
     val localDensity = LocalDensity.current
     var imeHeigh by remember { mutableIntStateOf(0) }

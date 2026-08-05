@@ -9,12 +9,12 @@ import java.util.zip.ZipInputStream
 private data class ListInfo(
     val level: Int,
     val isNumbered: Boolean,
-    val number: Int
+    val number: Int,
 )
 
 private data class ParagraphProperties(
     val listInfo: ListInfo?,
-    val headingLevel: Int
+    val headingLevel: Int,
 )
 
 object DocxParser {
@@ -37,8 +37,8 @@ object DocxParser {
         }
     }
 
-    private fun parseDocumentXml(inputStream: InputStream): String {
-        return try {
+    private fun parseDocumentXml(inputStream: InputStream): String =
+        try {
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = true
             val parser = factory.newPullParser()
@@ -56,6 +56,7 @@ object DocxParser {
                             "tbl" -> if (inBody) processTable(parser, result)
                         }
                     }
+
                     XmlPullParser.END_TAG -> {
                         if (parser.name == "body") inBody = false
                     }
@@ -67,9 +68,11 @@ object DocxParser {
         } catch (e: Exception) {
             "Error parsing document XML: ${e.message}"
         }
-    }
 
-    private fun processParagraph(parser: XmlPullParser, result: StringBuilder) {
+    private fun processParagraph(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val paragraphStartDepth = parser.depth
         val paragraphContent = StringBuilder()
         var listInfo: ListInfo? = null
@@ -79,7 +82,10 @@ object DocxParser {
             when (parser.eventType) {
                 XmlPullParser.START_TAG -> {
                     when (parser.name) {
-                        "r" -> extractRunText(parser, paragraphContent)
+                        "r" -> {
+                            extractRunText(parser, paragraphContent)
+                        }
+
                         "pPr" -> {
                             val props = extractParagraphProperties(parser)
                             listInfo = props.listInfo
@@ -87,6 +93,7 @@ object DocxParser {
                         }
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "p" && parser.depth == paragraphStartDepth) {
                         break
@@ -103,10 +110,12 @@ object DocxParser {
                     val marker = if (listInfo.isNumbered) "${listInfo.number}. " else "- "
                     result.append("$indent$marker$paragraphText\n")
                 }
+
                 headingLevel > 0 -> {
                     val headingPrefix = "#".repeat(headingLevel)
                     result.append("$headingPrefix $paragraphText\n\n")
                 }
+
                 else -> {
                     result.append("$paragraphText\n\n")
                 }
@@ -114,7 +123,10 @@ object DocxParser {
         }
     }
 
-    private fun extractRunText(parser: XmlPullParser, result: StringBuilder) {
+    private fun extractRunText(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val runStartDepth = parser.depth
         var isBold = false
         var isItalic = false
@@ -128,24 +140,27 @@ object DocxParser {
                             isBold = formatting.first
                             isItalic = formatting.second
                         }
+
                         "t" -> {
                             parser.next()
                             if (parser.eventType == XmlPullParser.TEXT) {
                                 var text = parser.text ?: ""
 
                                 // Apply markdown formatting
-                                text = when {
-                                    isBold && isItalic -> "***$text***"
-                                    isBold -> "**$text**"
-                                    isItalic -> "*$text*"
-                                    else -> text
-                                }
+                                text =
+                                    when {
+                                        isBold && isItalic -> "***$text***"
+                                        isBold -> "**$text**"
+                                        isItalic -> "*$text*"
+                                        else -> text
+                                    }
 
                                 result.append(text)
                             }
                         }
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "r" && parser.depth == runStartDepth) {
                         break
@@ -168,6 +183,7 @@ object DocxParser {
                         "i" -> isItalic = true
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "rPr" && parser.depth == rPrStartDepth) {
                         break
@@ -179,7 +195,10 @@ object DocxParser {
         return Pair(isBold, isItalic)
     }
 
-    private fun processTable(parser: XmlPullParser, result: StringBuilder) {
+    private fun processTable(
+        parser: XmlPullParser,
+        result: StringBuilder,
+    ) {
         val tableStartDepth = parser.depth
         val rows = mutableListOf<List<String>>()
 
@@ -193,6 +212,7 @@ object DocxParser {
                         }
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "tbl" && parser.depth == tableStartDepth) {
                         break
@@ -239,6 +259,7 @@ object DocxParser {
                         cells.add(cellText)
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "tr" && parser.depth == rowStartDepth) {
                         break
@@ -267,6 +288,7 @@ object DocxParser {
                         }
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "tc" && parser.depth == cellStartDepth) {
                         break
@@ -289,6 +311,7 @@ object DocxParser {
                         extractRunText(parser, result)
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "p" && parser.depth == paragraphStartDepth) {
                         break
@@ -316,14 +339,24 @@ object DocxParser {
                                 headingLevel = styleVal.lastOrNull()?.digitToIntOrNull() ?: 1
                             }
                         }
+
                         "numPr" -> {
                             val numPrStartDepth = parser.depth
                             while (parser.next() != XmlPullParser.END_DOCUMENT) {
                                 when (parser.eventType) {
-                                    XmlPullParser.START_TAG -> when (parser.name) {
-                                        "ilvl" -> listLevel = parser.getAttributeValue(null, "val")?.toIntOrNull() ?: 0
-                                        "numId" -> isNumbered = parser.getAttributeValue(null, "val") != null
+                                    XmlPullParser.START_TAG -> {
+                                        when (parser.name) {
+                                            "ilvl" -> {
+                                                listLevel =
+                                                    parser.getAttributeValue(null, "val")?.toIntOrNull() ?: 0
+                                            }
+
+                                            "numId" -> {
+                                                isNumbered = parser.getAttributeValue(null, "val") != null
+                                            }
+                                        }
                                     }
+
                                     XmlPullParser.END_TAG -> {
                                         if (parser.name == "numPr" && parser.depth == numPrStartDepth) break
                                     }
@@ -332,6 +365,7 @@ object DocxParser {
                         }
                     }
                 }
+
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "pPr" && parser.depth == pPrStartDepth) {
                         break
@@ -340,9 +374,12 @@ object DocxParser {
             }
         }
 
-        val listInfo = if (listLevel > 0 || isNumbered) {
-            ListInfo(level = listLevel, isNumbered = isNumbered, number = 1)
-        } else null
+        val listInfo =
+            if (listLevel > 0 || isNumbered) {
+                ListInfo(level = listLevel, isNumbered = isNumbered, number = 1)
+            } else {
+                null
+            }
 
         return ParagraphProperties(listInfo = listInfo, headingLevel = headingLevel)
     }

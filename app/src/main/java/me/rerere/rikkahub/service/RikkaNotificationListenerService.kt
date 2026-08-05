@@ -20,12 +20,14 @@ import me.rerere.rikkahub.data.telegram.TelegramBotPreferences
 import org.koin.android.ext.android.inject
 
 private const val TAG = "RikkaNListener"
+
 // Generous ring so a busy morning (school bus app + Slack + WhatsApp + Instagram +
 // dozen others piling notifications on while the user wakes up) does not silently roll
 // over within ~10 minutes. The ring is held in memory only; entries cost ~200 bytes
 // each so 500 entries is ~100KB — well below the per-process Java heap budget.
 private const val RING_SIZE = 500
 private const val MAX_TEXT_BYTES = 4096
+
 // Cache window for [RikkaNotificationListenerService.listActive]'s mapped entries.
 // Short enough that a freshly posted notification appears on the next user turn (loop
 // guard's freshness TTL is 5 s) but long enough that a single LLM tool turn that calls
@@ -42,7 +44,6 @@ private const val ACTIVE_LIST_CACHE_TTL_MS = 1_000L
  * The companion singleton lets tool factories reach the live instance synchronously.
  */
 class RikkaNotificationListenerService : NotificationListenerService() {
-
     private val whitelistPrefs: NotificationListenerPreferences by inject()
     private val telegramPrefs: TelegramBotPreferences by inject()
     private val telegramClient: TelegramBotClient by inject()
@@ -66,6 +67,7 @@ class RikkaNotificationListenerService : NotificationListenerService() {
     // under different StatusBarNotification keys; per-key dedup misses those, so this
     // global dedup catches "exact same payload as the previous forward" regardless of key.
     @Volatile private var lastForwardedGlobalSig: Int = 0
+
     @Volatile private var lastForwardedGlobalAtMs: Long = 0L
 
     override fun onListenerConnected() {
@@ -130,14 +132,22 @@ class RikkaNotificationListenerService : NotificationListenerService() {
     }
 
     private suspend fun tryForwardToTelegram(entry: NotificationEntry) {
-        val cfg = try { whitelistPrefs.current() } catch (t: Throwable) {
-            Log.w(TAG, "whitelist prefs read failed; skipping forward", t); return
-        }
+        val cfg =
+            try {
+                whitelistPrefs.current()
+            } catch (t: Throwable) {
+                Log.w(TAG, "whitelist prefs read failed; skipping forward", t)
+                return
+            }
         if (entry.packageName !in cfg.whitelist) return
 
-        val tg = try { telegramPrefs.current() } catch (t: Throwable) {
-            Log.w(TAG, "telegram prefs read failed; skipping forward", t); return
-        }
+        val tg =
+            try {
+                telegramPrefs.current()
+            } catch (t: Throwable) {
+                Log.w(TAG, "telegram prefs read failed; skipping forward", t)
+                return
+            }
         val chatId = tg.defaultChatId ?: return
         if (!tg.enabled) return
 
@@ -147,12 +157,14 @@ class RikkaNotificationListenerService : NotificationListenerService() {
         // notifications (e.g. a termux-notification the user explicitly asked the agent
         // to send) still go through.
         if (entry.ongoing &&
-            me.rerere.rikkahub.data.ai.AgentTurnTracker.isFreshlyTouched(entry.packageName)) {
+            me.rerere.rikkahub.data.ai.AgentTurnTracker
+                .isFreshlyTouched(entry.packageName)
+        ) {
             return
         }
 
         val signature = (entry.title + "|" + entry.text).hashCode()
-        if (lastForwarded[entry.key] == signature) return  // identical update; skip
+        if (lastForwarded[entry.key] == signature) return // identical update; skip
 
         // Global dedup: if the previous forward (any key) had the exact same package + title
         // + text within the last 5 minutes, skip. Catches Termux's persistent notification
@@ -163,14 +175,15 @@ class RikkaNotificationListenerService : NotificationListenerService() {
             return
         }
 
-        val body = buildString {
-            append("🔔 [").append(entry.label).append("] ")
-            if (entry.title.isNotBlank()) append(entry.title)
-            if (entry.text.isNotBlank()) {
-                if (entry.title.isNotBlank()) append('\n')
-                append(entry.text)
-            }
-        }.take(3500)
+        val body =
+            buildString {
+                append("🔔 [").append(entry.label).append("] ")
+                if (entry.title.isNotBlank()) append(entry.title)
+                if (entry.text.isNotBlank()) {
+                    if (entry.title.isNotBlank()) append('\n')
+                    append(entry.text)
+                }
+            }.take(3500)
 
         try {
             telegramClient.sendMessage(chatId, body)
@@ -201,19 +214,32 @@ class RikkaNotificationListenerService : NotificationListenerService() {
      * 1. action_title (case-insensitive, exact match)
      * 2. action_index (0-based)
      */
-    fun triggerAction(key: String, actionIndex: Int?, actionTitle: String?): TriggerResult {
-        val sbn = activeNotifications?.firstOrNull { it.key == key }
-            ?: return TriggerResult.NotFound
+    fun triggerAction(
+        key: String,
+        actionIndex: Int?,
+        actionTitle: String?,
+    ): TriggerResult {
+        val sbn =
+            activeNotifications?.firstOrNull { it.key == key }
+                ?: return TriggerResult.NotFound
         val actions = sbn.notification.actions ?: emptyArray()
         if (actions.isEmpty()) return TriggerResult.NoAction
         val normalizedActionTitle = actionTitle?.trim()
 
-        val matched: Notification.Action = when {
-            !normalizedActionTitle.isNullOrBlank() ->
-                actions.firstOrNull { matchesNotificationActionTitle(it.title?.toString(), normalizedActionTitle) }
-            actionIndex != null -> actions.getOrNull(actionIndex)
-            else -> null
-        } ?: return TriggerResult.NoAction
+        val matched: Notification.Action =
+            when {
+                !normalizedActionTitle.isNullOrBlank() -> {
+                    actions.firstOrNull { matchesNotificationActionTitle(it.title?.toString(), normalizedActionTitle) }
+                }
+
+                actionIndex != null -> {
+                    actions.getOrNull(actionIndex)
+                }
+
+                else -> {
+                    null
+                }
+            } ?: return TriggerResult.NoAction
 
         val remoteInputs = matched.remoteInputs
         if (remoteInputs != null && remoteInputs.isNotEmpty()) {
@@ -235,14 +261,19 @@ class RikkaNotificationListenerService : NotificationListenerService() {
      * apps that expose a direct-reply action (WhatsApp, Messages, Telegram, etc.).
      * Picks the first action that carries at least one RemoteInput.
      */
-    fun triggerReplyAction(key: String, text: String): TriggerResult {
-        val sbn = activeNotifications?.firstOrNull { it.key == key }
-            ?: return TriggerResult.NotFound
+    fun triggerReplyAction(
+        key: String,
+        text: String,
+    ): TriggerResult {
+        val sbn =
+            activeNotifications?.firstOrNull { it.key == key }
+                ?: return TriggerResult.NotFound
         val actions = sbn.notification.actions ?: emptyArray()
         if (actions.isEmpty()) return TriggerResult.NoAction
 
-        val matched = actions.firstOrNull { !it.remoteInputs.isNullOrEmpty() }
-            ?: return TriggerResult.NoAction
+        val matched =
+            actions.firstOrNull { !it.remoteInputs.isNullOrEmpty() }
+                ?: return TriggerResult.NoAction
         val remoteInputs = matched.remoteInputs ?: return TriggerResult.NoAction
         val pi = matched.actionIntent ?: return TriggerResult.NoAction
 
@@ -283,15 +314,29 @@ class RikkaNotificationListenerService : NotificationListenerService() {
         activeListCache = null
     }
 
-    private data class ActiveListCacheEntry(val cachedAtMs: Long, val entries: List<NotificationEntry>)
+    private data class ActiveListCacheEntry(
+        val cachedAtMs: Long,
+        val entries: List<NotificationEntry>,
+    )
+
     @Volatile private var activeListCache: ActiveListCacheEntry? = null
 
     sealed class TriggerResult {
-        data class Success(val actionTitle: String) : TriggerResult()
+        data class Success(
+            val actionTitle: String,
+        ) : TriggerResult()
+
         data object NotFound : TriggerResult()
+
         data object NoAction : TriggerResult()
-        data class RequiresInput(val actionTitle: String) : TriggerResult()
-        data class SendFailed(val reason: String) : TriggerResult()
+
+        data class RequiresInput(
+            val actionTitle: String,
+        ) : TriggerResult()
+
+        data class SendFailed(
+            val reason: String,
+        ) : TriggerResult()
     }
 
     private fun shouldDrop(entry: NotificationEntry): Boolean {
@@ -308,7 +353,10 @@ class RikkaNotificationListenerService : NotificationListenerService() {
     }
 }
 
-internal fun matchesNotificationActionTitle(actual: String?, requested: String?): Boolean =
+internal fun matchesNotificationActionTitle(
+    actual: String?,
+    requested: String?,
+): Boolean =
     !requested.isNullOrBlank() &&
         actual?.trim()?.equals(requested.trim(), ignoreCase = true) == true
 
@@ -331,13 +379,14 @@ private fun StatusBarNotification.toEntry(pm: PackageManager): NotificationEntry
     val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
     val text = extraText()
     val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty()
-    val label = try {
-        pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
-    } catch (t: Throwable) {
-        // Uninstalled / restricted package — fall back to the raw package name.
-        Log.d(TAG, "getApplicationLabel failed for $packageName", t)
-        packageName
-    }
+    val label =
+        try {
+            pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+        } catch (t: Throwable) {
+            // Uninstalled / restricted package — fall back to the raw package name.
+            Log.d(TAG, "getApplicationLabel failed for $packageName", t)
+            packageName
+        }
     val actionTitles = n.actions?.mapNotNull { it.title?.toString() } ?: emptyList()
     val ongoing = (n.flags and Notification.FLAG_ONGOING_EVENT) != 0
     return NotificationEntry(

@@ -832,6 +832,8 @@
   <string name="setting_page_config">Configure</string>
   <string name="setting_page_config_api_desc">You haven\'t configured API and model yet, please configure first</string>
   <string name="setting_page_config_api_title">Please configure API and model</string>
+  <string name="setting_page_security_degraded_title">Weak encryption in use</string>
+  <string name="setting_page_security_degraded_desc">Your device doesn\'t support hardware-backed encryption; credentials are stored with weak obfuscation</string>
   <string name="setting_page_data_backup">Data Backup</string>
   <string name="setting_page_data_backup_desc">Backup and restore app data</string>
   <string name="setting_page_data_settings">Data Settings</string>
@@ -1181,6 +1183,7 @@
   <string name="auto_compress_confirm_title">Compress context?</string>
   <string name="auto_compress_confirm_desc">Compressing will summarize and reset the current conversation history. Continue?</string>
   <string name="auto_compress_reset_warning">⚠️ Auto compress will reset the current conversation history</string>
+  <string name="auto_compress_invalid_input">Please enter a valid value</string>
   <string name="setting_model_page_tool_output">Tool Output Limit</string>
   <string name="setting_model_page_tool_output_max_chars">Tool output limit (KB, 1-20; e.g. 5 = 5000 chars)</string>
   <string name="setting_display_page_bubble_opacity_title">Bubble Opacity</string>

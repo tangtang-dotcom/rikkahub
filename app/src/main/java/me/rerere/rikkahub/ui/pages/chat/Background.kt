@@ -14,7 +14,10 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 
 @Composable
-fun AssistantBackground(setting: Settings, modifier: Modifier) {
+fun AssistantBackground(
+    setting: Settings,
+    modifier: Modifier,
+) {
     val assistant = setting.getCurrentAssistant()
     if (assistant.useGradientBackground) {
         MeshGradientBackground(modifier = modifier)
@@ -28,23 +31,26 @@ fun AssistantBackground(setting: Settings, modifier: Modifier) {
                 model = assistant.background,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(backgroundOpacity)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .alpha(backgroundOpacity),
             )
 
             // 全屏渐变遮罩
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                backgroundColor.copy(alpha = 0.2f),
-                                backgroundColor.copy(alpha = 0.5f)
-                            )
-                        )
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors =
+                                    listOf(
+                                        backgroundColor.copy(alpha = 0.2f),
+                                        backgroundColor.copy(alpha = 0.5f),
+                                    ),
+                            ),
+                        ),
             )
         }
     }

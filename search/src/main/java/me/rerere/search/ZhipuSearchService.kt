@@ -31,7 +31,7 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://bigmodel.cn/usercenter/proj-mgmt/apikeys")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -39,13 +39,17 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
 
     override fun parameters(options: SearchServiceOptions.ZhipuOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.ZhipuOptions): InputSchema? = null
@@ -53,63 +57,68 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.ZhipuOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        serviceOptions: SearchServiceOptions.ZhipuOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val body = buildJsonObject {
-                put("search_query", JsonPrimitive(query))
-                put("search_engine", JsonPrimitive("search_std"))
-                put("count", JsonPrimitive(commonOptions.resultSize))
-            }
+                val body =
+                    buildJsonObject {
+                        put("search_query", JsonPrimitive(query))
+                        put("search_engine", JsonPrimitive("search_std"))
+                        put("count", JsonPrimitive(commonOptions.resultSize))
+                    }
 
-            val request = Request.Builder()
-                .url("https://open.bigmodel.cn/api/paas/v4/web_search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://open.bigmodel.cn/api/paas/v4/web_search")
+                        .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
+                        .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
+                        .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
-                val response = runCatching {
-                    json.decodeFromString<ZhipuDto>(bodyRaw)
-                }.onFailure {
-                    it.printStackTrace()
-                    println(bodyRaw)
-                    error("Failed to decode response: $bodyRaw")
-                }.getOrThrow()
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val bodyRaw = response.body.string()
+                    val response =
+                        runCatching {
+                            json.decodeFromString<ZhipuDto>(bodyRaw)
+                        }.onFailure {
+                            it.printStackTrace()
+                            println(bodyRaw)
+                            error("Failed to decode response: $bodyRaw")
+                        }.getOrThrow()
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = response.searchResult.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.link,
-                                text = it.content,
-                            )
-                        }
-                    ))
-            } else {
-                println(response.body.string())
-                error("response failed #${response.code}")
+                    return@withContext Result.success(
+                        SearchResult(
+                            items =
+                                response.searchResult.map {
+                                    SearchResultItem(
+                                        title = it.title,
+                                        url = it.link,
+                                        text = it.content,
+                                    )
+                                },
+                        ),
+                    )
+                } else {
+                    println(response.body.string())
+                    error("response failed #${response.code}")
+                }
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.ZhipuOptions
-    ): Result<ScrapedResult> {
-        return Result.failure(Exception("Scraping is not supported for Zhipu"))
-    }
+        serviceOptions: SearchServiceOptions.ZhipuOptions,
+    ): Result<ScrapedResult> = Result.failure(Exception("Scraping is not supported for Zhipu"))
 
     @Serializable
     data class ZhipuDto(
         @SerialName("search_result")
-        val searchResult: List<ZhipuSearchResultDto>
+        val searchResult: List<ZhipuSearchResultDto>,
     )
 
     @Serializable
@@ -125,6 +134,6 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
         @SerialName("refer")
         val refer: String?,
         @SerialName("title")
-        val title: String
+        val title: String,
     )
 }

@@ -56,7 +56,9 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
-enum class ReasoningCardState(val expanded: Boolean) {
+enum class ReasoningCardState(
+    val expanded: Boolean,
+) {
     Collapsed(false),
     Preview(true),
     Expanded(true),
@@ -70,12 +72,16 @@ private class ReasoningState(
     var expandState by mutableStateOf(ReasoningCardState.Collapsed)
     var duration by mutableStateOf(initialDuration)
 
-    fun onExpandedChange(nextExpanded: Boolean, loading: Boolean) {
-        expandState = if (loading) {
-            if (nextExpanded) ReasoningCardState.Expanded else ReasoningCardState.Preview
-        } else {
-            if (nextExpanded) ReasoningCardState.Expanded else ReasoningCardState.Collapsed
-        }
+    fun onExpandedChange(
+        nextExpanded: Boolean,
+        loading: Boolean,
+    ) {
+        expandState =
+            if (loading) {
+                if (nextExpanded) ReasoningCardState.Expanded else ReasoningCardState.Preview
+            } else {
+                if (nextExpanded) ReasoningCardState.Expanded else ReasoningCardState.Collapsed
+            }
     }
 }
 
@@ -85,25 +91,30 @@ private fun rememberReasoningState(reasoning: UIMessagePart.Reasoning): Pair<Rea
     val loading = reasoning.finishedAt == null
     val scrollState = rememberScrollState()
 
-    val state = remember(reasoning.createdAt) {
-        ReasoningState(
-            scrollState = scrollState,
-            initialDuration = reasoning.finishedAt?.let { it - reasoning.createdAt }
-                ?: (Clock.System.now() - reasoning.createdAt)
-        )
-    }
+    val state =
+        remember(reasoning.createdAt) {
+            ReasoningState(
+                scrollState = scrollState,
+                initialDuration =
+                    reasoning.finishedAt?.let { it - reasoning.createdAt }
+                        ?: (Clock.System.now() - reasoning.createdAt),
+            )
+        }
 
     LaunchedEffect(reasoning.reasoning, loading) {
         if (loading) {
-            if (!state.expandState.expanded && settings.displaySetting.showThinkingContent)
+            if (!state.expandState.expanded && settings.displaySetting.showThinkingContent) {
                 state.expandState = ReasoningCardState.Preview
+            }
             scrollState.animateScrollTo(scrollState.maxValue)
         } else {
             if (state.expandState.expanded) {
-                state.expandState = if (settings.displaySetting.autoCloseThinking)
-                    ReasoningCardState.Collapsed
-                else
-                    ReasoningCardState.Expanded
+                state.expandState =
+                    if (settings.displaySetting.autoCloseThinking) {
+                        ReasoningCardState.Collapsed
+                    } else {
+                        ReasoningCardState.Expanded
+                    }
             }
         }
     }
@@ -130,50 +141,54 @@ private fun ReasoningContent(
     loading: Boolean,
 ) {
     val isPreview = expandState == ReasoningCardState.Preview
-    val reasoningTextStyle = MaterialTheme.typography.bodySmall.copy(
-        fontFamily = LocalTextStyle.current.fontFamily,
-    )
+    val reasoningTextStyle =
+        MaterialTheme.typography.bodySmall.copy(
+            fontFamily = LocalTextStyle.current.fontFamily,
+        )
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .let { contentModifier ->
-                if (isPreview) {
-                    contentModifier
-                        .graphicsLayer { alpha = 0.99f }
-                        .drawWithCache {
-                            val brush = Brush.verticalGradient(
-                                startY = 0f,
-                                endY = size.height,
-                                colorStops = arrayOf(
-                                    0.0f to Color.Transparent,
-                                    (fadeHeight / size.height) to Color.Black,
-                                    (1 - fadeHeight / size.height) to Color.Black,
-                                    1.0f to Color.Transparent
-                                )
-                            )
-                            onDrawWithContent {
-                                drawContent()
-                                drawRect(
-                                    brush = brush,
-                                    size = Size(size.width, size.height),
-                                    blendMode = BlendMode.DstIn,
-                                )
-                            }
-                        }
-                        .heightIn(max = 100.dp)
-                        .verticalScroll(scrollState)
-                } else {
-                    contentModifier
-                }
-            }
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .let { contentModifier ->
+                    if (isPreview) {
+                        contentModifier
+                            .graphicsLayer { alpha = 0.99f }
+                            .drawWithCache {
+                                val brush =
+                                    Brush.verticalGradient(
+                                        startY = 0f,
+                                        endY = size.height,
+                                        colorStops =
+                                            arrayOf(
+                                                0.0f to Color.Transparent,
+                                                (fadeHeight / size.height) to Color.Black,
+                                                (1 - fadeHeight / size.height) to Color.Black,
+                                                1.0f to Color.Transparent,
+                                            ),
+                                    )
+                                onDrawWithContent {
+                                    drawContent()
+                                    drawRect(
+                                        brush = brush,
+                                        size = Size(size.width, size.height),
+                                        blendMode = BlendMode.DstIn,
+                                    )
+                                }
+                            }.heightIn(max = 100.dp)
+                            .verticalScroll(scrollState)
+                    } else {
+                        contentModifier
+                    }
+                },
     ) {
         val reasoningContent = @Composable {
             MarkdownBlock(
-                content = reasoning.reasoning.replaceRegexes(
-                    assistant = assistant,
-                    scope = AssistantAffectScope.ASSISTANT,
-                    visual = true,
-                ),
+                content =
+                    reasoning.reasoning.replaceRegexes(
+                        assistant = assistant,
+                        scope = AssistantAffectScope.ASSISTANT,
+                        visual = true,
+                    ),
                 style = reasoningTextStyle,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -219,10 +234,11 @@ fun ChainOfThoughtScope.ChatMessageReasoningStep(
                 ReasoningTitle(title = thinkingTitle)
             } else {
                 Text(
-                    text = stringResource(
-                        R.string.deep_thinking_seconds,
-                        state.duration.toDouble(DurationUnit.SECONDS).toFloat()
-                    ),
+                    text =
+                        stringResource(
+                            R.string.deep_thinking_seconds,
+                            state.duration.toDouble(DurationUnit.SECONDS).toFloat(),
+                        ),
                     style = MaterialTheme.typography.titleSmall.copy(fontFamily = chatFontFamily),
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.shimmer(isLoading = loading),
@@ -254,7 +270,6 @@ fun ChainOfThoughtScope.ChatMessageReasoningStep(
     )
 }
 
-
 @Composable
 private fun ReasoningTitle(title: String) {
     val chatFontFamily = LocalTextStyle.current.fontFamily
@@ -262,17 +277,18 @@ private fun ReasoningTitle(title: String) {
         targetState = title,
         transitionSpec = {
             (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                slideOutVertically { height -> -height } + fadeOut()
+                slideOutVertically { height -> -height } + fadeOut(),
             )
-        }
+        },
     ) {
         Text(
             text = it,
             style = MaterialTheme.typography.titleSmall.copy(fontFamily = chatFontFamily),
             color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier
-                .padding(horizontal = 4.dp)
-                .shimmer(true),
+            modifier =
+                Modifier
+                    .padding(horizontal = 4.dp)
+                    .shimmer(true),
         )
     }
 }

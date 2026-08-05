@@ -43,11 +43,13 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.highlight.CodeHighlightText
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Calendar03
+import me.rerere.hugeicons.stroke.CalendarAdd01
 import me.rerere.hugeicons.stroke.Clipboard
 import me.rerere.hugeicons.stroke.Clock02
 import me.rerere.hugeicons.stroke.Delete01
@@ -60,8 +62,6 @@ import me.rerere.hugeicons.stroke.QuillWrite01
 import me.rerere.hugeicons.stroke.Refresh01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.hugeicons.stroke.Calendar03
-import me.rerere.hugeicons.stroke.CalendarAdd01
 import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Time02
 import me.rerere.hugeicons.stroke.VolumeHigh
@@ -92,21 +92,22 @@ object MemoryToolUI : ToolUIRenderer {
 
     override val toolName: String = "memory_tool"
 
-    private fun action(context: ToolUIContext): String? =
-        context.arguments.getStringContent("action")
+    private fun action(context: ToolUIContext): String? = context.arguments.getStringContent("action")
 
-    override fun icon(context: ToolUIContext): ImageVector = when (action(context)) {
-        ACTION_DELETE -> HugeIcons.Eraser
-        else -> HugeIcons.QuillWrite01
-    }
+    override fun icon(context: ToolUIContext): ImageVector =
+        when (action(context)) {
+            ACTION_DELETE -> HugeIcons.Eraser
+            else -> HugeIcons.QuillWrite01
+        }
 
     @Composable
-    override fun title(context: ToolUIContext): String = when (action(context)) {
-        ACTION_CREATE -> stringResource(R.string.chat_message_tool_create_memory)
-        ACTION_EDIT -> stringResource(R.string.chat_message_tool_edit_memory)
-        ACTION_DELETE -> stringResource(R.string.chat_message_tool_delete_memory)
-        else -> stringResource(R.string.chat_message_tool_call_generic, toolName)
-    }
+    override fun title(context: ToolUIContext): String =
+        when (action(context)) {
+            ACTION_CREATE -> stringResource(R.string.chat_message_tool_create_memory)
+            ACTION_EDIT -> stringResource(R.string.chat_message_tool_edit_memory)
+            ACTION_DELETE -> stringResource(R.string.chat_message_tool_delete_memory)
+            else -> stringResource(R.string.chat_message_tool_call_generic, toolName)
+        }
 
     override fun hasSummary(context: ToolUIContext): Boolean =
         action(context) in listOf(ACTION_CREATE, ACTION_EDIT) &&
@@ -127,31 +128,35 @@ object MemoryToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val memoryRepo: MemoryRepository = koinInject()
         val scope = rememberCoroutineScope()
         val memoryId = (context.content as? JsonObject)?.get("id")?.jsonPrimitiveOrNull?.intOrNull
         DefaultToolPreview(
             context = context,
-            headerActions = if (action(context) in listOf(ACTION_CREATE, ACTION_EDIT) && memoryId != null) {
-                {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                memoryRepo.deleteMemory(memoryId)
-                                onDismissRequest()
-                            }
+            headerActions =
+                if (action(context) in listOf(ACTION_CREATE, ACTION_EDIT) && memoryId != null) {
+                    {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    memoryRepo.deleteMemory(memoryId)
+                                    onDismissRequest()
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = HugeIcons.Delete01,
+                                contentDescription = stringResource(R.string.tool_ui_delete_memory),
+                            )
                         }
-                    ) {
-                        Icon(
-                            imageVector = HugeIcons.Delete01,
-                            contentDescription = stringResource(R.string.tool_ui_delete_memory)
-                        )
                     }
-                }
-            } else {
-                null
-            },
+                } else {
+                    null
+                },
         )
     }
 }
@@ -165,13 +170,17 @@ object SearchWebToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Search01
 
     @Composable
-    override fun title(context: ToolUIContext): String = stringResource(
-        R.string.chat_message_tool_search_web,
-        context.arguments.getStringContent("query") ?: ""
-    )
+    override fun title(context: ToolUIContext): String =
+        stringResource(
+            R.string.chat_message_tool_search_web,
+            context.arguments.getStringContent("query") ?: "",
+        )
 
     private fun items(context: ToolUIContext): List<JsonElement> =
-        context.content?.jsonObjectOrNull?.get("items")?.jsonArray ?: emptyList()
+        context.content
+            ?.jsonObjectOrNull
+            ?.get("items")
+            ?.jsonArray ?: emptyList()
 
     override fun hasSummary(context: ToolUIContext): Boolean =
         context.content.getStringContent("answer") != null || items(context).isNotEmpty()
@@ -208,7 +217,10 @@ object SearchWebToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val content = context.content
         if (content == null) {
             DefaultToolPreview(context = context)
@@ -227,11 +239,9 @@ object ScrapeWebToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.GlobalSearch
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_scrape_web)
+    override fun title(context: ToolUIContext): String = stringResource(R.string.chat_message_tool_scrape_web)
 
-    override fun hasSummary(context: ToolUIContext): Boolean =
-        context.arguments.getStringContent("url") != null
+    override fun hasSummary(context: ToolUIContext): Boolean = context.arguments.getStringContent("url") != null
 
     @Composable
     override fun Summary(context: ToolUIContext) {
@@ -243,7 +253,10 @@ object ScrapeWebToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val content = context.content
         if (content == null) {
             DefaultToolPreview(context = context)
@@ -262,8 +275,7 @@ object GetTimeInfoToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Time02
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_get_time)
+    override fun title(context: ToolUIContext): String = stringResource(R.string.chat_message_tool_get_time)
 }
 
 /**
@@ -296,14 +308,14 @@ object TextToSpeechToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String {
-        val preview = context.arguments.getStringContent("text")?.let { text ->
-            if (text.length > 24) text.take(24) + "…" else text
-        } ?: ""
+        val preview =
+            context.arguments.getStringContent("text")?.let { text ->
+                if (text.length > 24) text.take(24) + "…" else text
+            } ?: ""
         return stringResource(R.string.tool_ui_speaking, preview)
     }
 
-    override fun hasSummary(context: ToolUIContext): Boolean =
-        context.arguments.getStringContent("text") != null
+    override fun hasSummary(context: ToolUIContext): Boolean = context.arguments.getStringContent("text") != null
 
     @Composable
     override fun Summary(context: ToolUIContext) {
@@ -362,11 +374,9 @@ object RecentChatsToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Message02
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_recent_chats)
+    override fun title(context: ToolUIContext): String = stringResource(R.string.chat_message_tool_recent_chats)
 
-    private fun chats(context: ToolUIContext): List<JsonElement> =
-        (context.content as? JsonArray) ?: emptyList()
+    private fun chats(context: ToolUIContext): List<JsonElement> = (context.content as? JsonArray) ?: emptyList()
 
     override fun hasSummary(context: ToolUIContext): Boolean = chats(context).isNotEmpty()
 
@@ -394,13 +404,13 @@ object ConversationSearchToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Search01
 
     @Composable
-    override fun title(context: ToolUIContext): String = stringResource(
-        R.string.chat_message_tool_conversation_search,
-        context.arguments.getStringContent("query") ?: ""
-    )
+    override fun title(context: ToolUIContext): String =
+        stringResource(
+            R.string.chat_message_tool_conversation_search,
+            context.arguments.getStringContent("query") ?: "",
+        )
 
-    private fun results(context: ToolUIContext): List<JsonElement> =
-        (context.content as? JsonArray) ?: emptyList()
+    private fun results(context: ToolUIContext): List<JsonElement> = (context.content as? JsonArray) ?: emptyList()
 
     override fun hasSummary(context: ToolUIContext): Boolean = results(context).isNotEmpty()
 
@@ -428,17 +438,18 @@ object GetScreenTimeToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.SmartPhone01
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_screen_time)
+    override fun title(context: ToolUIContext): String = stringResource(R.string.chat_message_tool_screen_time)
 
     private fun apps(context: ToolUIContext): List<JsonElement> =
-        context.content?.jsonObjectOrNull?.get("apps")?.let { it as? JsonArray } ?: emptyList()
+        context.content
+            ?.jsonObjectOrNull
+            ?.get("apps")
+            ?.let { it as? JsonArray } ?: emptyList()
 
     private fun isNoPermission(context: ToolUIContext): Boolean =
         context.content.getStringContent("error") == "NO_PERMISSION"
 
-    override fun hasSummary(context: ToolUIContext): Boolean =
-        isNoPermission(context) || apps(context).isNotEmpty()
+    override fun hasSummary(context: ToolUIContext): Boolean = isNoPermission(context) || apps(context).isNotEmpty()
 
     @Composable
     override fun Summary(context: ToolUIContext) {
@@ -452,8 +463,12 @@ object GetScreenTimeToolUI : ToolUIRenderer {
         }
         val apps = apps(context)
         if (apps.isEmpty()) return
-        val totalMinutes = context.content?.jsonObjectOrNull?.get("total_minutes")
-            ?.jsonPrimitiveOrNull?.longOrNull ?: 0
+        val totalMinutes =
+            context.content
+                ?.jsonObjectOrNull
+                ?.get("total_minutes")
+                ?.jsonPrimitiveOrNull
+                ?.longOrNull ?: 0
         Column(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             modifier = Modifier.shimmer(isLoading = context.loading),
@@ -480,8 +495,9 @@ object GetScreenTimeToolUI : ToolUIRenderer {
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = app.getStringContent("app_name")
-                            ?: app.getStringContent("package") ?: "",
+                        text =
+                            app.getStringContent("app_name")
+                                ?: app.getStringContent("package") ?: "",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 1,
@@ -499,7 +515,10 @@ object GetScreenTimeToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val apps = apps(context)
         if (apps.isEmpty()) {
             DefaultToolPreview(context = context)
@@ -515,11 +534,13 @@ object CalendarQueryToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Calendar03
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_calendar_query)
+    override fun title(context: ToolUIContext): String = stringResource(R.string.chat_message_tool_calendar_query)
 
     private fun events(context: ToolUIContext): List<JsonElement> =
-        context.content?.jsonObjectOrNull?.get("events")?.let { it as? JsonArray } ?: emptyList()
+        context.content
+            ?.jsonObjectOrNull
+            ?.get("events")
+            ?.let { it as? JsonArray } ?: emptyList()
 
     override fun hasSummary(context: ToolUIContext): Boolean = events(context).isNotEmpty()
 
@@ -563,14 +584,21 @@ object CalendarCreateToolUI : ToolUIRenderer {
 }
 
 @Composable
-private fun ScreenTimePreview(content: JsonElement, apps: List<JsonElement>) {
-    val totalMinutes = content.jsonObjectOrNull?.get("total_minutes")
-        ?.jsonPrimitiveOrNull?.longOrNull ?: 0
+private fun ScreenTimePreview(
+    content: JsonElement,
+    apps: List<JsonElement>,
+) {
+    val totalMinutes =
+        content.jsonObjectOrNull
+            ?.get("total_minutes")
+            ?.jsonPrimitiveOrNull
+            ?.longOrNull ?: 0
     val maxAppMs = apps.maxOfOrNull { it.appMs() }?.takeIf { it > 0 } ?: 1L
     LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.8f)
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxHeight(0.8f)
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
@@ -603,8 +631,9 @@ private fun ScreenTimePreview(content: JsonElement, apps: List<JsonElement>) {
             }
         }
         items(apps) { app ->
-            val name = app.getStringContent("app_name")
-                ?: app.getStringContent("package") ?: return@items
+            val name =
+                app.getStringContent("app_name")
+                    ?: app.getStringContent("package") ?: return@items
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -633,8 +662,7 @@ private fun ScreenTimePreview(content: JsonElement, apps: List<JsonElement>) {
 }
 
 /** 读取单个应用条目的前台时长 (毫秒) */
-private fun JsonElement.appMs(): Long =
-    jsonObjectOrNull?.get("total_ms")?.jsonPrimitiveOrNull?.longOrNull ?: 0
+private fun JsonElement.appMs(): Long = jsonObjectOrNull?.get("total_ms")?.jsonPrimitiveOrNull?.longOrNull ?: 0
 
 /** 读取单个应用条目的前台时长 (分钟) */
 private fun JsonElement.appMinutes(): Long =
@@ -649,13 +677,14 @@ private val SCREEN_TIME_RANGE_FORMATTER: DateTimeFormatter =
  * 工具用 ZonedDateTime.toString() 输出, 区域 ID 时会带 "[Asia/Shanghai]" 后缀,
  * 故优先用 ZonedDateTime.parse, 再回退到 offset / 本地日期时间.
  */
-private fun formatRangeTime(iso: String): String = runCatching {
-    ZonedDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
-}.recoverCatching {
-    OffsetDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
-}.recoverCatching {
-    LocalDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
-}.getOrDefault(iso)
+private fun formatRangeTime(iso: String): String =
+    runCatching {
+        ZonedDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
+    }.recoverCatching {
+        OffsetDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
+    }.recoverCatching {
+        LocalDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
+    }.getOrDefault(iso)
 
 /** 将分钟数格式化为 "Xh Ym" / "Xh" / "Ym" */
 private fun formatMinutes(minutes: Long): String {
@@ -677,16 +706,19 @@ private fun SearchWebPreview(
     val items = content.jsonObject["items"]?.jsonArray ?: emptyList()
     val answer = content.getStringContent("answer")
     val query = arguments.getStringContent("query") ?: ""
-    val images = content.jsonObject["images"]?.jsonArray
-        ?.mapNotNull { it.jsonPrimitive.contentOrNull }
-        ?.filter { it.isNotBlank() }
-        ?: emptyList()
+    val images =
+        content.jsonObject["images"]
+            ?.jsonArray
+            ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.8f)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxHeight(0.8f)
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
             Text(stringResource(R.string.chat_message_tool_search_prefix, query))
@@ -695,16 +727,18 @@ private fun SearchWebPreview(
         if (answer != null) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
                 ) {
                     MarkdownBlock(
                         content = answer,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -721,11 +755,12 @@ private fun SearchWebPreview(
                             model = imageUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .height(120.dp)
-                                .width(160.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { context.openUrl(imageUrl) },
+                            modifier =
+                                Modifier
+                                    .height(120.dp)
+                                    .width(160.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { context.openUrl(imageUrl) },
                         )
                     }
                 }
@@ -740,20 +775,22 @@ private fun SearchWebPreview(
 
                 Card(
                     onClick = { context.openUrl(url) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        ),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Favicon(
                             url = url,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                         Column {
                             Text(text = title, maxLines = 1)
@@ -761,13 +798,13 @@ private fun SearchWebPreview(
                                 text = text,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall,
                             )
                             Text(
                                 text = url,
                                 maxLines = 1,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             )
                         }
                     }
@@ -778,7 +815,7 @@ private fun SearchWebPreview(
                 CodeHighlightText(
                     code = JsonInstantPretty.encodeToString(content),
                     language = "json",
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
                 )
             }
         }
@@ -790,17 +827,19 @@ private fun ScrapeWebPreview(content: JsonElement) {
     val urls = content.jsonObject["urls"]?.jsonArray ?: emptyList()
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.8f)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxHeight(0.8f)
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
             Text(
-                text = stringResource(
-                    R.string.chat_message_tool_scrape_prefix,
-                    urls.joinToString(", ") { it.getStringContent("url") ?: "" }
-                )
+                text =
+                    stringResource(
+                        R.string.chat_message_tool_scrape_prefix,
+                        urls.joinToString(", ") { it.getStringContent("url") ?: "" },
+                    ),
             )
         }
 
@@ -814,14 +853,15 @@ private fun ScrapeWebPreview(content: JsonElement) {
                     text = urlObject["url"]?.jsonPrimitive?.content ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Card {
                     MarkdownBlock(
                         content = urlObject["content"]?.jsonPrimitive?.content ?: "",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                     )
                 }
             }
@@ -911,8 +951,7 @@ object OpenWifiSettingsToolUI : ToolUIRenderer {
     override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Settings03
 
     @Composable
-    override fun title(context: ToolUIContext): String =
-        context.content.getStringContent("summary") ?: "WiFi Settings"
+    override fun title(context: ToolUIContext): String = context.content.getStringContent("summary") ?: "WiFi Settings"
 }
 
 object ShowLocationOnMapToolUI : ToolUIRenderer {

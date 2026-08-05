@@ -86,15 +86,18 @@ fun GrokProviderConfigure(
                 oauthManager.consumeResult()
             }
 
-            else -> Unit
+            else -> {
+                Unit
+            }
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
@@ -110,8 +113,9 @@ fun GrokProviderConfigure(
         Button(
             onClick = oauthManager::startLogin,
             modifier = Modifier.fillMaxWidth(),
-            enabled = oauthStatus !is GrokOAuthStatus.Starting &&
-                oauthStatus !is GrokOAuthStatus.AwaitingApproval,
+            enabled =
+                oauthStatus !is GrokOAuthStatus.Starting &&
+                    oauthStatus !is GrokOAuthStatus.AwaitingApproval,
         ) {
             Text(stringResource(R.string.grok_sign_in))
         }
@@ -120,14 +124,16 @@ fun GrokProviderConfigure(
             is GrokOAuthStatus.AwaitingApproval -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -153,7 +159,9 @@ fun GrokProviderConfigure(
                 }
             }
 
-            else -> Unit
+            else -> {
+                Unit
+            }
         }
 
         Row(
@@ -167,11 +175,12 @@ fun GrokProviderConfigure(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = if (canEnable) {
-                        stringResource(R.string.grok_round_robin_description)
-                    } else {
-                        stringResource(R.string.grok_sign_in_required)
-                    },
+                    text =
+                        if (canEnable) {
+                            stringResource(R.string.grok_round_robin_description)
+                        } else {
+                            stringResource(R.string.grok_sign_in_required)
+                        },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -203,9 +212,10 @@ fun GrokProviderConfigure(
         if (accounts.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
             ) {
                 Text(
                     text = stringResource(R.string.grok_no_accounts),
@@ -246,17 +256,21 @@ fun GrokProviderConfigure(
     }
 }
 
-internal fun mergeGrokModels(existing: List<Model>, refreshed: List<Model>): List<Model> {
+internal fun mergeGrokModels(
+    existing: List<Model>,
+    refreshed: List<Model>,
+): List<Model> {
     val refreshedByModelId = refreshed.associateBy(Model::modelId)
-    val merged = existing.map { model ->
-        refreshedByModelId[model.modelId]?.let { refreshedModel ->
-            model.copy(
-                inputModalities = refreshedModel.inputModalities,
-                outputModalities = refreshedModel.outputModalities,
-                abilities = refreshedModel.abilities,
-            )
-        } ?: model
-    }
+    val merged =
+        existing.map { model ->
+            refreshedByModelId[model.modelId]?.let { refreshedModel ->
+                model.copy(
+                    inputModalities = refreshedModel.inputModalities,
+                    outputModalities = refreshedModel.outputModalities,
+                    abilities = refreshedModel.abilities,
+                )
+            } ?: model
+        }
     val existingModelIds = existing.mapTo(mutableSetOf(), Model::modelId)
     return merged + refreshed.filterNot { it.modelId in existingModelIds }
 }
@@ -281,7 +295,7 @@ private fun GrokAccountCard(
                     onClick = {
                         showDeleteConfirmation = false
                         onDelete()
-                    }
+                    },
                 ) {
                     Text(
                         stringResource(R.string.grok_remove),
@@ -299,9 +313,10 @@ private fun GrokAccountCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -329,18 +344,20 @@ private fun GrokAccountCard(
             }
 
             Text(
-                text = when (account.tokenStatus) {
-                    GrokTokenStatus.AVAILABLE -> stringResource(R.string.grok_token_available)
-                    GrokTokenStatus.EXPIRED -> stringResource(R.string.grok_token_expired)
-                    GrokTokenStatus.INVALID -> stringResource(R.string.grok_token_unavailable)
-                    GrokTokenStatus.UNKNOWN -> stringResource(R.string.grok_token_not_checked)
-                },
+                text =
+                    when (account.tokenStatus) {
+                        GrokTokenStatus.AVAILABLE -> stringResource(R.string.grok_token_available)
+                        GrokTokenStatus.EXPIRED -> stringResource(R.string.grok_token_expired)
+                        GrokTokenStatus.INVALID -> stringResource(R.string.grok_token_unavailable)
+                        GrokTokenStatus.UNKNOWN -> stringResource(R.string.grok_token_not_checked)
+                    },
                 style = MaterialTheme.typography.labelMedium,
-                color = when (account.tokenStatus) {
-                    GrokTokenStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
-                    GrokTokenStatus.INVALID, GrokTokenStatus.EXPIRED -> MaterialTheme.colorScheme.error
-                    GrokTokenStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                color =
+                    when (account.tokenStatus) {
+                        GrokTokenStatus.AVAILABLE -> MaterialTheme.colorScheme.primary
+                        GrokTokenStatus.INVALID, GrokTokenStatus.EXPIRED -> MaterialTheme.colorScheme.error
+                        GrokTokenStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
 
             account.usage?.planName?.let { plan ->
@@ -353,11 +370,12 @@ private fun GrokAccountCard(
             account.usage?.weekly?.let { GrokUsageRow(window = it) }
             account.usage?.let { usage ->
                 Text(
-                    text = if (usage.onDemandCap > 0) {
-                        stringResource(R.string.grok_on_demand_cap, formatCap(usage.onDemandCap))
-                    } else {
-                        stringResource(R.string.grok_on_demand_disabled)
-                    },
+                    text =
+                        if (usage.onDemandCap > 0) {
+                            stringResource(R.string.grok_on_demand_cap, formatCap(usage.onDemandCap))
+                        } else {
+                            stringResource(R.string.grok_on_demand_disabled)
+                        },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -405,10 +423,11 @@ private fun GrokUsageRow(window: GrokUsageWindow) {
         )
         window.resetsAt?.let { epochSeconds ->
             Text(
-                text = stringResource(
-                    R.string.grok_resets_at,
-                    GROK_RESET_FORMAT.format(Instant.ofEpochSecond(epochSeconds)),
-                ),
+                text =
+                    stringResource(
+                        R.string.grok_resets_at,
+                        GROK_RESET_FORMAT.format(Instant.ofEpochSecond(epochSeconds)),
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -416,9 +435,9 @@ private fun GrokUsageRow(window: GrokUsageWindow) {
     }
 }
 
-private fun formatCap(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+private fun formatCap(value: Double): String = if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
-private val GROK_RESET_FORMAT: DateTimeFormatter = DateTimeFormatter
-    .ofPattern("yyyy-MM-dd HH:mm")
-    .withZone(ZoneId.systemDefault())
+private val GROK_RESET_FORMAT: DateTimeFormatter =
+    DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm")
+        .withZone(ZoneId.systemDefault())

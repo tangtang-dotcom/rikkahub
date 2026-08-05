@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.favorite
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -81,9 +81,10 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
     ) { innerPadding ->
         if (favorites.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -107,20 +108,22 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
                         scope.launch {
                             val entity = vm.getEntityByRefKey(item.refKey) ?: return@launch
                             vm.removeFavorite(item.refKey)
-                            val result = snackbarHostState.showSnackbar(
-                                message = favoriteRemovedText,
-                                actionLabel = undoText,
-                                withDismissAction = true,
-                            )
+                            val result =
+                                snackbarHostState.showSnackbar(
+                                    message = favoriteRemovedText,
+                                    actionLabel = undoText,
+                                    withDismissAction = true,
+                                )
                             if (result == SnackbarResult.ActionPerformed) {
                                 vm.restoreFavorite(entity)
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .animateItem(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .animateItem(),
                 )
             }
         }
@@ -134,9 +137,10 @@ private fun SwipeableFavoriteCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        initialValue = SwipeToDismissBoxValue.Settled,
-    )
+    val dismissState =
+        rememberSwipeToDismissBoxState(
+            initialValue = SwipeToDismissBoxValue.Settled,
+        )
 
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
@@ -152,13 +156,13 @@ private fun SwipeableFavoriteCard(
         state = dismissState,
         backgroundContent = {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.errorContainer,
-                        RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer,
+                            RoundedCornerShape(12.dp),
+                        ).padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 Icon(
@@ -195,7 +199,12 @@ private fun FavoriteCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = item.conversationTitle.ifBlank { stringResource(R.string.favorite_page_untitled_conversation) },
+                    text =
+                        item.conversationTitle.ifBlank {
+                            stringResource(
+                                R.string.favorite_page_untitled_conversation,
+                            )
+                        },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,

@@ -33,37 +33,57 @@ sealed class TriggerSpec {
 
     @Serializable
     @SerialName("wifi_connected")
-    data class WifiConnected(val ssid: String? = null) : TriggerSpec()
+    data class WifiConnected(
+        val ssid: String? = null,
+    ) : TriggerSpec()
 
     @Serializable
     @SerialName("wifi_disconnected")
-    data class WifiDisconnected(val ssid: String? = null) : TriggerSpec()
+    data class WifiDisconnected(
+        val ssid: String? = null,
+    ) : TriggerSpec()
 
     @Serializable
     @SerialName("bluetooth_device_connected")
-    data class BluetoothDeviceConnected(val deviceAddress: String? = null) : TriggerSpec()
+    data class BluetoothDeviceConnected(
+        val deviceAddress: String? = null,
+    ) : TriggerSpec()
 
     @Serializable
     @SerialName("bluetooth_device_disconnected")
-    data class BluetoothDeviceDisconnected(val deviceAddress: String? = null) : TriggerSpec()
+    data class BluetoothDeviceDisconnected(
+        val deviceAddress: String? = null,
+    ) : TriggerSpec()
 
-    @Serializable @SerialName("headphones_plugged") data object HeadphonesPlugged : TriggerSpec()
+    @Serializable
+    @SerialName("headphones_plugged")
+    data object HeadphonesPlugged : TriggerSpec()
 
-    @Serializable @SerialName("headphones_unplugged") data object HeadphonesUnplugged : TriggerSpec()
+    @Serializable
+    @SerialName("headphones_unplugged")
+    data object HeadphonesUnplugged : TriggerSpec()
 
-    @Serializable @SerialName("power_connected") data object PowerConnected : TriggerSpec()
+    @Serializable
+    @SerialName("power_connected")
+    data object PowerConnected : TriggerSpec()
 
-    @Serializable @SerialName("power_disconnected") data object PowerDisconnected : TriggerSpec()
+    @Serializable
+    @SerialName("power_disconnected")
+    data object PowerDisconnected : TriggerSpec()
 
     /** Fires on transition: previous level was ≥threshold, current level is <threshold. */
     @Serializable
     @SerialName("battery_below")
-    data class BatteryBelow(val thresholdPercent: Int) : TriggerSpec()
+    data class BatteryBelow(
+        val thresholdPercent: Int,
+    ) : TriggerSpec()
 
     /** Fires on transition: previous level was <threshold, current level is ≥threshold. */
     @Serializable
     @SerialName("battery_above")
-    data class BatteryAbove(val thresholdPercent: Int) : TriggerSpec()
+    data class BatteryAbove(
+        val thresholdPercent: Int,
+    ) : TriggerSpec()
 
     @Serializable
     @SerialName("geofence_enter")
@@ -85,11 +105,15 @@ sealed class TriggerSpec {
 
     @Serializable
     @SerialName("app_launched")
-    data class AppLaunched(val packageName: String) : TriggerSpec()
+    data class AppLaunched(
+        val packageName: String,
+    ) : TriggerSpec()
 
     @Serializable
     @SerialName("app_closed")
-    data class AppClosed(val packageName: String) : TriggerSpec()
+    data class AppClosed(
+        val packageName: String,
+    ) : TriggerSpec()
 
     /**
      * `*_contains` fields match as case-insensitive plain substrings; `*_matches` fields
@@ -109,12 +133,20 @@ sealed class TriggerSpec {
         val textMatches: String? = null,
     ) : TriggerSpec()
 
-    @Serializable @SerialName("boot_completed") data object BootCompleted : TriggerSpec()
+    @Serializable
+    @SerialName("boot_completed")
+    data object BootCompleted : TriggerSpec()
 
-    @Serializable @SerialName("screen_on") data object ScreenOn : TriggerSpec()
+    @Serializable
+    @SerialName("screen_on")
+    data object ScreenOn : TriggerSpec()
 
-    @Serializable @SerialName("screen_off") data object ScreenOff : TriggerSpec()
+    @Serializable
+    @SerialName("screen_off")
+    data object ScreenOff : TriggerSpec()
 
     /** Only via workflow_run() or the Settings "Run now" button. */
-    @Serializable @SerialName("manual") data object Manual : TriggerSpec()
+    @Serializable
+    @SerialName("manual")
+    data object Manual : TriggerSpec()
 }

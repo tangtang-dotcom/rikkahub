@@ -23,15 +23,18 @@ import org.koin.java.KoinJavaComponent
 internal class BootTriggerFamily(
     private val scope: CoroutineScope,
 ) : WorkflowTriggerFamily {
-
     override val name = "boot"
 
     @Volatile private var matching: List<WorkflowDefinition> = emptyList()
+
     @Volatile private var callback: TriggerFireCallback? = null
 
     override fun handles(spec: TriggerSpec): Boolean = spec is TriggerSpec.BootCompleted
 
-    override suspend fun sync(matching: List<WorkflowDefinition>, callback: TriggerFireCallback) {
+    override suspend fun sync(
+        matching: List<WorkflowDefinition>,
+        callback: TriggerFireCallback,
+    ) {
         this.matching = matching
         this.callback = callback
     }
@@ -71,7 +74,9 @@ internal class BootTriggerFamily(
         callback = null
     }
 
-    companion object { private const val TAG = "WorkflowTrigger" }
+    companion object {
+        private const val TAG = "WorkflowTrigger"
+    }
 }
 
 /**
@@ -83,9 +88,13 @@ internal class BootTriggerFamily(
 object WorkflowBootDispatcher {
     @Volatile private var family: BootTriggerFamily? = null
 
-    internal fun bind(f: BootTriggerFamily) { family = f }
+    internal fun bind(f: BootTriggerFamily) {
+        family = f
+    }
 
-    fun onBoot() { family?.onBoot() }
+    fun onBoot() {
+        family?.onBoot()
+    }
 }
 
 /**
@@ -95,9 +104,10 @@ object WorkflowBootDispatcher {
  * (boot family filters to BootCompleted at the call site). Null if Koin isn't ready.
  */
 internal object BootTriggerHelper {
-    suspend fun repositoryLookup(): Pair<TriggerFireCallback, List<WorkflowDefinition>>? = runCatching {
-        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-        val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
-        engine.triggerCallback to repo.listEnabled().map { it.definition }
-    }.getOrNull()
+    suspend fun repositoryLookup(): Pair<TriggerFireCallback, List<WorkflowDefinition>>? =
+        runCatching {
+            val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
+            val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
+            engine.triggerCallback to repo.listEnabled().map { it.definition }
+        }.getOrNull()
 }

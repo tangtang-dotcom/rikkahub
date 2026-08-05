@@ -48,8 +48,7 @@ class WorkspaceManager(
         root: String,
         path: String = "",
         area: WorkspaceStorageArea = WorkspaceStorageArea.FILES,
-    ): List<WorkspaceFileEntry> =
-        fileSystem.list(areaDir(root, area), path)
+    ): List<WorkspaceFileEntry> = fileSystem.list(areaDir(root, area), path)
 
     fun readText(
         root: String,
@@ -107,7 +106,10 @@ class WorkspaceManager(
      * 可以直接用文件 IO 访问, 无需经过 PRoot; 只是 Rootfs 目录里对应位置是个空挂载点,
      * 按 [WorkspaceStorageArea.LINUX] 解析必然落空。
      */
-    fun resolveRootfsPath(root: String, path: String): RootfsLocation {
+    fun resolveRootfsPath(
+        root: String,
+        path: String,
+    ): RootfsLocation {
         val trimmed = path.trim().trimEnd('/').ifBlank { "/" }
         require(trimmed.startsWith("/")) { "Rootfs path must be absolute: $path" }
 
@@ -134,16 +136,25 @@ class WorkspaceManager(
         return RootfsLocation(linuxDir(root), trimmed.trimStart('/'))
     }
 
-    fun rootfsFileSize(root: String, path: String): Long =
-        resolveRootfsFile(root, path).also { it.requireReadableFile(path) }.length()
+    fun rootfsFileSize(
+        root: String,
+        path: String,
+    ): Long = resolveRootfsFile(root, path).also { it.requireReadableFile(path) }.length()
 
-    fun exportRootfsFile(root: String, path: String, outputStream: OutputStream) {
+    fun exportRootfsFile(
+        root: String,
+        path: String,
+        outputStream: OutputStream,
+    ) {
         val file = resolveRootfsFile(root, path)
         file.requireReadableFile(path)
         outputStream.use { out -> file.inputStream().use { it.copyTo(out) } }
     }
 
-    private fun resolveRootfsFile(root: String, path: String): File {
+    private fun resolveRootfsFile(
+        root: String,
+        path: String,
+    ): File {
         val location = resolveRootfsPath(root, path)
         return fileSystem.resolve(location.rootDir, location.relativePath)
     }
@@ -158,14 +169,20 @@ class WorkspaceManager(
         path: String,
         recursive: Boolean = false,
         area: WorkspaceStorageArea = WorkspaceStorageArea.FILES,
-    ): Boolean =
-        fileSystem.delete(areaDir(root, area), path, recursive)
+    ): Boolean = fileSystem.delete(areaDir(root, area), path, recursive)
 
-    fun moveFile(root: String, source: String, target: String, overwrite: Boolean = false): WorkspaceFileEntry =
-        fileSystem.move(filesDir(root), source, target, overwrite)
+    fun moveFile(
+        root: String,
+        source: String,
+        target: String,
+        overwrite: Boolean = false,
+    ): WorkspaceFileEntry = fileSystem.move(filesDir(root), source, target, overwrite)
 
-    fun glob(root: String, pattern: String, path: String = ""): List<WorkspaceFileEntry> =
-        fileSystem.glob(filesDir(root), pattern, path)
+    fun glob(
+        root: String,
+        pattern: String,
+        path: String = "",
+    ): List<WorkspaceFileEntry> = fileSystem.glob(filesDir(root), pattern, path)
 
     fun grep(
         root: String,
@@ -174,8 +191,7 @@ class WorkspaceManager(
         regex: Boolean = false,
         ignoreCase: Boolean = true,
         includeGlob: String? = null,
-    ): List<WorkspaceSearchMatch> =
-        fileSystem.grep(filesDir(root), query, path, regex, ignoreCase, includeGlob)
+    ): List<WorkspaceSearchMatch> = fileSystem.grep(filesDir(root), query, path, regex, ignoreCase, includeGlob)
 
     fun executeCommand(
         root: String,
@@ -201,7 +217,7 @@ class WorkspaceManager(
                 timeoutMillis = timeoutMillis,
                 stdin = stdin,
                 bindMounts = bindMounts,
-            )
+            ),
         )
     }
 
@@ -211,10 +227,14 @@ class WorkspaceManager(
         }
     }
 
-    private fun areaDir(root: String, area: WorkspaceStorageArea): File = when (area) {
-        WorkspaceStorageArea.FILES -> filesDir(root)
-        WorkspaceStorageArea.LINUX -> linuxDir(root)
-    }
+    private fun areaDir(
+        root: String,
+        area: WorkspaceStorageArea,
+    ): File =
+        when (area) {
+            WorkspaceStorageArea.FILES -> filesDir(root)
+            WorkspaceStorageArea.LINUX -> linuxDir(root)
+        }
 
     fun cleanupAllTempDirs() {
         val roots = baseDir.listFiles()?.filter { it.isDirectory } ?: return

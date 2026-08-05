@@ -34,7 +34,6 @@ import me.rerere.rikkahub.ui.components.ai.QuickMessagesContent
 import me.rerere.rikkahub.ui.components.ai.SkillsContent
 import org.koin.compose.koinInject
 
-
 @Composable
 fun ExtensionSelector(
     modifier: Modifier = Modifier,
@@ -58,22 +57,24 @@ fun ExtensionSelector(
 
     val useConversationInjections =
         assistant.allowConversationPromptInjection && conversation != null && onUpdateConversation != null
-    val selectedModeInjectionIds = if (useConversationInjections) {
-        conversation.modeInjectionIds
-    } else {
-        assistant.modeInjectionIds
-    }
-    val selectedLorebookIds = if (useConversationInjections) {
-        conversation.lorebookIds
-    } else {
-        assistant.lorebookIds
-    }
+    val selectedModeInjectionIds =
+        if (useConversationInjections) {
+            conversation.modeInjectionIds
+        } else {
+            assistant.modeInjectionIds
+        }
+    val selectedLorebookIds =
+        if (useConversationInjections) {
+            conversation.lorebookIds
+        } else {
+            assistant.lorebookIds
+        }
 
     val pagerState = rememberPagerState { 4 }
     val scope = rememberCoroutineScope()
 
     Column(
-        modifier = modifier
+        modifier = modifier,
     ) {
         SecondaryScrollableTabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -86,36 +87,37 @@ fun ExtensionSelector(
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(0) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_quick_messages)) }
+                text = { Text(stringResource(R.string.extension_selector_tab_quick_messages)) },
             )
             Tab(
                 selected = pagerState.currentPage == 1,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(1) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_mode_injections)) }
+                text = { Text(stringResource(R.string.extension_selector_tab_mode_injections)) },
             )
             Tab(
                 selected = pagerState.currentPage == 2,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(2) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_lorebooks)) }
+                text = { Text(stringResource(R.string.extension_selector_tab_lorebooks)) },
             )
             Tab(
                 selected = pagerState.currentPage == 3,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(3) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_skills)) }
+                text = { Text(stringResource(R.string.extension_selector_tab_skills)) },
             )
         }
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         ) { page ->
             when (page) {
                 0 -> {
@@ -124,11 +126,12 @@ fun ExtensionSelector(
                             quickMessages = settings.quickMessages,
                             selectedIds = assistant.quickMessageIds,
                             onToggle = { id, checked ->
-                                val newIds = if (checked) {
-                                    assistant.quickMessageIds + id
-                                } else {
-                                    assistant.quickMessageIds - id
-                                }
+                                val newIds =
+                                    if (checked) {
+                                        assistant.quickMessageIds + id
+                                    } else {
+                                        assistant.quickMessageIds - id
+                                    }
                                 onUpdate(assistant.copy(quickMessageIds = newIds))
                             },
                             onManage = onNavigateToQuickMessages,
@@ -148,11 +151,12 @@ fun ExtensionSelector(
                             modeInjections = settings.modeInjections,
                             selectedIds = selectedModeInjectionIds,
                             onToggle = { id, checked ->
-                                val newIds = if (checked) {
-                                    selectedModeInjectionIds + id
-                                } else {
-                                    selectedModeInjectionIds - id
-                                }
+                                val newIds =
+                                    if (checked) {
+                                        selectedModeInjectionIds + id
+                                    } else {
+                                        selectedModeInjectionIds - id
+                                    }
                                 if (useConversationInjections) {
                                     onUpdateConversation(conversation.copy(modeInjectionIds = newIds))
                                 } else {
@@ -176,11 +180,12 @@ fun ExtensionSelector(
                             lorebooks = settings.lorebooks,
                             selectedIds = selectedLorebookIds,
                             onToggle = { id, checked ->
-                                val newIds = if (checked) {
-                                    selectedLorebookIds + id
-                                } else {
-                                    selectedLorebookIds - id
-                                }
+                                val newIds =
+                                    if (checked) {
+                                        selectedLorebookIds + id
+                                    } else {
+                                        selectedLorebookIds - id
+                                    }
                                 if (useConversationInjections) {
                                     onUpdateConversation(conversation.copy(lorebookIds = newIds))
                                 } else {
@@ -204,11 +209,12 @@ fun ExtensionSelector(
                             skills = skills,
                             enabledSkills = assistant.enabledSkills,
                             onToggle = { name, checked ->
-                                val newSkills = if (checked) {
-                                    assistant.enabledSkills + name
-                                } else {
-                                    assistant.enabledSkills - name
-                                }
+                                val newSkills =
+                                    if (checked) {
+                                        assistant.enabledSkills + name
+                                    } else {
+                                        assistant.enabledSkills - name
+                                    }
                                 onUpdate(assistant.copy(enabledSkills = newSkills))
                             },
                             onManage = onNavigateToSkills,

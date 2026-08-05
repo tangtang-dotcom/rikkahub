@@ -4,8 +4,8 @@ package me.rerere.rikkahub.utils
  * 移除字符串中的Markdown格式
  * @return 移除Markdown格式后的纯文本
  */
-fun String.stripMarkdown(): String {
-    return this
+fun String.stripMarkdown(): String =
+    this
         // 移除代码块 (```...``` 和 `...`)
         .replace(Regex("```[\\s\\S]*?```|`[^`]*?`"), "")
         // 移除图片和链接，但保留其文本内容
@@ -30,7 +30,6 @@ fun String.stripMarkdown(): String {
         // 将多个换行符压缩，以保留段落
         .replace(Regex("\n{3,}"), "\n\n")
         .trim()
-}
 
 fun String.extractThinkingTitle(): String? {
     // 按行分割文本

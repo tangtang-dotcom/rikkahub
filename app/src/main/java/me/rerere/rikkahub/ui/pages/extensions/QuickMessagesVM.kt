@@ -11,17 +11,22 @@ import me.rerere.rikkahub.data.model.QuickMessage
 import kotlin.uuid.Uuid
 
 class QuickMessagesVM(
-    private val settingsStore: SettingsStore
+    private val settingsStore: SettingsStore,
 ) : ViewModel() {
-    val settings = settingsStore.settingsFlow
-        .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
+    val settings =
+        settingsStore.settingsFlow
+            .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
 
-    fun addQuickMessage(title: String, content: String) {
+    fun addQuickMessage(
+        title: String,
+        content: String,
+    ) {
         updateQuickMessages(
-            settings.value.quickMessages + QuickMessage(
-                title = title,
-                content = content,
-            )
+            settings.value.quickMessages +
+                QuickMessage(
+                    title = title,
+                    content = content,
+                ),
         )
     }
 
@@ -29,7 +34,7 @@ class QuickMessagesVM(
         updateQuickMessages(
             settings.value.quickMessages.map { quickMessage ->
                 if (quickMessage.id == updated.id) updated else quickMessage
-            }
+            },
         )
     }
 
@@ -37,7 +42,7 @@ class QuickMessagesVM(
         updateQuickMessages(
             settings.value.quickMessages.filterNot { quickMessage ->
                 quickMessage.id == id
-            }
+            },
         )
     }
 
@@ -47,11 +52,12 @@ class QuickMessagesVM(
             settingsStore.update { settings ->
                 settings.copy(
                     quickMessages = quickMessages,
-                    assistants = settings.assistants.map { assistant ->
-                        assistant.copy(
-                            quickMessageIds = assistant.quickMessageIds.filter { it in validIds }.toSet()
-                        )
-                    }
+                    assistants =
+                        settings.assistants.map { assistant ->
+                            assistant.copy(
+                                quickMessageIds = assistant.quickMessageIds.filter { it in validIds }.toSet(),
+                            )
+                        },
                 )
             }
         }

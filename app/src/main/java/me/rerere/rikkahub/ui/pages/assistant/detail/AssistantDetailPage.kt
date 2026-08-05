@@ -1,17 +1,8 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.BookOpen01
-import me.rerere.hugeicons.stroke.Brain02
-import me.rerere.hugeicons.stroke.ArrowRight01
-import me.rerere.hugeicons.stroke.Code
-import me.rerere.hugeicons.stroke.Message02
-import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.hugeicons.stroke.Puzzle
-import me.rerere.hugeicons.stroke.Wrench01
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,6 +23,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ArrowRight01
+import me.rerere.hugeicons.stroke.BookOpen01
+import me.rerere.hugeicons.stroke.Brain02
+import me.rerere.hugeicons.stroke.Code
+import me.rerere.hugeicons.stroke.Message02
+import me.rerere.hugeicons.stroke.Puzzle
+import me.rerere.hugeicons.stroke.Settings03
+import me.rerere.hugeicons.stroke.Wrench01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.model.Assistant
@@ -47,11 +47,12 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AssistantDetailPage(id: String) {
-    val vm: AssistantDetailVM = koinViewModel(
-        parameters = {
-            parametersOf(id)
-        }
-    )
+    val vm: AssistantDetailVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id)
+            },
+        )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
     val navController = LocalNavController.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -61,9 +62,10 @@ fun AssistantDetailPage(id: String) {
             LargeFlexibleTopAppBar(
                 title = {
                     Text(
-                        text = assistant.name.ifBlank {
-                            stringResource(R.string.assistant_page_default_assistant)
-                        },
+                        text =
+                            assistant.name.ifBlank {
+                                stringResource(R.string.assistant_page_default_assistant)
+                            },
                         maxLines = 1,
                     )
                 },
@@ -71,11 +73,11 @@ fun AssistantDetailPage(id: String) {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -85,7 +87,7 @@ fun AssistantDetailPage(id: String) {
             item {
                 AssistantHeader(
                     assistant = assistant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
                 )
             }
 
@@ -151,27 +153,28 @@ fun AssistantDetailPage(id: String) {
 @Composable
 private fun AssistantHeader(
     assistant: Assistant,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         UIAvatar(
             value = assistant.avatar,
             name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
             onUpdate = null,
-            modifier = Modifier
-                .size(100.dp)
-                .heroAnimation("assistant_${assistant.id}")
+            modifier =
+                Modifier
+                    .size(100.dp)
+                    .heroAnimation("assistant_${assistant.id}"),
         )
 
         Text(
             text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
             style = MaterialTheme.typography.headlineSmall,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
 
         if (assistant.systemPrompt.isNotBlank()) {
@@ -180,7 +183,7 @@ private fun AssistantHeader(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

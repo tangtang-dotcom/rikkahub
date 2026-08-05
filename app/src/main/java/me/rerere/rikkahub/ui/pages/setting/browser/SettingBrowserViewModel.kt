@@ -17,29 +17,34 @@ import java.io.File
 class SettingBrowserViewModel(
     private val prefs: BrowserPreferences,
 ) : ViewModel() {
-
     /** Per-tool enabled map, keyed by [me.rerere.rikkahub.browser.BrowserToolDefaults.ALL_TOOLS]. */
-    val toolStates: StateFlow<Map<String, Boolean>> = prefs.observeAll().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyMap(),
-    )
+    val toolStates: StateFlow<Map<String, Boolean>> =
+        prefs.observeAll().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyMap(),
+        )
 
     /** Per-tool timeout, in milliseconds. Always clamped into the supported range. */
-    val perToolTimeoutMs: StateFlow<Long> = prefs.perToolTimeoutFlow().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = BrowserToolDefaults.DEFAULT_PER_TOOL_TIMEOUT_MS,
-    )
+    val perToolTimeoutMs: StateFlow<Long> =
+        prefs.perToolTimeoutFlow().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BrowserToolDefaults.DEFAULT_PER_TOOL_TIMEOUT_MS,
+        )
 
     /** Single-task timeout, in milliseconds. Always clamped into the supported range. */
-    val singleTaskTimeoutMs: StateFlow<Long> = prefs.singleTaskTimeoutFlow().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = BrowserToolDefaults.DEFAULT_SINGLE_TASK_TIMEOUT_MS,
-    )
+    val singleTaskTimeoutMs: StateFlow<Long> =
+        prefs.singleTaskTimeoutFlow().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BrowserToolDefaults.DEFAULT_SINGLE_TASK_TIMEOUT_MS,
+        )
 
-    fun setToolEnabled(toolName: String, enabled: Boolean) {
+    fun setToolEnabled(
+        toolName: String,
+        enabled: Boolean,
+    ) {
         viewModelScope.launch { prefs.setToolEnabled(toolName, enabled) }
     }
 
@@ -60,7 +65,10 @@ class SettingBrowserViewModel(
      * Done on Dispatchers.IO; the cookie API on the main thread is safe but the dir
      * recursion isn't. [onDone] fires on the main thread once both have completed.
      */
-    fun clearBrowsingData(context: Context, onDone: () -> Unit) {
+    fun clearBrowsingData(
+        context: Context,
+        onDone: () -> Unit,
+    ) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 runCatching {

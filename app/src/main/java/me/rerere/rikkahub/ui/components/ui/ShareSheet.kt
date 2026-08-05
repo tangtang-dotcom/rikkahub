@@ -12,8 +12,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,23 +33,26 @@ import me.rerere.rikkahub.utils.JsonInstant
 import kotlin.io.encoding.Base64
 
 @Composable
-fun ShareSheet(
-    state: ShareSheetState,
-) {
+fun ShareSheet(state: ShareSheetState) {
     val context = LocalContext.current
     if (state.isShow) {
         ModalBottomSheet(
             onDismissRequest = {
                 state.dismiss()
             },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -63,14 +66,14 @@ fun ShareSheet(
                             intent.type = "text/plain"
                             intent.putExtra(
                                 Intent.EXTRA_TEXT,
-                                state.currentProvider?.encodeForShare() ?: ""
+                                state.currentProvider?.encodeForShare() ?: "",
                             )
                             try {
                                 context.startActivity(Intent.createChooser(intent, null))
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.Share03, null)
                     }
@@ -78,25 +81,25 @@ fun ShareSheet(
 
                 QRCode(
                     value = state.currentProvider?.encodeForShare() ?: "",
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
                 )
             }
         }
     }
 }
 
-fun ProviderSetting.encodeForShare(): String {
-    return buildString {
+fun ProviderSetting.encodeForShare(): String =
+    buildString {
         append("ai-provider:")
         append("v1:")
 
         val value = JsonInstant.encodeToString(this@encodeForShare.copyProvider(models = emptyList()))
         append(Base64.encode(value.encodeToByteArray()))
     }
-}
 
 fun decodeProviderSetting(value: String): ProviderSetting {
     require(value.startsWith("ai-provider:v1:")) { "Invalid provider setting string" }
@@ -129,6 +132,4 @@ class ShareSheetState {
 }
 
 @Composable
-fun rememberShareSheetState(): ShareSheetState {
-    return ShareSheetState()
-}
+fun rememberShareSheetState(): ShareSheetState = ShareSheetState()

@@ -22,8 +22,9 @@ import me.rerere.rikkahub.workflow.model.WorkflowContext
  * passes a flag indicating which the conditions actually need, so we don't pay for a
  * location lookup on a workflow that only checks battery.
  */
-class ContextProvider(private val context: Context) {
-
+class ContextProvider(
+    private val context: Context,
+) {
     fun snapshot(needsLocation: Boolean = false): WorkflowContext {
         val now = System.currentTimeMillis()
         val (level, charging) = batteryStatus()
@@ -45,11 +46,13 @@ class ContextProvider(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     private fun lastKnownLocation(): Pair<Double?, Double?> {
-        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+        val fine =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
         if (!fine) return null to null
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null to null
-        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+        val providers =
+            listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
         for (p in providers) {
             try {
                 val loc = lm.getLastKnownLocation(p) ?: continue
@@ -64,27 +67,30 @@ class ContextProvider(private val context: Context) {
     }
 
     private fun batteryStatus(): Pair<Int?, Boolean> {
-        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            ?: return null to false
+        val intent =
+            context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                ?: return null to false
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
         val pct = if (level >= 0) (level * 100 / scale).coerceIn(0, 100) else null
         val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)
-        val charging = status == BatteryManager.BATTERY_STATUS_CHARGING
-            || status == BatteryManager.BATTERY_STATUS_FULL
+        val charging =
+            status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                status == BatteryManager.BATTERY_STATUS_FULL
         return pct to charging
     }
 
     @Suppress("DEPRECATION")
-    private fun currentWifiSsid(): String? = try {
-        val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-        wm?.connectionInfo?.ssid?.removeSurrounding("\"")?.takeIf {
-            it.isNotBlank() && it != "<unknown ssid>"
+    private fun currentWifiSsid(): String? =
+        try {
+            val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            wm?.connectionInfo?.ssid?.removeSurrounding("\"")?.takeIf {
+                it.isNotBlank() && it != "<unknown ssid>"
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "currentWifiSsid: lookup failed", e)
+            null
         }
-    } catch (e: Throwable) {
-        Log.w(TAG, "currentWifiSsid: lookup failed", e)
-        null
-    }
 
     private fun isScreenOn(): Boolean {
         val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true

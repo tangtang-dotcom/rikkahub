@@ -13,13 +13,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import me.rerere.ai.provider.Model
@@ -44,8 +44,8 @@ import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
-import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
 import java.util.Locale
@@ -68,7 +68,8 @@ class ChatVM(
 
     // 会话级 token 累计（当前分支所有消息 usage 之和），供聊天底部统计条展示
     val sessionTotals: StateFlow<TokenBudgetTracker.Totals> =
-        conversation.map { TokenBudgetTracker.aggregate(it) }
+        conversation
+            .map { TokenBudgetTracker.aggregate(it) }
             .stateIn(viewModelScope, SharingStarted.Eagerly, TokenBudgetTracker.aggregate(conversation.value))
     var chatListInitialized by mutableStateOf(false) // 聊天列表是否已经滚动到底部
 
@@ -88,9 +89,10 @@ class ChatVM(
         chatService
             .getProcessingStatusFlow(_conversationId)
 
-    val conversationJobs = chatService
-        .getConversationJobs()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+    val conversationJobs =
+        chatService
+            .getConversationJobs()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     init {
         // 添加对话引用
@@ -117,14 +119,18 @@ class ChatVM(
         settingsStore.settingsFlow.stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
 
     // 网络搜索(每个助手独立)
-    val enableWebSearch = settings.map {
-        it.getCurrentAssistant().enableWebSearch
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val enableWebSearch =
+        settings
+            .map {
+                it.getCurrentAssistant().enableWebSearch
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     // 当前模型
-    val currentChatModel = settings.map { settings ->
-        settings.getCurrentChatModel()
-    }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    val currentChatModel =
+        settings
+            .map { settings ->
+                settings.getCurrentChatModel()
+            }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // 错误状态
     val errors: StateFlow<List<ChatError>> = chatService.errors
@@ -140,17 +146,19 @@ class ChatVM(
     val mcpManager = chatService.mcpManager
 
     // 更新设置
-    fun updateSettings(newSettings: Settings): Job {
-        return viewModelScope.launch {
+    fun updateSettings(newSettings: Settings): Job =
+        viewModelScope.launch {
             val oldSettings = settings.value
             // 检查用户头像是否有变化，如果有则删除旧头像
             checkUserAvatarDelete(oldSettings, newSettings)
             settingsStore.update(newSettings)
         }
-    }
 
     // 检查用户头像删除
-    private fun checkUserAvatarDelete(oldSettings: Settings, newSettings: Settings) {
+    private fun checkUserAvatarDelete(
+        oldSettings: Settings,
+        newSettings: Settings,
+    ) {
         val oldAvatar = oldSettings.displaySetting.userAvatar
         val newAvatar = newSettings.displaySetting.userAvatar
 
@@ -160,19 +168,24 @@ class ChatVM(
     }
 
     // 设置聊天模型
-    fun setChatModel(assistant: Assistant, model: Model) {
+    fun setChatModel(
+        assistant: Assistant,
+        model: Model,
+    ) {
         viewModelScope.launch {
             settingsStore.update { settings ->
                 settings.copy(
-                    assistants = settings.assistants.map {
-                        if (it.id == assistant.id) {
-                            it.copy(
-                                chatModelId = model.id
-                            )
-                        } else {
-                            it
-                        }
-                    })
+                    assistants =
+                        settings.assistants.map {
+                            if (it.id == assistant.id) {
+                                it.copy(
+                                    chatModelId = model.id,
+                                )
+                            } else {
+                                it
+                            }
+                        },
+                )
             }
         }
     }
@@ -187,7 +200,10 @@ class ChatVM(
      * @param content 消息内容
      * @param answer 是否触发消息生成，如果为false，则仅添加消息到消息列表中
      */
-    fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
+    fun handleMessageSend(
+        content: List<UIMessagePart>,
+        answer: Boolean = true,
+    ) {
         if (content.isEmptyInputMessage()) return
 
         // 自动压缩检查：开关开启时，达到触发点（当前模式阈值）即弹窗询问
@@ -214,19 +230,31 @@ class ChatVM(
     private val defaultAutoCompressBase: Long = 512 * 1024
 
     /** 当前模式的触发阈值（绝对 token 数）：模式A = 基准×百分比/100，模式B = token 消耗上限 */
-    private fun autoCompressTriggerPoint(s: Settings): Long = when (s.autoCompressMode) {
-        1 -> s.autoCompressTokenLimit
-        else -> {
-            val base = if (s.autoCompressTokenBase > 0) s.autoCompressTokenBase else defaultAutoCompressBase
-            base * s.autoCompressThreshold.coerceIn(50, 95) / 100
+    private fun autoCompressTriggerPoint(s: Settings): Long =
+        when (s.autoCompressMode) {
+            1 -> {
+                s.autoCompressTokenLimit
+            }
+
+            else -> {
+                val base = if (s.autoCompressTokenBase > 0) s.autoCompressTokenBase else defaultAutoCompressBase
+                base * s.autoCompressThreshold.coerceIn(50, 95) / 100
+            }
         }
-    }
 
     /** 当前模式的累计检测值：模式A = 估算 token（文本字符数 1:1），模式B = 会话累计 totalTokens */
-    private fun autoCompressCurrentValue(): Long = when (settings.value.autoCompressMode) {
-        1 -> sessionTotals.value.totalTokens
-        else -> conversation.value.currentMessages.sumOf { it.toText().length }.toLong()
-    }
+    private fun autoCompressCurrentValue(): Long =
+        when (settings.value.autoCompressMode) {
+            1 -> {
+                sessionTotals.value.totalTokens
+            }
+
+            else -> {
+                conversation.value.currentMessages
+                    .sumOf { it.toText().length }
+                    .toLong()
+            }
+        }
 
     /**
      * 自动压缩检查：当前检测值超过会话级触发点（nextTriggerAt）时，
@@ -255,15 +283,16 @@ class ChatVM(
     fun confirmAutoCompress() {
         pendingAutoCompressConfirm = false
         viewModelScope.launch {
-            chatService.compressConversation(
-                _conversationId,
-                conversation.value,
-                additionalPrompt = "",
-                targetTokens = 2000,
-                keepRecentMessages = 32
-            ).onFailure {
-                chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
-            }
+            chatService
+                .compressConversation(
+                    _conversationId,
+                    conversation.value,
+                    additionalPrompt = "",
+                    targetTokens = 2000,
+                    keepRecentMessages = 32,
+                ).onFailure {
+                    chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
+                }
             autoCompressNextTriggerAt = autoCompressTriggerPoint(settings.value)
         }
     }
@@ -279,7 +308,10 @@ class ChatVM(
         autoCompressNextTriggerAt = autoCompressCurrentValue() + autoCompressTriggerPoint(newSettings)
     }
 
-    fun handleMessageEdit(parts: List<UIMessagePart>, messageId: Uuid) {
+    fun handleMessageEdit(
+        parts: List<UIMessagePart>,
+        messageId: Uuid,
+    ) {
         if (parts.isEmptyInputMessage()) return
 
         viewModelScope.launch {
@@ -287,23 +319,26 @@ class ChatVM(
         }
     }
 
-    fun handleCompressContext(additionalPrompt: String, targetTokens: Int, keepRecentMessages: Int): Job {
-        return viewModelScope.launch {
-            chatService.compressConversation(
-                _conversationId,
-                conversation.value,
-                additionalPrompt,
-                targetTokens,
-                keepRecentMessages
-            ).onFailure {
-                chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
-            }
+    fun handleCompressContext(
+        additionalPrompt: String,
+        targetTokens: Int,
+        keepRecentMessages: Int,
+    ): Job =
+        viewModelScope.launch {
+            chatService
+                .compressConversation(
+                    _conversationId,
+                    conversation.value,
+                    additionalPrompt,
+                    targetTokens,
+                    keepRecentMessages,
+                ).onFailure {
+                    chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
+                }
         }
-    }
 
-    suspend fun forkMessage(message: UIMessage): Conversation {
-        return chatService.forkConversationAtMessage(_conversationId, message.id)
-    }
+    suspend fun forkMessage(message: UIMessage): Conversation =
+        chatService.forkConversationAtMessage(_conversationId, message.id)
 
     fun deleteMessage(message: UIMessage) {
         viewModelScope.launch {
@@ -315,13 +350,13 @@ class ChatVM(
         chatService.addError(
             error = IllegalStateException(context.getString(R.string.chat_stop_generation_before_delete)),
             conversationId = _conversationId,
-            title = context.getString(R.string.error_title_operation)
+            title = context.getString(R.string.error_title_operation),
         )
     }
 
     fun regenerateAtMessage(
         message: UIMessage,
-        regenerateAssistantMsg: Boolean = true
+        regenerateAssistantMsg: Boolean = true,
     ) {
         chatService.regenerateAtMessage(_conversationId, message, regenerateAssistantMsg)
     }
@@ -381,21 +416,26 @@ class ChatVM(
         }
     }
 
-    fun moveConversationToAssistant(conversation: Conversation, targetAssistantId: Uuid) {
+    fun moveConversationToAssistant(
+        conversation: Conversation,
+        targetAssistantId: Uuid,
+    ) {
         viewModelScope.launch {
             val conversationFull = conversationRepo.getConversationById(conversation.id) ?: return@launch
             // Folders are per-assistant groupings; after switching assistant the old folder is
             // not visible under the new one, so clear the assignment to avoid losing the chat.
-            val updatedConversation = conversationFull.copy(
-                assistantId = targetAssistantId,
-                folderId = null,
-            )
+            val updatedConversation =
+                conversationFull.copy(
+                    assistantId = targetAssistantId,
+                    folderId = null,
+                )
             // Drop any "Allow for this chat" grants the user gave the previous assistant.
             // The grants apply to a tool surface the new assistant may use very differently
             // (different prompt, different tool list), and the user authorised them under
             // the old persona's behaviour, not this one's. Persistent "Always Allow" grants
             // stay (they were granted globally) but ChatScope is reset.
-            me.rerere.rikkahub.data.ai.tools.ToolApprovalAllowList.clearChat(conversation.id)
+            me.rerere.rikkahub.data.ai.tools.ToolApprovalAllowList
+                .clearChat(conversation.id)
             if (conversation.id == _conversationId) {
                 chatService.saveConversation(_conversationId, updatedConversation)
                 settingsStore.updateAssistant(targetAssistantId)
@@ -405,11 +445,17 @@ class ChatVM(
         }
     }
 
-    fun translateMessage(message: UIMessage, targetLanguage: Locale) {
+    fun translateMessage(
+        message: UIMessage,
+        targetLanguage: Locale,
+    ) {
         chatService.translateMessage(_conversationId, message, targetLanguage)
     }
 
-    fun generateTitle(conversation: Conversation, force: Boolean = false) {
+    fun generateTitle(
+        conversation: Conversation,
+        force: Boolean = false,
+    ) {
         viewModelScope.launch {
             val conversationFull = conversationRepo.getConversationById(conversation.id) ?: return@launch
             chatService.generateTitle(_conversationId, conversationFull, force)
@@ -443,20 +489,21 @@ class ChatVM(
                         conversationId = _conversationId,
                         conversationTitle = conversation.value.title,
                         nodeId = node.id,
-                        node = node
-                    )
+                        node = node,
+                    ),
                 )
             }
 
             chatService.updateConversationState(_conversationId) { currentConversation ->
                 currentConversation.copy(
-                    messageNodes = currentConversation.messageNodes.map { existingNode ->
-                        if (existingNode.id == node.id) {
-                            existingNode.copy(isFavorite = !currentlyFavorited)
-                        } else {
-                            existingNode
-                        }
-                    }
+                    messageNodes =
+                        currentConversation.messageNodes.map { existingNode ->
+                            if (existingNode.id == node.id) {
+                                existingNode.copy(isFavorite = !currentlyFavorited)
+                            } else {
+                                existingNode
+                            }
+                        },
                 )
             }
         }
@@ -471,53 +518,55 @@ class ChatVM(
 
         if (config.intervalSeconds <= 0) return
 
-        autoTaskJob = viewModelScope.launch {
-            when (config.mode) {
-                0 -> {
-                    // 固定时间触发：延迟指定秒数后发送
-                    delay(config.intervalSeconds * 1000L)
-                    handleMessageSend(
-                        listOf(UIMessagePart.Text(config.message)),
-                        answer = true
-                    )
-                    writeAutoTaskConfig(context, AutoTaskConfig())
-                }
+        autoTaskJob =
+            viewModelScope.launch {
+                when (config.mode) {
+                    0 -> {
+                        // 固定时间触发：延迟指定秒数后发送
+                        delay(config.intervalSeconds * 1000L)
+                        handleMessageSend(
+                            listOf(UIMessagePart.Text(config.message)),
+                            answer = true,
+                        )
+                        writeAutoTaskConfig(context, AutoTaskConfig())
+                    }
 
-                1 -> {
-                    // 不定时触发：监听会话空闲状态
-                    while (isActive) {
-                        val job = conversationJob.value
-                        if (job != null && job.isActive) {
-                            try {
-                                withTimeoutOrNull(300_000L) {
-                                    conversationJob.first { it == null || !it.isActive }
+                    1 -> {
+                        // 不定时触发：监听会话空闲状态
+                        while (isActive) {
+                            val job = conversationJob.value
+                            if (job != null && job.isActive) {
+                                try {
+                                    withTimeoutOrNull(300_000L) {
+                                        conversationJob.first { it == null || !it.isActive }
+                                    }
+                                } catch (_: Exception) {
                                 }
-                            } catch (_: Exception) { }
-                        }
+                            }
 
-                        var idleSeconds = 0
-                        while (idleSeconds < config.intervalSeconds && isActive) {
-                            delay(1_000L)
-                            val currentJob = conversationJob.value
-                            if (currentJob != null && currentJob.isActive) {
-                                idleSeconds = 0
+                            var idleSeconds = 0
+                            while (idleSeconds < config.intervalSeconds && isActive) {
+                                delay(1_000L)
+                                val currentJob = conversationJob.value
+                                if (currentJob != null && currentJob.isActive) {
+                                    idleSeconds = 0
+                                    break
+                                }
+                                idleSeconds++
+                            }
+
+                            if (idleSeconds >= config.intervalSeconds && isActive) {
+                                handleMessageSend(
+                                    listOf(UIMessagePart.Text(config.message)),
+                                    answer = true,
+                                )
+                                writeAutoTaskConfig(context, AutoTaskConfig())
                                 break
                             }
-                            idleSeconds++
-                        }
-
-                        if (idleSeconds >= config.intervalSeconds && isActive) {
-                            handleMessageSend(
-                                listOf(UIMessagePart.Text(config.message)),
-                                answer = true
-                            )
-                            writeAutoTaskConfig(context, AutoTaskConfig())
-                            break
                         }
                     }
                 }
             }
-        }
     }
 
     /**

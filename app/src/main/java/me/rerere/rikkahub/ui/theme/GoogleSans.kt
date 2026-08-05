@@ -8,7 +8,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import me.rerere.rikkahub.R
 
-
 object ExtendedFontVariation {
     /**
      * Typographic feature axis for (ROND) variations
@@ -35,26 +34,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(57.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(57.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(57.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(57.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -62,26 +64,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(45.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(45.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(45.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(45.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -89,26 +94,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(36.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(36.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(36.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(36.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
 
         object Emphasized {
@@ -118,27 +126,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(57.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(57.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(57.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(57.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -146,27 +157,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(45.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(45.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(45.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(45.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -174,27 +188,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(36.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(36.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(36.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(36.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 
@@ -206,26 +223,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(32.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(32.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(32.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(32.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -233,26 +253,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(28.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(28.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(28.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(28.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -260,26 +283,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(24.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(24.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(24.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(24.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
 
         object Emphasized {
@@ -289,27 +315,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(32.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(32.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(32.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(32.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -317,27 +346,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(28.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(28.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(28.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(28.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -345,27 +377,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(24.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(24.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(24.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(24.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 
@@ -377,25 +412,28 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(22.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(22.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(22.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(22.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Normal
@@ -403,26 +441,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Normal
@@ -430,26 +471,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
 
         object Emphasized {
@@ -459,27 +503,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(22.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(22.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(22.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(22.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -487,27 +534,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -515,27 +565,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 
@@ -547,26 +600,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -574,26 +630,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Normal (400), Normal
@@ -601,26 +660,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Normal.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Normal.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
 
         object Emphasized {
@@ -630,27 +692,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(16.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(16.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -658,27 +723,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Emphasized
@@ -686,27 +754,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 
@@ -718,26 +789,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(11.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(11.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(11.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(11.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Normal
@@ -745,26 +819,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Medium (500), Normal
@@ -772,26 +849,29 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.Medium.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.Medium.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
 
         object Emphasized {
@@ -801,27 +881,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Small = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(11.sp),
+            val Small =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(11.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(11.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(11.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Semibold (600), Emphasized
@@ -829,27 +912,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Medium = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+            val Medium =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(12.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(12.sp),
+                            ),
                     ),
-                ),
-            )
+                )
 
             /**
              * Google Sans Flex Semibold (600), Emphasized
@@ -857,27 +943,30 @@ object GoogleSansFlex {
              * Fallback to Google Sans for unsupported glyphs (no round variation settings)
              **/
             @OptIn(ExperimentalTextApi::class)
-            val Large = FontFamily(
-                Font(
-                    R.font.google_sans_flex,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        ExtendedFontVariation.round(100),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+            val Large =
+                FontFamily(
+                    Font(
+                        R.font.google_sans_flex,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                ExtendedFontVariation.round(100),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-                Font(
-                    R.font.google_sans_flex, // Google Sans
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(FontWeight.SemiBold.weight),
-                        FontVariation.width(100f),
-                        FontVariation.grade(0),
-                        FontVariation.opticalSizing(14.sp),
+                    Font(
+                        R.font.google_sans_flex, // Google Sans
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(FontWeight.SemiBold.weight),
+                                FontVariation.width(100f),
+                                FontVariation.grade(0),
+                                FontVariation.opticalSizing(14.sp),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 }

@@ -62,7 +62,7 @@ fun EmojiPicker(
     modifier: Modifier = Modifier,
     onEmojiSelected: (Emoji) -> Unit = {},
     showSearch: Boolean = true,
-    height: Int = 400
+    height: Int = 400,
 ) {
     val emojiData = koinInject<EmojiData>()
     var searchQuery by remember { mutableStateOf("") }
@@ -77,14 +77,14 @@ fun EmojiPicker(
     emojiData.let { data ->
         Box(modifier = modifier) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(height.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surface,
-                        RoundedCornerShape(12.dp)
-                    )
-                    .padding(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(height.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(12.dp),
+                        ).padding(8.dp),
             ) {
                 // Search bar
                 if (showSearch) {
@@ -95,71 +95,79 @@ fun EmojiPicker(
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Search01,
-                                contentDescription = "Search"
+                                contentDescription = "Search",
                             )
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Search
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onSearch = { /* Handle search */ }
-                        ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                        keyboardOptions =
+                            KeyboardOptions(
+                                imeAction = ImeAction.Search,
+                            ),
+                        keyboardActions =
+                            KeyboardActions(
+                                onSearch = { /* Handle search */ },
+                            ),
                         singleLine = true,
-                        shape = RoundedCornerShape(50)
+                        shape = RoundedCornerShape(50),
                     )
                 }
 
                 // Category tabs
                 LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(data.categories.size) { index ->
                         val category = data.categories[index]
                         val isSelected = selectedCategoryIndex == index
 
                         Card(
-                            modifier = Modifier
-                                .clickable {
-                                    selectedCategoryIndex = index
-                                    coroutineScope.launch {
-                                        lazyListState.animateScrollToItem(0)
-                                    }
-                                }
-                                .clip(RoundedCornerShape(20.dp)),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            )
+                            modifier =
+                                Modifier
+                                    .clickable {
+                                        selectedCategoryIndex = index
+                                        coroutineScope.launch {
+                                            lazyListState.animateScrollToItem(0)
+                                        }
+                                    }.clip(RoundedCornerShape(20.dp)),
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor =
+                                        if (isSelected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        },
+                                ),
                         ) {
                             Text(
-                                text = when (category.name) {
-                                    "表情与情感" -> "\uD83D\uDE03"
-                                    "人物与身体" -> "\uD83D\uDC64"
-                                    "组件" -> "\uD83E\uDDF4"
-                                    "动物与自然" -> "\uD83D\uDC3B"
-                                    "食物与饮品" -> "\uD83C\uDF5B"
-                                    "旅行与地点" -> "\uD83C\uDF04"
-                                    "活动" -> "\uD83C\uDFA3"
-                                    "物品" -> "\uD83D\uDCBB"
-                                    "符号" -> "\uD83C\uDF00"
-                                    "旗帜" -> "\uD83D\uDEA9"
-                                    else -> category.name
-                                },
+                                text =
+                                    when (category.name) {
+                                        "表情与情感" -> "\uD83D\uDE03"
+                                        "人物与身体" -> "\uD83D\uDC64"
+                                        "组件" -> "\uD83E\uDDF4"
+                                        "动物与自然" -> "\uD83D\uDC3B"
+                                        "食物与饮品" -> "\uD83C\uDF5B"
+                                        "旅行与地点" -> "\uD83C\uDF04"
+                                        "活动" -> "\uD83C\uDFA3"
+                                        "物品" -> "\uD83D\uDCBB"
+                                        "符号" -> "\uD83C\uDF00"
+                                        "旗帜" -> "\uD83D\uDEA9"
+                                        else -> category.name
+                                    },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                color =
+                                    if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                         }
@@ -168,22 +176,24 @@ fun EmojiPicker(
 
                 // Emoji grid
                 val selectedCategory = data.categories[selectedCategoryIndex]
-                val emojiVariants = remember(selectedCategoryIndex, data) {
-                    selectedCategory.getEmojiVariants()
-                }
+                val emojiVariants =
+                    remember(selectedCategoryIndex, data) {
+                        selectedCategory.getEmojiVariants()
+                    }
 
-                val filteredEmojiVariants = remember(searchQuery, emojiVariants) {
-                    if (searchQuery.isBlank()) {
-                        emojiVariants
-                    } else {
-                        emojiVariants.filter { (baseEmoji, variants) ->
-                            variants.any { emoji ->
-                                emoji.name.contains(searchQuery, ignoreCase = true) ||
-                                    emoji.emoji.contains(searchQuery)
+                val filteredEmojiVariants =
+                    remember(searchQuery, emojiVariants) {
+                        if (searchQuery.isBlank()) {
+                            emojiVariants
+                        } else {
+                            emojiVariants.filter { (baseEmoji, variants) ->
+                                variants.any { emoji ->
+                                    emoji.name.contains(searchQuery, ignoreCase = true) ||
+                                        emoji.emoji.contains(searchQuery)
+                                }
                             }
                         }
                     }
-                }
 
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 40.dp),
@@ -191,7 +201,7 @@ fun EmojiPicker(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     items(filteredEmojiVariants.toList(), key = { it.first.emoji }) { (baseEmoji, variants) ->
                         EmojiItem(
@@ -200,13 +210,16 @@ fun EmojiPicker(
                             onClick = {
                                 onEmojiSelected(baseEmoji)
                             },
-                            onLongClick = if (variants.size > 1) {
-                                {
-                                    selectedEmojiForModifier = baseEmoji
-                                    modifierVariants = variants
-                                    showModifierPicker = true
-                                }
-                            } else null
+                            onLongClick =
+                                if (variants.size > 1) {
+                                    {
+                                        selectedEmojiForModifier = baseEmoji
+                                        modifierVariants = variants
+                                        showModifierPicker = true
+                                    }
+                                } else {
+                                    null
+                                },
                         )
                     }
                 }
@@ -224,7 +237,7 @@ fun EmojiPicker(
                     onDismiss = {
                         showModifierPicker = false
                         selectedEmojiForModifier = null
-                    }
+                    },
                 )
             }
         }
@@ -236,27 +249,27 @@ private fun EmojiItem(
     emoji: Emoji,
     hasVariants: Boolean = false,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
 ) {
     Box(
-        modifier = Modifier
-            .size(40.dp)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(
-                    alpha = if (hasVariants) 0.5f else 0.3f
-                )
-            ),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .size(40.dp)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ).clip(RoundedCornerShape(8.dp))
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                        alpha = if (hasVariants) 0.5f else 0.3f,
+                    ),
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = emoji.emoji,
             fontSize = 20.sp,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -265,50 +278,53 @@ private fun EmojiItem(
 private fun EmojiModifierPicker(
     variants: List<Emoji>,
     onEmojiSelected: (Emoji) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Popup(
         onDismissRequest = onDismiss,
-        properties = PopupProperties(
-            focusable = true,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
+        properties =
+            PopupProperties(
+                focusable = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+            ),
     ) {
         Surface(
-            modifier = Modifier
-                .wrapContentSize()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .wrapContentSize()
+                    .padding(16.dp),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 8.dp,
-            tonalElevation = 8.dp
+            tonalElevation = 8.dp,
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.emoji_picker_select_skin_tone),
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = 12.dp),
                 )
 
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(variants) { variant ->
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clickable { onEmojiSelected(variant) }
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(48.dp)
+                                    .clickable { onEmojiSelected(variant) }
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = variant.emoji,
                                 fontSize = 24.sp,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }

@@ -4,8 +4,13 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.navigation3.runtime.NavKey
 import me.rerere.rikkahub.Screen
 
-class Navigator(private val backStack: MutableList<NavKey>) {
-    fun navigate(screen: Screen, builder: NavigateOptionsBuilder.() -> Unit = {}) {
+class Navigator(
+    private val backStack: MutableList<NavKey>,
+) {
+    fun navigate(
+        screen: Screen,
+        builder: NavigateOptionsBuilder.() -> Unit = {},
+    ) {
         val options = NavigateOptionsBuilder().apply(builder)
 
         options.popUpToScreen?.let { target ->
@@ -40,7 +45,10 @@ class NavigateOptionsBuilder {
     internal var popUpToInclusive: Boolean = false
     var launchSingleTop: Boolean = false
 
-    fun popUpTo(screen: Screen, builder: PopUpToBuilder.() -> Unit = {}) {
+    fun popUpTo(
+        screen: Screen,
+        builder: PopUpToBuilder.() -> Unit = {},
+    ) {
         val options = PopUpToBuilder().apply(builder)
         popUpToScreen = screen
         popUpToInclusive = options.inclusive
@@ -51,6 +59,7 @@ class PopUpToBuilder {
     var inclusive: Boolean = false
 }
 
-val LocalNavController = compositionLocalOf<Navigator> {
-    error("No Navigator provided")
-}
+val LocalNavController =
+    compositionLocalOf<Navigator> {
+        error("No Navigator provided")
+    }

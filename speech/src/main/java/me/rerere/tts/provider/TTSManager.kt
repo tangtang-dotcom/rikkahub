@@ -16,7 +16,9 @@ import me.rerere.tts.provider.providers.StepTTSProvider
 import me.rerere.tts.provider.providers.SystemTTSProvider
 import me.rerere.tts.provider.providers.XAITTSProvider
 
-class TTSManager(private val context: Context) {
+class TTSManager(
+    private val context: Context,
+) {
     private val openAIProvider = OpenAITTSProvider()
     private val geminiProvider = GeminiTTSProvider()
     private val systemProvider = SystemTTSProvider()
@@ -31,9 +33,9 @@ class TTSManager(private val context: Context) {
 
     fun generateSpeech(
         providerSetting: TTSProviderSetting,
-        request: TTSRequest
-    ): Flow<AudioChunk> {
-        return when (providerSetting) {
+        request: TTSRequest,
+    ): Flow<AudioChunk> =
+        when (providerSetting) {
             is TTSProviderSetting.OpenAI -> openAIProvider.generateSpeech(context, providerSetting, request)
             is TTSProviderSetting.Gemini -> geminiProvider.generateSpeech(context, providerSetting, request)
             is TTSProviderSetting.SystemTTS -> systemProvider.generateSpeech(context, providerSetting, request)
@@ -46,14 +48,13 @@ class TTSManager(private val context: Context) {
             is TTSProviderSetting.FishAudio -> fishAudioProvider.generateSpeech(context, providerSetting, request)
             is TTSProviderSetting.Step -> stepProvider.generateSpeech(context, providerSetting, request)
         }
-    }
 
     /**
      * 返回该 provider 硬编码的语气标记引导提示词（默认空）。
      * 供 text_to_speech 工具注入 system prompt 使用。
      */
-    fun getPromptGuidance(providerSetting: TTSProviderSetting): String {
-        return when (providerSetting) {
+    fun getPromptGuidance(providerSetting: TTSProviderSetting): String =
+        when (providerSetting) {
             is TTSProviderSetting.OpenAI -> openAIProvider.promptGuidance
             is TTSProviderSetting.Gemini -> geminiProvider.promptGuidance
             is TTSProviderSetting.SystemTTS -> systemProvider.promptGuidance
@@ -66,5 +67,4 @@ class TTSManager(private val context: Context) {
             is TTSProviderSetting.FishAudio -> fishAudioProvider.promptGuidance
             is TTSProviderSetting.Step -> stepProvider.promptGuidance
         }
-    }
 }

@@ -47,13 +47,14 @@ private const val TAG = "SimpleHtmlBlock"
 @Composable
 fun SimpleHtmlBlock(
     html: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val document = remember(html) {
-        runCatching { Jsoup.parse(html) }.getOrElse {
-            Jsoup.parse("<p>Error parsing HTML: ${it.message}</p>")
+    val document =
+        remember(html) {
+            runCatching { Jsoup.parse(html) }.getOrElse {
+                Jsoup.parse("<p>Error parsing HTML: ${it.message}</p>")
+            }
         }
-    }
 
     val uriHandler = LocalUriHandler.current
 
@@ -67,7 +68,7 @@ fun SimpleHtmlBlock(
                     } catch (e: Exception) {
                         Log.e(TAG, "SimpleHtmlBlock: failed to open link: $url", e)
                     }
-                }
+                },
             )
         }
     }
@@ -76,16 +77,17 @@ fun SimpleHtmlBlock(
 @Composable
 private fun RenderNode(
     node: Node,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
 ) {
     when (node) {
         is TextNode -> {
             if (node.text().isNotBlank()) {
                 Text(
                     text = node.text(),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = LocalContentColor.current
-                    )
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = LocalContentColor.current,
+                        ),
                 )
             }
         }
@@ -101,25 +103,27 @@ private fun RenderNode(
 
                         Text(
                             text = annotatedString,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = inlineStyle?.color ?: LocalContentColor.current,
-                                fontWeight = inlineStyle?.fontWeight ?: FontWeight.Normal
-                            ),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = inlineStyle?.color ?: LocalContentColor.current,
+                                    fontWeight = inlineStyle?.fontWeight ?: FontWeight.Normal,
+                                ),
+                            modifier = Modifier.padding(bottom = 8.dp),
                         )
                     }
                 }
 
                 "h1", "h2", "h3", "h4", "h5", "h6" -> {
                     val headingLevel = node.tagName().substring(1).toIntOrNull() ?: 1
-                    val textStyle = when (headingLevel) {
-                        1 -> MaterialTheme.typography.headlineLarge
-                        2 -> MaterialTheme.typography.headlineMedium
-                        3 -> MaterialTheme.typography.headlineSmall
-                        4 -> MaterialTheme.typography.titleLarge
-                        5 -> MaterialTheme.typography.titleMedium
-                        else -> MaterialTheme.typography.titleSmall
-                    }
+                    val textStyle =
+                        when (headingLevel) {
+                            1 -> MaterialTheme.typography.headlineLarge
+                            2 -> MaterialTheme.typography.headlineMedium
+                            3 -> MaterialTheme.typography.headlineSmall
+                            4 -> MaterialTheme.typography.titleLarge
+                            5 -> MaterialTheme.typography.titleMedium
+                            else -> MaterialTheme.typography.titleSmall
+                        }
 
                     val annotatedString = buildAnnotatedStringFromElement(node, onLinkClick)
                     if (annotatedString.text.isNotBlank()) {
@@ -129,11 +133,12 @@ private fun RenderNode(
 
                         Text(
                             text = annotatedString,
-                            style = textStyle.copy(
-                                color = inlineStyle?.color ?: LocalContentColor.current,
-                                fontWeight = inlineStyle?.fontWeight ?: textStyle.fontWeight
-                            ),
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            style =
+                                textStyle.copy(
+                                    color = inlineStyle?.color ?: LocalContentColor.current,
+                                    fontWeight = inlineStyle?.fontWeight ?: textStyle.fontWeight,
+                                ),
+                            modifier = Modifier.padding(vertical = 8.dp),
                         )
                     }
                 }
@@ -180,10 +185,11 @@ private fun RenderNode(
 
                         Text(
                             text = annotatedString,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = inlineStyle?.color ?: LocalContentColor.current,
-                                fontWeight = inlineStyle?.fontWeight ?: FontWeight.Normal
-                            )
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = inlineStyle?.color ?: LocalContentColor.current,
+                                    fontWeight = inlineStyle?.fontWeight ?: FontWeight.Normal,
+                                ),
                         )
                     }
                 }
@@ -196,7 +202,7 @@ private fun RenderNode(
 private fun RenderList(
     listElement: Element,
     isOrdered: Boolean,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
 ) {
     Column(modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
         listElement.children().forEachIndexed { index, item ->
@@ -204,9 +210,10 @@ private fun RenderList(
                 Row(modifier = Modifier.padding(vertical = 2.dp)) {
                     Text(
                         text = if (isOrdered) "${index + 1}. " else "• ",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = LocalContentColor.current
-                        )
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = LocalContentColor.current,
+                            ),
                     )
                     Spacer(modifier = Modifier.width(4.dp))
 
@@ -214,10 +221,11 @@ private fun RenderList(
                     if (annotatedString.text.isNotBlank()) {
                         Text(
                             text = annotatedString,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = LocalContentColor.current
-                            ),
-                            modifier = Modifier.weight(1f)
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = LocalContentColor.current,
+                                ),
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -229,53 +237,59 @@ private fun RenderList(
 @Composable
 private fun RenderDetails(
     detailsElement: Element,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
 ) {
     val isOpenByDefault = detailsElement.hasAttr("open")
     var isExpanded by remember { mutableStateOf(isOpenByDefault) }
 
-    val summaryElement = detailsElement.children().find {
-        it.tagName().lowercase() == "summary"
-    }
+    val summaryElement =
+        detailsElement.children().find {
+            it.tagName().lowercase() == "summary"
+        }
     val summaryText = summaryElement?.text() ?: "Details"
 
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         // Summary (clickable header)
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { isExpanded = !isExpanded }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded }
+                    .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = if (isExpanded) "▼ " else "▶ ",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = LocalContentColor.current
-                )
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        color = LocalContentColor.current,
+                    ),
             )
 
-            val summaryAnnotatedString = if (summaryElement != null) {
-                buildAnnotatedStringFromElement(summaryElement, onLinkClick)
-            } else {
-                AnnotatedString(summaryText)
-            }
+            val summaryAnnotatedString =
+                if (summaryElement != null) {
+                    buildAnnotatedStringFromElement(summaryElement, onLinkClick)
+                } else {
+                    AnnotatedString(summaryText)
+                }
 
             Text(
                 text = summaryAnnotatedString,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = LocalContentColor.current,
-                    fontWeight = FontWeight.Medium
-                )
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        color = LocalContentColor.current,
+                        fontWeight = FontWeight.Medium,
+                    ),
             )
         }
 
         // Details content (animated visibility)
         AnimatedVisibility(visible = isExpanded) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 4.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, top = 4.dp),
             ) {
                 detailsElement.children().forEach { child ->
                     if (child.tagName().lowercase() != "summary") {
@@ -288,25 +302,25 @@ private fun RenderDetails(
 }
 
 @Composable
-private fun RenderImage(
-    imgElement: Element
-) {
+private fun RenderImage(imgElement: Element) {
     val src = imgElement.attr("src")
     val alt = imgElement.attr("alt")
     if (src.isNotEmpty()) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center,
         ) {
             ZoomableAsyncImage(
                 model = src,
                 contentDescription = alt.takeIf { it.isNotEmpty() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Fit,
             )
         }
@@ -315,17 +329,16 @@ private fun RenderImage(
 
 private fun buildAnnotatedStringFromElement(
     element: Element,
-    onLinkClick: (String) -> Unit
-): AnnotatedString {
-    return buildAnnotatedString {
+    onLinkClick: (String) -> Unit,
+): AnnotatedString =
+    buildAnnotatedString {
         processElementNodes(element, this, onLinkClick)
     }
-}
 
 private fun processElementNodes(
     element: Element,
     builder: AnnotatedString.Builder,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
 ) {
     element.childNodes().forEach { node ->
         when (node) {
@@ -341,7 +354,7 @@ private fun processElementNodes(
                         builder.addStyle(
                             SpanStyle(fontWeight = FontWeight.Bold),
                             start,
-                            builder.length
+                            builder.length,
                         )
                     }
 
@@ -351,7 +364,7 @@ private fun processElementNodes(
                         builder.addStyle(
                             SpanStyle(fontStyle = FontStyle.Italic),
                             start,
-                            builder.length
+                            builder.length,
                         )
                     }
 
@@ -361,7 +374,7 @@ private fun processElementNodes(
                         builder.addStyle(
                             SpanStyle(textDecoration = TextDecoration.Underline),
                             start,
-                            builder.length
+                            builder.length,
                         )
                     }
 
@@ -373,16 +386,16 @@ private fun processElementNodes(
                             builder.addStyle(
                                 SpanStyle(
                                     color = Color.Blue,
-                                    textDecoration = TextDecoration.Underline
+                                    textDecoration = TextDecoration.Underline,
                                 ),
                                 start,
-                                builder.length
+                                builder.length,
                             )
                             builder.addStringAnnotation(
                                 tag = "URL",
                                 annotation = href,
                                 start = start,
-                                end = builder.length
+                                end = builder.length,
                             )
                         }
                     }
@@ -393,10 +406,10 @@ private fun processElementNodes(
                         builder.addStyle(
                             SpanStyle(
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                background = Color.Gray.copy(alpha = 0.2f)
+                                background = Color.Gray.copy(alpha = 0.2f),
                             ),
                             start,
-                            builder.length
+                            builder.length,
                         )
                     }
 
@@ -416,7 +429,7 @@ private fun processElementNodes(
                                 builder.addStyle(
                                     spanStyle,
                                     start,
-                                    builder.length
+                                    builder.length,
                                 )
                             }
                         }
@@ -434,7 +447,7 @@ private fun processElementNodes(
                                 builder.addStyle(
                                     SpanStyle(color = parsedColor),
                                     start,
-                                    builder.length
+                                    builder.length,
                                 )
                             }
                         }
@@ -450,14 +463,17 @@ private fun processElementNodes(
 }
 
 private fun parseInlineStyle(style: String): SpanStyle? {
-    val properties = style.split(";")
-        .mapNotNull { property ->
-            val parts = property.split(":")
-            if (parts.size == 2) {
-                parts[0].trim() to parts[1].trim()
-            } else null
-        }
-        .toMap()
+    val properties =
+        style
+            .split(";")
+            .mapNotNull { property ->
+                val parts = property.split(":")
+                if (parts.size == 2) {
+                    parts[0].trim() to parts[1].trim()
+                } else {
+                    null
+                }
+            }.toMap()
 
     var color: Color? = null
     var fontWeight: FontWeight? = null
@@ -473,19 +489,24 @@ private fun parseInlineStyle(style: String): SpanStyle? {
     return if (color != null || fontWeight != null) {
         SpanStyle(
             color = color ?: Color.Unspecified,
-            fontWeight = fontWeight
+            fontWeight = fontWeight,
         )
-    } else null
+    } else {
+        null
+    }
 }
 
-private fun parseColor(colorString: String): Color? {
-    return try {
+private fun parseColor(colorString: String): Color? =
+    try {
         when {
             colorString.startsWith("#") -> {
                 // Hex color
                 val hex = colorString.removePrefix("#")
                 when (hex.length) {
-                    6 -> Color("#$hex".toColorInt())
+                    6 -> {
+                        Color("#$hex".toColorInt())
+                    }
+
                     3 -> {
                         // Convert 3-digit hex to 6-digit
                         val r = hex[0].toString().repeat(2)
@@ -494,7 +515,9 @@ private fun parseColor(colorString: String): Color? {
                         Color("#$r$g$b".toColorInt())
                     }
 
-                    else -> null
+                    else -> {
+                        null
+                    }
                 }
             }
 
@@ -504,7 +527,9 @@ private fun parseColor(colorString: String): Color? {
                 val values = rgb.split(",").map { it.trim().toIntOrNull() }
                 if (values.size == 3 && values.all { it != null && it in 0..255 }) {
                     Color(values[0]!!, values[1]!!, values[2]!!)
-                } else null
+                } else {
+                    null
+                }
             }
 
             colorString.startsWith("rgba(") -> {
@@ -520,8 +545,12 @@ private fun parseColor(colorString: String): Color? {
                         r in 0..255 && g in 0..255 && b in 0..255 && a in 0f..1f
                     ) {
                         Color(r, g, b, (a * 255).toInt())
-                    } else null
-                } else null
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
 
             else -> {
@@ -547,10 +576,9 @@ private fun parseColor(colorString: String): Color? {
     } catch (e: Exception) {
         null
     }
-}
 
-private fun parseFontWeight(weightString: String): FontWeight? {
-    return when (weightString.lowercase()) {
+private fun parseFontWeight(weightString: String): FontWeight? =
+    when (weightString.lowercase()) {
         "normal" -> FontWeight.Normal
         "bold" -> FontWeight.SemiBold
         "bolder" -> FontWeight.ExtraBold
@@ -566,12 +594,9 @@ private fun parseFontWeight(weightString: String): FontWeight? {
         "900" -> FontWeight.W900
         else -> null
     }
-}
 
 @Composable
-private fun RenderProgress(
-    progressElement: Element
-) {
+private fun RenderProgress(progressElement: Element) {
     val value = progressElement.attr("value").toFloatOrNull() ?: 0f
     val max = progressElement.attr("max").toFloatOrNull() ?: 100f
     val progress = if (max > 0) (value / max).coerceIn(0f, 1f) else 0f
@@ -580,52 +605,56 @@ private fun RenderProgress(
     val style = progressElement.attr("style")
     var width = ""
     if (style.isNotEmpty()) {
-        val properties = style.split(";")
-            .mapNotNull { property ->
-                val parts = property.split(":")
-                if (parts.size == 2) {
-                    parts[0].trim() to parts[1].trim()
-                } else null
-            }
-            .toMap()
+        val properties =
+            style
+                .split(";")
+                .mapNotNull { property ->
+                    val parts = property.split(":")
+                    if (parts.size == 2) {
+                        parts[0].trim() to parts[1].trim()
+                    } else {
+                        null
+                    }
+                }.toMap()
         width = properties["width"] ?: ""
     }
     if (width.isEmpty()) {
         width = progressElement.attr("width")
     }
 
-    val widthModifier = if (width.isNotEmpty()) {
-        when {
-            width.endsWith("%") -> {
-                val percentage = width.removeSuffix("%").toFloatOrNull()
-                if (percentage != null && percentage > 0) {
-                    Modifier.fillMaxWidth(percentage / 100f)
-                } else {
-                    Modifier.fillMaxWidth()
+    val widthModifier =
+        if (width.isNotEmpty()) {
+            when {
+                width.endsWith("%") -> {
+                    val percentage = width.removeSuffix("%").toFloatOrNull()
+                    if (percentage != null && percentage > 0) {
+                        Modifier.fillMaxWidth(percentage / 100f)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
                 }
-            }
 
-            width.endsWith("px") -> {
-                val pixels = width.removeSuffix("px").toIntOrNull()
-                if (pixels != null && pixels > 0) {
-                    Modifier.width(pixels.dp)
-                } else {
-                    Modifier.fillMaxWidth()
+                width.endsWith("px") -> {
+                    val pixels = width.removeSuffix("px").toIntOrNull()
+                    if (pixels != null && pixels > 0) {
+                        Modifier.width(pixels.dp)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
                 }
-            }
 
-            else -> {
-                val pixels = width.toIntOrNull()
-                if (pixels != null && pixels > 0) {
-                    Modifier.width(pixels.dp)
-                } else {
-                    Modifier.fillMaxWidth()
+                else -> {
+                    val pixels = width.toIntOrNull()
+                    if (pixels != null && pixels > 0) {
+                        Modifier.width(pixels.dp)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
                 }
             }
+        } else {
+            Modifier.fillMaxWidth()
         }
-    } else {
-        Modifier.fillMaxWidth()
-    }
 
     LinearProgressIndicator(
         progress = { progress },
@@ -636,7 +665,7 @@ private fun RenderProgress(
 @Composable
 private fun RenderTable(
     tableElement: Element,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
 ) {
     val rows = mutableListOf<List<@Composable () -> Unit>>()
     var headers = emptyList<@Composable () -> Unit>()
@@ -651,9 +680,10 @@ private fun RenderTable(
                 if (annotatedString.text.isNotBlank()) {
                     Text(
                         text = annotatedString,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = LocalContentColor.current
-                        )
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = LocalContentColor.current,
+                            ),
                     )
                 }
             }
@@ -684,7 +714,7 @@ private fun RenderTable(
                 rows = rows,
                 cellBorder = null,
                 headerBackground = Color.Transparent,
-                zebraStriping = false
+                zebraStriping = false,
             )
         }
     }

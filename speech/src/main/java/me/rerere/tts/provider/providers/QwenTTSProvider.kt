@@ -20,82 +20,92 @@ import java.util.concurrent.TimeUnit
 private const val TAG = "QwenTTSProvider"
 
 class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .readTimeout(120, TimeUnit.SECONDS)
+            .build()
 
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.Qwen,
-        request: TTSRequest
-    ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
-            put("model", providerSetting.model)
-            put("input", JSONObject().apply {
-                put("text", request.text)
-                put("voice", providerSetting.voice)
-                put("language_type", providerSetting.languageType)
-            })
-        }
+        request: TTSRequest,
+    ): Flow<AudioChunk> =
+        flow {
+            val requestBody =
+                JSONObject().apply {
+                    put("model", providerSetting.model)
+                    put(
+                        "input",
+                        JSONObject().apply {
+                            put("text", request.text)
+                            put("voice", providerSetting.voice)
+                            put("language_type", providerSetting.languageType)
+                        },
+                    )
+                }
 
-        Log.i(TAG, "generateSpeech: $requestBody")
+            Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/services/aigc/multimodal-generation/generation")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("X-DashScope-SSE", "enable")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
+            val httpRequest =
+                Request
+                    .Builder()
+                    .url("${providerSetting.baseUrl}/services/aigc/multimodal-generation/generation")
+                    .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("X-DashScope-SSE", "enable")
+                    .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
 
-        val response = httpClient.newCall(httpRequest).execute()
+            val response = httpClient.newCall(httpRequest).execute()
 
-        if (!response.isSuccessful) {
-            val errorBody = response.body.string()
-            Log.e(TAG, "Qwen TTS request failed: ${response.code} ${response.message}, body: $errorBody")
-            throw Exception("Qwen TTS request failed: ${response.code} ${response.message}")
-        }
+            if (!response.isSuccessful) {
+                val errorBody = response.body.string()
+                Log.e(TAG, "Qwen TTS request failed: ${response.code} ${response.message}, body: $errorBody")
+                throw Exception("Qwen TTS request failed: ${response.code} ${response.message}")
+            }
 
-        val reader = response.body.byteStream().bufferedReader()
+            val reader = response.body.byteStream().bufferedReader()
 
-        try {
-            var currentData = StringBuilder()
+            try {
+                var currentData = StringBuilder()
 
-            reader.lineSequence().forEach { line ->
-                when {
-                    line.startsWith("data:") -> {
-                        currentData.append(line.removePrefix("data:"))
-                    }
-
-                    line.isEmpty() && currentData.isNotEmpty() -> {
-                        val result = parseSSEData(currentData.toString())
-                        if (result != null) {
-                            val (audioData, isLast) = result
-                            emit(
-                                AudioChunk(
-                                    data = audioData,
-                                    format = AudioFormat.PCM,
-                                    sampleRate = 24000,
-                                    isLast = isLast,
-                                    metadata = mapOf(
-                                        "provider" to "qwen",
-                                        "model" to providerSetting.model,
-                                        "voice" to providerSetting.voice,
-                                        "sampleRate" to "24000",
-                                        "channels" to "1",
-                                        "bitDepth" to "16"
-                                    )
-                                )
-                            )
+                reader.lineSequence().forEach { line ->
+                    when {
+                        line.startsWith("data:") -> {
+                            currentData.append(line.removePrefix("data:"))
                         }
-                        currentData = StringBuilder()
+
+                        line.isEmpty() && currentData.isNotEmpty() -> {
+                            val result = parseSSEData(currentData.toString())
+                            if (result != null) {
+                                val (audioData, isLast) = result
+                                emit(
+                                    AudioChunk(
+                                        data = audioData,
+                                        format = AudioFormat.PCM,
+                                        sampleRate = 24000,
+                                        isLast = isLast,
+                                        metadata =
+                                            mapOf(
+                                                "provider" to "qwen",
+                                                "model" to providerSetting.model,
+                                                "voice" to providerSetting.voice,
+                                                "sampleRate" to "24000",
+                                                "channels" to "1",
+                                                "bitDepth" to "16",
+                                            ),
+                                    ),
+                                )
+                            }
+                            currentData = StringBuilder()
+                        }
                     }
                 }
+            } finally {
+                reader.close()
             }
-        } finally {
-            reader.close()
         }
-    }
 
     private fun parseSSEData(data: String): Pair<ByteArray, Boolean>? {
         return try {

@@ -10,8 +10,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
-import me.rerere.ai.core.Tool as RikkaTool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.ai.core.Tool as RikkaTool
 
 private const val TAG = "LiteRtToolBridge"
 
@@ -39,29 +39,34 @@ private const val TAG = "LiteRtToolBridge"
  * [LiteRtToolBridgeRegistry] before invoking the SDK; the @Tool method reads from there.
  */
 class LiteRtToolBridge : ToolSet {
-
     @Tool(
-        description = "Invoke a Rikka local tool by its registered name. Returns the tool's " +
-            "structured JSON output as a string. Use this when you need to take an action " +
-            "outside of pure conversation (e.g. running a Termux shell command, reading a " +
-            "file, fetching a URL, controlling the device).",
+        description =
+            "Invoke a Rikka local tool by its registered name. Returns the tool's " +
+                "structured JSON output as a string. Use this when you need to take an action " +
+                "outside of pure conversation (e.g. running a Termux shell command, reading a " +
+                "file, fetching a URL, controlling the device).",
     )
     fun runTool(
         @ToolParam(description = "The tool's registered name (e.g. termux_run_command, files_read, get_time_info).")
         name: String,
-        @ToolParam(description = "A JSON string holding the tool's arguments object. Pass \"{}\" when the tool takes no arguments.")
+        @ToolParam(
+            description = "A JSON string holding the tool's arguments object. Pass \"{}\" when the tool takes no arguments.",
+        )
         argsJson: String,
     ): String {
-        val tool = LiteRtToolBridgeRegistry.lookup(name)
-            ?: return errorEnvelope("tool_not_found", "No tool named '$name' is registered for this request.")
-        val args: JsonObject = parseArgs(argsJson)
-            ?: return errorEnvelope("invalid_json_args", "argsJson must be a valid JSON object, got: $argsJson")
+        val tool =
+            LiteRtToolBridgeRegistry.lookup(name)
+                ?: return errorEnvelope("tool_not_found", "No tool named '$name' is registered for this request.")
+        val args: JsonObject =
+            parseArgs(argsJson)
+                ?: return errorEnvelope("invalid_json_args", "argsJson must be a valid JSON object, got: $argsJson")
         return runBlocking {
             runCatching {
                 val parts = tool.execute(args)
-                val textOnly = parts
-                    .filterIsInstance<UIMessagePart.Text>()
-                    .joinToString("") { it.text }
+                val textOnly =
+                    parts
+                        .filterIsInstance<UIMessagePart.Text>()
+                        .joinToString("") { it.text }
                 textOnly.ifBlank { "(tool returned no text output)" }
             }.getOrElse { t ->
                 Log.w(TAG, "runTool($name) threw", t)
@@ -70,11 +75,15 @@ class LiteRtToolBridge : ToolSet {
         }
     }
 
-    private fun parseArgs(raw: String): JsonObject? = runCatching {
-        Json.parseToJsonElement(raw.ifBlank { "{}" }).jsonObject
-    }.getOrNull()
+    private fun parseArgs(raw: String): JsonObject? =
+        runCatching {
+            Json.parseToJsonElement(raw.ifBlank { "{}" }).jsonObject
+        }.getOrNull()
 
-    private fun errorEnvelope(error: String, detail: String): String =
+    private fun errorEnvelope(
+        error: String,
+        detail: String,
+    ): String =
         buildJsonObject {
             put("error", error)
             put("detail", detail)

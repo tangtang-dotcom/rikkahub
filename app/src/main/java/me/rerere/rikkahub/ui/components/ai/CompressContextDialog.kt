@@ -34,7 +34,7 @@ import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 @Composable
 fun CompressContextDialog(
     onDismiss: () -> Unit,
-    onConfirm: (additionalPrompt: String, targetTokens: Int, keepRecentMessages: Int) -> Job
+    onConfirm: (additionalPrompt: String, targetTokens: Int, keepRecentMessages: Int) -> Job,
 ) {
     var additionalPrompt by remember { mutableStateOf("") }
     var selectedTokens by remember { mutableIntStateOf(2000) }
@@ -63,17 +63,17 @@ fun CompressContextDialog(
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 if (isLoading) {
                     // Loading state
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RabbitLoadingIndicator(
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(stringResource(R.string.chat_page_compressing))
@@ -84,19 +84,20 @@ fun CompressContextDialog(
                     // Token size selector
                     Text(
                         text = stringResource(R.string.chat_page_compress_target_tokens),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                     SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         tokenOptions.forEachIndexed { index, tokens ->
                             SegmentedButton(
                                 selected = selectedTokens == tokens,
                                 onClick = { selectedTokens = tokens },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = tokenOptions.size
-                                )
+                                shape =
+                                    SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = tokenOptions.size,
+                                    ),
                             ) {
                                 Text("$tokens")
                             }
@@ -129,7 +130,7 @@ fun CompressContextDialog(
                     Text(
                         text = stringResource(R.string.chat_page_compress_warning),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -156,6 +157,6 @@ fun CompressContextDialog(
                     Text(stringResource(R.string.cancel))
                 }
             }
-        }
+        },
     )
 }

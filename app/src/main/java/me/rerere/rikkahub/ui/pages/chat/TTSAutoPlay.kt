@@ -12,7 +12,11 @@ import me.rerere.rikkahub.utils.extractQuotedContentAsText
 import me.rerere.rikkahub.utils.removeBracketedContent
 
 @Composable
-fun TTSAutoPlay(vm: ChatVM, setting: Settings, conversation: Conversation) {
+fun TTSAutoPlay(
+    vm: ChatVM,
+    setting: Settings,
+    conversation: Conversation,
+) {
     // Auto-play TTS after generation completes
     val tts = LocalTTSState.current
     val currentConversation by rememberUpdatedState(conversation)

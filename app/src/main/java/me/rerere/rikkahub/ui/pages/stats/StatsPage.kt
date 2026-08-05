@@ -1,11 +1,5 @@
 package me.rerere.rikkahub.ui.pages.stats
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.ChartColumn
-import me.rerere.hugeicons.stroke.Cpu
-import me.rerere.hugeicons.stroke.Message01
-import me.rerere.hugeicons.stroke.Rocket01
-import me.rerere.hugeicons.stroke.Zap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +35,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ChartColumn
+import me.rerere.hugeicons.stroke.Cpu
+import me.rerere.hugeicons.stroke.Message01
+import me.rerere.hugeicons.stroke.Rocket01
+import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.theme.CustomColors
@@ -72,10 +72,11 @@ fun StatsPage(vm: StatsVM = koinViewModel()) {
     ) { padding ->
         if (stats.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
             }
@@ -103,7 +104,10 @@ fun StatsPage(vm: StatsVM = koinViewModel()) {
 }
 
 @Composable
-private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modifier = Modifier) {
+private fun HeatmapCard(
+    conversationsPerDay: Map<LocalDate, Int>,
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CustomColors.cardColorsOnSurfaceContainer,
@@ -144,9 +148,10 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
 @Composable
 private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
     val today = LocalDate.now()
-    val startSunday = today
-        .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-        .minusWeeks(52)
+    val startSunday =
+        today
+            .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+            .minusWeeks(52)
 
     val numWeeks = 53
     val activeCounts = conversationsPerDay.values.filter { it > 0 }.sorted()
@@ -159,15 +164,16 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
     val monthLabelHeight = 14.dp
 
     // Day-of-week labels (only Mon/Wed/Fri to save space, Sun=0)
-    val dowLabels = listOf(
-        "",
-        stringResource(R.string.stats_page_dow_mon),
-        "",
-        stringResource(R.string.stats_page_dow_wed),
-        "",
-        stringResource(R.string.stats_page_dow_fri),
-        ""
-    )
+    val dowLabels =
+        listOf(
+            "",
+            stringResource(R.string.stats_page_dow_mon),
+            "",
+            stringResource(R.string.stats_page_dow_wed),
+            "",
+            stringResource(R.string.stats_page_dow_fri),
+            "",
+        )
 
     // Shared scroll state so month labels + grid scroll together
     val scrollState = rememberScrollState(initial = Int.MAX_VALUE)
@@ -205,22 +211,25 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
             Row(horizontalArrangement = Arrangement.spacedBy(cellSpacing)) {
                 for (weekIdx in 0 until numWeeks) {
                     val weekStart = startSunday.plusDays((weekIdx * 7).toLong())
-                    val labelDate = (0..6)
-                        .map { weekStart.plusDays(it.toLong()) }
-                        .firstOrNull { it.dayOfMonth == 1 }
+                    val labelDate =
+                        (0..6)
+                            .map { weekStart.plusDays(it.toLong()) }
+                            .firstOrNull { it.dayOfMonth == 1 }
                     Box(
-                        modifier = Modifier
-                            .width(cellSize)
-                            .height(monthLabelHeight),
+                        modifier =
+                            Modifier
+                                .width(cellSize)
+                                .height(monthLabelHeight),
                         contentAlignment = Alignment.BottomStart,
                     ) {
                         if (labelDate != null) {
                             Text(
-                                text = if (labelDate.monthValue == 1) {
-                                    labelDate.year.toString()
-                                } else {
-                                    labelDate.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                                },
+                                text =
+                                    if (labelDate.monthValue == 1) {
+                                        labelDate.year.toString()
+                                    } else {
+                                        labelDate.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                                    },
                                 modifier = Modifier.wrapContentWidth(unbounded = true),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.75,
@@ -241,14 +250,15 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
                             val date = startSunday.plusDays((weekIdx * 7 + dow).toLong())
                             val isFuture = date.isAfter(today)
                             val count = if (isFuture) 0 else (conversationsPerDay[date] ?: 0)
-                            val alpha = when {
-                                isFuture -> -1f
-                                count == 0 -> 0f
-                                count <= q1 -> 0.25f
-                                count <= q2 -> 0.5f
-                                count <= q3 -> 0.75f
-                                else -> 1f
-                            }
+                            val alpha =
+                                when {
+                                    isFuture -> -1f
+                                    count == 0 -> 0f
+                                    count <= q1 -> 0.25f
+                                    count <= q2 -> 0.5f
+                                    count <= q3 -> 0.75f
+                                    else -> 1f
+                                }
                             HeatmapCell(alpha = alpha, sizeDp = cellSize.value.toInt())
                         }
                     }
@@ -259,22 +269,33 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
 }
 
 @Composable
-private fun HeatmapCell(alpha: Float, sizeDp: Int) {
-    val color = when {
-        alpha < 0f -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // future
-        alpha == 0f -> MaterialTheme.colorScheme.surfaceVariant
-        else -> MaterialTheme.colorScheme.primary.copy(alpha = alpha)
-    }
+private fun HeatmapCell(
+    alpha: Float,
+    sizeDp: Int,
+) {
+    val color =
+        when {
+            alpha < 0f -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+
+            // future
+            alpha == 0f -> MaterialTheme.colorScheme.surfaceVariant
+
+            else -> MaterialTheme.colorScheme.primary.copy(alpha = alpha)
+        }
     Box(
-        modifier = Modifier
-            .size(sizeDp.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(color)
+        modifier =
+            Modifier
+                .size(sizeDp.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(color),
     )
 }
 
 @Composable
-private fun StatsGrid(stats: AppStats, modifier: Modifier = Modifier) {
+private fun StatsGrid(
+    stats: AppStats,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -361,15 +382,17 @@ private fun StatCard(
     }
 }
 
-private fun formatCount(count: Long): String = when {
-    count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0)
-    count >= 1_000 -> "%.1fK".format(count / 1_000.0)
-    else -> count.toString()
-}
+private fun formatCount(count: Long): String =
+    when {
+        count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0)
+        count >= 1_000 -> "%.1fK".format(count / 1_000.0)
+        else -> count.toString()
+    }
 
-private fun formatTokens(count: Long): String = when {
-    count >= 1_000_000_000 -> "%.2fB".format(count / 1_000_000_000.0)
-    count >= 1_000_000 -> "%.2fM".format(count / 1_000_000.0)
-    count >= 1_000 -> "%.1fK".format(count / 1_000.0)
-    else -> count.toString()
-}
+private fun formatTokens(count: Long): String =
+    when {
+        count >= 1_000_000_000 -> "%.2fB".format(count / 1_000_000_000.0)
+        count >= 1_000_000 -> "%.2fM".format(count / 1_000_000.0)
+        count >= 1_000 -> "%.1fK".format(count / 1_000.0)
+        else -> count.toString()
+    }

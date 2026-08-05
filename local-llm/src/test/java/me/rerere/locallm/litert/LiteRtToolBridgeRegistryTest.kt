@@ -1,5 +1,6 @@
 package me.rerere.locallm.litert
 
+import kotlinx.serialization.json.buildJsonObject
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
@@ -8,21 +9,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlinx.serialization.json.buildJsonObject
 
 class LiteRtToolBridgeRegistryTest {
-
     @After
     fun teardown() {
         LiteRtToolBridgeRegistry.clear()
     }
 
-    private fun stubTool(name: String): Tool = Tool(
-        name = name,
-        description = "stub",
-        parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
-        execute = { listOf(UIMessagePart.Text("ok")) },
-    )
+    private fun stubTool(name: String): Tool =
+        Tool(
+            name = name,
+            description = "stub",
+            parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
+            execute = { listOf(UIMessagePart.Text("ok")) },
+        )
 
     @Test
     fun `lookup returns null when no tools are registered`() {

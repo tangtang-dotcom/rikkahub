@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class LiteRtToolPrefixBudgetTest {
-
     @Test
     fun `4k context model gets the small-context cap`() {
         val budget = LiteRtToolPrefix.budgetForContext(maxNumTokens = 4096)

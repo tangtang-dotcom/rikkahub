@@ -30,8 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,30 +57,31 @@ import java.util.Locale
 fun LanguageSelectionDialog(
     onLanguageSelected: (Locale) -> Unit,
     onClearTranslation: () -> Unit = {},
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     // 支持的语言列表
-    val languages = remember {
-        listOf(
-            Locale.SIMPLIFIED_CHINESE,
-            Locale.ENGLISH,
-            Locale.TRADITIONAL_CHINESE,
-            Locale.JAPANESE,
-            Locale.KOREAN,
-            Locale.FRENCH,
-            Locale.GERMAN,
-            Locale.forLanguageTag("es-ES"),
-            Locale.ITALIAN,
-            Locale.forLanguageTag("ar"),
-            Locale.forLanguageTag("fa"),
-            Locale.forLanguageTag("ur"),
-        )
-    }
+    val languages =
+        remember {
+            listOf(
+                Locale.SIMPLIFIED_CHINESE,
+                Locale.ENGLISH,
+                Locale.TRADITIONAL_CHINESE,
+                Locale.JAPANESE,
+                Locale.KOREAN,
+                Locale.FRENCH,
+                Locale.GERMAN,
+                Locale.forLanguageTag("es-ES"),
+                Locale.ITALIAN,
+                Locale.forLanguageTag("ar"),
+                Locale.forLanguageTag("fa"),
+                Locale.forLanguageTag("ur"),
+            )
+        }
 
     // 语言名称映射函数，原有的 locale.displayName 方法无法获取 emoji
     @Composable
-    fun getLanguageDisplayName(locale: Locale): String {
-        return when (locale) {
+    fun getLanguageDisplayName(locale: Locale): String =
+        when (locale) {
             Locale.SIMPLIFIED_CHINESE -> stringResource(R.string.language_simplified_chinese)
             Locale.ENGLISH -> stringResource(R.string.language_english)
             Locale.TRADITIONAL_CHINESE -> stringResource(R.string.language_traditional_chinese)
@@ -95,48 +96,53 @@ fun LanguageSelectionDialog(
             Locale.forLanguageTag("ur") -> stringResource(R.string.language_urdu)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // 标题
             Text(
                 text = stringResource(R.string.translation_language_selection_title),
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             // 语言列表
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 items(languages, key = { it.toLanguageTag() }) { language ->
                     Card(
                         onClick = {
                             onLanguageSelected(language)
                         },
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
                         ) {
                             Icon(
                                 imageVector = HugeIcons.LanguageCircle,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
                             )
                             Text(
                                 text = getLanguageDisplayName(language),
@@ -151,14 +157,15 @@ fun LanguageSelectionDialog(
                         onClick = {
                             onClearTranslation()
                         },
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Cancel01,
@@ -179,7 +186,7 @@ fun LanguageSelectionDialog(
 @Composable
 fun CollapsibleTranslationText(
     content: String,
-    onClickCitation: (String) -> Unit
+    onClickCitation: (String) -> Unit,
 ) {
     if (content.isNotBlank()) {
         var isCollapsed by remember { mutableStateOf(false) }
@@ -188,45 +195,50 @@ fun CollapsibleTranslationText(
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
         )
 
         // Translation title and collapse button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
                     imageVector = HugeIcons.LanguageCircle,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = stringResource(R.string.translation_text),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
 
             // 折叠/展开按钮
             IconButton(
                 onClick = { isCollapsed = !isCollapsed },
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             ) {
                 Icon(
                     imageVector = if (isCollapsed) HugeIcons.ArrowDown01 else HugeIcons.ArrowUp01,
-                    contentDescription = if (isCollapsed) stringResource(R.string.expand_translation) else stringResource(
-                        R.string.collapse_translation
-                    ),
+                    contentDescription =
+                        if (isCollapsed) {
+                            stringResource(R.string.expand_translation)
+                        } else {
+                            stringResource(
+                                R.string.collapse_translation,
+                            )
+                        },
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -235,16 +247,18 @@ fun CollapsibleTranslationText(
         AnimatedVisibility(
             visible = !isCollapsed,
             enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
+            exit = shrinkVertically() + fadeOut(),
         ) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                ),
-                shape = MaterialTheme.shapes.medium
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    ),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 // Check if it's loading state
                 val isTranslating = content == stringResource(R.string.translating)
@@ -252,34 +266,36 @@ fun CollapsibleTranslationText(
                 if (isTranslating) {
                     // Show loading animation for translation
                     Row(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(12.dp)
+                                .fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
 
                         val infiniteTransition = rememberInfiniteTransition(label = "loading")
                         val alpha by infiniteTransition.animateFloat(
                             initialValue = 0.3f,
                             targetValue = 1f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(1000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Reverse
-                            ),
-                            label = "alpha"
+                            animationSpec =
+                                infiniteRepeatable(
+                                    animation = tween(1000, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Reverse,
+                                ),
+                            label = "alpha",
                         )
 
                         Text(
                             text = stringResource(R.string.translating),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.graphicsLayer(alpha = alpha)
+                            modifier = Modifier.graphicsLayer(alpha = alpha),
                         )
                     }
                 } else {
@@ -287,9 +303,10 @@ fun CollapsibleTranslationText(
                     MarkdownBlock(
                         content = content,
                         onClickCitation = onClickCitation,
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .animateContentSize()
+                        modifier =
+                            Modifier
+                                .padding(12.dp)
+                                .animateContentSize(),
                     )
                 }
             }

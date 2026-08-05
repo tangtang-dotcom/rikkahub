@@ -7,28 +7,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.withTimeoutOrNull
 import me.rerere.rikkahub.skills.CatalogEntry
 import me.rerere.rikkahub.skills.SkillCatalog
 import me.rerere.rikkahub.skills.SkillUrlImporter
 import me.rerere.rikkahub.skills.SkillZipError
 import me.rerere.rikkahub.skills.SkillZipImporter
 import me.rerere.rikkahub.skills.loadCatalogFromAssets
-import java.util.LinkedHashMap
 import org.json.JSONArray
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Files
+import java.util.LinkedHashMap
 import kotlin.collections.iterator
 
 class SkillsVM(
@@ -36,11 +36,11 @@ class SkillsVM(
     private val skillManager: SkillManager,
     private val urlImporter: SkillUrlImporter,
 ) : ViewModel() {
-
     companion object {
         private const val TAG = "SkillsVM"
         private const val MAX_MD_BYTES = 1L * 1024 * 1024 // 1 MB cap on local .md
     }
+
     private val _skills = MutableStateFlow<List<SkillMetadata>>(emptyList())
     val skills = _skills.asStateFlow()
 
@@ -49,9 +49,10 @@ class SkillsVM(
      * sheet observes this so the "Install" / "Installed" button state stays in sync as
      * the user (or LLM) installs / deletes skills.
      */
-    val installedSkillNames = _skills
-        .map { list -> list.mapTo(mutableSetOf()) { it.name } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+    val installedSkillNames =
+        _skills
+            .map { list -> list.mapTo(mutableSetOf()) { it.name } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     /** Phase 19D — bundled catalog. Loaded lazily on first access. */
     val catalog: SkillCatalog by lazy { loadCatalogFromAssets(context) }
@@ -66,7 +67,11 @@ class SkillsVM(
         }
     }
 
-    fun saveSkill(name: String, content: String, onResult: (Boolean) -> Unit) {
+    fun saveSkill(
+        name: String,
+        content: String,
+        onResult: (Boolean) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val result = skillManager.saveSkill(name, content)
             _skills.value = skillManager.listSkills()
@@ -85,13 +90,17 @@ class SkillsVM(
 
     fun getSkillsDir() = skillManager.getSkillsDir()
 
-    fun importSkillFromGitHub(repoUrl: String, onResult: (Boolean, String) -> Unit) {
+    fun importSkillFromGitHub(
+        repoUrl: String,
+        onResult: (Boolean, String) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val info = parseGitHubUrl(repoUrl) ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "Invalid GitHub repository URL") }
-                    return@launch
-                }
+                val info =
+                    parseGitHubUrl(repoUrl) ?: run {
+                        withContext(Dispatchers.Main) { onResult(false, "Invalid GitHub repository URL") }
+                        return@launch
+                    }
 
                 // Collect all files recursively via GitHub Contents API
                 val files = mutableListOf<Pair<String, String>>() // relativePath -> downloadUrl
@@ -101,15 +110,19 @@ class SkillsVM(
                     return@launch
                 }
 
-                val skillMdEntry = files.find { it.first == "SKILL.md" } ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "No SKILL.md found in the directory") }
-                    return@launch
-                }
+                val skillMdEntry =
+                    files.find { it.first == "SKILL.md" } ?: run {
+                        withContext(Dispatchers.Main) { onResult(false, "No SKILL.md found in the directory") }
+                        return@launch
+                    }
 
-                val skillMdContent = downloadText(skillMdEntry.second) ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "Failed to download SKILL.md — check the URL and your network") }
-                    return@launch
-                }
+                val skillMdContent =
+                    downloadText(skillMdEntry.second) ?: run {
+                        withContext(
+                            Dispatchers.Main,
+                        ) { onResult(false, "Failed to download SKILL.md — check the URL and your network") }
+                        return@launch
+                    }
 
                 val frontmatter = SkillFrontmatterParser.parse(skillMdContent)
                 val name = frontmatter["name"]
@@ -157,15 +170,19 @@ class SkillsVM(
      * the UI looks up via stringResource. On success, [onResult] receives `true` + the
      * installed skill's name.
      */
-    fun importFromLocalFile(uri: Uri, onResult: (success: Boolean, message: String) -> Unit) {
+    fun importFromLocalFile(
+        uri: Uri,
+        onResult: (success: Boolean, message: String) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val type = detectFileType(uri)
             try {
-                val outcome: Pair<Boolean, String> = when (type) {
-                    LocalFileType.Markdown -> importLocalMarkdown(uri)
-                    LocalFileType.Zip -> importLocalZip(uri)
-                    LocalFileType.Unsupported -> false to "skill_import_unsupported_file_type"
-                }
+                val outcome: Pair<Boolean, String> =
+                    when (type) {
+                        LocalFileType.Markdown -> importLocalMarkdown(uri)
+                        LocalFileType.Zip -> importLocalZip(uri)
+                        LocalFileType.Unsupported -> false to "skill_import_unsupported_file_type"
+                    }
                 _skills.value = skillManager.listSkills()
                 withContext(Dispatchers.Main) { onResult(outcome.first, outcome.second) }
             } catch (t: Throwable) {
@@ -186,7 +203,10 @@ class SkillsVM(
      * via [SkillUrlImporter.importFromUrl] under a 30-second hard timeout — same surface
      * as the existing GitHub-URL import path, including HTML guard + format detector.
      */
-    fun installFromCatalog(entry: CatalogEntry, onResult: (success: Boolean, message: String) -> Unit) {
+    fun installFromCatalog(
+        entry: CatalogEntry,
+        onResult: (success: Boolean, message: String) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             if (entry.isBundled) {
                 _skills.value = skillManager.listSkills()
@@ -198,14 +218,16 @@ class SkillsVM(
                 withContext(Dispatchers.Main) { onResult(false, "skill_catalog_install_failed") }
                 return@launch
             }
-            val result = withTimeoutOrNull(30_000) {
-                urlImporter.importFromUrl(url)
-            }
-            val (ok, msg) = when (result) {
-                null -> false to "skill_catalog_install_failed"
-                is SkillUrlImporter.Result.Ok -> true to result.metadata.name
-                is SkillUrlImporter.Result.Err -> false to result.detail
-            }
+            val result =
+                withTimeoutOrNull(30_000) {
+                    urlImporter.importFromUrl(url)
+                }
+            val (ok, msg) =
+                when (result) {
+                    null -> false to "skill_catalog_install_failed"
+                    is SkillUrlImporter.Result.Ok -> true to result.metadata.name
+                    is SkillUrlImporter.Result.Err -> false to result.detail
+                }
             _skills.value = skillManager.listSkills()
             withContext(Dispatchers.Main) { onResult(ok, msg) }
         }
@@ -233,33 +255,33 @@ class SkillsVM(
         }
     }
 
-    private fun queryDisplayName(uri: Uri): String? {
-        return runCatching {
+    private fun queryDisplayName(uri: Uri): String? =
+        runCatching {
             context.contentResolver.query(uri, arrayOf("_display_name"), null, null, null)?.use { c ->
                 if (c.moveToFirst()) c.getString(0) else null
             }
         }.getOrNull()
-    }
 
     private fun importLocalMarkdown(uri: Uri): Pair<Boolean, String> {
-        val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
-            // Read up to MAX_MD_BYTES + 1 to detect overflow without materialising the
-            // whole stream blindly.
-            val out = java.io.ByteArrayOutputStream()
-            val buf = ByteArray(8 * 1024)
-            var total = 0L
-            while (true) {
-                val n = input.read(buf)
-                if (n <= 0) break
-                total += n
-                if (total > MAX_MD_BYTES) {
-                    // Use the markdown-specific cap error, not the zip cap key.
-                    return false to "skill_import_md_too_large"
+        val bytes =
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                // Read up to MAX_MD_BYTES + 1 to detect overflow without materialising the
+                // whole stream blindly.
+                val out = java.io.ByteArrayOutputStream()
+                val buf = ByteArray(8 * 1024)
+                var total = 0L
+                while (true) {
+                    val n = input.read(buf)
+                    if (n <= 0) break
+                    total += n
+                    if (total > MAX_MD_BYTES) {
+                        // Use the markdown-specific cap error, not the zip cap key.
+                        return false to "skill_import_md_too_large"
+                    }
+                    out.write(buf, 0, n)
                 }
-                out.write(buf, 0, n)
-            }
-            out.toByteArray()
-        } ?: return false to "skill_import_unsupported_file_type"
+                out.toByteArray()
+            } ?: return false to "skill_import_unsupported_file_type"
         val text = bytes.toString(Charsets.UTF_8)
         if (text.isBlank()) {
             return false to "skill_import_empty_file"
@@ -279,26 +301,30 @@ class SkillsVM(
         tempRoot.mkdirs()
         val workDir = Files.createTempDirectory(tempRoot.toPath(), "extract-").toFile()
         try {
-            val skillRoot = context.contentResolver.openInputStream(uri)?.use { input ->
-                SkillZipImporter.extractZipToDir(input, workDir)
-            } ?: return false to "skill_import_unsupported_file_type"
+            val skillRoot =
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    SkillZipImporter.extractZipToDir(input, workDir)
+                } ?: return false to "skill_import_unsupported_file_type"
             if (skillRoot.isFailure) {
                 val err = skillRoot.exceptionOrNull()
-                val key = when (err) {
-                    is SkillZipError.MissingSkillMd -> "skill_import_missing_skill_md"
-                    is SkillZipError.PathTraversal -> "skill_import_path_traversal"
-                    is SkillZipError.TooLarge -> "skill_import_zip_too_large"
-                    else -> "skill_import_unsupported_file_type"
-                }
+                val key =
+                    when (err) {
+                        is SkillZipError.MissingSkillMd -> "skill_import_missing_skill_md"
+                        is SkillZipError.PathTraversal -> "skill_import_path_traversal"
+                        is SkillZipError.TooLarge -> "skill_import_zip_too_large"
+                        else -> "skill_import_unsupported_file_type"
+                    }
                 return false to key
             }
             val rootDir = skillRoot.getOrThrow()
-            val skillMd = rootDir.resolve("SKILL.md").takeIf { it.exists() }
-                ?: rootDir.listFiles()?.firstOrNull { it.isFile && it.name.equals("SKILL.md", ignoreCase = true) }
-                ?: return false to "skill_import_missing_skill_md"
+            val skillMd =
+                rootDir.resolve("SKILL.md").takeIf { it.exists() }
+                    ?: rootDir.listFiles()?.firstOrNull { it.isFile && it.name.equals("SKILL.md", ignoreCase = true) }
+                    ?: return false to "skill_import_missing_skill_md"
             val frontmatter = SkillFrontmatterParser.parse(skillMd.readText())
-            val skillName = frontmatter["name"]?.takeIf { it.isNotBlank() }
-                ?: return false to "skill_import_missing_skill_md"
+            val skillName =
+                frontmatter["name"]?.takeIf { it.isNotBlank() }
+                    ?: return false to "skill_import_missing_skill_md"
             // Collect every file into a relativePath -> content map, then atomic-save.
             val files = LinkedHashMap<String, String>()
             rootDir.walkTopDown().filter { it.isFile }.forEach { f ->
@@ -330,8 +356,9 @@ class SkillsVM(
             val relativePath = itemPath.removePrefix("$basePath/").removePrefix(basePath)
             when (type) {
                 "file" -> {
-                    val downloadUrl = item.optString("download_url").takeIf { it.isNotBlank() }
-                        ?: return false
+                    val downloadUrl =
+                        item.optString("download_url").takeIf { it.isNotBlank() }
+                            ?: return false
                     result.add(relativePath to downloadUrl)
                 }
 
@@ -371,8 +398,11 @@ class SkillsVM(
         connection.readTimeout = 30_000
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         return try {
-            if (connection.responseCode == 200) connection.inputStream.bufferedReader().readText()
-            else null
+            if (connection.responseCode == 200) {
+                connection.inputStream.bufferedReader().readText()
+            } else {
+                null
+            }
         } finally {
             connection.disconnect()
         }

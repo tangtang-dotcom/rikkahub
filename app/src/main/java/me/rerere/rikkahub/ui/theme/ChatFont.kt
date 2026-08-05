@@ -37,14 +37,18 @@ fun rememberChatFontFamily(displaySetting: DisplaySetting): FontFamily {
     }
 }
 
-fun DisplaySetting.resolveChatFontFamily(context: Context): FontFamily = when (chatFontFamily) {
-    ChatFontFamily.DEFAULT -> FontFamily.Default
-    ChatFontFamily.SERIF -> FontFamily.Serif
-    ChatFontFamily.MONOSPACE -> FontFamily.Monospace
-    ChatFontFamily.CUSTOM -> loadCustomFontFamily(context, chatCustomFontPath) ?: FontFamily.Default
-}
+fun DisplaySetting.resolveChatFontFamily(context: Context): FontFamily =
+    when (chatFontFamily) {
+        ChatFontFamily.DEFAULT -> FontFamily.Default
+        ChatFontFamily.SERIF -> FontFamily.Serif
+        ChatFontFamily.MONOSPACE -> FontFamily.Monospace
+        ChatFontFamily.CUSTOM -> loadCustomFontFamily(context, chatCustomFontPath) ?: FontFamily.Default
+    }
 
-private fun loadCustomFontFamily(context: Context, relativePath: String): FontFamily? {
+private fun loadCustomFontFamily(
+    context: Context,
+    relativePath: String,
+): FontFamily? {
     val file = resolveFilesDirFile(context, relativePath) ?: return null
     if (!file.isFile) return null
     return runCatching {
@@ -53,7 +57,10 @@ private fun loadCustomFontFamily(context: Context, relativePath: String): FontFa
     }.getOrNull()
 }
 
-private fun resolveFilesDirFile(context: Context, relativePath: String): File? {
+private fun resolveFilesDirFile(
+    context: Context,
+    relativePath: String,
+): File? {
     if (relativePath.isBlank()) return null
     val filesDir = runCatching { context.filesDir.canonicalFile }.getOrNull() ?: return null
     val file = runCatching { File(filesDir, relativePath).canonicalFile }.getOrNull() ?: return null

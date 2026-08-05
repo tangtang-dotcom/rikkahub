@@ -31,18 +31,20 @@ fun DotLoading(
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = animationDuration),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "dot_alpha"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = animationDuration),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "dot_alpha",
     )
 
     Box(
-        modifier = Modifier
-            .size(size)
-            .then(modifier)
-            .alpha(alpha)
-            .background(color = color, shape = CircleShape)
+        modifier =
+            Modifier
+                .size(size)
+                .then(modifier)
+                .alpha(alpha)
+                .background(color = color, shape = CircleShape),
     )
 }

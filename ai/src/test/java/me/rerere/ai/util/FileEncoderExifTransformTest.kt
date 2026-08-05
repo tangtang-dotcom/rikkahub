@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class FileEncoderExifTransformTest {
-
     @Test
     fun `all supported exif orientations should map to expected transform`() {
         assertEquals(ExifTransformType.NONE, mapExifOrientationToTransform(ORIENTATION_NORMAL))
@@ -26,36 +25,39 @@ class FileEncoderExifTransformTest {
 
     @Test
     fun `long screenshots should keep original resolution when under pixel budget`() {
-        val sampleSize = calculateImageInSampleSize(
-            width = 1272,
-            height = 2800,
-            maxDimension = 10_000,
-            maxPixels = 16_000_000L
-        )
+        val sampleSize =
+            calculateImageInSampleSize(
+                width = 1272,
+                height = 2800,
+                maxDimension = 10_000,
+                maxPixels = 16_000_000L,
+            )
 
         assertEquals(1, sampleSize)
     }
 
     @Test
     fun `very large images should still be downsampled by pixel budget`() {
-        val sampleSize = calculateImageInSampleSize(
-            width = 5000,
-            height = 5000,
-            maxDimension = 10_000,
-            maxPixels = 16_000_000L
-        )
+        val sampleSize =
+            calculateImageInSampleSize(
+                width = 5000,
+                height = 5000,
+                maxDimension = 10_000,
+                maxPixels = 16_000_000L,
+            )
 
         assertEquals(2, sampleSize)
     }
 
     @Test
     fun `extremely long images should still be downsampled by max dimension`() {
-        val sampleSize = calculateImageInSampleSize(
-            width = 1200,
-            height = 20_000,
-            maxDimension = 10_000,
-            maxPixels = 16_000_000L
-        )
+        val sampleSize =
+            calculateImageInSampleSize(
+                width = 1200,
+                height = 20_000,
+                maxDimension = 10_000,
+                maxPixels = 16_000_000L,
+            )
 
         assertEquals(2, sampleSize)
     }

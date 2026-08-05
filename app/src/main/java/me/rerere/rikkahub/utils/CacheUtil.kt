@@ -8,15 +8,14 @@ import java.util.concurrent.TimeUnit
  * This is a lightweight alternative to Guava Cache to avoid concurrency issues.
  */
 class SimpleCache<K, V>(
-    private val expireAfterWriteMillis: Long
+    private val expireAfterWriteMillis: Long,
 ) {
     private data class CacheEntry<V>(
         val value: V,
-        val timestamp: Long = System.currentTimeMillis()
+        val timestamp: Long = System.currentTimeMillis(),
     ) {
-        fun isExpired(expireAfterWriteMillis: Long): Boolean {
-            return System.currentTimeMillis() - timestamp > expireAfterWriteMillis
-        }
+        fun isExpired(expireAfterWriteMillis: Long): Boolean =
+            System.currentTimeMillis() - timestamp > expireAfterWriteMillis
     }
 
     private val cache = ConcurrentHashMap<K, CacheEntry<V>>()
@@ -31,7 +30,10 @@ class SimpleCache<K, V>(
         }
     }
 
-    fun put(key: K, value: V) {
+    fun put(
+        key: K,
+        value: V,
+    ) {
         cache[key] = CacheEntry(value)
     }
 
@@ -56,13 +58,14 @@ class SimpleCache<K, V>(
     class Builder<K, V> {
         private var expireAfterWriteMillis: Long = Long.MAX_VALUE
 
-        fun expireAfterWrite(duration: Long, unit: TimeUnit): Builder<K, V> {
+        fun expireAfterWrite(
+            duration: Long,
+            unit: TimeUnit,
+        ): Builder<K, V> {
             expireAfterWriteMillis = unit.toMillis(duration)
             return this
         }
 
-        fun build(): SimpleCache<K, V> {
-            return SimpleCache(expireAfterWriteMillis)
-        }
+        fun build(): SimpleCache<K, V> = SimpleCache(expireAfterWriteMillis)
     }
 }

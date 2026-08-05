@@ -19,7 +19,6 @@ import java.time.ZonedDateTime
  * in the row's last-run status.
  */
 object ConditionEvaluator {
-
     /** Returns [Result.Pass] if every condition passes, else [Result.FailedAt(idx, reason)]. */
     fun evaluateAll(
         conditions: List<ConditionSpec>,
@@ -38,38 +37,92 @@ object ConditionEvaluator {
      * per-type result is negated once here at the top level — so inversion works
      * uniformly for every condition type without per-type special-casing.
      */
-    fun evaluate(condition: ConditionSpec, ctx: WorkflowContext, zone: ZoneId = ZoneId.systemDefault()): Boolean {
+    fun evaluate(
+        condition: ConditionSpec,
+        ctx: WorkflowContext,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): Boolean {
         val raw = evaluateRaw(condition, ctx, zone)
         return if (condition.invert) !raw else raw
     }
 
     /** The positive-only per-type evaluation, before [ConditionSpec.invert] is applied. */
-    private fun evaluateRaw(condition: ConditionSpec, ctx: WorkflowContext, zone: ZoneId): Boolean {
+    private fun evaluateRaw(
+        condition: ConditionSpec,
+        ctx: WorkflowContext,
+        zone: ZoneId,
+    ): Boolean {
         val now = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ctx.nowMs), zone)
         return when (condition) {
-            is ConditionSpec.TimeBetween -> timeBetween(now.toLocalTime(), condition.start, condition.end)
+            is ConditionSpec.TimeBetween -> {
+                timeBetween(now.toLocalTime(), condition.start, condition.end)
+            }
+
             is ConditionSpec.TimeAfterSunset -> {
-                if (ctx.latitude == null || ctx.longitude == null) true  // fail-open w/o location
-                else SolarTimes.isAfterSunset(now, ctx.latitude, ctx.longitude, condition.offsetMinutes)
+                if (ctx.latitude == null || ctx.longitude == null) {
+                    true // fail-open w/o location
+                } else {
+                    SolarTimes.isAfterSunset(now, ctx.latitude, ctx.longitude, condition.offsetMinutes)
+                }
             }
+
             is ConditionSpec.TimeBeforeSunrise -> {
-                if (ctx.latitude == null || ctx.longitude == null) true
-                else SolarTimes.isBeforeSunrise(now, ctx.latitude, ctx.longitude, condition.offsetMinutes)
+                if (ctx.latitude == null || ctx.longitude == null) {
+                    true
+                } else {
+                    SolarTimes.isBeforeSunrise(now, ctx.latitude, ctx.longitude, condition.offsetMinutes)
+                }
             }
+
             is ConditionSpec.DayOfWeekIn -> {
-                if (condition.days.isEmpty()) true
-                else now.dayOfWeek in condition.days.map { isoToDow(it) }.toSet()
+                if (condition.days.isEmpty()) {
+                    true
+                } else {
+                    now.dayOfWeek in condition.days.map { isoToDow(it) }.toSet()
+                }
             }
-            is ConditionSpec.WifiSsidIs -> ctx.wifiSsid != null && ctx.wifiSsid.equals(condition.ssid, ignoreCase = false)
-            is ConditionSpec.WifiSsidIn -> ctx.wifiSsid != null && condition.ssids.any { it == ctx.wifiSsid }
-            is ConditionSpec.BatteryAbove -> ctx.batteryLevel != null && ctx.batteryLevel > condition.percent
-            is ConditionSpec.BatteryBelow -> ctx.batteryLevel != null && ctx.batteryLevel < condition.percent
-            is ConditionSpec.IsCharging -> ctx.isCharging
-            is ConditionSpec.IsNotCharging -> !ctx.isCharging
-            is ConditionSpec.ForegroundAppIs -> ctx.foregroundPackage == condition.packageName
-            is ConditionSpec.ForegroundAppIn -> ctx.foregroundPackage != null && ctx.foregroundPackage in condition.packageNames
-            is ConditionSpec.ScreenIsOn -> ctx.screenOn
-            is ConditionSpec.ScreenIsOff -> !ctx.screenOn
+
+            is ConditionSpec.WifiSsidIs -> {
+                ctx.wifiSsid != null &&
+                    ctx.wifiSsid.equals(condition.ssid, ignoreCase = false)
+            }
+
+            is ConditionSpec.WifiSsidIn -> {
+                ctx.wifiSsid != null && condition.ssids.any { it == ctx.wifiSsid }
+            }
+
+            is ConditionSpec.BatteryAbove -> {
+                ctx.batteryLevel != null && ctx.batteryLevel > condition.percent
+            }
+
+            is ConditionSpec.BatteryBelow -> {
+                ctx.batteryLevel != null && ctx.batteryLevel < condition.percent
+            }
+
+            is ConditionSpec.IsCharging -> {
+                ctx.isCharging
+            }
+
+            is ConditionSpec.IsNotCharging -> {
+                !ctx.isCharging
+            }
+
+            is ConditionSpec.ForegroundAppIs -> {
+                ctx.foregroundPackage == condition.packageName
+            }
+
+            is ConditionSpec.ForegroundAppIn -> {
+                ctx.foregroundPackage != null &&
+                    ctx.foregroundPackage in condition.packageNames
+            }
+
+            is ConditionSpec.ScreenIsOn -> {
+                ctx.screenOn
+            }
+
+            is ConditionSpec.ScreenIsOff -> {
+                !ctx.screenOn
+            }
         }
     }
 
@@ -81,7 +134,11 @@ object ConditionEvaluator {
      * "HH:mm" between handler. If [start] > [end] (e.g. 22:00..06:00), wrap past midnight
      * — the window is `now >= start || now < end`.
      */
-    fun timeBetween(now: LocalTime, startStr: String, endStr: String): Boolean {
+    fun timeBetween(
+        now: LocalTime,
+        startStr: String,
+        endStr: String,
+    ): Boolean {
         val start = parseHHmm(startStr) ?: return false
         val end = parseHHmm(endStr) ?: return false
         return if (start <= end) {
@@ -100,34 +157,87 @@ object ConditionEvaluator {
         return LocalTime.of(h, m)
     }
 
-    private fun isoToDow(iso: Int): DayOfWeek = when (iso) {
-        1 -> DayOfWeek.MONDAY; 2 -> DayOfWeek.TUESDAY; 3 -> DayOfWeek.WEDNESDAY
-        4 -> DayOfWeek.THURSDAY; 5 -> DayOfWeek.FRIDAY; 6 -> DayOfWeek.SATURDAY
-        else -> DayOfWeek.SUNDAY
-    }
+    private fun isoToDow(iso: Int): DayOfWeek =
+        when (iso) {
+            1 -> DayOfWeek.MONDAY
+            2 -> DayOfWeek.TUESDAY
+            3 -> DayOfWeek.WEDNESDAY
+            4 -> DayOfWeek.THURSDAY
+            5 -> DayOfWeek.FRIDAY
+            6 -> DayOfWeek.SATURDAY
+            else -> DayOfWeek.SUNDAY
+        }
 
     private fun summary(c: ConditionSpec): String {
-        val base = when (c) {
-            is ConditionSpec.TimeBetween -> "between ${c.start} and ${c.end}"
-            is ConditionSpec.TimeAfterSunset -> "after sunset" + if (c.offsetMinutes != 0) " ${c.offsetMinutes}m" else ""
-            is ConditionSpec.TimeBeforeSunrise -> "before sunrise" + if (c.offsetMinutes != 0) " ${c.offsetMinutes}m" else ""
-            is ConditionSpec.DayOfWeekIn -> "day in ${c.days}"
-            is ConditionSpec.WifiSsidIs -> "WiFi is ${c.ssid}"
-            is ConditionSpec.WifiSsidIn -> "WiFi in ${c.ssids}"
-            is ConditionSpec.BatteryAbove -> "battery > ${c.percent}%"
-            is ConditionSpec.BatteryBelow -> "battery < ${c.percent}%"
-            is ConditionSpec.IsCharging -> "charging"
-            is ConditionSpec.IsNotCharging -> "not charging"
-            is ConditionSpec.ForegroundAppIs -> "foreground app = ${c.packageName}"
-            is ConditionSpec.ForegroundAppIn -> "foreground app in ${c.packageNames.size} pkgs"
-            is ConditionSpec.ScreenIsOn -> "screen on"
-            is ConditionSpec.ScreenIsOff -> "screen off"
-        }
+        val base =
+            when (c) {
+                is ConditionSpec.TimeBetween -> {
+                    "between ${c.start} and ${c.end}"
+                }
+
+                is ConditionSpec.TimeAfterSunset -> {
+                    "after sunset" +
+                        if (c.offsetMinutes != 0) " ${c.offsetMinutes}m" else ""
+                }
+
+                is ConditionSpec.TimeBeforeSunrise -> {
+                    "before sunrise" +
+                        if (c.offsetMinutes != 0) " ${c.offsetMinutes}m" else ""
+                }
+
+                is ConditionSpec.DayOfWeekIn -> {
+                    "day in ${c.days}"
+                }
+
+                is ConditionSpec.WifiSsidIs -> {
+                    "WiFi is ${c.ssid}"
+                }
+
+                is ConditionSpec.WifiSsidIn -> {
+                    "WiFi in ${c.ssids}"
+                }
+
+                is ConditionSpec.BatteryAbove -> {
+                    "battery > ${c.percent}%"
+                }
+
+                is ConditionSpec.BatteryBelow -> {
+                    "battery < ${c.percent}%"
+                }
+
+                is ConditionSpec.IsCharging -> {
+                    "charging"
+                }
+
+                is ConditionSpec.IsNotCharging -> {
+                    "not charging"
+                }
+
+                is ConditionSpec.ForegroundAppIs -> {
+                    "foreground app = ${c.packageName}"
+                }
+
+                is ConditionSpec.ForegroundAppIn -> {
+                    "foreground app in ${c.packageNames.size} pkgs"
+                }
+
+                is ConditionSpec.ScreenIsOn -> {
+                    "screen on"
+                }
+
+                is ConditionSpec.ScreenIsOff -> {
+                    "screen off"
+                }
+            }
         return if (c.invert) "NOT ($base)" else base
     }
 
     sealed class Result {
         data object Pass : Result()
-        data class FailedAt(val index: Int, val reason: String) : Result()
+
+        data class FailedAt(
+            val index: Int,
+            val reason: String,
+        ) : Result()
     }
 }

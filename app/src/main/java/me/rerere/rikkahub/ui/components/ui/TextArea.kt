@@ -77,80 +77,86 @@ fun TextArea(
     readOnly: Boolean = false,
     supportedFileTypes: Array<String> = arrayOf("text/*", "application/json"),
     enableFullscreen: Boolean = true,
-    onImportError: ((String) -> Unit)? = null
+    onImportError: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
     var isFullScreen by remember { mutableStateOf(false) }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                try {
-                    val content = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.bufferedReader()
-                            ?.use { reader -> reader.readText() }
-                            ?: error("Failed to read file")
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri: Uri? ->
+            uri?.let {
+                scope.launch {
+                    try {
+                        val content =
+                            withContext(Dispatchers.IO) {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?.bufferedReader()
+                                    ?.use { reader -> reader.readText() }
+                                    ?: error("Failed to read file")
+                            }
+                        state.setTextAndPlaceCursorAtEnd(content)
+                        toaster.show(context.getString(R.string.text_area_import_success), type = ToastType.Success)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        val errorMessage = e.message ?: context.getString(R.string.text_area_import_failed)
+                        onImportError?.invoke(errorMessage) ?: toaster.show(
+                            message = errorMessage,
+                            type = ToastType.Error,
+                        )
                     }
-                    state.setTextAndPlaceCursorAtEnd(content)
-                    toaster.show(context.getString(R.string.text_area_import_success), type = ToastType.Success)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    val errorMessage = e.message ?: context.getString(R.string.text_area_import_failed)
-                    onImportError?.invoke(errorMessage) ?: toaster.show(
-                        message = errorMessage,
-                        type = ToastType.Error
-                    )
                 }
             }
         }
-    }
-
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         // Header with label, fullscreen and import button
         if (label.isNotEmpty()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     if (enableFullscreen) {
                         Icon(
                             imageVector = HugeIcons.FullScreen,
                             contentDescription = stringResource(R.string.text_area_fullscreen_edit),
-                            modifier = Modifier
-                                .onClick(onClick = {
-                                    isFullScreen = true
-                                })
-                                .size(24.dp)
+                            modifier =
+                                Modifier
+                                    .onClick(onClick = {
+                                        isFullScreen = true
+                                    })
+                                    .size(24.dp),
                         )
                     }
 
                     Icon(
                         imageVector = HugeIcons.FileImport,
                         contentDescription = stringResource(R.string.text_area_import_from_file),
-                        modifier = Modifier
-                            .onClick(onClick = {
-                                filePickerLauncher.launch(supportedFileTypes)
-                            })
-                            .size(24.dp)
+                        modifier =
+                            Modifier
+                                .onClick(onClick = {
+                                    filePickerLauncher.launch(supportedFileTypes)
+                                })
+                                .size(24.dp),
                     )
                 }
             }
@@ -158,17 +164,22 @@ fun TextArea(
             // Multi-line text input
             OutlinedTextField(
                 state = state,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                placeholder = if (placeholder.isNotEmpty()) {
-                    { Text(placeholder) }
-                } else null,
-                lineLimits = TextFieldLineLimits.MultiLine(
-                    minHeightInLines = minLines,
-                    maxHeightInLines = maxLines
-                ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+                placeholder =
+                    if (placeholder.isNotEmpty()) {
+                        { Text(placeholder) }
+                    } else {
+                        null
+                    },
+                lineLimits =
+                    TextFieldLineLimits.MultiLine(
+                        minHeightInLines = minLines,
+                        maxHeightInLines = maxLines,
+                    ),
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
     }
@@ -179,7 +190,7 @@ fun TextArea(
             state = state,
             label = label,
             placeholder = placeholder,
-            onDismiss = { isFullScreen = false }
+            onDismiss = { isFullScreen = false },
         )
     }
 }
@@ -189,7 +200,7 @@ private fun FullScreenTextEditor(
     state: TextFieldState,
     label: String,
     placeholder: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     var editingText by remember(state.text.toString()) {
         mutableStateOf(state.text.toString())
@@ -197,24 +208,27 @@ private fun FullScreenTextEditor(
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+            ),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Surface(
-                modifier = Modifier
-                    .widthIn(max = 800.dp)
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                modifier =
+                    Modifier
+                        .widthIn(max = 800.dp)
+                        .fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxSize(),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -223,7 +237,7 @@ private fun FullScreenTextEditor(
                             onClick = {
                                 state.setTextAndPlaceCursorAtEnd(editingText)
                                 onDismiss()
-                            }
+                            },
                         ) {
                             Text(stringResource(R.string.text_area_save))
                         }
@@ -231,21 +245,26 @@ private fun FullScreenTextEditor(
                     TextField(
                         value = editingText,
                         onValueChange = { editingText = it },
-                        modifier = Modifier
-                            .imePadding()
-                            .fillMaxSize(),
+                        modifier =
+                            Modifier
+                                .imePadding()
+                                .fillMaxSize(),
                         shape = RoundedCornerShape(16.dp),
-                        placeholder = if (placeholder.isNotEmpty()) {
-                            { Text(placeholder) }
-                        } else if (label.isNotEmpty()) {
-                            { Text(label) }
-                        } else null,
-                        colors = TextFieldDefaults.colors().copy(
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                        ),
+                        placeholder =
+                            if (placeholder.isNotEmpty()) {
+                                { Text(placeholder) }
+                            } else if (label.isNotEmpty()) {
+                                { Text(label) }
+                            } else {
+                                null
+                            },
+                        colors =
+                            TextFieldDefaults.colors().copy(
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                            ),
                     )
                 }
             }

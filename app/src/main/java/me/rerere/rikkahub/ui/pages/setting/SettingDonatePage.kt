@@ -65,11 +65,12 @@ fun SettingDonatePage() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { paddings ->
         Column(
-            modifier = Modifier
-                .padding(paddings)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .padding(paddings)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             DonateMethodsCardGroup()
 
@@ -80,9 +81,10 @@ fun SettingDonatePage() {
             )
 
             Sponsors(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
             )
         }
     }
@@ -135,42 +137,44 @@ private fun Sponsors(modifier: Modifier = Modifier) {
         }
     }
     Box(
-        modifier = modifier
+        modifier = modifier,
     ) {
-        sponsors.onSuccess { value ->
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 48.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(value) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        AsyncImage(
-                            model = it.avatar,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(48.dp)
-                        )
-                        Text(
-                            text = it.userName,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                        )
+        sponsors
+            .onSuccess { value ->
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 48.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    items(value) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            AsyncImage(
+                                model = it.avatar,
+                                contentDescription = null,
+                                modifier =
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .size(48.dp),
+                            )
+                            Text(
+                                text = it.userName,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
+            }.onLoading {
+                CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }.onError {
+                Text(
+                    text = it.message ?: it.javaClass.simpleName,
+                    modifier = Modifier.align(Alignment.Center),
+                )
             }
-        }.onLoading {
-            CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }.onError {
-            Text(
-                text = it.message ?: it.javaClass.simpleName,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
     }
 }

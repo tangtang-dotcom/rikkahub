@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,14 +42,13 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
-import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.theme.ColorMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -63,7 +63,14 @@ fun WorkspaceTerminalPage(id: String) {
                 TopAppBar(
                     title = {
                         Text(
-                            text = state.workspace?.name?.let { stringResource(R.string.workspace_terminal_title_with_name, it) } ?: stringResource(R.string.workspace_terminal_title),
+                            text =
+                                state.workspace?.name?.let {
+                                    stringResource(
+                                        R.string.workspace_terminal_title_with_name,
+                                        it,
+                                    )
+                                }
+                                    ?: stringResource(R.string.workspace_terminal_title),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -87,20 +94,23 @@ private fun WorkspaceTerminalContent(
 ) {
     val context = LocalContext.current
     val terminalTextSizePx = with(LocalDensity.current) { 12.sp.roundToPx() }
-    val terminalTypeface = remember(context) {
-        ResourcesCompat.getFont(context, R.font.jetbrains_mono) ?: Typeface.MONOSPACE
-    }
+    val terminalTypeface =
+        remember(context) {
+            ResourcesCompat.getFont(context, R.font.jetbrains_mono) ?: Typeface.MONOSPACE
+        }
     var finished by remember(root) { mutableStateOf(false) }
     var controlDown by remember(root) { mutableStateOf(false) }
     var altDown by remember(root) { mutableStateOf(false) }
-    val sessionClient = remember(root) {
-        WorkspaceTerminalSessionClient(context.applicationContext) {
-            finished = true
+    val sessionClient =
+        remember(root) {
+            WorkspaceTerminalSessionClient(context.applicationContext) {
+                finished = true
+            }
         }
-    }
-    val viewClient = remember(root) {
-        WorkspaceTerminalViewClient(context)
-    }
+    val viewClient =
+        remember(root) {
+            WorkspaceTerminalViewClient(context)
+        }
     viewClient.controlDown = controlDown
     viewClient.altDown = altDown
 
@@ -110,49 +120,53 @@ private fun WorkspaceTerminalContent(
         sessionClient,
     ) {
         val current = root
-        value = if (current == null) {
-            TerminalSessionUiState.Loading
-        } else {
-            // rootfs stat 与 RootfsPatcher().patch()/DNS 查询都是阻塞 I/O, 放到 IO 线程执行;
-            // TerminalSession 构造内部会创建 Handler, 必须回到主线程执行
-            val prepared = withContext(Dispatchers.IO) {
-                if (!workspaceRootfsReady(context, current)) {
-                    false
-                } else {
-                    prepareWorkspaceTerminalSession(context, current)
-                    true
-                }
-            }
-            if (!prepared) {
-                TerminalSessionUiState.NotInstalled
+        value =
+            if (current == null) {
+                TerminalSessionUiState.Loading
             } else {
-                if (!isActive) return@produceState
-                val created = createWorkspaceTerminalSession(context, current, sessionClient)
-                // 创建后若组合已离开, 主动回收以免泄漏 proot 进程, 且不再把已 finish 的 session 暴露为 Ready
-                if (!isActive) {
-                    created.finishIfRunning()
-                    return@produceState
+                // rootfs stat 与 RootfsPatcher().patch()/DNS 查询都是阻塞 I/O, 放到 IO 线程执行;
+                // TerminalSession 构造内部会创建 Handler, 必须回到主线程执行
+                val prepared =
+                    withContext(Dispatchers.IO) {
+                        if (!workspaceRootfsReady(context, current)) {
+                            false
+                        } else {
+                            prepareWorkspaceTerminalSession(context, current)
+                            true
+                        }
+                    }
+                if (!prepared) {
+                    TerminalSessionUiState.NotInstalled
+                } else {
+                    if (!isActive) return@produceState
+                    val created = createWorkspaceTerminalSession(context, current, sessionClient)
+                    // 创建后若组合已离开, 主动回收以免泄漏 proot 进程, 且不再把已 finish 的 session 暴露为 Ready
+                    if (!isActive) {
+                        created.finishIfRunning()
+                        return@produceState
+                    }
+                    TerminalSessionUiState.Ready(created)
                 }
-                TerminalSessionUiState.Ready(created)
             }
-        }
     }
 
     val currentState = sessionState
     if (currentState !is TerminalSessionUiState.Ready) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = if (currentState is TerminalSessionUiState.NotInstalled) {
-                    stringResource(R.string.workspace_terminal_not_installed)
-                } else {
-                    stringResource(R.string.workspace_terminal_loading)
-                },
+                text =
+                    if (currentState is TerminalSessionUiState.NotInstalled) {
+                        stringResource(R.string.workspace_terminal_not_installed)
+                    } else {
+                        stringResource(R.string.workspace_terminal_loading)
+                    },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             )
@@ -170,17 +184,19 @@ private fun WorkspaceTerminalContent(
     }
 
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-            .imePadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+                .imePadding(),
         color = Color.Black,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
             ) {
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
@@ -226,9 +242,10 @@ private fun WorkspaceTerminalContent(
                 if (finished) {
                     Text(
                         text = stringResource(R.string.workspace_terminal_exited),
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                        .padding(12.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(12.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     )
@@ -254,11 +271,12 @@ private fun TerminalExtraKeysBar(
     onSendText: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -286,23 +304,25 @@ private fun TerminalExtraKey(
 ) {
     Text(
         text = label,
-        modifier = Modifier
-            .background(
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                },
-                shape = RoundedCornerShape(6.dp),
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .background(
+                    color =
+                        if (selected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        },
+                    shape = RoundedCornerShape(6.dp),
+                ).clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
         style = MaterialTheme.typography.labelMedium,
-        color = if (selected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
-        },
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+            },
     )
 }
 
@@ -313,6 +333,10 @@ private fun TerminalSession.writeText(text: String) {
 
 private sealed interface TerminalSessionUiState {
     data object Loading : TerminalSessionUiState
+
     data object NotInstalled : TerminalSessionUiState
-    data class Ready(val session: TerminalSession) : TerminalSessionUiState
+
+    data class Ready(
+        val session: TerminalSession,
+    ) : TerminalSessionUiState
 }

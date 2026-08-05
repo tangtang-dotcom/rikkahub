@@ -15,8 +15,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,12 +24,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,17 +61,20 @@ fun SettingAccessibilityPage() {
 
     // Re-read the live service singleton on every recomposition; when it appears or
     // disappears, the running flag and lastActions flow recollect themselves.
-    val svc = remember(AccessibilityServiceHandle.isRunning()) {
-        RikkaAccessibilityService.instance
-    }
+    val svc =
+        remember(AccessibilityServiceHandle.isRunning()) {
+            RikkaAccessibilityService.instance
+        }
 
     // Pull StateFlows from the live service if present; otherwise show empty defaults.
-    val runningFlow: StateFlow<Boolean> = svc?.running
-        ?: remember { MutableStateFlow(false) }
+    val runningFlow: StateFlow<Boolean> =
+        svc?.running
+            ?: remember { MutableStateFlow(false) }
     val running by runningFlow.collectAsStateWithLifecycle()
 
-    val actionsFlow: StateFlow<List<ActionLogEntry>> = svc?.lastActions
-        ?: remember { MutableStateFlow(emptyList()) }
+    val actionsFlow: StateFlow<List<ActionLogEntry>> =
+        svc?.lastActions
+            ?: remember { MutableStateFlow(emptyList()) }
     val actions by actionsFlow.collectAsStateWithLifecycle()
 
     val captureOkFmt = stringResource(R.string.setting_page_accessibility_capture_ok_toast)
@@ -82,11 +85,12 @@ fun SettingAccessibilityPage() {
     var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                overlayGranted = Settings.canDrawOverlays(context)
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    overlayGranted = Settings.canDrawOverlays(context)
+                }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -104,25 +108,26 @@ fun SettingAccessibilityPage() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Status card
             Text(
                 text = stringResource(R.string.setting_page_accessibility_status_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(start = 16.dp),
             )
             CardGroup {
                 if (running) {
                     item(
                         headlineContent = {
                             Text(stringResource(R.string.setting_page_accessibility_status_running))
-                        }
+                        },
                     )
                 } else {
                     item(
@@ -131,13 +136,13 @@ fun SettingAccessibilityPage() {
                         },
                         supportingContent = {
                             Text(stringResource(R.string.setting_page_accessibility_status_help))
-                        }
+                        },
                     )
                 }
                 item(
                     onClick = {
                         context.startActivity(
-                            PermissionHelper.accessibilitySettingsIntent()
+                            PermissionHelper.accessibilitySettingsIntent(),
                         )
                     },
                     headlineContent = {
@@ -150,14 +155,14 @@ fun SettingAccessibilityPage() {
             Text(
                 text = stringResource(R.string.setting_page_accessibility_overlay_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
             )
             CardGroup {
                 if (overlayGranted) {
                     item(
                         headlineContent = {
                             Text(stringResource(R.string.setting_page_accessibility_overlay_granted))
-                        }
+                        },
                     )
                 } else {
                     item(
@@ -166,14 +171,15 @@ fun SettingAccessibilityPage() {
                         },
                         supportingContent = {
                             Text(stringResource(R.string.setting_page_accessibility_overlay_help))
-                        }
+                        },
                     )
                     item(
                         onClick = {
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:${context.packageName}")
-                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            val intent =
+                                Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:${context.packageName}"),
+                                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             context.startActivity(intent)
                         },
                         headlineContent = {
@@ -187,7 +193,7 @@ fun SettingAccessibilityPage() {
             Text(
                 text = stringResource(R.string.setting_page_accessibility_diagnostics_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
             )
             CardGroup {
                 item(
@@ -204,14 +210,17 @@ fun SettingAccessibilityPage() {
                             val result = live.captureScreenshot(0)
                             when (result) {
                                 is RikkaAccessibilityService.ScreenshotOutcome.Success -> {
-                                    val cacheDir = File(context.cacheDir, "screenshots")
-                                        .apply { mkdirs() }
+                                    val cacheDir =
+                                        File(context.cacheDir, "screenshots")
+                                            .apply { mkdirs() }
                                     val ts = System.currentTimeMillis()
                                     val file = File(cacheDir, "diag-$ts.png")
                                     try {
                                         FileOutputStream(file).use { os ->
                                             result.bitmap.compress(
-                                                android.graphics.Bitmap.CompressFormat.PNG, 100, os
+                                                android.graphics.Bitmap.CompressFormat.PNG,
+                                                100,
+                                                os,
                                             )
                                         }
                                     } finally {
@@ -219,6 +228,7 @@ fun SettingAccessibilityPage() {
                                     }
                                     toaster.show(String.format(captureOkFmt, file.name))
                                 }
+
                                 is RikkaAccessibilityService.ScreenshotOutcome.Failure -> {
                                     toaster.show(
                                         String.format(captureFailFmt, result.reason),
@@ -238,14 +248,14 @@ fun SettingAccessibilityPage() {
             Text(
                 text = stringResource(R.string.setting_page_accessibility_recent_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
             )
             if (actions.isEmpty()) {
                 CardGroup {
                     item(
                         headlineContent = {
                             Text(stringResource(R.string.setting_page_accessibility_no_actions))
-                        }
+                        },
                     )
                 }
             } else {
@@ -259,11 +269,14 @@ fun SettingAccessibilityPage() {
                             trailingContent = {
                                 Text(
                                     text = if (entry.success) "OK" else "FAIL",
-                                    color = if (entry.success)
-                                        MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.error
+                                    color =
+                                        if (entry.success) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.error
+                                        },
                                 )
-                            }
+                            },
                         )
                     }
                 }

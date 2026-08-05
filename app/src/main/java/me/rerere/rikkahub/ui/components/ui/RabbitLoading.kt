@@ -33,7 +33,7 @@ fun RabbitLoadingIndicator(modifier: Modifier = Modifier) {
                     setTint(primaryColor)
                     start()
                 }
-            }
+            },
         )
     } else {
         ContainedLoadingIndicator(

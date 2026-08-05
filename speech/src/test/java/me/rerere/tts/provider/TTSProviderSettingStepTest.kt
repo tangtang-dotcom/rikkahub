@@ -29,15 +29,17 @@ class TTSProviderSettingStepTest {
 
     @Test
     fun step_copyProvider_preserves_id_and_name() {
-        val original = TTSProviderSetting.Step(
-            apiKey = "sk-test",
-            model = "stepaudio-2.5-tts",
-            voice = "cixingnansheng",
-        )
-        val copied = original.copyProvider(
-            id = original.id,
-            name = "My Step"
-        ) as TTSProviderSetting.Step
+        val original =
+            TTSProviderSetting.Step(
+                apiKey = "sk-test",
+                model = "stepaudio-2.5-tts",
+                voice = "cixingnansheng",
+            )
+        val copied =
+            original.copyProvider(
+                id = original.id,
+                name = "My Step",
+            ) as TTSProviderSetting.Step
 
         assertEquals(original.id, copied.id)
         assertEquals("My Step", copied.name)

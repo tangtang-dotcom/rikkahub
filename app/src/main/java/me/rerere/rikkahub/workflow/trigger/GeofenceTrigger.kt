@@ -45,16 +45,19 @@ internal class GeofenceTriggerFamily(
     private val context: Context,
     private val scope: CoroutineScope,
 ) : WorkflowTriggerFamily {
-
     override val name = "geofence"
 
     @Volatile private var fireCallback: TriggerFireCallback? = null
-    @Volatile private var registered: Map<String, TriggerSpec> = emptyMap()  // workflowId -> spec
+
+    @Volatile private var registered: Map<String, TriggerSpec> = emptyMap() // workflowId -> spec
 
     override fun handles(spec: TriggerSpec): Boolean =
         spec is TriggerSpec.GeofenceEnter || spec is TriggerSpec.GeofenceExit
 
-    override suspend fun sync(matching: List<WorkflowDefinition>, callback: TriggerFireCallback) {
+    override suspend fun sync(
+        matching: List<WorkflowDefinition>,
+        callback: TriggerFireCallback,
+    ) {
         fireCallback = callback
         GeofenceTriggerDispatcher.bind(this)
 
@@ -72,11 +75,16 @@ internal class GeofenceTriggerFamily(
             return
         }
 
-        val targetMap: Map<String, TriggerSpec> = matching.mapNotNull { wf ->
-            val spec = wf.trigger
-            if (spec !is TriggerSpec.GeofenceEnter && spec !is TriggerSpec.GeofenceExit) null
-            else wf.id to spec
-        }.toMap()
+        val targetMap: Map<String, TriggerSpec> =
+            matching
+                .mapNotNull { wf ->
+                    val spec = wf.trigger
+                    if (spec !is TriggerSpec.GeofenceEnter && spec !is TriggerSpec.GeofenceExit) {
+                        null
+                    } else {
+                        wf.id to spec
+                    }
+                }.toMap()
 
         val toRemove = registered.keys - targetMap.keys
         val toAdd = targetMap.filter { (id, spec) -> registered[id] != spec }
@@ -89,29 +97,42 @@ internal class GeofenceTriggerFamily(
         }
 
         if (toAdd.isNotEmpty()) {
-            val list = toAdd.mapNotNull { (id, spec) ->
-                when (spec) {
-                    is TriggerSpec.GeofenceEnter -> Geofence.Builder()
-                        .setRequestId(id)
-                        .setCircularRegion(spec.lat, spec.lng, spec.radiusM.toFloat())
-                        .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-                        .build()
-                    is TriggerSpec.GeofenceExit -> Geofence.Builder()
-                        .setRequestId(id)
-                        .setCircularRegion(spec.lat, spec.lng, spec.radiusM.toFloat())
-                        .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
-                        .build()
-                    else -> null
+            val list =
+                toAdd.mapNotNull { (id, spec) ->
+                    when (spec) {
+                        is TriggerSpec.GeofenceEnter -> {
+                            Geofence
+                                .Builder()
+                                .setRequestId(id)
+                                .setCircularRegion(spec.lat, spec.lng, spec.radiusM.toFloat())
+                                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                                .build()
+                        }
+
+                        is TriggerSpec.GeofenceExit -> {
+                            Geofence
+                                .Builder()
+                                .setRequestId(id)
+                                .setCircularRegion(spec.lat, spec.lng, spec.radiusM.toFloat())
+                                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
+                                .build()
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
                 }
-            }
             if (list.isNotEmpty()) {
-                val req = GeofencingRequest.Builder()
-                    .setInitialTrigger(0)  // don't fire on register
-                    .addGeofences(list)
-                    .build()
-                @Suppress("MissingPermission")  // permission was checked above
+                val req =
+                    GeofencingRequest
+                        .Builder()
+                        .setInitialTrigger(0) // don't fire on register
+                        .addGeofences(list)
+                        .build()
+                @Suppress("MissingPermission") // permission was checked above
                 withContext(Dispatchers.IO) {
                     runCatching { Tasks.await(client.addGeofences(req, geofencingPendingIntent())) }
                         .onFailure { Log.w(TAG, "geofence: addGeofences failed", it) }
@@ -136,7 +157,10 @@ internal class GeofenceTriggerFamily(
     }
 
     /** Called by [GeofenceTriggerReceiver]'s coroutine when an event arrives. */
-    fun onEvent(workflowIds: List<String>, transition: Int) {
+    fun onEvent(
+        workflowIds: List<String>,
+        transition: Int,
+    ) {
         val snap = registered
         scope.launch(Dispatchers.IO) {
             for (id in workflowIds) {
@@ -160,8 +184,9 @@ internal class GeofenceTriggerFamily(
                     cb = loaded.fire
                     fireSpec = storedSpec
                 }
-                val matches = (transition == Geofence.GEOFENCE_TRANSITION_ENTER && fireSpec is TriggerSpec.GeofenceEnter)
-                    || (transition == Geofence.GEOFENCE_TRANSITION_EXIT && fireSpec is TriggerSpec.GeofenceExit)
+                val matches =
+                    (transition == Geofence.GEOFENCE_TRANSITION_ENTER && fireSpec is TriggerSpec.GeofenceEnter) ||
+                        (transition == Geofence.GEOFENCE_TRANSITION_EXIT && fireSpec is TriggerSpec.GeofenceExit)
                 if (matches) {
                     runCatching { cb.onFire(id, fireSpec) }.onFailure {
                         Log.w(TAG, "geofence: fire callback failed for wf=$id", it)
@@ -172,26 +197,31 @@ internal class GeofenceTriggerFamily(
     }
 
     private fun hasGeofencePermissions(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+        val fine =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
         if (!fine) return false
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            val bg = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED
+            val bg =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
             if (!bg) return false
         }
         return true
     }
 
     private fun geofencingPendingIntent(): PendingIntent {
-        val intent = Intent(context, GeofenceTriggerReceiver::class.java).apply {
-            action = GeofenceTriggerReceiver.ACTION
-        }
+        val intent =
+            Intent(context, GeofenceTriggerReceiver::class.java).apply {
+                action = GeofenceTriggerReceiver.ACTION
+            }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         return PendingIntent.getBroadcast(context, 0, intent, flags)
     }
 
-    companion object { private const val TAG = "WorkflowTrigger" }
+    companion object {
+        private const val TAG = "WorkflowTrigger"
+    }
 }
 
 /** App-wide bridge so the manifest receiver can find the family at fire time. */
@@ -209,7 +239,10 @@ object GeofenceTriggerDispatcher {
     private const val COLD_FIRE_LEASE_MS = 8_000L
 
     @Volatile private var family: GeofenceTriggerFamily? = null
-    internal fun bind(f: GeofenceTriggerFamily) { family = f }
+
+    internal fun bind(f: GeofenceTriggerFamily) {
+        family = f
+    }
 
     /**
      * Dispatch a geofence transition. When the trigger family is already bound (warm process)
@@ -244,12 +277,13 @@ object GeofenceTriggerDispatcher {
         scope.launch(Dispatchers.IO) {
             // Fire each workflow as an INDEPENDENT child so releasing the broadcast lease below
             // (on timeout) cannot cancel an in-flight workflow — the children outlive the join.
-            val fires = workflowIds.map { id ->
-                launch {
-                    runCatching { GeofenceTriggerHelper.lookupAndFire(id, transition) }
-                        .onFailure { Log.w(TAG, "geofence: cold-start dispatch failed for wf=$id", it) }
+            val fires =
+                workflowIds.map { id ->
+                    launch {
+                        runCatching { GeofenceTriggerHelper.lookupAndFire(id, transition) }
+                            .onFailure { Log.w(TAG, "geofence: cold-start dispatch failed for wf=$id", it) }
+                    }
                 }
-            }
             try {
                 // Hold the lease only for a bounded head-start, then release whether or not the
                 // fires finished; never hold it across an arbitrarily long workflow.
@@ -274,12 +308,13 @@ internal object GeofenceTriggerHelper {
         val fire: TriggerFireCallback,
     )
 
-    suspend fun repositoryLookup(workflowId: String): Loaded? = runCatching {
-        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-        val loaded = repo.getById(workflowId) ?: return@runCatching null
-        val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
-        Loaded(loaded.entity, loaded.definition, engine.triggerCallback)
-    }.getOrNull()
+    suspend fun repositoryLookup(workflowId: String): Loaded? =
+        runCatching {
+            val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
+            val loaded = repo.getById(workflowId) ?: return@runCatching null
+            val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
+            Loaded(loaded.entity, loaded.definition, engine.triggerCallback)
+        }.getOrNull()
 
     /**
      * Load a single workflow by id (== geofence requestId) straight from the repository and
@@ -287,12 +322,16 @@ internal object GeofenceTriggerHelper {
      * path (no bound family). The engine callback re-checks enabled / cooldown / conditions,
      * but we also gate on the entity's enabled flag and the stored spec direction here.
      */
-    suspend fun lookupAndFire(workflowId: String, transition: Int) {
+    suspend fun lookupAndFire(
+        workflowId: String,
+        transition: Int,
+    ) {
         val loaded = repositoryLookup(workflowId) ?: return
         if (!loaded.entity.enabled) return
         val spec = loaded.definition.trigger
-        val matches = (transition == Geofence.GEOFENCE_TRANSITION_ENTER && spec is TriggerSpec.GeofenceEnter)
-            || (transition == Geofence.GEOFENCE_TRANSITION_EXIT && spec is TriggerSpec.GeofenceExit)
+        val matches =
+            (transition == Geofence.GEOFENCE_TRANSITION_ENTER && spec is TriggerSpec.GeofenceEnter) ||
+                (transition == Geofence.GEOFENCE_TRANSITION_EXIT && spec is TriggerSpec.GeofenceExit)
         if (matches) loaded.fire.onFire(workflowId, spec)
     }
 }

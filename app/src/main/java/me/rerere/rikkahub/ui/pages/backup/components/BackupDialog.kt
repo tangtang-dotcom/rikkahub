@@ -18,7 +18,7 @@ fun BackupDialog() {
             Button(
                 onClick = {
                     exitProcess(0)
-                }
+                },
             ) {
                 Text(stringResource(R.string.backup_page_restart_app))
             }

@@ -8,8 +8,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.uuid.Uuid
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -32,6 +30,8 @@ import me.rerere.rikkahub.data.repository.ScheduledJobRepository
 import me.rerere.rikkahub.data.repository.ScheduledJobRunRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.uuid.Uuid
 
 private const val TAG = "CronJobWorker"
 
@@ -53,10 +53,11 @@ internal suspend fun awaitGenerationTerminal(
     flow: Flow<Job?>,
     timeoutMs: Long,
 ): Boolean {
-    val completed: Unit? = withTimeoutOrNull(timeoutMs) {
-        flow.first { it == null }
-        Unit
-    }
+    val completed: Unit? =
+        withTimeoutOrNull(timeoutMs) {
+            flow.first { it == null }
+            Unit
+        }
     return completed != null
 }
 
@@ -66,8 +67,11 @@ internal suspend fun awaitGenerationTerminal(
  * the next regular fire's replay guard. Natural fires stamp the slot they were enqueued
  * for so a true WorkManager replay still matches.
  */
-internal fun computeRunSlot(isManual: Boolean, jobNextRunAtMs: Long?, nowMs: Long): Long =
-    if (isManual) nowMs else (jobNextRunAtMs ?: nowMs)
+internal fun computeRunSlot(
+    isManual: Boolean,
+    jobNextRunAtMs: Long?,
+    nowMs: Long,
+): Long = if (isManual) nowMs else (jobNextRunAtMs ?: nowMs)
 
 /**
  * A WorkManager replay re-fires the SAME enqueued work request, so a true replay's
@@ -94,15 +98,19 @@ internal fun shouldSuppressAsReplay(
  */
 private object CronJobRunningTracker {
     private val running = ConcurrentHashMap.newKeySet<String>()
+
     fun start(jobId: String): Boolean = running.add(jobId)
-    fun stop(jobId: String) { running.remove(jobId) }
+
+    fun stop(jobId: String) {
+        running.remove(jobId)
+    }
 }
 
 class CronJobWorker(
     appContext: Context,
     params: WorkerParameters,
-) : CoroutineWorker(appContext, params), KoinComponent {
-
+) : CoroutineWorker(appContext, params),
+    KoinComponent {
     private val repo: ScheduledJobRepository by inject()
     private val runRepo: ScheduledJobRunRepository by inject()
     private val scheduler: CronJobScheduler by inject()
@@ -118,8 +126,14 @@ class CronJobWorker(
         val isManual = inputData.getBoolean(KEY_MANUAL, false)
 
         if (!CronJobRunningTracker.start(jobId)) {
-            recordRun(jobId, scheduledAtMs = System.currentTimeMillis(),
-                outcome = "concurrent_skip", mode = "?", convId = null, errorMessage = null)
+            recordRun(
+                jobId,
+                scheduledAtMs = System.currentTimeMillis(),
+                outcome = "concurrent_skip",
+                mode = "?",
+                convId = null,
+                errorMessage = null,
+            )
             return Result.success()
         }
 
@@ -145,67 +159,79 @@ class CronJobWorker(
             if (!isManual) {
                 val priorRow = runRepo.getMostRecent(jobId)
                 if (shouldSuppressAsReplay(priorRow, scheduledAtMs, nowMs)) {
-                    Log.w(TAG, "doWork: suppressing likely WorkManager replay for $jobId " +
-                            "(prior row ${priorRow!!.id} same scheduledAtMs=$scheduledAtMs outcome=${priorRow.outcome})")
-                    runRepo.insert(ScheduledJobRunEntity(
-                        id = runRowId,
-                        jobId = jobId,
-                        mode = job.mode,
-                        scheduledAtMs = scheduledAtMs,
-                        startedAtMs = nowMs,
-                        finishedAtMs = nowMs,
-                        outcome = "process_killed_replay",
-                        conversationId = null,
-                        errorMessage = "duplicate fire suppressed (prior run ${priorRow.id})",
-                    ))
+                    Log.w(
+                        TAG,
+                        "doWork: suppressing likely WorkManager replay for $jobId " +
+                            "(prior row ${priorRow!!.id} same scheduledAtMs=$scheduledAtMs outcome=${priorRow.outcome})",
+                    )
+                    runRepo.insert(
+                        ScheduledJobRunEntity(
+                            id = runRowId,
+                            jobId = jobId,
+                            mode = job.mode,
+                            scheduledAtMs = scheduledAtMs,
+                            startedAtMs = nowMs,
+                            finishedAtMs = nowMs,
+                            outcome = "process_killed_replay",
+                            conversationId = null,
+                            errorMessage = "duplicate fire suppressed (prior run ${priorRow.id})",
+                        ),
+                    )
                     return Result.success()
                 }
             }
 
             // Optimistic insert — outcome will be overwritten on completion.
-            runRepo.insert(ScheduledJobRunEntity(
-                id = runRowId,
-                jobId = jobId,
-                mode = job.mode,
-                scheduledAtMs = scheduledAtMs,
-                startedAtMs = nowMs,
-                finishedAtMs = null,
-                outcome = "success",                          // optimistic
-                conversationId = null,
-                errorMessage = null,
-            ))
+            runRepo.insert(
+                ScheduledJobRunEntity(
+                    id = runRowId,
+                    jobId = jobId,
+                    mode = job.mode,
+                    scheduledAtMs = scheduledAtMs,
+                    startedAtMs = nowMs,
+                    finishedAtMs = null,
+                    outcome = "success", // optimistic
+                    conversationId = null,
+                    errorMessage = null,
+                ),
+            )
 
             // Phase 24 — open the cross-pillar ledger row alongside the domain detail row.
             // domain_id is keyed per-fire (jobId:slot) so a replay or a later fire of the
             // same job is a distinct ledger row. Best-effort: ledger failures never break the
             // cron run.
-            val ledgerId = agentRunRepo.open(
-                kind = AgentRunKind.Cron,
-                domainId = "$jobId:$scheduledAtMs",
-                metadata = buildJsonObject {
-                    put("job_name", job.name)
-                    put("mode", job.mode)
-                    put("manual", isManual)
-                },
+            val ledgerId =
+                agentRunRepo.open(
+                    kind = AgentRunKind.Cron,
+                    domainId = "$jobId:$scheduledAtMs",
+                    metadata =
+                        buildJsonObject {
+                            put("job_name", job.name)
+                            put("mode", job.mode)
+                            put("manual", isManual)
+                        },
+                )
+
+            val (outcome, errorMessage, convIdMaybe) =
+                when (job.mode) {
+                    "llm" -> runLlm(job)
+                    "direct" -> runDirect(job)
+                    else -> Triple("failed", "unknown_mode:${job.mode}", null)
+                }
+
+            runRepo.update(
+                ScheduledJobRunEntity(
+                    id = runRowId,
+                    jobId = jobId,
+                    mode = job.mode,
+                    scheduledAtMs = scheduledAtMs,
+                    startedAtMs = nowMs,
+                    finishedAtMs = System.currentTimeMillis(),
+                    outcome = outcome,
+                    conversationId = convIdMaybe?.toString(),
+                    errorMessage = errorMessage?.take(500),
+                ),
             )
-
-            val (outcome, errorMessage, convIdMaybe) = when (job.mode) {
-                "llm"    -> runLlm(job)
-                "direct" -> runDirect(job)
-                else     -> Triple("failed", "unknown_mode:${job.mode}", null)
-            }
-
-            runRepo.update(ScheduledJobRunEntity(
-                id = runRowId,
-                jobId = jobId,
-                mode = job.mode,
-                scheduledAtMs = scheduledAtMs,
-                startedAtMs = nowMs,
-                finishedAtMs = System.currentTimeMillis(),
-                outcome = outcome,
-                conversationId = convIdMaybe?.toString(),
-                errorMessage = errorMessage?.take(500),
-            ))
 
             // Phase 24 — mirror the terminal outcome into the cross-pillar ledger. Cron
             // outcomes map to: success → succeeded; timed_out / failed / unknown → failed.
@@ -229,14 +255,19 @@ class CronJobWorker(
                 // Derive runsSoFar from the authoritative success-count query (post-update,
                 // so the final outcome is already committed) rather than incrementing the
                 // cached field — this avoids runsSoFar drift after a replay.
-                val newRunsSoFar = if (outcome == "success") runRepo.countSuccessful(job.id)
-                                   else job.runsSoFar
+                val newRunsSoFar =
+                    if (outcome == "success") {
+                        runRepo.countSuccessful(job.id)
+                    } else {
+                        job.runsSoFar
+                    }
                 val maxReached = job.maxRuns != null && newRunsSoFar >= job.maxRuns
-                val updated = job.copy(
-                    lastRunAtMs = nowMs,
-                    runsSoFar = newRunsSoFar,
-                    enabled = if (job.scheduleType == "once" || maxReached) false else job.enabled,
-                )
+                val updated =
+                    job.copy(
+                        lastRunAtMs = nowMs,
+                        runsSoFar = newRunsSoFar,
+                        enabled = if (job.scheduleType == "once" || maxReached) false else job.enabled,
+                    )
                 repo.update(updated)
                 if (updated.enabled) scheduler.schedule(updated)
             }
@@ -259,7 +290,10 @@ class CronJobWorker(
      * persists runsSoFar+1. On replay, countSuccessful() sees the existing success row and
      * correctly reports the job as exhausted.
      */
-    private suspend fun boundsExpired(job: ScheduledJobEntity, nowMs: Long): Boolean {
+    private suspend fun boundsExpired(
+        job: ScheduledJobEntity,
+        nowMs: Long,
+    ): Boolean {
         if (job.endAtUnixMs != null && nowMs > job.endAtUnixMs) return true
         if (job.maxRuns != null) {
             val successCount = runRepo.countSuccessful(job.id)
@@ -270,14 +304,17 @@ class CronJobWorker(
 
     private suspend fun runLlm(job: ScheduledJobEntity): Triple<String, String?, Uuid?> {
         val prompt = job.prompt ?: return Triple("failed", "missing_prompt_for_llm_mode", null)
-        val assistantUuid = runCatching { Uuid.parse(job.assistantId) }.getOrNull()
-            ?: return Triple("failed", "bad_assistant_id:${job.assistantId}", null)
+        val assistantUuid =
+            runCatching { Uuid.parse(job.assistantId) }.getOrNull()
+                ?: return Triple("failed", "bad_assistant_id:${job.assistantId}", null)
 
-        val conv = Conversation.ofId(
-            id = Uuid.random(),
-            assistantId = assistantUuid,
-            newConversation = true,
-        ).copy(title = "[Scheduled] ${job.name}")
+        val conv =
+            Conversation
+                .ofId(
+                    id = Uuid.random(),
+                    assistantId = assistantUuid,
+                    newConversation = true,
+                ).copy(title = "[Scheduled] ${job.name}")
         conversationRepo.insertConversation(conv)
         chatService.initializeConversation(conv.id)
         HeadlessConversations.mark(conv.id)
@@ -285,12 +322,16 @@ class CronJobWorker(
             chatService.sendMessage(conv.id, listOf(UIMessagePart.Text(prompt)))
             // Wait for the generation job to clear, with a 15-min wall-clock cap.
             // See awaitGenerationTerminal's KDoc for the Unit-sentinel rationale.
-            val completed = awaitGenerationTerminal(
-                flow = chatService.getGenerationJobStateFlow(conv.id),
-                timeoutMs = 15L * 60_000L,
-            )
-            return if (!completed) Triple("timed_out", "llm turn exceeded 15min", conv.id)
-                   else Triple("success", null, conv.id)
+            val completed =
+                awaitGenerationTerminal(
+                    flow = chatService.getGenerationJobStateFlow(conv.id),
+                    timeoutMs = 15L * 60_000L,
+                )
+            return if (!completed) {
+                Triple("timed_out", "llm turn exceeded 15min", conv.id)
+            } else {
+                Triple("success", null, conv.id)
+            }
         } catch (t: Throwable) {
             return Triple("failed", "${t::class.simpleName}: ${t.message.orEmpty()}", conv.id)
         } finally {
@@ -303,25 +344,33 @@ class CronJobWorker(
         // a run row for this job will already exist with a very recent startedAtMs.
         // Treat any non-skip row created within the last 5 minutes as a duplicate and bail.
         val actionsJson = job.actionsJson ?: return Triple("failed", "missing_actions_for_direct_mode", null)
-        val parsed = DirectModeActionRunner.parse(actionsJson).getOrElse {
-            return Triple("failed", "actions_parse:${(it as? DirectModeActionRunner.ParseError)?.code ?: it.message}", null)
-        }
+        val parsed =
+            DirectModeActionRunner.parse(actionsJson).getOrElse {
+                return Triple(
+                    "failed",
+                    "actions_parse:${(it as? DirectModeActionRunner.ParseError)?.code ?: it.message}",
+                    null,
+                )
+            }
         // Tool list scoped to the job's assistant — same path ChatService uses.
-        val assistantUuid = runCatching { Uuid.parse(job.assistantId) }.getOrNull()
-            ?: return Triple("failed", "bad_assistant_id:${job.assistantId}", null)
+        val assistantUuid =
+            runCatching { Uuid.parse(job.assistantId) }.getOrNull()
+                ?: return Triple("failed", "bad_assistant_id:${job.assistantId}", null)
         val settings = settingsStore.settingsFlow.first()
-        val assistant = settings.findAssistantById(assistantUuid)
-            ?: return Triple("failed", "assistant_not_found", null)
+        val assistant =
+            settings.findAssistantById(assistantUuid)
+                ?: return Triple("failed", "assistant_not_found", null)
         // Headless context — sub-agent recursion guard fires from this dispatch path so
         // a cron job's direct-mode action sequence cannot itself spawn a sub-agent.
-        val tools = localTools.getTools(
-            assistant.localTools,
-            me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
-                callerAssistantId = assistantUuid.toString(),
-                callerConversationId = null,  // direct-mode has no conversation
-                isHeadless = true,
-            ),
-        )
+        val tools =
+            localTools.getTools(
+                assistant.localTools,
+                me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
+                    callerAssistantId = assistantUuid.toString(),
+                    callerConversationId = null, // direct-mode has no conversation
+                    isHeadless = true,
+                ),
+            )
         val seq = directRunner.run(parsed, tools)
         return Triple(seq.finalOutcome, seq.errorMessage, null)
     }
@@ -338,36 +387,46 @@ class CronJobWorker(
         // function on the worker's dispatcher, so this insert runs inline. No runBlocking
         // bridge needed (which would have blocked the worker thread).
         runCatching {
-            runRepo.insert(ScheduledJobRunEntity(
-                id = Uuid.random().toString(),
-                jobId = jobId,
-                mode = mode,
-                scheduledAtMs = scheduledAtMs,
-                startedAtMs = scheduledAtMs,
-                finishedAtMs = scheduledAtMs,
-                outcome = outcome,
-                conversationId = convId?.toString(),
-                errorMessage = errorMessage?.take(500),
-            ))
+            runRepo.insert(
+                ScheduledJobRunEntity(
+                    id = Uuid.random().toString(),
+                    jobId = jobId,
+                    mode = mode,
+                    scheduledAtMs = scheduledAtMs,
+                    startedAtMs = scheduledAtMs,
+                    finishedAtMs = scheduledAtMs,
+                    outcome = outcome,
+                    conversationId = convId?.toString(),
+                    errorMessage = errorMessage?.take(500),
+                ),
+            )
         }.onFailure { Log.w(TAG, "recordRun failed", it) }
     }
 
-    private fun postFailureNotification(jobName: String, errorMessage: String) {
+    private fun postFailureNotification(
+        jobName: String,
+        errorMessage: String,
+    ) {
         val ctx = applicationContext
         val nm = ctx.getSystemService(NotificationManager::class.java)
         if (nm.getNotificationChannel(CHANNEL_ID) == null) {
-            nm.createNotificationChannel(NotificationChannel(
-                CHANNEL_ID, "Scheduled jobs", NotificationManager.IMPORTANCE_DEFAULT))
+            nm.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, "Scheduled jobs", NotificationManager.IMPORTANCE_DEFAULT),
+            )
         }
-        val builder = NotificationCompat.Builder(ctx, CHANNEL_ID)
-            .setContentTitle("Scheduled job failed")
-            .setContentText("$jobName: $errorMessage")
-            .setStyle(NotificationCompat.BigTextStyle().bigText("$jobName: $errorMessage"))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setAutoCancel(true)
+        val builder =
+            NotificationCompat
+                .Builder(ctx, CHANNEL_ID)
+                .setContentTitle("Scheduled job failed")
+                .setContentText("$jobName: $errorMessage")
+                .setStyle(NotificationCompat.BigTextStyle().bigText("$jobName: $errorMessage"))
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setAutoCancel(true)
         try {
             NotificationManagerCompat.from(ctx).notify(jobName.hashCode(), builder.build())
-        } catch (_: SecurityException) { /* POST_NOTIFICATIONS not granted — fine */ }
+        } catch (_: SecurityException) {
+            // POST_NOTIFICATIONS not granted — fine
+        }
     }
 
     companion object {

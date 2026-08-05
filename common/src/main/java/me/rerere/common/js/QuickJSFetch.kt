@@ -51,58 +51,72 @@ globalThis.fetch = function(url, options) {
 """
 
 fun QuickJSContext.injectFetch(httpClient: OkHttpClient) {
-    globalObject.setProperty("__httpRequest", JSCallFunction { args ->
-        val url = args[0] as? String ?: error("url is required")
-        val method = (args[1] as? String ?: "GET").uppercase()
-        val headersJson = args[2] as? String
-        val body = args[3] as? String
+    globalObject.setProperty(
+        "__httpRequest",
+        JSCallFunction { args ->
+            val url = args[0] as? String ?: error("url is required")
+            val method = (args[1] as? String ?: "GET").uppercase()
+            val headersJson = args[2] as? String
+            val body = args[3] as? String
 
-        val requestBuilder = Request.Builder().url(url)
+            val requestBuilder = Request.Builder().url(url)
 
-        val parsedHeaders = if (!headersJson.isNullOrBlank() && headersJson != "null") {
-            json.parseToJsonElement(headersJson).jsonObject
-        } else null
+            val parsedHeaders =
+                if (!headersJson.isNullOrBlank() && headersJson != "null") {
+                    json.parseToJsonElement(headersJson).jsonObject
+                } else {
+                    null
+                }
 
-        parsedHeaders?.entries?.forEach { (key, value) ->
-            requestBuilder.addHeader(key, value.jsonPrimitive.content)
-        }
-
-        val contentType = try {
-            parsedHeaders?.get("Content-Type")?.jsonPrimitive?.content
-        } catch (_: Exception) {
-            null
-        }
-
-        val mediaType = (contentType ?: "application/json").toMediaType()
-        when (method) {
-            "GET" -> requestBuilder.get()
-            "HEAD" -> requestBuilder.head()
-            else -> {
-                val reqBody = body?.toRequestBody(mediaType)
-                    ?: if (method in setOf("POST", "PUT", "PATCH")) {
-                        "".toRequestBody(mediaType)
-                    } else {
-                        null
-                    }
-                requestBuilder.method(method, reqBody)
+            parsedHeaders?.entries?.forEach { (key, value) ->
+                requestBuilder.addHeader(key, value.jsonPrimitive.content)
             }
-        }
 
-        val response = httpClient.newCall(requestBuilder.build()).execute()
-        val responseBody = response.body.string()
-        val code = response.code
-        val message = response.message
-        response.close()
+            val contentType =
+                try {
+                    parsedHeaders?.get("Content-Type")?.jsonPrimitive?.content
+                } catch (_: Exception) {
+                    null
+                }
 
-        json.encodeToString(
-            HttpResponseDto(
-                status = code,
-                ok = code in 200..299,
-                statusText = message,
-                body = responseBody,
+            val mediaType = (contentType ?: "application/json").toMediaType()
+            when (method) {
+                "GET" -> {
+                    requestBuilder.get()
+                }
+
+                "HEAD" -> {
+                    requestBuilder.head()
+                }
+
+                else -> {
+                    val reqBody =
+                        body?.toRequestBody(mediaType)
+                            ?: if (method in setOf("POST", "PUT", "PATCH")) {
+                                "".toRequestBody(mediaType)
+                            } else {
+                                null
+                            }
+                    requestBuilder.method(method, reqBody)
+                }
+            }
+
+            val response = httpClient.newCall(requestBuilder.build()).execute()
+            val responseBody = response.body.string()
+            val code = response.code
+            val message = response.message
+            response.close()
+
+            json.encodeToString(
+                HttpResponseDto(
+                    status = code,
+                    ok = code in 200..299,
+                    statusText = message,
+                    body = responseBody,
+                ),
             )
-        )
-    })
+        },
+    )
 
     evaluate(FETCH_POLYFILL)
 }

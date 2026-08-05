@@ -19,7 +19,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed class ConditionSpec {
-
     /** When true, the evaluator negates this condition's result. Default false = unchanged. */
     abstract val invert: Boolean
 
@@ -85,11 +84,15 @@ sealed class ConditionSpec {
 
     @Serializable
     @SerialName("is_charging")
-    data class IsCharging(override val invert: Boolean = false) : ConditionSpec()
+    data class IsCharging(
+        override val invert: Boolean = false,
+    ) : ConditionSpec()
 
     @Serializable
     @SerialName("is_not_charging")
-    data class IsNotCharging(override val invert: Boolean = false) : ConditionSpec()
+    data class IsNotCharging(
+        override val invert: Boolean = false,
+    ) : ConditionSpec()
 
     @Serializable
     @SerialName("foreground_app_is")
@@ -107,9 +110,13 @@ sealed class ConditionSpec {
 
     @Serializable
     @SerialName("screen_is_on")
-    data class ScreenIsOn(override val invert: Boolean = false) : ConditionSpec()
+    data class ScreenIsOn(
+        override val invert: Boolean = false,
+    ) : ConditionSpec()
 
     @Serializable
     @SerialName("screen_is_off")
-    data class ScreenIsOff(override val invert: Boolean = false) : ConditionSpec()
+    data class ScreenIsOff(
+        override val invert: Boolean = false,
+    ) : ConditionSpec()
 }

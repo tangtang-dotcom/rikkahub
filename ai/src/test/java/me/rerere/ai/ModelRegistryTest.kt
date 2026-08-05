@@ -32,11 +32,11 @@ class ModelRegistryTest {
         assertTrue(ModelRegistry.GEMINI_2_5_IMAGE.match("gemini-2.5-flash-image"))
         assertEquals(
             listOf(Modality.TEXT, Modality.IMAGE),
-            ModelRegistry.MODEL_OUTPUT_MODALITIES.getData("gemini-2.5-flash-image")
+            ModelRegistry.MODEL_OUTPUT_MODALITIES.getData("gemini-2.5-flash-image"),
         )
         assertEquals(
             listOf(Modality.TEXT),
-            ModelRegistry.MODEL_OUTPUT_MODALITIES.getData("gemini-2.5-flash")
+            ModelRegistry.MODEL_OUTPUT_MODALITIES.getData("gemini-2.5-flash"),
         )
     }
 
@@ -53,11 +53,11 @@ class ModelRegistryTest {
     fun testSpecificityPriority() {
         assertEquals(
             listOf(Modality.TEXT, Modality.IMAGE),
-            ModelRegistry.MODEL_INPUT_MODALITIES.getData("kimi-k2.5")
+            ModelRegistry.MODEL_INPUT_MODALITIES.getData("kimi-k2.5"),
         )
         assertEquals(
             listOf(Modality.TEXT),
-            ModelRegistry.MODEL_INPUT_MODALITIES.getData("kimi-k2")
+            ModelRegistry.MODEL_INPUT_MODALITIES.getData("kimi-k2"),
         )
     }
 
@@ -67,7 +67,7 @@ class ModelRegistryTest {
         assertTrue(ModelRegistry.OPENAI_O_MODELS.match("o3-mini"))
         assertEquals(
             listOf(Modality.TEXT, Modality.IMAGE),
-            ModelRegistry.MODEL_INPUT_MODALITIES.getData("o3-mini")
+            ModelRegistry.MODEL_INPUT_MODALITIES.getData("o3-mini"),
         )
     }
 
@@ -75,19 +75,19 @@ class ModelRegistryTest {
     fun testGlm5AndMinimaxM25() {
         assertEquals(
             listOf(Modality.TEXT),
-            ModelRegistry.MODEL_INPUT_MODALITIES.getData("glm-5")
+            ModelRegistry.MODEL_INPUT_MODALITIES.getData("glm-5"),
         )
         assertEquals(
             listOf(Modality.TEXT),
-            ModelRegistry.MODEL_INPUT_MODALITIES.getData("minimax-m2.5")
+            ModelRegistry.MODEL_INPUT_MODALITIES.getData("minimax-m2.5"),
         )
         assertEquals(
             listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            ModelRegistry.MODEL_ABILITIES.getData("glm-5")
+            ModelRegistry.MODEL_ABILITIES.getData("glm-5"),
         )
         assertEquals(
             listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            ModelRegistry.MODEL_ABILITIES.getData("minimax-m2.5")
+            ModelRegistry.MODEL_ABILITIES.getData("minimax-m2.5"),
         )
     }
 
@@ -96,11 +96,11 @@ class ModelRegistryTest {
         val reasonerAbilities = ModelRegistry.MODEL_ABILITIES.getData("deepseek-reasoner")
         assertEquals(
             reasonerAbilities,
-            ModelRegistry.MODEL_ABILITIES.getData("deepseek-v4-flash")
+            ModelRegistry.MODEL_ABILITIES.getData("deepseek-v4-flash"),
         )
         assertEquals(
             reasonerAbilities,
-            ModelRegistry.MODEL_ABILITIES.getData("deepseek-v4-pro")
+            ModelRegistry.MODEL_ABILITIES.getData("deepseek-v4-pro"),
         )
     }
 }

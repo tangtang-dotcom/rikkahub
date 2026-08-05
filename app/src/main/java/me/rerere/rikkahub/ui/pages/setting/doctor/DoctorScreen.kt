@@ -58,14 +58,15 @@ fun DoctorScreen(vm: DoctorViewModel = koinViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val snackbar = remember { SnackbarHostState() }
 
-    val severityCounts = remember(state.results) {
-        mapOf(
-            Severity.FAIL to state.results.count { it.severity == Severity.FAIL },
-            Severity.WARN to state.results.count { it.severity == Severity.WARN },
-            Severity.OK to state.results.count { it.severity == Severity.OK },
-            Severity.INFO to state.results.count { it.severity == Severity.INFO },
-        )
-    }
+    val severityCounts =
+        remember(state.results) {
+            mapOf(
+                Severity.FAIL to state.results.count { it.severity == Severity.FAIL },
+                Severity.WARN to state.results.count { it.severity == Severity.WARN },
+                Severity.OK to state.results.count { it.severity == Severity.OK },
+                Severity.INFO to state.results.count { it.severity == Severity.INFO },
+            )
+        }
 
     Scaffold(
         topBar = {
@@ -122,28 +123,30 @@ fun DoctorScreen(vm: DoctorViewModel = koinViewModel()) {
                                 },
                                 trailingContent = {
                                     val fix = check.fix
-                                    if (fix != null) FixButton(
-                                        fix = fix,
-                                        onAutoFix = { f ->
-                                            scope.launch {
-                                                val res = vm.applyAutoFix(f)
-                                                snackbar.showSnackbar(res.message)
-                                            }
-                                        },
-                                        onOpenIntent = { intent ->
-                                            runCatching {
-                                                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                ctx.startActivity(intent)
-                                            }.onFailure {
+                                    if (fix != null) {
+                                        FixButton(
+                                            fix = fix,
+                                            onAutoFix = { f ->
                                                 scope.launch {
-                                                    snackbar.showSnackbar(
-                                                        "Could not open: ${it.message ?: it::class.simpleName}"
-                                                    )
+                                                    val res = vm.applyAutoFix(f)
+                                                    snackbar.showSnackbar(res.message)
                                                 }
-                                            }
-                                        },
-                                        onOpenAppRoute = { key -> nav.navigate(routeFor(key)) },
-                                    )
+                                            },
+                                            onOpenIntent = { intent ->
+                                                runCatching {
+                                                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    ctx.startActivity(intent)
+                                                }.onFailure {
+                                                    scope.launch {
+                                                        snackbar.showSnackbar(
+                                                            "Could not open: ${it.message ?: it::class.simpleName}",
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            onOpenAppRoute = { key -> nav.navigate(routeFor(key)) },
+                                        )
+                                    }
                                 },
                             )
                         }
@@ -162,14 +165,14 @@ private fun SummaryCard(
     onCopyReport: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp)
-            .background(
-                MaterialTheme.colorScheme.surfaceContainerHigh,
-                RoundedCornerShape(20.dp),
-            )
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                    RoundedCornerShape(20.dp),
+                ).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(
@@ -188,9 +191,10 @@ private fun SummaryCard(
             ) {
                 if (running) {
                     CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .padding(end = 0.dp),
+                        modifier =
+                            Modifier
+                                .size(16.dp)
+                                .padding(end = 0.dp),
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
@@ -210,7 +214,11 @@ private fun SummaryCard(
 }
 
 @Composable
-private fun CountPill(label: String, count: Int, severity: Severity) {
+private fun CountPill(
+    label: String,
+    count: Int,
+    severity: Severity,
+) {
     val color = severityColor(severity)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -229,9 +237,10 @@ private fun CountPill(label: String, count: Int, severity: Severity) {
 @Composable
 private fun SeverityDot(severity: Severity) {
     Box(
-        modifier = Modifier
-            .size(10.dp)
-            .background(severityColor(severity), CircleShape),
+        modifier =
+            Modifier
+                .size(10.dp)
+                .background(severityColor(severity), CircleShape),
     )
 }
 
@@ -242,11 +251,12 @@ private fun FixButton(
     onOpenIntent: (android.content.Intent) -> Unit,
     onOpenAppRoute: (AppRouteKey) -> Unit,
 ) {
-    val (label, click) = when (fix) {
-        is FixAction.AutoFix -> fix.label to { onAutoFix(fix) }
-        is FixAction.OpenIntent -> fix.label to { onOpenIntent(fix.intent) }
-        is FixAction.OpenAppRoute -> fix.label to { onOpenAppRoute(fix.routeKey) }
-    }
+    val (label, click) =
+        when (fix) {
+            is FixAction.AutoFix -> fix.label to { onAutoFix(fix) }
+            is FixAction.OpenIntent -> fix.label to { onOpenIntent(fix.intent) }
+            is FixAction.OpenAppRoute -> fix.label to { onOpenAppRoute(fix.routeKey) }
+        }
     OutlinedButton(
         onClick = click,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
@@ -256,24 +266,32 @@ private fun FixButton(
 }
 
 @Composable
-private fun severityColor(severity: Severity): Color = when (severity) {
-    Severity.OK -> MaterialTheme.colorScheme.primary
-    Severity.INFO -> MaterialTheme.colorScheme.tertiary
-    // Material doesn't define a stock warning colour — Google's HIG uses amber here.
-    Severity.WARN -> Color(0xFFFFB300)
-    Severity.FAIL -> MaterialTheme.colorScheme.error
-}
+private fun severityColor(severity: Severity): Color =
+    when (severity) {
+        Severity.OK -> MaterialTheme.colorScheme.primary
 
-private fun routeFor(key: AppRouteKey): Screen = when (key) {
-    AppRouteKey.SettingTelegram -> Screen.SettingTelegram
-    AppRouteKey.SettingScheduledJobs -> Screen.SettingScheduledJobs
-    AppRouteKey.SettingWorkflows -> Screen.SettingWorkflows
-    AppRouteKey.SettingPermissions -> Screen.SettingPermissions
-    AppRouteKey.SettingProvider -> Screen.SettingProvider
-    AppRouteKey.Assistant -> Screen.Assistant
-}
+        Severity.INFO -> MaterialTheme.colorScheme.tertiary
 
-private fun copyToClipboard(ctx: Context, text: String) {
+        // Material doesn't define a stock warning colour — Google's HIG uses amber here.
+        Severity.WARN -> Color(0xFFFFB300)
+
+        Severity.FAIL -> MaterialTheme.colorScheme.error
+    }
+
+private fun routeFor(key: AppRouteKey): Screen =
+    when (key) {
+        AppRouteKey.SettingTelegram -> Screen.SettingTelegram
+        AppRouteKey.SettingScheduledJobs -> Screen.SettingScheduledJobs
+        AppRouteKey.SettingWorkflows -> Screen.SettingWorkflows
+        AppRouteKey.SettingPermissions -> Screen.SettingPermissions
+        AppRouteKey.SettingProvider -> Screen.SettingProvider
+        AppRouteKey.Assistant -> Screen.Assistant
+    }
+
+private fun copyToClipboard(
+    ctx: Context,
+    text: String,
+) {
     val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
     cm.setPrimaryClip(ClipData.newPlainText("RikkaHub Agents diagnostic report", text))
 }

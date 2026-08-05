@@ -29,7 +29,10 @@ val LocalCodeHighlighter = staticCompositionLocalOf { CodeHighlighter() }
 class CodeHighlighter {
     private val engine = HighlightEngine(builtinLanguages())
 
-    fun highlight(code: String, language: String): List<HighlightToken> {
+    fun highlight(
+        code: String,
+        language: String,
+    ): List<HighlightToken> {
         if (code.isEmpty()) return emptyList()
 
         return engine.highlight(code, language)
@@ -56,17 +59,18 @@ fun CodeHighlightText(
     minLines: Int = 1,
 ) {
     val highlighter = LocalCodeHighlighter.current
-    val annotatedString = remember(code, language, colors, highlighter) {
-        if (code.length > MAX_CODE_LENGTH) {
-            AnnotatedString(code)
-        } else {
-            buildAnnotatedString {
-                highlighter.highlight(code, language).forEach { token ->
-                    buildHighlightText(token, colors)
+    val annotatedString =
+        remember(code, language, colors, highlighter) {
+            if (code.length > MAX_CODE_LENGTH) {
+                AnnotatedString(code)
+            } else {
+                buildAnnotatedString {
+                    highlighter.highlight(code, language).forEach { token ->
+                        buildHighlightText(token, colors)
+                    }
                 }
             }
         }
-    }
 
     Text(
         modifier = modifier,

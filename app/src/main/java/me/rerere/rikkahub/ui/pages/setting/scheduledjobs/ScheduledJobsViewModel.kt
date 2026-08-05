@@ -28,11 +28,13 @@ class ScheduledJobsViewModel(
     private val runRepository: ScheduledJobRunRepository,
     private val scheduler: CronJobScheduler,
 ) : ViewModel() {
-
     val jobs: StateFlow<List<ScheduledJobEntity>> =
         repository.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setEnabled(id: String, enabled: Boolean) {
+    fun setEnabled(
+        id: String,
+        enabled: Boolean,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val job = repository.getById(id) ?: return@launch
             val updated = job.copy(enabled = enabled)
@@ -41,7 +43,10 @@ class ScheduledJobsViewModel(
         }
     }
 
-    fun delete(id: String, onDone: () -> Unit = {}) {
+    fun delete(
+        id: String,
+        onDone: () -> Unit = {},
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             scheduler.cancel(id)
             runRepository.deleteAllForJob(id)
@@ -59,8 +64,10 @@ class ScheduledJobsViewModel(
         return RunNowOutcome.Fired
     }
 
-    suspend fun history(id: String, limit: Int = 20): List<ScheduledJobRunEntity> =
-        runRepository.getRecent(id, limit)
+    suspend fun history(
+        id: String,
+        limit: Int = 20,
+    ): List<ScheduledJobRunEntity> = runRepository.getRecent(id, limit)
 
     suspend fun get(id: String): ScheduledJobEntity? = repository.getById(id)
 

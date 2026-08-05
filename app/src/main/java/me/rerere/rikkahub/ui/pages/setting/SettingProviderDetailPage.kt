@@ -1,17 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Package01
-import me.rerere.hugeicons.stroke.Connect
-import me.rerere.hugeicons.stroke.ArrowDown01
-import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.Refresh03
-import me.rerere.hugeicons.stroke.Tools
-import me.rerere.hugeicons.stroke.Share01
-import me.rerere.hugeicons.stroke.Delete01
-import me.rerere.hugeicons.stroke.DragDropHorizontal
-import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.hugeicons.stroke.CheckList
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
@@ -48,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -59,13 +48,13 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -74,7 +63,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -110,6 +98,18 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.CheckList
+import me.rerere.hugeicons.stroke.Connect
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.DragDropHorizontal
+import me.rerere.hugeicons.stroke.Package01
+import me.rerere.hugeicons.stroke.Refresh03
+import me.rerere.hugeicons.stroke.Share01
+import me.rerere.hugeicons.stroke.Tools
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.ai.ModelAbilityTag
 import me.rerere.rikkahub.ui.components.ai.ModelModalityTag
@@ -128,9 +128,9 @@ import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.assistant.detail.CustomBodies
 import me.rerere.rikkahub.ui.pages.assistant.detail.CustomHeaders
-import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.CodexProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.GrokProviderConfigure
+import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConnectionTester
 import me.rerere.rikkahub.ui.pages.setting.components.SettingProviderBalanceOption
 import me.rerere.rikkahub.ui.pages.setting.components.isUsingDefaultBaseUrl
@@ -146,7 +146,10 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.uuid.Uuid
 
 @Composable
-fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
+fun SettingProviderDetailPage(
+    id: Uuid,
+    vm: SettingVM = koinViewModel(),
+) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val navController = LocalNavController.current
     val provider = settings.providers.find { it.id == id } ?: return
@@ -168,21 +171,24 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
     }
 
     val onEdit = { newProvider: ProviderSetting ->
-        val newSettings = settings.copy(
-            providers = settings.providers.map {
-                if (newProvider.id == it.id) {
-                    newProvider
-                } else {
-                    it
-                }
-            }
-        )
+        val newSettings =
+            settings.copy(
+                providers =
+                    settings.providers.map {
+                        if (newProvider.id == it.id) {
+                            newProvider
+                        } else {
+                            it
+                        }
+                    },
+            )
         vm.updateSettings(newSettings)
     }
     val onDelete = {
-        val newSettings = settings.copy(
-            providers = settings.providers - provider
-        )
+        val newSettings =
+            settings.copy(
+                providers = settings.providers - provider,
+            )
         vm.updateSettings(newSettings)
         navController.popBackStack()
     }
@@ -198,7 +204,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         AutoAIIcon(provider.name, modifier = Modifier.size(22.dp))
                         Text(text = provider.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -209,12 +215,13 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                         // 多选模式：全选 / 删除选中 / 关闭
                         TextButton(
                             onClick = {
-                                selectedIds = if (selectedIds.size == provider.models.size) {
-                                    emptySet()
-                                } else {
-                                    provider.models.map { it.id }.toSet()
-                                }
-                            }
+                                selectedIds =
+                                    if (selectedIds.size == provider.models.size) {
+                                        emptySet()
+                                    } else {
+                                        provider.models.map { it.id }.toSet()
+                                    }
+                            },
                         ) {
                             Text(stringResource(R.string.setting_provider_page_multi_select_all))
                         }
@@ -226,11 +233,11 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                                 onEdit(updated)
                                 selectedIds = emptySet()
                                 selectionMode = false
-                            }
+                            },
                         ) {
                             Text(
                                 stringResource(R.string.setting_provider_page_delete_selected, selectedIds.size),
-                                color = MaterialTheme.colorScheme.error
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
                         IconButton(onClick = {
@@ -245,17 +252,17 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                         IconButton(
                             onClick = {
                                 shareSheetState.show(provider)
-                            }
+                            },
                         ) {
                             Icon(HugeIcons.Share01, null)
                         }
                     }
-                }
+                },
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = CustomColors.cardColorsOnSurfaceContainer.containerColor
+                containerColor = CustomColors.cardColorsOnSurfaceContainer.containerColor,
             ) {
                 NavigationBarItem(
                     selected = pager.currentPage == 0,
@@ -265,7 +272,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                         scope.launch {
                             pager.animateScrollToPage(0)
                         }
-                    }
+                    },
                 )
                 NavigationBarItem(
                     selected = pager.currentPage == 1,
@@ -275,16 +282,17 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                         scope.launch {
                             pager.animateScrollToPage(1)
                         }
-                    }
+                    },
                 )
             }
-        }
+        },
     ) {
         HorizontalPager(
             state = pager,
-            modifier = Modifier
-                .padding(it)
-                .consumeWindowInsets(it)
+            modifier =
+                Modifier
+                    .padding(it)
+                    .consumeWindowInsets(it),
         ) { page ->
             when (page) {
                 0 -> {
@@ -294,12 +302,12 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                             onEdit(it)
                             toaster.show(
                                 context.getString(R.string.setting_provider_page_save_success),
-                                type = ToastType.Success
+                                type = ToastType.Success,
                             )
                         },
                         onDelete = {
                             onDelete()
-                        }
+                        },
                     )
                 }
 
@@ -322,7 +330,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
 private fun SettingProviderConfigPage(
     provider: ProviderSetting,
     onEdit: (ProviderSetting) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     if (provider is ProviderSetting.Codex) {
         CodexProviderConfigure(
@@ -342,25 +350,26 @@ private fun SettingProviderConfigPage(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         ProviderConfigure(
             provider = internalProvider,
             onEdit = {
                 internalProvider = it
-            }
+            },
         )
 
         if (internalProvider is ProviderSetting.OpenAI) {
             SettingProviderBalanceOption(
                 provider = internalProvider,
                 balanceOption = internalProvider.balanceOption,
-                onEdit = { internalProvider = internalProvider.copyProvider(balanceOption = it) }
+                onEdit = { internalProvider = internalProvider.copyProvider(balanceOption = it) },
             )
             ProviderBalanceText(providerSetting = provider, style = MaterialTheme.typography.labelSmall)
         }
@@ -368,7 +377,7 @@ private fun SettingProviderConfigPage(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             ProviderConnectionTester(
                 internalProvider = internalProvider,
@@ -394,14 +403,14 @@ private fun SettingProviderConfigPage(
             ) {
                 Icon(
                     imageVector = HugeIcons.Refresh03,
-                    contentDescription = stringResource(R.string.setting_model_page_reset_to_default)
+                    contentDescription = stringResource(R.string.setting_model_page_reset_to_default),
                 )
             }
 
             Button(
                 onClick = {
                     onEdit(internalProvider)
-                }
+                },
             ) {
                 Text(stringResource(R.string.setting_provider_page_save))
             }
@@ -410,9 +419,10 @@ private fun SettingProviderConfigPage(
         // 硅基流动图标
         if (provider is ProviderSetting.OpenAI && provider.baseUrl.contains("siliconflow.cn")) {
             SiliconFlowPowerByIcon(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(vertical = 16.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 16.dp),
             )
         }
     }
@@ -437,11 +447,11 @@ private fun SettingProviderConfigPage(
                     onClick = {
                         showDeleteDialog = false
                         onDelete()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.delete))
                 }
-            }
+            },
         )
     }
 }
@@ -478,10 +488,12 @@ private fun ModelList(
     val toaster = LocalToaster.current
     val modelList by produceState(emptyList(), providerSetting) {
         runCatching {
-            value = providerManager.getProviderByType(providerSetting)
-                .listModels(providerSetting)
-                .sortedBy { it.modelId }
-                .toList()
+            value =
+                providerManager
+                    .getProviderByType(providerSetting)
+                    .listModels(providerSetting)
+                    .sortedBy { it.modelId }
+                    .toList()
         }.onFailure { error ->
             // runCatching catches Throwable, which includes CancellationException
             // (e.g. when the user navigates away from the Models tab mid-fetch
@@ -493,49 +505,52 @@ private fun ModelList(
             // Minimax that return an HTTP 200 error envelope instead of a 4xx).
             toaster.show(
                 error.message ?: "Failed to load models",
-                type = ToastType.Error
+                type = ToastType.Error,
             )
         }
     }
     var expanded by rememberSaveable { mutableStateOf(true) }
     val lazyListState = rememberLazyListState()
-    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        onUpdateProvider(providerSetting.moveMove(from.index, to.index))
-    }
+    val reorderableLazyListState =
+        rememberReorderableLazyListState(lazyListState) { from, to ->
+            onUpdateProvider(providerSetting.moveMove(from.index, to.index))
+        }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .floatingToolbarVerticalNestedScroll(
-                    expanded = expanded,
-                    onExpand = { expanded = true },
-                    onCollapse = { expanded = false },
-                ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .floatingToolbarVerticalNestedScroll(
+                        expanded = expanded,
+                        onExpand = { expanded = true },
+                        onCollapse = { expanded = false },
+                    ),
             contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 128.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            state = lazyListState
+            state = lazyListState,
         ) {
             // 模型列表
             if (providerSetting.models.isEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillParentMaxHeight(0.8f)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillParentMaxHeight(0.8f)
+                                .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
                             text = stringResource(R.string.setting_provider_page_no_models),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
                             text = stringResource(R.string.setting_provider_page_add_models_hint),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
                     }
                 }
@@ -543,7 +558,7 @@ private fun ModelList(
                 items(providerSetting.models, key = { it.id }) { item ->
                     ReorderableItem(
                         state = reorderableLazyListState,
-                        key = item.id
+                        key = item.id,
                     ) { isDragging ->
                         ModelCard(
                             model = item,
@@ -557,41 +572,45 @@ private fun ModelList(
                             selectionMode = selectionMode,
                             selected = item.id in selectedIds,
                             onToggleSelect = {
-                                onSelectedIdsChange(if (item.id in selectedIds) {
-                                    selectedIds - item.id
-                                } else {
-                                    selectedIds + item.id
-                                })
+                                onSelectedIdsChange(
+                                    if (item.id in selectedIds) {
+                                        selectedIds - item.id
+                                    } else {
+                                        selectedIds + item.id
+                                    },
+                                )
                             },
                             onEnterMultiSelect = {
                                 onSelectionModeChange(true)
                                 onSelectedIdsChange(setOf(item.id))
                             },
-                            modifier = Modifier
-                                .let { mod ->
-                                    if (selectionMode) {
-                                        mod.combinedClickable(
-                                            onClick = {
-                                                onSelectedIdsChange(if (item.id in selectedIds) {
-                                                    selectedIds - item.id
-                                                } else {
-                                                    selectedIds + item.id
-                                                })
-                                            }
-                                        )
-                                    } else {
-                                        mod.longPressDraggableHandle()
-                                    }
-                                }
-                                .graphicsLayer {
-                                    if (isDragging) {
-                                        scaleX = 1.05f
-                                        scaleY = 1.05f
-                                    } else {
-                                        scaleX = 1f
-                                        scaleY = 1f
-                                    }
-                                },
+                            modifier =
+                                Modifier
+                                    .let { mod ->
+                                        if (selectionMode) {
+                                            mod.combinedClickable(
+                                                onClick = {
+                                                    onSelectedIdsChange(
+                                                        if (item.id in selectedIds) {
+                                                            selectedIds - item.id
+                                                        } else {
+                                                            selectedIds + item.id
+                                                        },
+                                                    )
+                                                },
+                                            )
+                                        } else {
+                                            mod.longPressDraggableHandle()
+                                        }
+                                    }.graphicsLayer {
+                                        if (isDragging) {
+                                            scaleX = 1.05f
+                                            scaleY = 1.05f
+                                        } else {
+                                            scaleX = 1f
+                                            scaleY = 1f
+                                        }
+                                    },
                         )
                     }
                 }
@@ -599,9 +618,10 @@ private fun ModelList(
         }
         HorizontalFloatingToolbar(
             expanded = expanded,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = -ScreenOffset),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = -ScreenOffset),
         ) {
             AddModelButton(
                 models = modelList,
@@ -614,7 +634,7 @@ private fun ModelList(
                 },
                 expanded = expanded,
                 parentProvider = providerSetting,
-                onUpdateProvider = onUpdateProvider
+                onUpdateProvider = onUpdateProvider,
             )
         }
     }
@@ -625,7 +645,7 @@ private fun ModelSettingsForm(
     model: Model,
     onModelChange: (Model) -> Unit,
     isEdit: Boolean,
-    parentProvider: ProviderSetting? = null
+    parentProvider: ProviderSetting? = null,
 ) {
     val pagerState = rememberPagerState { 3 }
     val scope = rememberCoroutineScope()
@@ -640,8 +660,8 @@ private fun ModelSettingsForm(
                 displayName = id,
                 inputModalities = inputModality,
                 outputModalities = outputModality,
-                abilities = abilities
-            )
+                abilities = abilities,
+            ),
         )
     }
 
@@ -657,7 +677,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(0)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_basic_settings)) }
+                text = { Text(stringResource(R.string.setting_provider_page_basic_settings)) },
             )
             Tab(
                 selected = pagerState.currentPage == 1,
@@ -666,7 +686,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(1)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_advanced_settings)) }
+                text = { Text(stringResource(R.string.setting_provider_page_advanced_settings)) },
             )
             Tab(
                 selected = pagerState.currentPage == 2,
@@ -675,23 +695,24 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(2)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_page_built_in_tools)) }
+                text = { Text(stringResource(R.string.setting_page_built_in_tools)) },
             )
         }
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) { page ->
             when (page) {
                 0 -> {
                     // 基本设置页面
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(vertical = 16.dp)
-                            .verticalScroll(rememberScrollState())
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 16.dp)
+                                .verticalScroll(rememberScrollState()),
                     ) {
                         OutlinedTextField(
                             value = model.modelId,
@@ -707,7 +728,7 @@ private fun ModelSettingsForm(
                                     Text(stringResource(R.string.setting_provider_page_model_id_placeholder))
                                 }
                             },
-                            enabled = !isEdit
+                            enabled = !isEdit,
                         )
 
                         OutlinedTextField(
@@ -715,20 +736,26 @@ private fun ModelSettingsForm(
                             onValueChange = {
                                 onModelChange(model.copy(displayName = it.trim()))
                             },
-                            label = { Text(stringResource(if (isEdit) R.string.setting_provider_page_model_name else R.string.setting_provider_page_model_display_name)) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        if (isEdit) R.string.setting_provider_page_model_name else R.string.setting_provider_page_model_display_name,
+                                    ),
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 if (!isEdit) {
                                     Text(stringResource(R.string.setting_provider_page_model_display_name_placeholder))
                                 }
-                            }
+                            },
                         )
 
                         ModelTypeSelector(
                             selectedType = model.type,
                             onTypeSelected = {
                                 onModelChange(model.copy(type = it))
-                            }
+                            },
                         )
 
                         ModelModalitySelector(
@@ -740,7 +767,7 @@ private fun ModelSettingsForm(
                             outputModalities = model.outputModalities,
                             onUpdateOutputModalities = {
                                 onModelChange(model.copy(outputModalities = it))
-                            }
+                            },
                         )
 
                         if (model.type == ModelType.CHAT) {
@@ -748,7 +775,7 @@ private fun ModelSettingsForm(
                                 abilities = model.abilities,
                                 onUpdateAbilities = {
                                     onModelChange(model.copy(abilities = it))
-                                }
+                                },
                             )
                         }
                     }
@@ -757,32 +784,33 @@ private fun ModelSettingsForm(
                 1 -> {
                     // 高级设置页面
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         ProviderOverrideSettings(
                             providerOverride = model.providerOverwrite,
                             onUpdateProviderOverride = { providerOverride ->
                                 onModelChange(model.copy(providerOverwrite = providerOverride))
                             },
-                            parentProvider = parentProvider
+                            parentProvider = parentProvider,
                         )
 
                         CustomHeaders(
                             headers = model.customHeaders,
                             onUpdate = { headers ->
                                 onModelChange(model.copy(customHeaders = headers))
-                            }
+                            },
                         )
 
                         CustomBodies(
                             customBodies = model.customBodies,
                             onUpdate = { bodies ->
                                 onModelChange(model.copy(customBodies = bodies))
-                            }
+                            },
                         )
                     }
                 }
@@ -793,7 +821,7 @@ private fun ModelSettingsForm(
                         tools = model.tools,
                         onUpdateTools = { tools ->
                             onModelChange(model.copy(tools = tools))
-                        }
+                        },
                     )
                 }
             }
@@ -809,7 +837,7 @@ private fun AddModelButton(
     onAddModel: (Model) -> Unit,
     onRemoveModel: (Model) -> Unit,
     parentProvider: ProviderSetting,
-    onUpdateProvider: (ProviderSetting) -> Unit
+    onUpdateProvider: (ProviderSetting) -> Unit,
 ) {
     val dialogState = useEditState<Model> { onAddModel(it) }
     val scope = rememberCoroutineScope()
@@ -830,42 +858,46 @@ private fun AddModelButton(
             onAllModelSelected = {
                 onUpdateProvider(
                     parentProvider.copyProvider(
-                        models = parentProvider.models + it.filter { model ->
-                            parentProvider.models.none { existing -> existing.modelId == model.modelId }
-                        }.map { model -> model.enrichCapabilities() }
-                    )
+                        models =
+                            parentProvider.models +
+                                it
+                                    .filter { model ->
+                                        parentProvider.models.none { existing -> existing.modelId == model.modelId }
+                                    }.map { model -> model.enrichCapabilities() },
+                    ),
                 )
             },
             onAllModelDeselected = { filteredModels ->
                 onUpdateProvider(
                     parentProvider.copyProvider(
-                        models = parentProvider.models.filter { model ->
-                            filteredModels.none { filtered -> filtered.modelId == model.modelId }
-                        }
-                    )
+                        models =
+                            parentProvider.models.filter { model ->
+                                filteredModels.none { filtered -> filtered.modelId == model.modelId }
+                            },
+                    ),
                 )
-            }
+            },
         )
 
         Button(
             onClick = {
                 dialogState.open(Model())
-            }
+            },
         ) {
             Row(
                 modifier = Modifier,
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     HugeIcons.Add01,
-                    contentDescription = stringResource(R.string.setting_provider_page_add_model)
+                    contentDescription = stringResource(R.string.setting_provider_page_add_model),
                 )
                 AnimatedVisibility(expanded) {
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
                         stringResource(R.string.setting_provider_page_add_new_model),
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
@@ -874,7 +906,11 @@ private fun AddModelButton(
 
     if (dialogState.isEditing) {
         dialogState.currentState?.let { modelState ->
-            val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            val sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                )
             ModalBottomSheet(
                 onDismissRequest = {
                     dialogState.dismiss()
@@ -888,35 +924,37 @@ private fun AddModelButton(
                                 sheetState.hide()
                                 dialogState.dismiss()
                             }
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.ArrowDown01, null)
                     }
-                }
+                },
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.95f)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.95f)
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = stringResource(R.string.setting_provider_page_add_model),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
                     )
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
                     ) {
                         ModelSettingsForm(
                             model = modelState,
                             onModelChange = { dialogState.currentState = it },
                             isEdit = false,
-                            parentProvider = parentProvider
+                            parentProvider = parentProvider,
                         )
                     }
 
@@ -954,50 +992,58 @@ private fun ModelPicker(
     onModelSelected: (Model) -> Unit,
     onModelDeselected: (Model) -> Unit,
     onAllModelSelected: (List<Model>) -> Unit,
-    onAllModelDeselected: (List<Model>) -> Unit
+    onAllModelDeselected: (List<Model>) -> Unit,
 ) {
     var showModal by remember { mutableStateOf(false) }
     if (showModal) {
         ModalBottomSheet(
             onDismissRequest = { showModal = false },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                ),
         ) {
             var filterText by remember { mutableStateOf("") }
             val filterKeywords = filterText.split(" ").filter { it.isNotBlank() }
-            val filteredModels = models.fastFilter {
-                if (filterKeywords.isEmpty()) {
-                    true
-                } else {
-                    filterKeywords.all { keyword ->
-                        it.modelId.contains(keyword, ignoreCase = true) ||
-                            it.displayName.contains(keyword, ignoreCase = true)
+            val filteredModels =
+                models.fastFilter {
+                    if (filterKeywords.isEmpty()) {
+                        true
+                    } else {
+                        filterKeywords.all { keyword ->
+                            it.modelId.contains(keyword, ignoreCase = true) ||
+                                it.displayName.contains(keyword, ignoreCase = true)
+                        }
                     }
                 }
-            }
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.9f)
-                    .padding(8.dp)
-                    .imePadding(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.9f)
+                        .padding(8.dp)
+                        .imePadding(),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // 标题栏和添加所有按钮
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.setting_provider_page_avaliable_models),
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
 
-                    val unselectedCount = filteredModels.count { model ->
-                        selectedModels.none { it.modelId == model.modelId }
-                    }
+                    val unselectedCount =
+                        filteredModels.count { model ->
+                            selectedModels.none { it.modelId == model.modelId }
+                        }
 
                     TextButton(
                         onClick = {
@@ -1009,18 +1055,23 @@ private fun ModelPicker(
                         },
                     ) {
                         Text(
-                            if (unselectedCount > 0) stringResource(
-                                R.string.setting_provider_page_select_all,
-                                unselectedCount
-                            ) else stringResource(R.string.setting_provider_page_deselect_models)
+                            if (unselectedCount > 0) {
+                                stringResource(
+                                    R.string.setting_provider_page_select_all,
+                                    unselectedCount,
+                                )
+                            } else {
+                                stringResource(R.string.setting_provider_page_deselect_models)
+                            },
                         )
                     }
                 }
 
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(8.dp),
                 ) {
@@ -1028,21 +1079,24 @@ private fun ModelPicker(
                         Card {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(
-                                    8.dp
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(
+                                        8.dp,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
                             ) {
                                 AutoAIIcon(
                                     it.modelId,
-                                    Modifier.size(32.dp)
+                                    Modifier.size(32.dp),
                                 )
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(
-                                        4.dp
-                                    ),
+                                    verticalArrangement =
+                                        Arrangement.spacedBy(
+                                            4.dp,
+                                        ),
                                     modifier = Modifier.weight(1f),
                                 ) {
                                     Text(
@@ -1052,7 +1106,7 @@ private fun ModelPicker(
 
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     ) {
                                         val modelMeta = remember(it) { it.enrichCapabilities() }
                                         ModelModalityTag(
@@ -1067,12 +1121,14 @@ private fun ModelPicker(
                                     onClick = {
                                         if (selectedModels.any { model -> model.modelId == it.modelId }) {
                                             // 从selectedModels中计算出要删除的model，因为删除需要id匹配，而不是ModelId
-                                            onModelDeselected(selectedModels.firstOrNull { model -> model.modelId == it.modelId }
-                                                ?: it)
+                                            onModelDeselected(
+                                                selectedModels.firstOrNull { model -> model.modelId == it.modelId }
+                                                    ?: it,
+                                            )
                                         } else {
                                             onModelSelected(it)
                                         }
-                                    }
+                                    },
                                 ) {
                                     if (selectedModels.any { model -> model.modelId == it.modelId }) {
                                         Icon(HugeIcons.Cancel01, null)
@@ -1105,12 +1161,12 @@ private fun ModelPicker(
                     Text(models.size.toString())
                 }
             }
-        }
+        },
     ) {
         IconButton(
             onClick = {
                 showModal = true
-            }
+            },
         ) {
             Icon(HugeIcons.Package01, null)
         }
@@ -1120,31 +1176,32 @@ private fun ModelPicker(
 @Composable
 private fun ModelTypeSelector(
     selectedType: ModelType,
-    onTypeSelected: (ModelType) -> Unit
+    onTypeSelected: (ModelType) -> Unit,
 ) {
     Text(
         stringResource(R.string.setting_provider_page_model_type),
-        style = MaterialTheme.typography.titleSmall
+        style = MaterialTheme.typography.titleSmall,
     )
     SingleChoiceSegmentedButtonRow(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         ModelType.entries.forEachIndexed { index, type ->
             SegmentedButton(
                 shape = SegmentedButtonDefaults.itemShape(index, ModelType.entries.size),
                 label = {
                     Text(
-                        text = stringResource(
-                            when (type) {
-                                ModelType.CHAT -> R.string.setting_provider_page_chat_model
-                                ModelType.EMBEDDING -> R.string.setting_provider_page_embedding_model
-                                ModelType.IMAGE -> R.string.setting_provider_page_image_model
-                            }
-                        )
+                        text =
+                            stringResource(
+                                when (type) {
+                                    ModelType.CHAT -> R.string.setting_provider_page_chat_model
+                                    ModelType.EMBEDDING -> R.string.setting_provider_page_embedding_model
+                                    ModelType.IMAGE -> R.string.setting_provider_page_image_model
+                                },
+                            ),
                     )
                 },
                 selected = selectedType == type,
-                onClick = { onTypeSelected(type) }
+                onClick = { onTypeSelected(type) },
             )
         }
     }
@@ -1156,12 +1213,12 @@ private fun ModelModalitySelector(
     inputModalities: List<Modality>,
     onUpdateInputModalities: (List<Modality>) -> Unit,
     outputModalities: List<Modality>,
-    onUpdateOutputModalities: (List<Modality>) -> Unit
+    onUpdateOutputModalities: (List<Modality>) -> Unit,
 ) {
     if (model.type == ModelType.CHAT) {
         Text(
             stringResource(R.string.setting_provider_page_input_modality),
-            style = MaterialTheme.typography.titleSmall
+            style = MaterialTheme.typography.titleSmall,
         )
         MultiChoiceSegmentedButtonRow(
             modifier = Modifier.fillMaxWidth(),
@@ -1176,15 +1233,16 @@ private fun ModelModalitySelector(
                         } else {
                             onUpdateInputModalities(inputModalities - modality)
                         }
-                    }
+                    },
                 ) {
                     Text(
-                        text = stringResource(
-                            when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
-                            }
-                        )
+                        text =
+                            stringResource(
+                                when (modality) {
+                                    Modality.TEXT -> R.string.setting_provider_page_text
+                                    Modality.IMAGE -> R.string.setting_provider_page_image
+                                },
+                            ),
                     )
                 }
             }
@@ -1192,7 +1250,7 @@ private fun ModelModalitySelector(
 
         Text(
             stringResource(R.string.setting_provider_page_output_modality),
-            style = MaterialTheme.typography.titleSmall
+            style = MaterialTheme.typography.titleSmall,
         )
         MultiChoiceSegmentedButtonRow(
             modifier = Modifier.fillMaxWidth(),
@@ -1207,15 +1265,16 @@ private fun ModelModalitySelector(
                         } else {
                             onUpdateOutputModalities(outputModalities - modality)
                         }
-                    }
+                    },
                 ) {
                     Text(
-                        text = stringResource(
-                            when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
-                            }
-                        )
+                        text =
+                            stringResource(
+                                when (modality) {
+                                    Modality.TEXT -> R.string.setting_provider_page_text
+                                    Modality.IMAGE -> R.string.setting_provider_page_image
+                                },
+                            ),
                     )
                 }
             }
@@ -1226,11 +1285,11 @@ private fun ModelModalitySelector(
 @Composable
 fun ModalAbilitySelector(
     abilities: List<ModelAbility>,
-    onUpdateAbilities: (List<ModelAbility>) -> Unit
+    onUpdateAbilities: (List<ModelAbility>) -> Unit,
 ) {
     Text(
         stringResource(R.string.setting_provider_page_abilities),
-        style = MaterialTheme.typography.titleSmall
+        style = MaterialTheme.typography.titleSmall,
     )
     MultiChoiceSegmentedButtonRow(
         modifier = Modifier.fillMaxWidth(),
@@ -1248,14 +1307,15 @@ fun ModalAbilitySelector(
                 },
                 label = {
                     Text(
-                        text = stringResource(
-                            when (ability) {
-                                ModelAbility.TOOL -> R.string.setting_provider_page_tool
-                                ModelAbility.REASONING -> R.string.setting_provider_page_reasoning
-                            }
-                        )
+                        text =
+                            stringResource(
+                                when (ability) {
+                                    ModelAbility.TOOL -> R.string.setting_provider_page_tool
+                                    ModelAbility.REASONING -> R.string.setting_provider_page_reasoning
+                                },
+                            ),
                     )
-                }
+                },
             )
         }
     }
@@ -1273,16 +1333,20 @@ private fun ModelCard(
     onToggleSelect: () -> Unit = {},
     onEnterMultiSelect: () -> Unit = {},
 ) {
-    val dialogState = useEditState<Model> {
-        onEdit(it)
-    }
+    val dialogState =
+        useEditState<Model> {
+            onEdit(it)
+        }
     val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
     val scope = rememberCoroutineScope()
 
-
     if (dialogState.isEditing) {
         dialogState.currentState?.let { editingModel ->
-            val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            val sheetState =
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                )
             ModalBottomSheet(
                 onDismissRequest = {
                     dialogState.dismiss()
@@ -1292,10 +1356,11 @@ private fun ModelCard(
                 dragHandle = null,
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.95f)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.95f)
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -1309,7 +1374,7 @@ private fun ModelCard(
                                     dialogState.dismiss()
                                 }
                             },
-                            modifier = Modifier.align(Alignment.CenterStart)
+                            modifier = Modifier.align(Alignment.CenterStart),
                         ) {
                             Icon(HugeIcons.Cancel01, null)
                         }
@@ -1321,15 +1386,16 @@ private fun ModelCard(
                     }
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
                     ) {
                         ModelSettingsForm(
                             model = editingModel,
                             onModelChange = { dialogState.currentState = it },
                             isEdit = true,
-                            parentProvider = parentProvider
+                            parentProvider = parentProvider,
                         )
                     }
 
@@ -1361,12 +1427,14 @@ private fun ModelCard(
 
     SwipeToDismissBox(
         state = swipeToDismissBoxState,
-        backgroundContent = {            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
+        backgroundContent = {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 FilledTonalIconButton(
                     onClick = {
@@ -1374,11 +1442,11 @@ private fun ModelCard(
                             swipeToDismissBoxState.reset()
                         }
                         onEnterMultiSelect()
-                    }
+                    },
                 ) {
                     Icon(
                         HugeIcons.CheckList,
-                        contentDescription = stringResource(R.string.setting_provider_page_multi_select)
+                        contentDescription = stringResource(R.string.setting_provider_page_multi_select),
                     )
                 }
                 IconButton(
@@ -1386,7 +1454,7 @@ private fun ModelCard(
                         scope.launch {
                             swipeToDismissBoxState.reset()
                         }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Cancel01, null)
                 }
@@ -1396,30 +1464,32 @@ private fun ModelCard(
                             onDelete()
                             swipeToDismissBoxState.reset()
                         }
-                    }
+                    },
                 ) {
                     Icon(
                         HugeIcons.Delete01,
-                        contentDescription = stringResource(R.string.chat_page_delete)
+                        contentDescription = stringResource(R.string.chat_page_delete),
                     )
                 }
             }
         },
         enableDismissFromStartToEnd = false,
         gesturesEnabled = !selectionMode,
-        modifier = modifier
+        modifier = modifier,
     ) {
         OutlinedCard(
-            border = if (selectionMode && selected) {
-                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-            } else {
-                CardDefaults.outlinedCardBorder()
-            }
+            border =
+                if (selectionMode && selected) {
+                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                } else {
+                    CardDefaults.outlinedCardBorder()
+                },
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -1427,10 +1497,11 @@ private fun ModelCard(
                     Checkbox(
                         checked = selected,
                         onCheckedChange = { onToggleSelect() },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary,
-                            checkmarkColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                        colors =
+                            CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary,
+                                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
                     )
                 }
                 Surface(
@@ -1460,7 +1531,7 @@ private fun ModelCard(
                             Tag(type = TagType.INFO) {
                                 Text(
                                     model.providerOverwrite?.javaClass?.simpleName ?: model.providerOverwrite?.name
-                                    ?: "ProviderOverwrite"
+                                        ?: "ProviderOverwrite",
                                 )
                             }
                         }
@@ -1475,7 +1546,7 @@ private fun ModelCard(
                     IconButton(
                         onClick = {
                             dialogState.open(model.copy())
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.Tools, "Edit")
                     }
@@ -1488,65 +1559,71 @@ private fun ModelCard(
 @Composable
 private fun BuiltInToolsSettings(
     tools: Set<BuiltInTools>,
-    onUpdateTools: (Set<BuiltInTools>) -> Unit
+    onUpdateTools: (Set<BuiltInTools>) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             text = stringResource(R.string.setting_page_built_in_tools),
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
         )
 
         Text(
             text = stringResource(R.string.setting_page_built_in_tools_desc),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        val availableTools = listOf(
-            BuiltInTools.Search to Pair(
-                stringResource(R.string.setting_page_built_in_tools_search),
-                stringResource(R.string.setting_page_built_in_tools_search_desc)
-            ),
-            BuiltInTools.UrlContext to Pair(
-                stringResource(R.string.setting_page_built_in_tools_url_context),
-                stringResource(R.string.setting_page_built_in_tools_url_context_desc)
-            ),
-            BuiltInTools.ImageGeneration to Pair(
-                stringResource(R.string.setting_page_built_in_tools_image_generation),
-                stringResource(R.string.setting_page_built_in_tools_image_generation_desc)
+        val availableTools =
+            listOf(
+                BuiltInTools.Search to
+                    Pair(
+                        stringResource(R.string.setting_page_built_in_tools_search),
+                        stringResource(R.string.setting_page_built_in_tools_search_desc),
+                    ),
+                BuiltInTools.UrlContext to
+                    Pair(
+                        stringResource(R.string.setting_page_built_in_tools_url_context),
+                        stringResource(R.string.setting_page_built_in_tools_url_context_desc),
+                    ),
+                BuiltInTools.ImageGeneration to
+                    Pair(
+                        stringResource(R.string.setting_page_built_in_tools_image_generation),
+                        stringResource(R.string.setting_page_built_in_tools_image_generation_desc),
+                    ),
             )
-        )
 
         availableTools.forEach { (tool, info) ->
             val (title, description) = info
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleSmall
+                            style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Switch(
@@ -1557,7 +1634,7 @@ private fun BuiltInToolsSettings(
                             } else {
                                 onUpdateTools(tools - tool)
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -1569,60 +1646,61 @@ private fun BuiltInToolsSettings(
 private fun ProviderOverrideSettings(
     providerOverride: ProviderSetting?,
     onUpdateProviderOverride: (ProviderSetting?) -> Unit,
-    parentProvider: ProviderSetting?
+    parentProvider: ProviderSetting?,
 ) {
     var showProviderConfig by remember { mutableStateOf(false) }
     var editingProvider by remember { mutableStateOf<ProviderSetting?>(null) }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = stringResource(R.string.setting_provider_page_provider_override),
-            style = MaterialTheme.typography.titleSmall
+            style = MaterialTheme.typography.titleSmall,
         )
 
         Text(
             text = stringResource(R.string.setting_provider_page_provider_override_desc),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         if (providerOverride != null) {
             OutlinedCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AutoAIIcon(
                             providerOverride.name,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                         Text(
                             text = "${providerOverride.name} （覆盖）",
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         IconButton(
                             onClick = {
                                 editingProvider = providerOverride
                                 showProviderConfig = true
-                            }
+                            },
                         ) {
                             Icon(HugeIcons.Tools, contentDescription = "Edit override")
                         }
                         IconButton(
                             onClick = {
                                 onUpdateProviderOverride(null)
-                            }
+                            },
                         ) {
                             Icon(HugeIcons.Cancel01, contentDescription = "Remove override")
                         }
@@ -1632,15 +1710,16 @@ private fun ProviderOverrideSettings(
         } else {
             Button(
                 onClick = {
-                    editingProvider = parentProvider?.copyProvider(
-                        id = Uuid.random(),
-                        builtIn = false,
-                        models = emptyList(), // 这里必须设置为空，不然会导致循环依赖JSON
-                        description = {},
-                    )
+                    editingProvider =
+                        parentProvider?.copyProvider(
+                            id = Uuid.random(),
+                            builtIn = false,
+                            models = emptyList(), // 这里必须设置为空，不然会导致循环依赖JSON
+                            description = {},
+                        )
                     showProviderConfig = true
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(HugeIcons.Add01, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
@@ -1655,16 +1734,21 @@ private fun ProviderOverrideSettings(
                     showProviderConfig = false
                     editingProvider = null
                 },
-                sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+                sheetState =
+                    rememberBottomSheetState(
+                        initialValue = SheetValue.Hidden,
+                        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                    ),
             ) {
                 var internalProvider by remember(editingProvider) { mutableStateOf(editingProvider!!) }
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.9f)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.9f)
+                            .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.setting_provider_page_configure_provider_override),
@@ -1672,14 +1756,15 @@ private fun ProviderOverrideSettings(
                     )
 
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         ProviderConfigure(
                             provider = internalProvider,
-                            onEdit = { internalProvider = it }
+                            onEdit = { internalProvider = it },
                         )
                     }
 

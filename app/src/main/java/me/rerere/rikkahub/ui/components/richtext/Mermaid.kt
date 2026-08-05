@@ -52,77 +52,83 @@ fun Mermaid(
     val toaster = LocalToaster.current
     val navController = LocalNavController.current
 
-    val jsInterface = remember {
-        MermaidInterface(
-            onExportImage = { base64Image ->
-                runCatching {
-                    activity?.let {
-                        try {
-                            val imageBytes = Base64.decode(base64Image, Base64.DEFAULT)
-                            val bitmap =
-                                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                            context.exportImage(
-                                it,
-                                bitmap,
-                                "mermaid_${System.currentTimeMillis()}.png"
-                            )
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+    val jsInterface =
+        remember {
+            MermaidInterface(
+                onExportImage = { base64Image ->
+                    runCatching {
+                        activity?.let {
+                            try {
+                                val imageBytes = Base64.decode(base64Image, Base64.DEFAULT)
+                                val bitmap =
+                                    BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                context.exportImage(
+                                    it,
+                                    bitmap,
+                                    "mermaid_${System.currentTimeMillis()}.png",
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
+                        toaster.show(
+                            context.getString(R.string.mermaid_export_success),
+                            type = ToastType.Success,
+                        )
+                    }.onFailure {
+                        it.printStackTrace()
+                        toaster.show(
+                            context.getString(R.string.mermaid_export_failed),
+                            type = ToastType.Error,
+                        )
                     }
-                    toaster.show(
-                        context.getString(R.string.mermaid_export_success),
-                        type = ToastType.Success
-                    )
-                }.onFailure {
-                    it.printStackTrace()
-                    toaster.show(
-                        context.getString(R.string.mermaid_export_failed),
-                        type = ToastType.Error
-                    )
-                }
-            }
-        )
-    }
-
-    val html = remember(code, colorScheme, darkMode) {
-        buildMermaidHtml(
-            code = code,
-            colorScheme = colorScheme,
-        )
-    }
-
-    val webViewState = rememberWebViewState(
-        data = html,
-        baseUrl = WEB_VIEW_BASE_URL,
-        mimeType = "text/html",
-        encoding = "UTF-8",
-        interfaces = mapOf(
-            "AndroidInterface" to jsInterface
-        ),
-        settings = {
-            builtInZoomControls = true
-            displayZoomControls = false
-            useWideViewPort = true
-            loadWithOverviewMode = true
+                },
+            )
         }
-    )
+
+    val html =
+        remember(code, colorScheme, darkMode) {
+            buildMermaidHtml(
+                code = code,
+                colorScheme = colorScheme,
+            )
+        }
+
+    val webViewState =
+        rememberWebViewState(
+            data = html,
+            baseUrl = WEB_VIEW_BASE_URL,
+            mimeType = "text/html",
+            encoding = "UTF-8",
+            interfaces =
+                mapOf(
+                    "AndroidInterface" to jsInterface,
+                ),
+            settings = {
+                builtInZoomControls = true
+                displayZoomControls = false
+                useWideViewPort = true
+                loadWithOverviewMode = true
+            },
+        )
 
     Column(
-        modifier = modifier
+        modifier = modifier,
     ) {
         WebView(
             state = webViewState,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .height(200.dp),
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .height(200.dp),
         )
 
         if (activity != null) {
             Row(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(4.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.End)
+                        .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 IconButton(
@@ -133,20 +139,20 @@ fun Mermaid(
                 ) {
                     Icon(
                         HugeIcons.View,
-                        contentDescription = "Preview"
+                        contentDescription = "Preview",
                     )
                 }
                 IconButton(
                     onClick = {
                         webViewState.webView?.evaluateJavascript(
                             "exportSvgToPng();",
-                            null
+                            null,
                         )
                     },
                 ) {
                     Icon(
                         HugeIcons.Download01,
-                        contentDescription = stringResource(R.string.mermaid_export)
+                        contentDescription = stringResource(R.string.mermaid_export),
                     )
                 }
             }
@@ -155,7 +161,7 @@ fun Mermaid(
 }
 
 private class MermaidInterface(
-    private val onExportImage: (String) -> Unit
+    private val onExportImage: (String) -> Unit,
 ) {
     @JavascriptInterface
     fun exportImage(base64Image: String) {
@@ -192,7 +198,7 @@ private fun buildMermaidHtml(
                     padding: 0;
                     display: flex;
                     justify-content: center;
-                    background-color: ${background};
+                    background-color: $background;
                 }
                 .mermaid {
                     padding: 8px;
@@ -213,43 +219,43 @@ private fun buildMermaidHtml(
                     startOnLoad: true,
                     theme: 'base',
                     themeVariables: {
-                        primaryColor: '${primaryColor}',
-                        primaryTextColor: '${onPrimary}',
-                        primaryBorderColor: '${primaryColor}',
+                        primaryColor: '$primaryColor',
+                        primaryTextColor: '$onPrimary',
+                        primaryBorderColor: '$primaryColor',
 
-                        secondaryColor: '${secondaryColor}',
-                        secondaryTextColor: '${onSecondary}',
-                        secondaryBorderColor: '${secondaryColor}',
+                        secondaryColor: '$secondaryColor',
+                        secondaryTextColor: '$onSecondary',
+                        secondaryBorderColor: '$secondaryColor',
 
-                        tertiaryColor: '${tertiaryColor}',
-                        tertiaryTextColor: '${onTertiary}',
-                        tertiaryBorderColor: '${tertiaryColor}',
+                        tertiaryColor: '$tertiaryColor',
+                        tertiaryTextColor: '$onTertiary',
+                        tertiaryBorderColor: '$tertiaryColor',
 
-                        background: '${background}',
-                        mainBkg: '${primaryColor}',
-                        secondBkg: '${secondaryColor}',
+                        background: '$background',
+                        mainBkg: '$primaryColor',
+                        secondBkg: '$secondaryColor',
 
-                        lineColor: '${onBackground}',
-                        textColor: '${onBackground}',
+                        lineColor: '$onBackground',
+                        textColor: '$onBackground',
 
-                        nodeBkg: '${surface}',
-                        nodeBorder: '${primaryColor}',
-                        clusterBkg: '${surface}',
-                        clusterBorder: '${primaryColor}',
+                        nodeBkg: '$surface',
+                        nodeBorder: '$primaryColor',
+                        clusterBkg: '$surface',
+                        clusterBorder: '$primaryColor',
 
-                        actorBorder: '${primaryColor}',
-                        actorBkg: '${surface}',
-                        actorTextColor: '${onBackground}',
-                        actorLineColor: '${primaryColor}',
+                        actorBorder: '$primaryColor',
+                        actorBkg: '$surface',
+                        actorTextColor: '$onBackground',
+                        actorLineColor: '$primaryColor',
 
-                        taskBorderColor: '${primaryColor}',
-                        taskBkgColor: '${primaryColor}',
-                        taskTextLightColor: '${onPrimary}',
-                        taskTextDarkColor: '${onBackground}',
+                        taskBorderColor: '$primaryColor',
+                        taskBkgColor: '$primaryColor',
+                        taskTextLightColor: '$onPrimary',
+                        taskTextDarkColor: '$onBackground',
 
-                        labelColor: '${onBackground}',
-                        errorBkgColor: '${errorColor}',
-                        errorTextColor: '${onErrorColor}'
+                        labelColor: '$onBackground',
+                        errorBkgColor: '$errorColor',
+                        errorTextColor: '$onErrorColor'
                     }
               });
 
@@ -277,12 +283,12 @@ private fun buildMermaidHtml(
 
                     const img = new Image();
                     img.onload = function() {
-                        ctx.fillStyle = '${background}';
+                        ctx.fillStyle = '$background';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
                         ctx.font = '14px Arial';
-                        ctx.fillStyle = '${onBackground}';
+                        ctx.fillStyle = '$onBackground';
                         ctx.fillText('rikka-ai.com', 20, canvas.height - 10);
 
                         const pngBase64 = canvas.toDataURL('image/png').split(',')[1];
@@ -299,5 +305,5 @@ private fun buildMermaidHtml(
             </script>
         </body>
         </html>
-    """.trimIndent()
+        """.trimIndent()
 }

@@ -58,7 +58,7 @@ private const val MAX_SEGMENT_BYTES = 6 * 1024 * 1024
 class MiMoASRController(
     private val context: Context,
     private val httpClient: OkHttpClient,
-    private val provider: ASRProviderSetting.MiMo
+    private val provider: ASRProviderSetting.MiMo,
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -81,7 +81,7 @@ class MiMoASRController(
         if (state.value.isRecording) return
         if (ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.RECORD_AUDIO,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             setError("Microphone permission is required")
@@ -100,7 +100,7 @@ class MiMoASRController(
         _state.update {
             ASRState(
                 status = ASRStatus.Listening,
-                isAvailable = true
+                isAvailable = true,
             )
         }
         startRecorder()
@@ -136,70 +136,76 @@ class MiMoASRController(
     @SuppressLint("MissingPermission")
     private fun startRecorder() {
         recorderJob?.cancel()
-        recorderJob = scope.launch(Dispatchers.IO) {
-            val sampleRate = provider.sampleRate
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val bufferSize = minBufferSize
-                .coerceAtLeast(sampleRate / 10 * 2)
-                .coerceAtLeast(4096)
+        recorderJob =
+            scope.launch(Dispatchers.IO) {
+                val sampleRate = provider.sampleRate
+                val minBufferSize =
+                    AudioRecord.getMinBufferSize(
+                        sampleRate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                    )
+                val bufferSize =
+                    minBufferSize
+                        .coerceAtLeast(sampleRate / 10 * 2)
+                        .coerceAtLeast(4096)
 
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize * 2
-            )
-            audioRecord = recorder
+                val recorder =
+                    AudioRecord(
+                        MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                        sampleRate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        bufferSize * 2,
+                    )
+                audioRecord = recorder
 
-            try {
-                recorder.startRecording()
-                val buffer = ByteArray(bufferSize)
-                val segmentMs = provider.segmentDurationSec.coerceAtLeast(0) * 1000L
-                while (isActive) {
-                    val read = recorder.read(buffer, 0, buffer.size)
-                    if (read > 0) {
-                        val amplitude = calculateRmsAmplitude(buffer, read)
-                        _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
+                try {
+                    recorder.startRecording()
+                    val buffer = ByteArray(bufferSize)
+                    val segmentMs = provider.segmentDurationSec.coerceAtLeast(0) * 1000L
+                    while (isActive) {
+                        val read = recorder.read(buffer, 0, buffer.size)
+                        if (read > 0) {
+                            val amplitude = calculateRmsAmplitude(buffer, read)
+                            _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
 
-                        val shouldFlush = synchronized(bufferLock) {
-                            currentBuffer.write(buffer, 0, read)
-                            if (segmentMs <= 0) {
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES
-                            } else {
-                                val elapsed = SystemClock.elapsedRealtime() - segmentStartElapsedMs
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
+                            val shouldFlush =
+                                synchronized(bufferLock) {
+                                    currentBuffer.write(buffer, 0, read)
+                                    if (segmentMs <= 0) {
+                                        currentBuffer.size() >= MAX_SEGMENT_BYTES
+                                    } else {
+                                        val elapsed = SystemClock.elapsedRealtime() - segmentStartElapsedMs
+                                        currentBuffer.size() >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
+                                    }
+                                }
+
+                            if (shouldFlush) {
+                                // 用单独协程异步 flush, 不阻塞录音主循环
+                                triggerFlush()
                             }
+                        } else if (read < 0) {
+                            throw IllegalStateException("AudioRecord read error: $read")
                         }
-
-                        if (shouldFlush) {
-                            // 用单独协程异步 flush, 不阻塞录音主循环
-                            triggerFlush()
-                        }
-                    } else if (read < 0) {
-                        throw IllegalStateException("AudioRecord read error: $read")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Audio recording failed", e)
+                    setError(e.message ?: "Audio recording failed")
+                } finally {
+                    releaseRecorder()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio recording failed", e)
-                setError(e.message ?: "Audio recording failed")
-            } finally {
-                releaseRecorder()
             }
-        }
     }
 
     private fun triggerFlush() {
         // 同一时刻只跑一个 flush, 避免后发先至导致结果乱序
         if (flushJob?.isActive == true) return
-        flushJob = scope.launch(Dispatchers.IO) {
-            runCatching { flushSegment() }
-                .onFailure { Log.e(TAG, "Segment flush failed", it) }
-        }
+        flushJob =
+            scope.launch(Dispatchers.IO) {
+                runCatching { flushSegment() }
+                    .onFailure { Log.e(TAG, "Segment flush failed", it) }
+            }
     }
 
     /**
@@ -207,67 +213,76 @@ class MiMoASRController(
      * 在 bufferLock 内拷贝出 PCM 并立刻重置缓冲区, 不持有锁等待网络, 避免阻塞录音写。
      */
     private suspend fun flushSegment() {
-        val pcmBytes = synchronized(bufferLock) {
-            if (currentBuffer.size() == 0) return
-            val bytes = currentBuffer.toByteArray()
-            currentBuffer = ByteArrayOutputStream()
-            segmentStartElapsedMs = SystemClock.elapsedRealtime()
-            bytes
-        }
+        val pcmBytes =
+            synchronized(bufferLock) {
+                if (currentBuffer.size() == 0) return
+                val bytes = currentBuffer.toByteArray()
+                currentBuffer = ByteArrayOutputStream()
+                segmentStartElapsedMs = SystemClock.elapsedRealtime()
+                bytes
+            }
 
-        val wavBytes = pcm16ToWav(
-            pcm = pcmBytes,
-            sampleRate = provider.sampleRate,
-            channels = 1,
-            bitsPerSample = 16
-        )
+        val wavBytes =
+            pcm16ToWav(
+                pcm = pcmBytes,
+                sampleRate = provider.sampleRate,
+                channels = 1,
+                bitsPerSample = 16,
+            )
         val b64 = Base64.encodeToString(wavBytes, Base64.NO_WRAP)
 
-        val message = JSONObject()
-            .put("role", "user")
-            .put(
-                "content",
-                JSONArray().put(
-                    JSONObject()
-                        .put("type", "input_audio")
-                        .put(
-                            "input_audio",
-                            JSONObject().put("data", "data:audio/wav;base64,$b64")
-                        )
+        val message =
+            JSONObject()
+                .put("role", "user")
+                .put(
+                    "content",
+                    JSONArray().put(
+                        JSONObject()
+                            .put("type", "input_audio")
+                            .put(
+                                "input_audio",
+                                JSONObject().put("data", "data:audio/wav;base64,$b64"),
+                            ),
+                    ),
                 )
-            )
 
-        val body = JSONObject()
-            .put("model", provider.model)
-            .put("messages", JSONArray().put(message))
+        val body =
+            JSONObject()
+                .put("model", provider.model)
+                .put("messages", JSONArray().put(message))
         if (provider.language.isNotBlank()) {
             body.put("asr_options", JSONObject().put("language", provider.language))
         }
 
-        val request = Request.Builder()
-            .url("${provider.baseUrl.trimEnd('/')}/chat/completions")
-            .addHeader("api-key", provider.apiKey)
-            .addHeader("Content-Type", "application/json")
-            .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
+        val request =
+            Request
+                .Builder()
+                .url("${provider.baseUrl.trimEnd('/')}/chat/completions")
+                .addHeader("api-key", provider.apiKey)
+                .addHeader("Content-Type", "application/json")
+                .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
+                .build()
 
-        val text = withContext(Dispatchers.IO) {
-            httpClient.newCall(request).execute().use { resp ->
-                val respBody = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw IOException("MiMo ASR HTTP ${resp.code}: $respBody")
+        val text =
+            withContext(Dispatchers.IO) {
+                httpClient.newCall(request).execute().use { resp ->
+                    val respBody = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful) {
+                        throw IOException("MiMo ASR HTTP ${resp.code}: $respBody")
+                    }
+                    val json =
+                        runCatching { JSONObject(respBody) }.getOrElse {
+                            throw IOException("MiMo ASR response is not valid JSON: $respBody")
+                        }
+                    json
+                        .optJSONArray("choices")
+                        ?.optJSONObject(0)
+                        ?.optJSONObject("message")
+                        ?.optString("content", "")
+                        ?.trim()
+                        ?: ""
                 }
-                val json = runCatching { JSONObject(respBody) }.getOrElse {
-                    throw IOException("MiMo ASR response is not valid JSON: $respBody")
-                }
-                json.optJSONArray("choices")
-                    ?.optJSONObject(0)
-                    ?.optJSONObject("message")
-                    ?.optString("content", "")
-                    ?.trim()
-                    ?: ""
             }
-        }
 
         if (text.isNotEmpty()) {
             completedTranscripts.add(text)
@@ -276,9 +291,10 @@ class MiMoASRController(
     }
 
     private fun publishTranscript() {
-        val transcript = completedTranscripts
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
+        val transcript =
+            completedTranscripts
+                .filter { it.isNotBlank() }
+                .joinToString(" ")
         _state.update { it.copy(transcript = transcript, errorMessage = null) }
         scope.launch { onTranscriptChange?.invoke(transcript) }
     }
@@ -287,7 +303,7 @@ class MiMoASRController(
         _state.update {
             it.copy(
                 status = ASRStatus.Error,
-                errorMessage = message
+                errorMessage = message,
             )
         }
     }
@@ -310,7 +326,7 @@ class MiMoASRController(
             pcm: ByteArray,
             sampleRate: Int,
             channels: Int,
-            bitsPerSample: Int
+            bitsPerSample: Int,
         ): ByteArray {
             val byteRate = sampleRate * channels * bitsPerSample / 8
             val blockAlign = channels * bitsPerSample / 8
@@ -323,8 +339,8 @@ class MiMoASRController(
             out.write("WAVE".toByteArray(Charsets.US_ASCII))
             // fmt chunk
             out.write("fmt ".toByteArray(Charsets.US_ASCII))
-            writeIntLE(out, 16)            // PCM fmt chunk size
-            writeShortLE(out, 1)           // audio format = PCM
+            writeIntLE(out, 16) // PCM fmt chunk size
+            writeShortLE(out, 1) // audio format = PCM
             writeShortLE(out, channels)
             writeIntLE(out, sampleRate)
             writeIntLE(out, byteRate)
@@ -337,14 +353,20 @@ class MiMoASRController(
             return out.toByteArray()
         }
 
-        private fun writeIntLE(out: ByteArrayOutputStream, value: Int) {
+        private fun writeIntLE(
+            out: ByteArrayOutputStream,
+            value: Int,
+        ) {
             out.write(value and 0xFF)
             out.write((value shr 8) and 0xFF)
             out.write((value shr 16) and 0xFF)
             out.write((value shr 24) and 0xFF)
         }
 
-        private fun writeShortLE(out: ByteArrayOutputStream, value: Int) {
+        private fun writeShortLE(
+            out: ByteArrayOutputStream,
+            value: Int,
+        ) {
             out.write(value and 0xFF)
             out.write((value shr 8) and 0xFF)
         }

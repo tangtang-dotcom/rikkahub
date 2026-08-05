@@ -161,45 +161,46 @@ internal class Mode {
     internal var matcher: ResumableMultiRegex? = null
 
     /** Shallow copy, mirroring `inherit()` upstream. Compiled state is intentionally dropped. */
-    fun copy(): Mode = Mode().also { copy ->
-        copy.scope = scope
-        copy.scopes = scopes
-        copy.beginScope = beginScope
-        copy.beginScopes = beginScopes
-        copy.endScope = endScope
-        copy.endScopes = endScopes
-        copy.begin = begin
-        copy.beginList = beginList
-        copy.end = end
-        copy.endList = endList
-        copy.match = match
-        copy.matchList = matchList
-        copy.beforeMatch = beforeMatch
-        copy.illegal = illegal
-        copy.illegalList = illegalList
-        copy.keywords = keywords
-        copy.beginKeywords = beginKeywords
-        copy.contains = contains
-        copy.starts = starts
-        copy.variants = variants
-        copy.subLanguage = subLanguage
-        copy.subLanguageList = subLanguageList
-        copy.label = label
-        copy.relevance = relevance
-        copy.excludeBegin = excludeBegin
-        copy.excludeEnd = excludeEnd
-        copy.returnBegin = returnBegin
-        copy.returnEnd = returnEnd
-        copy.endsParent = endsParent
-        copy.endsWithParent = endsWithParent
-        copy.skip = skip
-        copy.onBegin = onBegin
-        copy.onEnd = onEnd
-        // Upstream keeps the compiled scope on the very field it was declared on, so a copy taken
-        // after compilation carries it along; keep that property here too.
-        copy.compiledBeginScope = compiledBeginScope
-        copy.compiledEndScope = compiledEndScope
-    }
+    fun copy(): Mode =
+        Mode().also { copy ->
+            copy.scope = scope
+            copy.scopes = scopes
+            copy.beginScope = beginScope
+            copy.beginScopes = beginScopes
+            copy.endScope = endScope
+            copy.endScopes = endScopes
+            copy.begin = begin
+            copy.beginList = beginList
+            copy.end = end
+            copy.endList = endList
+            copy.match = match
+            copy.matchList = matchList
+            copy.beforeMatch = beforeMatch
+            copy.illegal = illegal
+            copy.illegalList = illegalList
+            copy.keywords = keywords
+            copy.beginKeywords = beginKeywords
+            copy.contains = contains
+            copy.starts = starts
+            copy.variants = variants
+            copy.subLanguage = subLanguage
+            copy.subLanguageList = subLanguageList
+            copy.label = label
+            copy.relevance = relevance
+            copy.excludeBegin = excludeBegin
+            copy.excludeEnd = excludeEnd
+            copy.returnBegin = returnBegin
+            copy.returnEnd = returnEnd
+            copy.endsParent = endsParent
+            copy.endsWithParent = endsWithParent
+            copy.skip = skip
+            copy.onBegin = onBegin
+            copy.onEnd = onEnd
+            // Upstream keeps the compiled scope on the very field it was declared on, so a copy taken
+            // after compilation carries it along; keep that property here too.
+            copy.compiledBeginScope = compiledBeginScope
+            copy.compiledEndScope = compiledEndScope
+        }
 
     /** Shallow copy with [block] applied on top, mirroring `inherit(mode, overrides)` upstream. */
     fun inherit(block: Mode.() -> Unit): Mode = copy().apply(block)
@@ -305,12 +306,13 @@ internal fun variant(source: Mode): Mode.() -> Unit = { overwriteFrom(source) }
  *
  * Mirrors the `deepFreeze` applied to the exported `MODES` upstream.
  */
-internal fun Mode.frozen(): Mode = apply {
-    if (frozen) return@apply
-    frozen = true
-    contains.forEach { it.frozen() }
-    starts?.frozen()
-}
+internal fun Mode.frozen(): Mode =
+    apply {
+        if (frozen) return@apply
+        frozen = true
+        contains.forEach { it.frozen() }
+        starts?.frozen()
+    }
 
 /**
  * A compiled `beginScope` / `endScope`.
@@ -340,6 +342,7 @@ internal class Language(
 internal interface MatchData {
     val index: Int
     val input: String
+
     operator fun get(group: Int): String?
 }
 
@@ -348,7 +351,9 @@ internal val MatchData.value: String get() = this[0].orEmpty()
 internal typealias ModeCallback = (match: MatchData, response: CallbackResponse) -> Unit
 
 /** Mirrors `Response` upstream: lets a callback veto the match it was handed. */
-internal class CallbackResponse(mode: Mode) {
+internal class CallbackResponse(
+    mode: Mode,
+) {
     val data: MutableMap<String, Any?> = mode.data
 
     var isMatchIgnored: Boolean = false

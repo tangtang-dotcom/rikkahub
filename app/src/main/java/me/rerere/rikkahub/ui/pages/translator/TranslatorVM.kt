@@ -20,8 +20,9 @@ class TranslatorVM(
     private val settingsStore: SettingsStore,
     private val generationHandler: GenerationHandler,
 ) : ViewModel() {
-    val settings: StateFlow<Settings> = settingsStore.settingsFlow
-        .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
+    val settings: StateFlow<Settings> =
+        settingsStore.settingsFlow
+            .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
 
     // 翻译状态
     private val _translating = MutableStateFlow(false)
@@ -70,23 +71,25 @@ class TranslatorVM(
         _translating.value = true
         _translatedText.value = ""
 
-        currentJob = viewModelScope.launch {
-            runCatching {
-                generationHandler.translateText(
-                    settings = settings.value,
-                    sourceText = inputText,
-                    targetLanguage = targetLanguage.value
-                ) { translatedText ->
-                    // Update translation in real-time
-                    _translatedText.value = translatedText
-                }.collect { /* Final translation already handled in onStreamUpdate */ }
-            }.onFailure {
-                it.printStackTrace()
-                errorFlow.emit(it)
-            }
+        currentJob =
+            viewModelScope.launch {
+                runCatching {
+                    generationHandler
+                        .translateText(
+                            settings = settings.value,
+                            sourceText = inputText,
+                            targetLanguage = targetLanguage.value,
+                        ) { translatedText ->
+                            // Update translation in real-time
+                            _translatedText.value = translatedText
+                        }.collect { /* Final translation already handled in onStreamUpdate */ }
+                }.onFailure {
+                    it.printStackTrace()
+                    errorFlow.emit(it)
+                }
 
-            _translating.value = false
-        }
+                _translating.value = false
+            }
     }
 
     fun cancelTranslation() {

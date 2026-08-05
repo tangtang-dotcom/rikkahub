@@ -36,11 +36,12 @@ fun ReminderTab(vm: BackupVM) {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .imePadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .imePadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         CardGroup(
@@ -66,10 +67,11 @@ fun ReminderTab(vm: BackupVM) {
                         ) {
                             intervals.forEachIndexed { index, days ->
                                 SegmentedButton(
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index = index,
-                                        count = intervals.size,
-                                    ),
+                                    shape =
+                                        SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = intervals.size,
+                                        ),
                                     onClick = { updateConfig(config.copy(intervalDays = days)) },
                                     selected = config.intervalDays == days,
                                 ) {
@@ -88,9 +90,9 @@ fun ReminderTab(vm: BackupVM) {
                             } else {
                                 stringResource(
                                     R.string.backup_page_reminder_last_time,
-                                    Instant.ofEpochMilli(config.lastBackupTime).toLocalDateTime()
+                                    Instant.ofEpochMilli(config.lastBackupTime).toLocalDateTime(),
                                 )
-                            }
+                            },
                         )
                     },
                 )

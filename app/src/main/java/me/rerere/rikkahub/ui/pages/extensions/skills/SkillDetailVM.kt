@@ -19,7 +19,10 @@ data class SkillFile(
 )
 
 sealed class SkillFileNode {
-    data class FileNode(val skillFile: SkillFile) : SkillFileNode()
+    data class FileNode(
+        val skillFile: SkillFile,
+    ) : SkillFileNode()
+
     data class DirNode(
         val name: String,
         val relativePath: String,
@@ -31,7 +34,6 @@ class SkillDetailVM(
     private val context: Context,
     private val skillManager: SkillManager,
 ) : ViewModel() {
-
     private val _tree = MutableStateFlow<List<SkillFileNode>>(emptyList())
     val tree = _tree.asStateFlow()
 
@@ -50,23 +52,32 @@ class SkillDetailVM(
         }
     }
 
-    private fun buildTree(root: File, dir: File): List<SkillFileNode> {
+    private fun buildTree(
+        root: File,
+        dir: File,
+    ): List<SkillFileNode> {
         val items = dir.listFiles()?.toList() ?: return emptyList()
-        val files = items
-            .filter { it.isFile }
-            .sortedWith(compareBy({ it.name != "SKILL.md" }, { it.name }))
-            .map { f -> SkillFileNode.FileNode(SkillFile(f, f.relativeTo(root).path)) }
-        val dirs = items
-            .filter { it.isDirectory }
-            .sortedBy { it.name }
-            .map { d -> SkillFileNode.DirNode(d.name, d.relativeTo(root).path, buildTree(root, d)) }
+        val files =
+            items
+                .filter { it.isFile }
+                .sortedWith(compareBy({ it.name != "SKILL.md" }, { it.name }))
+                .map { f -> SkillFileNode.FileNode(SkillFile(f, f.relativeTo(root).path)) }
+        val dirs =
+            items
+                .filter { it.isDirectory }
+                .sortedBy { it.name }
+                .map { d -> SkillFileNode.DirNode(d.name, d.relativeTo(root).path, buildTree(root, d)) }
         return dirs + files
     }
 
     fun readFile(skillFile: SkillFile): String = skillFile.file.readText()
 
     // Returns null on success, error message on failure
-    fun saveFile(relativePath: String, content: String, onResult: (String?) -> Unit) {
+    fun saveFile(
+        relativePath: String,
+        content: String,
+        onResult: (String?) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             if (relativePath == "SKILL.md") {
                 val name = SkillFrontmatterParser.parse(content)["name"]
@@ -85,7 +96,10 @@ class SkillDetailVM(
         }
     }
 
-    fun deleteFile(skillFile: SkillFile, onResult: (Boolean) -> Unit) {
+    fun deleteFile(
+        skillFile: SkillFile,
+        onResult: (Boolean) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val success = skillManager.deleteSkillFile(skillName, skillFile.relativePath)
             if (success) loadFiles()

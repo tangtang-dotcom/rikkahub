@@ -1,9 +1,6 @@
 package me.rerere.rikkahub.ui.pages.log
 
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -21,10 +19,10 @@ import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import me.rerere.common.android.LogEntry
 import me.rerere.common.android.Logging
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.JsonTree
@@ -66,7 +66,7 @@ fun LogPage() {
                         onClick = {
                             Logging.clear()
                             logs = Logging.getRecentLogs()
-                        }
+                        },
                     ) {
                         Icon(HugeIcons.Delete01, null)
                     }
@@ -85,9 +85,10 @@ fun LogPage() {
                 requestLoggingEnabled = it
                 Logging.setRequestLoggingEnabled(it)
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
         )
     }
 }
@@ -97,36 +98,44 @@ private fun UnifiedLogList(
     logs: List<LogEntry>,
     requestLoggingEnabled: Boolean,
     onRequestLoggingChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var selectedLog by remember { mutableStateOf<LogEntry.RequestLog?>(null) }
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState =
+        rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        )
     val scope = rememberCoroutineScope()
     val sortedLogs = remember(logs) { logs.sortedByDescending { it.timestamp } }
 
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(16.dp),
     ) {
         item {
             RequestLoggingSwitchCard(
                 enabled = requestLoggingEnabled,
-                onEnabledChange = onRequestLoggingChange
+                onEnabledChange = onRequestLoggingChange,
             )
         }
 
         items(sortedLogs, key = { it.id }, contentType = { it.javaClass.simpleName }) { log ->
             when (log) {
-                is LogEntry.RequestLog -> RequestLogCard(
-                    log = log,
-                    onClick = {
-                        selectedLog = log
-                        scope.launch { sheetState.show() }
-                    }
-                )
+                is LogEntry.RequestLog -> {
+                    RequestLogCard(
+                        log = log,
+                        onClick = {
+                            selectedLog = log
+                            scope.launch { sheetState.show() }
+                        },
+                    )
+                }
 
-                is LogEntry.TextLog -> TextLogCard(log = log)
+                is LogEntry.TextLog -> {
+                    TextLogCard(log = log)
+                }
             }
         }
     }
@@ -134,7 +143,7 @@ private fun UnifiedLogList(
     selectedLog?.let { log ->
         ModalBottomSheet(
             onDismissRequest = { selectedLog = null },
-            sheetState = sheetState
+            sheetState = sheetState,
         ) {
             RequestLogDetail(log)
         }
@@ -144,66 +153,71 @@ private fun UnifiedLogList(
 @Composable
 private fun RequestLoggingSwitchCard(
     enabled: Boolean,
-    onEnabledChange: (Boolean) -> Unit
+    onEnabledChange: (Boolean) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.log_page_record_requests),
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = stringResource(R.string.log_page_record_requests_desc),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Switch(
                 checked = enabled,
-                onCheckedChange = onEnabledChange
+                onCheckedChange = onEnabledChange,
             )
         }
     }
 }
 
 @Composable
-private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
+private fun RequestLogCard(
+    log: LogEntry.RequestLog,
+    onClick: () -> Unit,
+) {
     val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = log.method,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = dateFormat.format(Date(log.timestamp)),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -211,28 +225,29 @@ private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
                 text = log.url,
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = JetbrainsMono,
-                maxLines = 2
+                maxLines = 2,
             )
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 log.responseCode?.let { code ->
                     Text(
                         text = "Status: $code",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (code in 200..299) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        }
+                        color =
+                            if (code in 200..299) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
                     )
                 }
                 log.durationMs?.let { duration ->
                     Text(
                         text = "${duration}ms",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -241,7 +256,7 @@ private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
                 Text(
                     text = "Error: $error",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -256,13 +271,13 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Text(
                     text = "Request Details",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
 
@@ -303,7 +318,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                         text = "Request Headers",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 log.requestHeaders.forEach { (key, value) ->
@@ -320,22 +335,23 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                         text = "Request Body",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
                     )
-                    val jsonElement = remember(body) {
-                        runCatching { JsonInstantPretty.parseToJsonElement(body) }.getOrNull()
-                    }
+                    val jsonElement =
+                        remember(body) {
+                            runCatching { JsonInstantPretty.parseToJsonElement(body) }.getOrNull()
+                        }
                     if (jsonElement != null) {
                         JsonTree(
                             json = jsonElement,
                             modifier = Modifier.padding(top = 4.dp),
-                            initialExpandLevel = 2
+                            initialExpandLevel = 2,
                         )
                     } else {
                         Text(
                             text = body,
                             fontFamily = JetbrainsMono,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
                 }
@@ -348,7 +364,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                         text = "Response Headers",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 log.responseHeaders.forEach { (key, value) ->
@@ -362,33 +378,39 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
 }
 
 @Composable
-private fun DetailSection(label: String, value: String) {
+private fun DetailSection(
+    label: String,
+    value: String,
+) {
     Column {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontFamily = JetbrainsMono
+            fontFamily = JetbrainsMono,
         )
     }
 }
 
 @Composable
-private fun HeaderItem(key: String, value: String) {
+private fun HeaderItem(
+    key: String,
+    value: String,
+) {
     Column(modifier = Modifier.padding(vertical = 2.dp)) {
         Text(
             text = key,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            fontFamily = JetbrainsMono
+            fontFamily = JetbrainsMono,
         )
     }
 }
@@ -405,24 +427,24 @@ private fun TextLogCard(log: LogEntry.TextLog) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = log.tag,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text = dateFormat.format(Date(log.timestamp)),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
                     text = log.message,
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = JetbrainsMono
+                    fontFamily = JetbrainsMono,
                 )
             }
         }

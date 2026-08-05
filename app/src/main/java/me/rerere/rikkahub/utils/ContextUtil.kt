@@ -9,7 +9,6 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -23,7 +22,6 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -49,7 +47,10 @@ fun Context.readClipboardText(): String {
  */
 fun Context.joinQQGroup(key: String?): Boolean {
     val intent = Intent(Intent.ACTION_VIEW)
-    intent.setData(("mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D$key").toUri())
+    intent.setData(
+        ("mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D$key")
+            .toUri(),
+    )
     // 此Flag可根据具体产品需要自定义，如设置，则在加群界面按返回，返回手Q主界面，不设置，按返回会返回到呼起产品界面    //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     try {
         startActivity(intent)
@@ -83,20 +84,21 @@ fun Context.writeClipboardText(text: String) {
  */
 fun Context.hasUsageStatsPermission(): Boolean {
     val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        appOps.unsafeCheckOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            packageName
-        )
-    } else {
-        @Suppress("DEPRECATION")
-        appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            packageName
-        )
-    }
+    val mode =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                packageName,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                packageName,
+            )
+        }
     return mode == AppOpsManager.MODE_ALLOWED
 }
 
@@ -106,9 +108,11 @@ fun Context.hasUsageStatsPermission(): Boolean {
  */
 fun Context.openUsageAccessSettings() {
     runCatching {
-        startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        })
+        startActivity(
+            Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
     }.onFailure {
         Log.e(TAG, "openUsageAccessSettings failed", it)
     }
@@ -120,9 +124,11 @@ fun Context.openUsageAccessSettings() {
 fun Context.openUrl(url: String) {
     Log.i(TAG, "openUrl: $url")
     runCatching {
-        val intent = CustomTabsIntent.Builder()
-            .setShowTitle(true)
-            .build()
+        val intent =
+            CustomTabsIntent
+                .Builder()
+                .setShowTitle(true)
+                .build()
         intent.launchUrl(this, url.toUri())
     }.onFailure {
         it.printStackTrace()
@@ -155,7 +161,7 @@ fun Context.getComponentActivity(): ComponentActivity? {
 fun Context.exportImage(
     activity: Activity,
     bitmap: Bitmap,
-    fileName: String = "RikkaHub Agents_Agents_${System.currentTimeMillis()}.png"
+    fileName: String = "RikkaHub Agents_Agents_${System.currentTimeMillis()}.png",
 ) {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -165,7 +171,7 @@ fun Context.exportImage(
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                1
+                1,
             )
             return
         }
@@ -176,13 +182,15 @@ fun Context.exportImage(
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10及以上使用MediaStore API
-            val contentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-            }
-            val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                ?: error("MediaStore returned no URI for $fileName")
+            val contentValues =
+                ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
+            val uri =
+                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    ?: error("MediaStore returned no URI for $fileName")
             outputStream = contentResolver.openOutputStream(uri)
                 ?: error("Could not open output stream for $fileName")
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
@@ -194,7 +202,7 @@ fun Context.exportImage(
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
 
             // 通知图库更新
-            @Suppress("DEPRECATION")  // MediaStore is the modern path; this still works for gallery refresh
+            @Suppress("DEPRECATION") // MediaStore is the modern path; this still works for gallery refresh
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
             mediaScanIntent.data = Uri.fromFile(image)
             sendBroadcast(mediaScanIntent)
@@ -211,7 +219,7 @@ fun Context.exportImage(
 fun Context.exportImageFile(
     activity: Activity,
     file: File,
-    fileName: String = "RikkaHub Agents_Agents_${System.currentTimeMillis()}.png"
+    fileName: String = "RikkaHub Agents_Agents_${System.currentTimeMillis()}.png",
 ) {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -221,7 +229,7 @@ fun Context.exportImageFile(
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                1
+                1,
             )
             return
         }
@@ -232,13 +240,15 @@ fun Context.exportImageFile(
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10及以上使用MediaStore API
-            val contentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-            }
-            val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                ?: error("MediaStore returned no URI for $fileName")
+            val contentValues =
+                ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
+            val uri =
+                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    ?: error("MediaStore returned no URI for $fileName")
             outputStream = contentResolver.openOutputStream(uri)
                 ?: error("Could not open output stream for $fileName")
             file.inputStream().copyTo(outputStream)
@@ -249,7 +259,7 @@ fun Context.exportImageFile(
             file.copyTo(image, overwrite = true)
 
             // 通知图库更新
-            @Suppress("DEPRECATION")  // MediaStore is the modern path; this still works for gallery refresh
+            @Suppress("DEPRECATION") // MediaStore is the modern path; this still works for gallery refresh
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
             mediaScanIntent.data = Uri.fromFile(image)
             sendBroadcast(mediaScanIntent)

@@ -85,9 +85,10 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
             if (settings.quickMessages.isEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -143,7 +144,7 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
                     quickMessage.copy(
                         title = title,
                         content = content,
-                    )
+                    ),
                 )
                 editTarget = null
             },
@@ -178,9 +179,10 @@ private fun QuickMessageCard(
         colors = CustomColors.cardColorsOnSurfaceContainer,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -190,9 +192,10 @@ private fun QuickMessageCard(
                 tint = MaterialTheme.colorScheme.primary,
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(

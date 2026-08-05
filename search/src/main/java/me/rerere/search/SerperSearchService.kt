@@ -31,7 +31,7 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
         TextButton(
             onClick = {
                 urlHandler.openUri("https://serper.dev/api-keys")
-            }
+            },
         ) {
             Text(stringResource(R.string.click_to_get_api_key))
         }
@@ -39,13 +39,17 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
 
     override fun parameters(options: SearchServiceOptions.SerperOptions): InputSchema? =
         InputSchema.Obj(
-            properties = buildJsonObject {
-                put("query", buildJsonObject {
-                    put("type", "string")
-                    put("description", "search keyword")
-                })
-            },
-            required = listOf("query")
+            properties =
+                buildJsonObject {
+                    put(
+                        "query",
+                        buildJsonObject {
+                            put("type", "string")
+                            put("description", "search keyword")
+                        },
+                    )
+                },
+            required = listOf("query"),
         )
 
     override fun scrapingParameters(options: SearchServiceOptions.SerperOptions): InputSchema? = null
@@ -53,59 +57,63 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.SerperOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        serviceOptions: SearchServiceOptions.SerperOptions,
+    ): Result<SearchResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val body = buildJsonObject {
-                put("q", query)
-                put("num", commonOptions.resultSize)
-            }
-            val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
+                val body =
+                    buildJsonObject {
+                        put("q", query)
+                        put("num", commonOptions.resultSize)
+                    }
+                val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://google.serper.dev/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("X-API-KEY", apiKey)
-                .addHeader("Content-Type", "application/json")
-                .build()
+                val request =
+                    Request
+                        .Builder()
+                        .url("https://google.serper.dev/search")
+                        .post(body.toString().toRequestBody())
+                        .addHeader("X-API-KEY", apiKey)
+                        .addHeader("Content-Type", "application/json")
+                        .build()
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string()
-                val searchResponse = json.decodeFromString<SerperSearchResponse>(responseBody)
+                val response = httpClient.newCall(request).await()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    val searchResponse = json.decodeFromString<SerperSearchResponse>(responseBody)
 
-                val answer = searchResponse.answerBox?.let { it.answer ?: it.snippet }
-                    ?: searchResponse.knowledgeGraph?.description
+                    val answer =
+                        searchResponse.answerBox?.let { it.answer ?: it.snippet }
+                            ?: searchResponse.knowledgeGraph?.description
 
-                val items = searchResponse.organic.map { result ->
-                    SearchResultItem(
-                        title = result.title,
-                        url = result.link,
-                        text = result.snippet ?: ""
+                    val items =
+                        searchResponse.organic.map { result ->
+                            SearchResultItem(
+                                title = result.title,
+                                url = result.link,
+                                text = result.snippet ?: "",
+                            )
+                        }
+
+                    return@withContext Result.success(
+                        SearchResult(
+                            answer = answer,
+                            items = items,
+                        ),
                     )
+                } else {
+                    error("Serper search failed with code ${response.code}: ${response.message}")
                 }
-
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = answer,
-                        items = items
-                    )
-                )
-            } else {
-                error("Serper search failed with code ${response.code}: ${response.message}")
             }
         }
-    }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.SerperOptions
-    ): Result<ScrapedResult> {
-        return Result.failure(Exception("Scraping is not supported for Serper"))
-    }
+        serviceOptions: SearchServiceOptions.SerperOptions,
+    ): Result<ScrapedResult> = Result.failure(Exception("Scraping is not supported for Serper"))
 
     @Serializable
     data class SerperSearchResponse(

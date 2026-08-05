@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MemoryGuardTest {
-
     @Test fun `model fits comfortably under 70 percent of available memory returns Ok`() {
         val decision = MemoryGuard.decide(modelFileBytes = 1_000_000_000L, availMemBytes = 4_000_000_000L)
         assertEquals(MemoryGuard.Decision.Ok, decision)
@@ -47,7 +46,7 @@ class MemoryGuardTest {
     @Test fun `large model on a device with barely enough memory just fits at budget boundary`() {
         // Exact boundary: 3.5 GB model, 5 GB avail → budget = 3.5 GB → fits.
         val avail = 5_000_000_000L
-        val model = (avail * 0.7).toLong()  // == 3_500_000_000
+        val model = (avail * 0.7).toLong() // == 3_500_000_000
         val decision = MemoryGuard.decide(modelFileBytes = model, availMemBytes = avail)
         assertEquals(MemoryGuard.Decision.Ok, decision)
     }
@@ -67,10 +66,11 @@ class MemoryGuardTest {
         // saw "needs 1800 MB but only 2105 MB available" — looked contradictory because
         // the 30% headroom budget was hidden. Required-free should be ~2571 MB so the
         // refusal "need 2571 MB but only 2105 MB" reads consistently.
-        val decision = MemoryGuard.decide(
-            modelFileBytes = 1_800_000_000L,
-            availMemBytes = 2_105_000_000L,
-        )
+        val decision =
+            MemoryGuard.decide(
+                modelFileBytes = 1_800_000_000L,
+                availMemBytes = 2_105_000_000L,
+            )
         assertTrue(decision is MemoryGuard.Decision.TooLarge)
         decision as MemoryGuard.Decision.TooLarge
         // 1.8 GB / 0.7 ≈ 2.571 GB; allow ±5 MB tolerance for the rounding.

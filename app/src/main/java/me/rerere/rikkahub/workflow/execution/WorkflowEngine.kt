@@ -58,7 +58,6 @@ class WorkflowEngine(
     private val contextProvider: ContextProvider,
     private val actionRunner: WorkflowActionRunner,
 ) {
-
     /**
      * [LocalTools] is resolved lazily via Koin to break the construction cycle:
      *   - [LocalTools] constructor takes a [WorkflowEngine] (so workflow_run can fire)
@@ -68,7 +67,9 @@ class WorkflowEngine(
      * graph is fully resolved by the time `fire()` is called.
      */
     private val localTools: LocalTools by lazy {
-        org.koin.java.KoinJavaComponent.getKoin().get<LocalTools>()
+        org.koin.java.KoinJavaComponent
+            .getKoin()
+            .get<LocalTools>()
     }
 
     /**
@@ -79,15 +80,18 @@ class WorkflowEngine(
      * AgentRunRepository depends only on its DAO.
      */
     private val agentRunRepo: me.rerere.rikkahub.data.agentrun.AgentRunRepository by lazy {
-        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.agentrun.AgentRunRepository>()
+        org.koin.java.KoinJavaComponent
+            .getKoin()
+            .get<me.rerere.rikkahub.data.agentrun.AgentRunRepository>()
     }
 
     private val perWorkflowLocks = mutableMapOf<String, Mutex>()
     private val locksMutex = Mutex()
 
-    private suspend fun lockFor(id: String): Mutex = locksMutex.withLock {
-        perWorkflowLocks.getOrPut(id) { Mutex() }
-    }
+    private suspend fun lockFor(id: String): Mutex =
+        locksMutex.withLock {
+            perWorkflowLocks.getOrPut(id) { Mutex() }
+        }
 
     /**
      * Drop the lock entry for a deleted workflow. Wired from
@@ -110,16 +114,18 @@ class WorkflowEngine(
      * sequence. Returns the resulting status — useful for `workflow_run` synchronous tool
      * call, ignored by the trigger callback path.
      */
-    suspend fun fire(workflowId: String): FireOutcome = withContext(Dispatchers.IO) {
-        val lock = lockFor(workflowId)
-        lock.withLock { fireLocked(workflowId) }
-    }
+    suspend fun fire(workflowId: String): FireOutcome =
+        withContext(Dispatchers.IO) {
+            val lock = lockFor(workflowId)
+            lock.withLock { fireLocked(workflowId) }
+        }
 
     private suspend fun fireLocked(workflowId: String): FireOutcome {
         val firedAtMs = System.currentTimeMillis()
         val started = System.nanoTime()
-        val loaded = repository.getById(workflowId)
-            ?: return FireOutcome(WorkflowRunStatus.FAILED, "workflow_not_found", "")
+        val loaded =
+            repository.getById(workflowId)
+                ?: return FireOutcome(WorkflowRunStatus.FAILED, "workflow_not_found", "")
         val def = loaded.definition
         val entity = loaded.entity
 
@@ -127,17 +133,27 @@ class WorkflowEngine(
         // workflow loads so a `workflow_not_found` non-fire isn't recorded, but before the
         // gate checks so a SKIPPED_* outcome is still visible in the ledger. domain_id is
         // the workflow id; the ledger row is per-fire (a fresh row each time fire() runs).
-        val ledgerId = agentRunRepo.open(
-            kind = me.rerere.rikkahub.data.agentrun.AgentRunKind.Workflow,
-            domainId = workflowId,
-            metadata = buildJsonObject {
-                put("name", entity.name)
-                put("trigger", def.trigger::class.simpleName ?: "unknown")
-            },
-        )
+        val ledgerId =
+            agentRunRepo.open(
+                kind = me.rerere.rikkahub.data.agentrun.AgentRunKind.Workflow,
+                domainId = workflowId,
+                metadata =
+                    buildJsonObject {
+                        put("name", entity.name)
+                        put("trigger", def.trigger::class.simpleName ?: "unknown")
+                    },
+            )
 
         if (!entity.enabled) {
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_DISABLED, null, "", ledgerId)
+            return persistAndReturn(
+                workflowId,
+                firedAtMs,
+                started,
+                WorkflowRunStatus.SKIPPED_DISABLED,
+                null,
+                "",
+                ledgerId,
+            )
         }
 
         // Trigger runtime pre-flight — surface "this trigger needs setup" as an explicit
@@ -157,7 +173,15 @@ class WorkflowEngine(
         // be satisfied by waiting.
         val lastActualFireMs = if (def.cooldownSeconds > 0) repository.lastActualFireAtMs(workflowId) else null
         if (CooldownGate.isWithinCooldown(def.cooldownSeconds, lastActualFireMs, firedAtMs)) {
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_COOLDOWN, null, "", ledgerId)
+            return persistAndReturn(
+                workflowId,
+                firedAtMs,
+                started,
+                WorkflowRunStatus.SKIPPED_COOLDOWN,
+                null,
+                "",
+                ledgerId,
+            )
         }
 
         // Daily-cap gate
@@ -165,7 +189,15 @@ class WorkflowEngine(
             val today = LocalDate.now(ZoneId.systemDefault()).toString()
             val countedToday = if (entity.runsTodayDate == today) entity.runsTodayCount else 0
             if (countedToday >= def.maxRunsPerDay) {
-                return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_DAILY_CAP, null, "", ledgerId)
+                return persistAndReturn(
+                    workflowId,
+                    firedAtMs,
+                    started,
+                    WorkflowRunStatus.SKIPPED_DAILY_CAP,
+                    null,
+                    "",
+                    ledgerId,
+                )
             }
         }
 
@@ -175,8 +207,13 @@ class WorkflowEngine(
             val cr = ConditionEvaluator.evaluateAll(def.conditions, ctx)
             if (cr is ConditionEvaluator.Result.FailedAt) {
                 return persistAndReturn(
-                    workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_CONDITIONS,
-                    "condition[${cr.index}] failed: ${cr.reason}", "", ledgerId,
+                    workflowId,
+                    firedAtMs,
+                    started,
+                    WorkflowRunStatus.SKIPPED_CONDITIONS,
+                    "condition[${cr.index}] failed: ${cr.reason}",
+                    "",
+                    ledgerId,
                 )
             }
         }
@@ -187,37 +224,52 @@ class WorkflowEngine(
         // fall back to "any assistant with Workflows toggle on" but log loudly — the user's
         // intent might not match what we run.
         val settings = settingsStore.settingsFlow.first()
-        val authoringAssistant = run {
-            val storedId = def.authoringAssistantId
-            val byId = if (storedId != null) {
-                settings.assistants.firstOrNull { it.id.toString() == storedId }
-            } else null
-            if (byId != null) {
-                byId
-            } else {
-                if (storedId != null) {
-                    Log.w(TAG, "fire: authoring assistant $storedId for workflow $workflowId no longer exists; falling back to first-with-Workflows")
-                }
-                settings.assistants.firstOrNull { asst ->
-                    asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.LocalToolOption.Workflows }
+        val authoringAssistant =
+            run {
+                val storedId = def.authoringAssistantId
+                val byId =
+                    if (storedId != null) {
+                        settings.assistants.firstOrNull { it.id.toString() == storedId }
+                    } else {
+                        null
+                    }
+                if (byId != null) {
+                    byId
+                } else {
+                    if (storedId != null) {
+                        Log.w(
+                            TAG,
+                            "fire: authoring assistant $storedId for workflow $workflowId no longer exists; falling back to first-with-Workflows",
+                        )
+                    }
+                    settings.assistants.firstOrNull { asst ->
+                        asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.LocalToolOption.Workflows }
+                    }
                 }
             }
-        }
         if (authoringAssistant == null) {
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.FAILED,
-                "no_workflows_assistant", "", ledgerId)
+            return persistAndReturn(
+                workflowId,
+                firedAtMs,
+                started,
+                WorkflowRunStatus.FAILED,
+                "no_workflows_assistant",
+                "",
+                ledgerId,
+            )
         }
         // Headless context — sub-agent recursion guard fires from workflow-action
         // dispatch so a workflow's actions can't spawn a sub-agent that re-fires another
         // workflow_run that re-spawns ad infinitum.
-        val tools = localTools.getTools(
-            authoringAssistant.localTools,
-            me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
-                callerAssistantId = authoringAssistant.id.toString(),
-                callerConversationId = null,  // headless workflow fire — no conv
-                isHeadless = true,
-            ),
-        )
+        val tools =
+            localTools.getTools(
+                authoringAssistant.localTools,
+                me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
+                    callerAssistantId = authoringAssistant.id.toString(),
+                    callerConversationId = null, // headless workflow fire — no conv
+                    isHeadless = true,
+                ),
+            )
 
         // Execute the action sequence. ActionRunner enforces per-action timeout + HARDLINE.
         val result = actionRunner.run(def.actions, tools)
@@ -232,51 +284,84 @@ class WorkflowEngine(
      * that reason and the user sees a clear "missing setup" message in workflow_get history.
      */
     private fun triggerRuntimeCheck(trigger: me.rerere.rikkahub.workflow.model.TriggerSpec): String? {
-        val ctx = (this as Any).let {
-            // Static context lookup via Koin so we don't need to take it as a constructor arg
-            // (engine is shared across cron / sub-agent surfaces; minimising its DI surface
-            // is worth a tiny lookup cost on the rare-fire path).
-            org.koin.java.KoinJavaComponent.getKoin().get<android.content.Context>()
-        }
+        val ctx =
+            (this as Any).let {
+                // Static context lookup via Koin so we don't need to take it as a constructor arg
+                // (engine is shared across cron / sub-agent surfaces; minimising its DI surface
+                // is worth a tiny lookup cost on the rare-fire path).
+                org.koin.java.KoinJavaComponent
+                    .getKoin()
+                    .get<android.content.Context>()
+            }
         return when (trigger) {
             is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceEnter,
-            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceExit -> {
-                val fineGranted = androidx.core.content.ContextCompat.checkSelfPermission(
-                    ctx, android.Manifest.permission.ACCESS_FINE_LOCATION
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                val bgGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceExit,
+            -> {
+                val fineGranted =
                     androidx.core.content.ContextCompat.checkSelfPermission(
-                        ctx, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ctx,
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
                     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                } else true
+                val bgGranted =
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            ctx,
+                            android.Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    } else {
+                        true
+                    }
                 when {
                     !fineGranted -> "geofence_unavailable: ACCESS_FINE_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
                     !bgGranted -> "geofence_unavailable: ACCESS_BACKGROUND_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
                     else -> null
                 }
             }
+
             is me.rerere.rikkahub.workflow.model.TriggerSpec.NotificationReceived -> {
-                if (!me.rerere.rikkahub.data.ai.tools.local.NotificationListenerHandle.isBound()) {
+                if (!me.rerere.rikkahub.data.ai.tools.local.NotificationListenerHandle
+                        .isBound()
+                ) {
                     "notification_listener_not_enabled: enable the RikkaHub notification listener in Settings → Apps → Special access → Notification access"
-                } else null
+                } else {
+                    null
+                }
             }
+
             is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched,
-            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed -> {
-                if (!me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.isRunning()) {
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed,
+            -> {
+                if (!me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle
+                        .isRunning()
+                ) {
                     "accessibility_not_enabled: enable the RikkaHub accessibility service in Settings → Accessibility (required for app_launched / app_closed triggers)"
-                } else null
+                } else {
+                    null
+                }
             }
+
             is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceConnected,
-            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceDisconnected -> {
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceDisconnected,
+            -> {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(
-                        ctx, android.Manifest.permission.BLUETOOTH_CONNECT
-                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    if (!granted) "bluetooth_connect_not_granted: BLUETOOTH_CONNECT runtime permission not granted — required on Android 12+ to read paired-device addresses"
-                    else null
-                } else null
+                    val granted =
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            ctx,
+                            android.Manifest.permission.BLUETOOTH_CONNECT,
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!granted) {
+                        "bluetooth_connect_not_granted: BLUETOOTH_CONNECT runtime permission not granted — required on Android 12+ to read paired-device addresses"
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
-            else -> null
+
+            else -> {
+                null
+            }
         }
     }
 
@@ -303,20 +388,31 @@ class WorkflowEngine(
         // WorkflowRunStatus is terminal from the ledger's point of view: SUCCESS →
         // succeeded; FAILED → failed; every SKIPPED_* variant → cancelled (the fire was
         // accepted but a gate stopped it — not a failure, not a success).
-        val ledgerStatus = when (status) {
-            WorkflowRunStatus.SUCCESS -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
-            WorkflowRunStatus.FAILED -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
-            else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
-        }
+        val ledgerStatus =
+            when (status) {
+                WorkflowRunStatus.SUCCESS -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
+                WorkflowRunStatus.FAILED -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
+                else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
+            }
         agentRunRepo.markTerminal(
             id = ledgerId,
             status = ledgerStatus,
-            lastError = error ?: if (ledgerStatus == me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled) status.name else null,
+            lastError =
+                error
+                    ?: if (ledgerStatus ==
+                        me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
+                    ) {
+                        status.name
+                    } else {
+                        null
+                    },
         )
         return FireOutcome(status, error, summary)
     }
 
-    companion object { private const val TAG = "WorkflowEngine" }
+    companion object {
+        private const val TAG = "WorkflowEngine"
+    }
 
     data class FireOutcome(
         val status: WorkflowRunStatus,
@@ -332,7 +428,11 @@ class WorkflowEngine(
  * bumped on every attempt — including skips — so it can't be the cooldown anchor).
  */
 internal object CooldownGate {
-    fun isWithinCooldown(cooldownSeconds: Int, lastActualFireMs: Long?, nowMs: Long): Boolean {
+    fun isWithinCooldown(
+        cooldownSeconds: Int,
+        lastActualFireMs: Long?,
+        nowMs: Long,
+    ): Boolean {
         if (cooldownSeconds <= 0) return false
         if (lastActualFireMs == null) return false
         return nowMs < lastActualFireMs + cooldownSeconds * 1000L
@@ -347,43 +447,59 @@ internal object CooldownGate {
  * Per-action timeout is the action's [WorkflowAction.timeoutSeconds] field; default 60s.
  */
 class WorkflowActionRunner {
+    data class RunResult(
+        val success: Boolean,
+        val error: String?,
+        val summary: String,
+    )
 
-    data class RunResult(val success: Boolean, val error: String?, val summary: String)
-
-    suspend fun run(actions: List<WorkflowAction>, availableTools: List<Tool>): RunResult {
+    suspend fun run(
+        actions: List<WorkflowAction>,
+        availableTools: List<Tool>,
+    ): RunResult {
         val outputs = mutableListOf<String>()
         for ((idx, action) in actions.withIndex()) {
             val argsJson = action.args.toString()
             val hardlineReason = HardlineCommandGuard.checkTool(action.tool, argsJson)
             if (hardlineReason != null) {
                 logSafe("workflow hardline-blocked action $idx tool=${action.tool}: $hardlineReason")
-                return RunResult(success = false,
+                return RunResult(
+                    success = false,
                     error = "action $idx: hardline:$hardlineReason",
-                    summary = outputs.joinToString("\n"))
+                    summary = outputs.joinToString("\n"),
+                )
             }
-            val tool = availableTools.find { it.name == action.tool }
-                ?: return RunResult(false, "action $idx: unknown_tool:${action.tool}", outputs.joinToString("\n"))
-            val out = try {
-                withTimeoutOrNull(action.timeoutSeconds * 1000L) { tool.execute(action.args) }
-            } catch (c: kotlinx.coroutines.CancellationException) {
-                // Don't swallow cancellation — re-throw so structured concurrency can
-                // unwind the fire (e.g. the engine scope is cancelled on shutdown). The
-                // generic catch below would otherwise turn it into a spurious FAILED row.
-                throw c
-            } catch (t: Throwable) {
-                logSafe("workflow action $idx tool=${action.tool} threw: ${t.message}")
-                return RunResult(false,
-                    "action $idx: ${t::class.simpleName}: ${t.message.orEmpty()}".take(500),
-                    outputs.joinToString("\n"))
-            }
+            val tool =
+                availableTools.find { it.name == action.tool }
+                    ?: return RunResult(false, "action $idx: unknown_tool:${action.tool}", outputs.joinToString("\n"))
+            val out =
+                try {
+                    withTimeoutOrNull(action.timeoutSeconds * 1000L) { tool.execute(action.args) }
+                } catch (c: kotlinx.coroutines.CancellationException) {
+                    // Don't swallow cancellation — re-throw so structured concurrency can
+                    // unwind the fire (e.g. the engine scope is cancelled on shutdown). The
+                    // generic catch below would otherwise turn it into a spurious FAILED row.
+                    throw c
+                } catch (t: Throwable) {
+                    logSafe("workflow action $idx tool=${action.tool} threw: ${t.message}")
+                    return RunResult(
+                        false,
+                        "action $idx: ${t::class.simpleName}: ${t.message.orEmpty()}".take(500),
+                        outputs.joinToString("\n"),
+                    )
+                }
             if (out == null) {
-                return RunResult(false,
+                return RunResult(
+                    false,
                     "action $idx: ${action.tool} exceeded ${action.timeoutSeconds}s",
-                    outputs.joinToString("\n"))
+                    outputs.joinToString("\n"),
+                )
             }
             // Surface the first ~200 chars of the tool's text output for the run history.
-            val text = out.filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
-                .joinToString("\n") { it.text }
+            val text =
+                out
+                    .filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
+                    .joinToString("\n") { it.text }
             outputs += "[$idx] ${action.tool}: ${text.take(200)}"
         }
         return RunResult(true, null, outputs.joinToString("\n").take(2000))
@@ -397,5 +513,7 @@ class WorkflowActionRunner {
         runCatching { Log.w(TAG, msg) }
     }
 
-    companion object { private const val TAG = "WorkflowActionRunner" }
+    companion object {
+        private const val TAG = "WorkflowActionRunner"
+    }
 }

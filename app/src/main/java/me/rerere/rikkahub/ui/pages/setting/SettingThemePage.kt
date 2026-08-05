@@ -19,9 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,11 +34,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -84,10 +84,11 @@ import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 import kotlin.uuid.Uuid
 
-private val themeJson = Json {
-    ignoreUnknownKeys = true
-    prettyPrint = true
-}
+private val themeJson =
+    Json {
+        ignoreUnknownKeys = true
+        prettyPrint = true
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,11 +112,11 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                 title = { Text(stringResource(R.string.setting_page_theme_setting)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -125,15 +126,16 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
             if (settings.dynamicColor) {
                 item("dynamicColorHint") {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = stringResource(R.string.setting_theme_page_dynamic_color_hint),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -148,20 +150,21 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                             text = stringResource(R.string.setting_theme_page_preset_themes),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                         )
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(MaterialTheme.colorScheme.surfaceBright)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceBright),
                         ) {
                             PresetThemeButtonGroup(
                                 themeId = settings.themeId,
                                 modifier = Modifier.fillMaxWidth(),
                                 onChangeTheme = {
                                     vm.updateSettings(settings.copy(themeId = it))
-                                }
+                                },
                             )
                         }
                     }
@@ -169,9 +172,10 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
 
                 item("customThemesHeader") {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
@@ -182,7 +186,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilledTonalButton(
-                                onClick = { showImportDialog = true }
+                                onClick = { showImportDialog = true },
                             ) {
                                 Icon(HugeIcons.FileImport, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
@@ -192,7 +196,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                                 onClick = {
                                     editingTheme = null
                                     showEditSheet = true
-                                }
+                                },
                             ) {
                                 Icon(HugeIcons.PlusSign, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
@@ -205,15 +209,16 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                 if (settings.customThemes.isEmpty()) {
                     item("emptyCustomThemes") {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = stringResource(R.string.setting_theme_page_no_custom_themes),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -230,7 +235,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                             val json = themeJson.encodeToString(theme)
                             scope.launch {
                                 clipboardManager.setClipEntry(
-                                    ClipEntry(ClipData.newPlainText("theme", json))
+                                    ClipEntry(ClipData.newPlainText("theme", json)),
                                 )
                             }
                             toaster.show(exportSuccessMsg, type = ToastType.Success)
@@ -241,7 +246,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         },
                         onDelete = {
                             deletingTheme = theme
-                        }
+                        },
                     )
                 }
             }
@@ -253,19 +258,20 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
             theme = editingTheme,
             onDismiss = { showEditSheet = false },
             onSave = { theme ->
-                val newThemes = if (editingTheme != null) {
-                    settings.customThemes.map { if (it.id == theme.id) theme else it }
-                } else {
-                    settings.customThemes + theme
-                }
+                val newThemes =
+                    if (editingTheme != null) {
+                        settings.customThemes.map { if (it.id == theme.id) theme else it }
+                    } else {
+                        settings.customThemes + theme
+                    }
                 vm.updateSettings(
                     settings.copy(
                         customThemes = newThemes,
-                        themeId = theme.id
-                    )
+                        themeId = theme.id,
+                    ),
                 )
                 showEditSheet = false
-            }
+            },
         )
     }
 
@@ -277,12 +283,12 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                 vm.updateSettings(
                     settings.copy(
                         customThemes = settings.customThemes + importedTheme,
-                        themeId = importedTheme.id
-                    )
+                        themeId = importedTheme.id,
+                    ),
                 )
                 showImportDialog = false
                 toaster.show(importSuccessMsg, type = ToastType.Success)
-            }
+            },
         )
     }
 
@@ -302,7 +308,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
         onDismiss = { deletingTheme = null },
         text = {
             Text(stringResource(R.string.setting_theme_page_delete_theme_message))
-        }
+        },
     )
 }
 
@@ -319,33 +325,35 @@ private fun CustomThemeItem(
     val scheme = theme.generateColorScheme(darkMode)
 
     ListItem(
-        modifier = Modifier
-            .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onSelect() },
+        modifier =
+            Modifier
+                .padding(horizontal = 8.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onSelect() },
         headlineContent = { Text(theme.name.ifEmpty { "Unnamed" }) },
         leadingContent = {
             Box(contentAlignment = Alignment.Center) {
                 Canvas(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(40.dp)
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .size(40.dp),
                 ) {
                     drawRect(color = scheme.primaryContainer, size = size)
                     drawRect(
                         color = scheme.secondaryContainer,
                         size = size,
-                        topLeft = Offset(x = size.width / 2, y = 0f)
+                        topLeft = Offset(x = size.width / 2, y = 0f),
                     )
                     drawRect(
                         color = scheme.tertiaryContainer,
                         size = size,
-                        topLeft = Offset(x = size.width / 2, y = size.height / 2)
+                        topLeft = Offset(x = size.width / 2, y = size.height / 2),
                     )
                     drawCircle(
                         color = scheme.primary,
                         radius = if (isSelected) 10.dp.toPx() else 6.dp.toPx(),
-                        center = Offset(x = size.width / 2, y = size.height / 2)
+                        center = Offset(x = size.width / 2, y = size.height / 2),
                     )
                 }
                 if (isSelected) {
@@ -353,7 +361,7 @@ private fun CustomThemeItem(
                         HugeIcons.Tick01,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
@@ -370,7 +378,7 @@ private fun CustomThemeItem(
                     Icon(
                         HugeIcons.Delete02,
                         null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -386,7 +394,11 @@ private fun CustomThemeEditSheet(
     onDismiss: () -> Unit,
     onSave: (CustomTheme) -> Unit,
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState =
+        rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        )
     var currentTheme by remember {
         mutableStateOf(theme ?: CustomTheme())
     }
@@ -396,23 +408,29 @@ private fun CustomThemeEditSheet(
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
         ) {
             Text(
-                text = if (theme == null) stringResource(R.string.setting_theme_page_create_theme)
-                else stringResource(R.string.setting_theme_page_edit_theme),
+                text =
+                    if (theme == null) {
+                        stringResource(R.string.setting_theme_page_create_theme)
+                    } else {
+                        stringResource(R.string.setting_theme_page_edit_theme)
+                    },
                 style = MaterialTheme.typography.titleLarge,
             )
 
             Spacer(Modifier.height(16.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 OutlinedTextField(
@@ -431,7 +449,7 @@ private fun CustomThemeEditSheet(
                     color = Color(currentTheme.primaryColorArgb.toInt()),
                     onColorChange = {
                         currentTheme = currentTheme.copy(primaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
+                    },
                 )
 
                 Text(
@@ -439,14 +457,15 @@ private fun CustomThemeEditSheet(
                     style = MaterialTheme.typography.titleSmall,
                 )
                 ColorPickerRow(
-                    color = if (currentTheme.secondaryColorArgb != null) {
-                        Color(currentTheme.secondaryColorArgb!!.toInt())
-                    } else {
-                        Color(currentTheme.generateColorScheme(false).secondary.toArgb())
-                    },
+                    color =
+                        if (currentTheme.secondaryColorArgb != null) {
+                            Color(currentTheme.secondaryColorArgb!!.toInt())
+                        } else {
+                            Color(currentTheme.generateColorScheme(false).secondary.toArgb())
+                        },
                     onColorChange = {
                         currentTheme = currentTheme.copy(secondaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
+                    },
                 )
 
                 Text(
@@ -454,14 +473,15 @@ private fun CustomThemeEditSheet(
                     style = MaterialTheme.typography.titleSmall,
                 )
                 ColorPickerRow(
-                    color = if (currentTheme.tertiaryColorArgb != null) {
-                        Color(currentTheme.tertiaryColorArgb!!.toInt())
-                    } else {
-                        Color(currentTheme.generateColorScheme(false).tertiary.toArgb())
-                    },
+                    color =
+                        if (currentTheme.tertiaryColorArgb != null) {
+                            Color(currentTheme.tertiaryColorArgb!!.toInt())
+                        } else {
+                            Color(currentTheme.generateColorScheme(false).tertiary.toArgb())
+                        },
                     onColorChange = {
                         currentTheme = currentTheme.copy(tertiaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
+                    },
                 )
 
                 ThemePreview(currentTheme)
@@ -480,7 +500,7 @@ private fun CustomThemeEditSheet(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = { onSave(currentTheme) },
-                    enabled = currentTheme.name.isNotBlank()
+                    enabled = currentTheme.name.isNotBlank(),
                 ) {
                     Text(stringResource(R.string.setting_theme_page_save))
                 }
@@ -527,7 +547,7 @@ private fun ImportThemeDialog(
                         errorMessage = e.message
                     }
                 },
-                enabled = jsonText.isNotBlank()
+                enabled = jsonText.isNotBlank(),
             ) {
                 Text(stringResource(R.string.setting_theme_page_import_theme))
             }
@@ -536,7 +556,7 @@ private fun ImportThemeDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(android.R.string.cancel))
             }
-        }
+        },
     )
 }
 
@@ -545,16 +565,21 @@ private fun ColorPickerRow(
     color: Color,
     onColorChange: (Color) -> Unit,
 ) {
-    val hsl = remember(color) {
-        FloatArray(3).also { ColorUtils.colorToHSL(color.toArgb(), it) }
-    }
+    val hsl =
+        remember(color) {
+            FloatArray(3).also { ColorUtils.colorToHSL(color.toArgb(), it) }
+        }
     var hue by remember(color) { mutableFloatStateOf(hsl[0]) }
     var saturation by remember(color) { mutableFloatStateOf(hsl[1]) }
     var lightness by remember(color) { mutableFloatStateOf(hsl[2]) }
     var hslCode by remember(color) { mutableStateOf(formatHslCode(hsl[0], hsl[1], hsl[2])) }
     var hslCodeError by remember(color) { mutableStateOf(false) }
 
-    fun updateColor(newHue: Float, newSaturation: Float, newLightness: Float) {
+    fun updateColor(
+        newHue: Float,
+        newSaturation: Float,
+        newLightness: Float,
+    ) {
         hue = newHue
         saturation = newSaturation
         lightness = newLightness
@@ -564,16 +589,17 @@ private fun ColorPickerRow(
     }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Canvas(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .clip(CircleShape),
             ) {
                 drawCircle(color = color)
             }
@@ -632,11 +658,12 @@ private fun ColorPickerRow(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = hslCodeError,
-            supportingText = if (hslCodeError) {
-                { Text("Use hsl(267 36% 48%)") }
-            } else {
-                null
-            },
+            supportingText =
+                if (hslCodeError) {
+                    { Text("Use hsl(267 36% 48%)") }
+                } else {
+                    null
+                },
         )
     }
 }
@@ -644,12 +671,13 @@ private fun ColorPickerRow(
 private val hslNumberRegex = Regex("""[-+]?\d*\.?\d+""")
 
 private fun parseHslCode(value: String): FloatArray? {
-    val values = buildList {
-        for (match in hslNumberRegex.findAll(value)) {
-            add(match.value.toFloatOrNull() ?: return null)
-            if (size == 3) break
+    val values =
+        buildList {
+            for (match in hslNumberRegex.findAll(value)) {
+                add(match.value.toFloatOrNull() ?: return null)
+                if (size == 3) break
+            }
         }
-    }
 
     if (values.size != 3) return null
 
@@ -669,9 +697,11 @@ private fun parseHslPercentOrFraction(value: Float): Float? {
     }
 }
 
-private fun formatHslCode(hue: Float, saturation: Float, lightness: Float): String {
-    return "hsl(${hue.roundToInt()} ${(saturation * 100).roundToInt()}% ${(lightness * 100).roundToInt()}%)"
-}
+private fun formatHslCode(
+    hue: Float,
+    saturation: Float,
+    lightness: Float,
+): String = "hsl(${hue.roundToInt()} ${(saturation * 100).roundToInt()}% ${(lightness * 100).roundToInt()}%)"
 
 @Composable
 private fun ThemePreview(theme: CustomTheme) {
@@ -679,18 +709,19 @@ private fun ThemePreview(theme: CustomTheme) {
     val scheme = theme.generateColorScheme(darkMode)
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = stringResource(R.string.setting_theme_page_preview),
             style = MaterialTheme.typography.titleSmall,
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(scheme.surface)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(scheme.surface)
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             ColorSwatch(scheme.primary, "P")
@@ -704,22 +735,26 @@ private fun ThemePreview(theme: CustomTheme) {
 }
 
 @Composable
-private fun ColorSwatch(color: Color, label: String) {
+private fun ColorSwatch(
+    color: Color,
+    label: String,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Canvas(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .clip(CircleShape),
         ) {
             drawCircle(color = color)
         }
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

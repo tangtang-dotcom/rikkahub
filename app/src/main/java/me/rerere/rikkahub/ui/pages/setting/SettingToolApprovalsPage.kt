@@ -23,7 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,6 +35,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
@@ -121,18 +121,25 @@ fun SettingToolApprovalsPage() {
             // unmistakable that approvals are off.
             item {
                 val containerColor =
-                    if (yolo) MaterialTheme.colorScheme.errorContainer
-                    else MaterialTheme.colorScheme.surfaceVariant
+                    if (yolo) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
                 val onContainer =
-                    if (yolo) MaterialTheme.colorScheme.onErrorContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    if (yolo) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(containerColor)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(containerColor)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -147,10 +154,14 @@ fun SettingToolApprovalsPage() {
                             color = onContainer,
                         )
                         Text(
-                            text = stringResource(
-                                if (yolo) R.string.setting_page_tool_approvals_yolo_on
-                                else R.string.setting_page_tool_approvals_yolo_off
-                            ),
+                            text =
+                                stringResource(
+                                    if (yolo) {
+                                        R.string.setting_page_tool_approvals_yolo_on
+                                    } else {
+                                        R.string.setting_page_tool_approvals_yolo_off
+                                    },
+                                ),
                             style = MaterialTheme.typography.bodySmall,
                             color = onContainer,
                         )
@@ -164,10 +175,15 @@ fun SettingToolApprovalsPage() {
                                 scope.launch { prefs.setYolo(false) }
                             }
                         },
-                        colors = if (yolo) SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.error,
-                            checkedTrackColor = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
-                        ) else SwitchDefaults.colors(),
+                        colors =
+                            if (yolo) {
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.error,
+                                    checkedTrackColor = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                                )
+                            } else {
+                                SwitchDefaults.colors()
+                            },
                     )
                 }
             }
@@ -192,9 +208,10 @@ fun SettingToolApprovalsPage() {
             } else {
                 item {
                     CardGroup(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
                     ) {
                         granted.sorted().forEach { toolName ->
                             item(
@@ -205,9 +222,10 @@ fun SettingToolApprovalsPage() {
                                     }) {
                                         Icon(
                                             imageVector = HugeIcons.Cancel01,
-                                            contentDescription = stringResource(
-                                                R.string.setting_page_tool_approvals_revoke
-                                            ),
+                                            contentDescription =
+                                                stringResource(
+                                                    R.string.setting_page_tool_approvals_revoke,
+                                                ),
                                         )
                                     }
                                 },

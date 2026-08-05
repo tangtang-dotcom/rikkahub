@@ -28,7 +28,6 @@ import org.junit.Test
  * - thought: true for reasoning parts
  */
 class GoogleProviderMessageTest {
-
     private lateinit var provider: GoogleProvider
 
     @Before
@@ -38,10 +37,11 @@ class GoogleProviderMessageTest {
 
     // Helper to invoke private buildContents method via reflection
     private fun invokeBuildContents(messages: List<UIMessage>): JsonArray {
-        val method = GoogleProvider::class.java.getDeclaredMethod(
-            "buildContents",
-            List::class.java
-        )
+        val method =
+            GoogleProvider::class.java.getDeclaredMethod(
+                "buildContents",
+                List::class.java,
+            )
         method.isAccessible = true
         return method.invoke(provider, messages) as JsonArray
     }
@@ -50,11 +50,12 @@ class GoogleProviderMessageTest {
         messages: List<UIMessage>,
         params: TextGenerationParams,
     ): JsonObject {
-        val method = GoogleProvider::class.java.getDeclaredMethod(
-            "buildCompletionRequestBody",
-            List::class.java,
-            TextGenerationParams::class.java
-        )
+        val method =
+            GoogleProvider::class.java.getDeclaredMethod(
+                "buildCompletionRequestBody",
+                List::class.java,
+                TextGenerationParams::class.java,
+            )
         method.isAccessible = true
         return method.invoke(provider, messages, params) as JsonObject
     }
@@ -62,21 +63,24 @@ class GoogleProviderMessageTest {
     @Test
     fun `multi-round tool calls should produce functionCall followed by functionResponse`() {
         // Scenario: Multiple rounds of tool calls
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Let me search"),
-                createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
-                UIMessagePart.Text("Now calculating"),
-                createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
-                UIMessagePart.Text("The answer is 4")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Let me search"),
+                        createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
+                        UIMessagePart.Text("Now calculating"),
+                        createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
+                        UIMessagePart.Text("The answer is 4"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Calculate something"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Calculate something"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
@@ -120,18 +124,21 @@ class GoogleProviderMessageTest {
 
     @Test
     fun `functionCall in model should be followed by user message with functionResponse`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Using tool"),
-                createExecutedTool("call_abc", "my_tool", "{}", "Tool output")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Using tool"),
+                        createExecutedTool("call_abc", "my_tool", "{}", "Tool output"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Use a tool"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Use a tool"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
@@ -155,31 +162,38 @@ class GoogleProviderMessageTest {
         val nextMsg = result[modelWithFunctionCallIndex + 1].jsonObject
         assertEquals("user", nextMsg["role"]?.jsonPrimitive?.content)
         val nextParts = nextMsg["parts"]?.jsonArray
-        assertTrue("Next message should have functionResponse",
-            nextParts?.any { it.jsonObject.containsKey("functionResponse") } == true)
+        assertTrue(
+            "Next message should have functionResponse",
+            nextParts?.any { it.jsonObject.containsKey("functionResponse") } == true,
+        )
     }
 
     @Test
     fun `reasoning parts should have thought flag set to true`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
-                UIMessagePart.Text("Here is my response")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
+                        UIMessagePart.Text("Here is my response"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Question"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Question"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
         // Find model message
-        val modelMsg = result.find {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "model"
-        }?.jsonObject
+        val modelMsg =
+            result
+                .find {
+                    it.jsonObject["role"]?.jsonPrimitive?.content == "model"
+                }?.jsonObject
 
         assertTrue("Should have model message", modelMsg != null)
 
@@ -192,30 +206,34 @@ class GoogleProviderMessageTest {
         assertTrue("Should have text parts", textParts.isNotEmpty())
 
         // Verify we have both regular text and thought text
-        val hasThoughtPart = textParts.any {
-            it.jsonObject["thought"]?.jsonPrimitive?.content == "true" ||
-            it.jsonObject["thought"]?.toString() == "true"
-        }
+        val hasThoughtPart =
+            textParts.any {
+                it.jsonObject["thought"]?.jsonPrimitive?.content == "true" ||
+                    it.jsonObject["thought"]?.toString() == "true"
+            }
         // Note: If reasoning is handled differently, adjust this assertion
     }
 
     @Test
     fun `parallel tool calls should be in same model message`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Running multiple tools"),
-                createExecutedTool("call_1", "tool_a", "{}", "Result A"),
-                createExecutedTool("call_2", "tool_b", "{}", "Result B"),
-                createExecutedTool("call_3", "tool_c", "{}", "Result C"),
-                UIMessagePart.Text("All done")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Running multiple tools"),
+                        createExecutedTool("call_1", "tool_a", "{}", "Result A"),
+                        createExecutedTool("call_2", "tool_b", "{}", "Result B"),
+                        createExecutedTool("call_3", "tool_c", "{}", "Result C"),
+                        UIMessagePart.Text("All done"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Do multiple things"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Do multiple things"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
@@ -231,9 +249,14 @@ class GoogleProviderMessageTest {
             if (functionCallParts.size == 3) {
                 foundModelWithMultipleCalls = true
                 // Verify tool names
-                val toolNames = functionCallParts.map {
-                    it.jsonObject["functionCall"]?.jsonObject?.get("name")?.jsonPrimitive?.content
-                }
+                val toolNames =
+                    functionCallParts.map {
+                        it.jsonObject["functionCall"]
+                            ?.jsonObject
+                            ?.get("name")
+                            ?.jsonPrimitive
+                            ?.content
+                    }
                 assertTrue(toolNames.contains("tool_a"))
                 assertTrue(toolNames.contains("tool_b"))
                 assertTrue(toolNames.contains("tool_c"))
@@ -241,8 +264,10 @@ class GoogleProviderMessageTest {
             }
         }
 
-        assertTrue("Should have model with 3 parallel functionCall parts",
-            foundModelWithMultipleCalls)
+        assertTrue(
+            "Should have model with 3 parallel functionCall parts",
+            foundModelWithMultipleCalls,
+        )
 
         // Verify corresponding functionResponse parts in user message
         var foundUserWithMultipleResponses = false
@@ -259,30 +284,35 @@ class GoogleProviderMessageTest {
             }
         }
 
-        assertTrue("Should have user with 3 functionResponse parts",
-            foundUserWithMultipleResponses)
+        assertTrue(
+            "Should have user with 3 functionResponse parts",
+            foundUserWithMultipleResponses,
+        )
     }
 
     @Test
     fun `multi-round reasoning and tools should maintain correct order`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Step 1: Search"),
-                UIMessagePart.Text("Searching..."),
-                createExecutedTool("call_1", "search", "{}", "Found data"),
-                UIMessagePart.Reasoning(reasoning = "Step 2: Analyze"),
-                UIMessagePart.Text("Analyzing..."),
-                createExecutedTool("call_2", "analyze", "{}", "Analysis done"),
-                UIMessagePart.Reasoning(reasoning = "Step 3: Present"),
-                UIMessagePart.Text("Results")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Step 1: Search"),
+                        UIMessagePart.Text("Searching..."),
+                        createExecutedTool("call_1", "search", "{}", "Found data"),
+                        UIMessagePart.Reasoning(reasoning = "Step 2: Analyze"),
+                        UIMessagePart.Text("Analyzing..."),
+                        createExecutedTool("call_2", "analyze", "{}", "Analysis done"),
+                        UIMessagePart.Reasoning(reasoning = "Step 3: Present"),
+                        UIMessagePart.Text("Results"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Analyze"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Analyze"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
@@ -316,22 +346,26 @@ class GoogleProviderMessageTest {
                 val nextMsg = result[i + 1].jsonObject
                 assertEquals("user", nextMsg["role"]?.jsonPrimitive?.content)
                 val nextParts = nextMsg["parts"]?.jsonArray
-                assertTrue("Should have functionResponse in next message",
-                    nextParts?.any { it.jsonObject.containsKey("functionResponse") } == true)
+                assertTrue(
+                    "Should have functionResponse in next message",
+                    nextParts?.any { it.jsonObject.containsKey("functionResponse") } == true,
+                )
             }
         }
     }
 
     @Test
     fun `user message parts should be correctly formatted`() {
-        val messages = listOf(
-            UIMessage(
-                role = MessageRole.USER,
-                parts = listOf(
-                    UIMessagePart.Text("Hello, how are you?")
-                )
+        val messages =
+            listOf(
+                UIMessage(
+                    role = MessageRole.USER,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Hello, how are you?"),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildContents(messages)
 
@@ -349,21 +383,23 @@ class GoogleProviderMessageTest {
 
     @Test
     fun `complex multi-round scenario with interleaved content`() {
-        val messages = listOf(
-            UIMessage.user("Execute task"),
-            UIMessage(
-                role = MessageRole.ASSISTANT,
-                parts = listOf(
-                    UIMessagePart.Text("Starting"),
-                    createExecutedTool("step1", "init", "{}", "initialized"),
-                    UIMessagePart.Text("Processing"),
-                    createExecutedTool("step2", "process", """{"data": "x"}""", "processed"),
-                    UIMessagePart.Text("Finalizing"),
-                    createExecutedTool("step3", "finalize", "{}", "done"),
-                    UIMessagePart.Text("Task completed")
-                )
+        val messages =
+            listOf(
+                UIMessage.user("Execute task"),
+                UIMessage(
+                    role = MessageRole.ASSISTANT,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Starting"),
+                            createExecutedTool("step1", "init", "{}", "initialized"),
+                            UIMessagePart.Text("Processing"),
+                            createExecutedTool("step2", "process", """{"data": "x"}""", "processed"),
+                            UIMessagePart.Text("Finalizing"),
+                            createExecutedTool("step3", "finalize", "{}", "done"),
+                            UIMessagePart.Text("Task completed"),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildContents(messages)
 
@@ -393,17 +429,20 @@ class GoogleProviderMessageTest {
 
     @Test
     fun `functionResponse should contain correct result structure`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                createExecutedTool("call_1", "my_tool", """{"input": "test"}""", "Expected output value")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        createExecutedTool("call_1", "my_tool", """{"input": "test"}""", "Expected output value"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Use tool"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Use tool"),
+                assistantMessage,
+            )
 
         val result = invokeBuildContents(messages)
 
@@ -426,27 +465,43 @@ class GoogleProviderMessageTest {
 
         // Verify response structure
         val response = functionResponse["response"]?.jsonObject
-        assertTrue("Response should contain result",
-            response?.containsKey("result") == true)
-        assertTrue("Result should contain expected output",
-            response?.get("result")?.jsonPrimitive?.content?.contains("Expected output value") == true)
+        assertTrue(
+            "Response should contain result",
+            response?.containsKey("result") == true,
+        )
+        assertTrue(
+            "Result should contain expected output",
+            response
+                ?.get("result")
+                ?.jsonPrimitive
+                ?.content
+                ?.contains("Expected output value") == true,
+        )
     }
 
     @Test
     fun `system prompt text should be serialized into Gemini system instruction`() {
         val prompt = "Assistant prompt\n\nTool guidance"
-        val messages = listOf(
-            UIMessage.system(prompt),
-            UIMessage.user("hello")
-        )
-        val params = TextGenerationParams(
-            model = Model(modelId = "gemini-test", abilities = listOf(ModelAbility.REASONING))
-        )
+        val messages =
+            listOf(
+                UIMessage.system(prompt),
+                UIMessage.user("hello"),
+            )
+        val params =
+            TextGenerationParams(
+                model = Model(modelId = "gemini-test", abilities = listOf(ModelAbility.REASONING)),
+            )
 
         val request = invokeBuildCompletionRequestBody(messages, params)
         val systemInstruction = request["systemInstruction"]!!.jsonObject
         val parts = systemInstruction["parts"]!!.jsonArray
-        assertEquals(prompt, parts.single().jsonObject["text"]!!.jsonPrimitive.content)
+        assertEquals(
+            prompt,
+            parts
+                .single()
+                .jsonObject["text"]!!
+                .jsonPrimitive.content,
+        )
     }
 
     // ==================== Helper Functions ====================
@@ -455,13 +510,12 @@ class GoogleProviderMessageTest {
         callId: String,
         name: String,
         input: String,
-        output: String
-    ): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+        output: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = input,
-            output = listOf(UIMessagePart.Text(output))
+            output = listOf(UIMessagePart.Text(output)),
         )
-    }
 }

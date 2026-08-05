@@ -18,13 +18,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.datetime.toJavaLocalDateTime
 import me.rerere.ai.core.MessageRole
@@ -98,29 +98,30 @@ fun ColumnScope.ChatMessageActionButtons(
         Icon(
             imageVector = HugeIcons.Copy01,
             contentDescription = stringResource(R.string.copy),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable { context.copyMessageToClipboard(message) }
-                .padding(8.dp)
-                .size(16.dp),
-            tint = actionIconColor
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .clickable { context.copyMessageToClipboard(message) }
+                    .padding(8.dp)
+                    .size(16.dp),
+            tint = actionIconColor,
         )
 
         Icon(
             imageVector = HugeIcons.Refresh03,
             contentDescription = stringResource(R.string.regenerate),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable {
-                    if (message.role == MessageRole.USER) {
-                        showRegenerateConfirm = true
-                    } else {
-                        onRegenerate()
-                    }
-                }
-                .padding(8.dp)
-                .size(16.dp),
-            tint = actionIconColor
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        if (message.role == MessageRole.USER) {
+                            showRegenerateConfirm = true
+                        } else {
+                            onRegenerate()
+                        }
+                    }.padding(8.dp)
+                    .size(16.dp),
+            tint = actionIconColor,
         )
 
         if (message.role == MessageRole.ASSISTANT) {
@@ -131,31 +132,31 @@ fun ColumnScope.ChatMessageActionButtons(
             Icon(
                 imageVector = if (isSpeaking) HugeIcons.StopCircle else HugeIcons.VolumeHigh,
                 contentDescription = stringResource(R.string.tts),
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable(
-                        enabled = isAvailable,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = LocalIndication.current,
-                        onClick = {
-                            if (!isSpeaking) {
-                                val text = message.toText()
-                                var textToSpeak = text
-                                if (settings.displaySetting.ttsOnlyReadQuoted) {
-                                    textToSpeak = textToSpeak.extractQuotedContentAsText() ?: textToSpeak
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable(
+                            enabled = isAvailable,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = LocalIndication.current,
+                            onClick = {
+                                if (!isSpeaking) {
+                                    val text = message.toText()
+                                    var textToSpeak = text
+                                    if (settings.displaySetting.ttsOnlyReadQuoted) {
+                                        textToSpeak = textToSpeak.extractQuotedContentAsText() ?: textToSpeak
+                                    }
+                                    if (settings.displaySetting.ttsOnlyReadOutsideBrackets) {
+                                        textToSpeak = textToSpeak.removeBracketedContent() ?: textToSpeak
+                                    }
+                                    tts.speak(textToSpeak)
+                                } else {
+                                    tts.stop()
                                 }
-                                if (settings.displaySetting.ttsOnlyReadOutsideBrackets) {
-                                    textToSpeak = textToSpeak.removeBracketedContent() ?: textToSpeak
-                                }
-                                tts.speak(textToSpeak)
-                            } else {
-                                tts.stop()
-                            }
-                        }
-                    )
-                    .padding(8.dp)
-                    .size(16.dp),
-                tint = if (isAvailable) actionIconColor else actionIconColor.copy(alpha = 0.38f)
+                            },
+                        ).padding(8.dp)
+                        .size(16.dp),
+                tint = if (isAvailable) actionIconColor else actionIconColor.copy(alpha = 0.38f),
             )
 
             // Translation button
@@ -163,18 +164,18 @@ fun ColumnScope.ChatMessageActionButtons(
                 Icon(
                     imageVector = HugeIcons.Translate,
                     contentDescription = stringResource(R.string.translate),
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = LocalIndication.current,
-                            onClick = {
-                                showTranslateDialog = true
-                            }
-                        )
-                        .padding(8.dp)
-                        .size(16.dp),
-                    tint = actionIconColor
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = LocalIndication.current,
+                                onClick = {
+                                    showTranslateDialog = true
+                                },
+                            ).padding(8.dp)
+                            .size(16.dp),
+                    tint = actionIconColor,
                 )
             }
         }
@@ -182,18 +183,18 @@ fun ColumnScope.ChatMessageActionButtons(
         Icon(
             imageVector = HugeIcons.MoreVertical,
             contentDescription = stringResource(R.string.more_options),
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = LocalIndication.current,
-                    onClick = {
-                        onOpenActionSheet()
-                    }
-                )
-                .padding(8.dp)
-                .size(16.dp),
-            tint = actionIconColor
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = LocalIndication.current,
+                        onClick = {
+                            onOpenActionSheet()
+                        },
+                    ).padding(8.dp)
+                    .size(16.dp),
+            tint = actionIconColor,
         )
 
         ChatMessageBranchSelector(
@@ -239,7 +240,7 @@ fun ColumnScope.ChatMessageActionButtons(
             onRegenerate()
         },
         onDismiss = { showRegenerateConfirm = false },
-        text = { Text(stringResource(R.string.regenerate_confirm_message)) }
+        text = { Text(stringResource(R.string.regenerate_confirm_message)) },
     )
 }
 
@@ -255,16 +256,21 @@ fun ChatMessageActionsSheet(
     isFavorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null,
     onWebViewPreview: () -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -274,19 +280,20 @@ fun ChatMessageActionsSheet(
                     onDismissRequest()
                     onSelectAndCopy()
                 },
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = HugeIcons.TextSelection,
                         contentDescription = null,
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     )
                     Text(
                         text = stringResource(R.string.select_and_copy),
@@ -296,8 +303,10 @@ fun ChatMessageActionsSheet(
             }
 
             // WebView Preview (only show if message has text content)
-            val hasTextContent = message.parts.filterIsInstance<UIMessagePart.Text>()
-                .any { it.text.isNotBlank() }
+            val hasTextContent =
+                message.parts
+                    .filterIsInstance<UIMessagePart.Text>()
+                    .any { it.text.isNotBlank() }
 
             if (hasTextContent) {
                 Card(
@@ -305,19 +314,20 @@ fun ChatMessageActionsSheet(
                         onDismissRequest()
                         onWebViewPreview()
                     },
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = HugeIcons.WebDesign01,
                             contentDescription = null,
-                            modifier = Modifier.padding(4.dp)
+                            modifier = Modifier.padding(4.dp),
                         )
                         Text(
                             text = stringResource(R.string.render_with_webview),
@@ -333,19 +343,20 @@ fun ChatMessageActionsSheet(
                     onDismissRequest()
                     onEdit()
                 },
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = HugeIcons.Edit01,
                         contentDescription = null,
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     )
                     Text(
                         text = stringResource(R.string.edit),
@@ -365,14 +376,15 @@ fun ChatMessageActionsSheet(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = HugeIcons.Share04,
                         contentDescription = null,
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     )
                     Text(
                         text = stringResource(R.string.share),
@@ -392,14 +404,15 @@ fun ChatMessageActionsSheet(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = HugeIcons.GitFork,
                         contentDescription = null,
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     )
                     Text(
                         text = stringResource(R.string.create_fork),
@@ -419,20 +432,25 @@ fun ChatMessageActionsSheet(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = HugeIcons.FavouriteCircle,
                             contentDescription = null,
-                            modifier = Modifier.padding(4.dp)
+                            modifier = Modifier.padding(4.dp),
                         )
                         Text(
-                            text = stringResource(
-                                if (isFavorite) R.string.chat_message_remove_favorite
-                                else R.string.chat_message_add_favorite
-                            ),
+                            text =
+                                stringResource(
+                                    if (isFavorite) {
+                                        R.string.chat_message_remove_favorite
+                                    } else {
+                                        R.string.chat_message_add_favorite
+                                    },
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
@@ -446,21 +464,23 @@ fun ChatMessageActionsSheet(
                     onDelete()
                 },
                 shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = HugeIcons.Delete01,
                         contentDescription = null,
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
                     )
                     Text(
                         text = stringResource(R.string.delete),

@@ -25,7 +25,6 @@ import org.junit.Test
  * - thinking blocks for reasoning
  */
 class ClaudeProviderMessageTest {
-
     private lateinit var provider: ClaudeProvider
 
     @Before
@@ -37,12 +36,13 @@ class ClaudeProviderMessageTest {
     // Signature is (List, Boolean, ClaudePromptCacheTtl); we pass promptCaching=false
     // so the TTL argument has no effect on the produced message array.
     private fun invokeBuildMessages(messages: List<UIMessage>): JsonArray {
-        val method = ClaudeProvider::class.java.getDeclaredMethod(
-            "buildMessages",
-            List::class.java,
-            Boolean::class.javaPrimitiveType,
-            ClaudePromptCacheTtl::class.java
-        )
+        val method =
+            ClaudeProvider::class.java.getDeclaredMethod(
+                "buildMessages",
+                List::class.java,
+                Boolean::class.javaPrimitiveType,
+                ClaudePromptCacheTtl::class.java,
+            )
         method.isAccessible = true
         return method.invoke(provider, messages, false, ClaudePromptCacheTtl.FIVE_MINUTES) as JsonArray
     }
@@ -50,21 +50,24 @@ class ClaudeProviderMessageTest {
     @Test
     fun `multi-round tool calls should produce tool_use followed by tool_result`() {
         // Scenario: Multiple rounds of tool calls
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Let me search"),
-                createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
-                UIMessagePart.Text("Now calculating"),
-                createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
-                UIMessagePart.Text("The answer is 4")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Let me search"),
+                        createExecutedTool("call_1", "search", """{"query": "test"}""", "Search result"),
+                        UIMessagePart.Text("Now calculating"),
+                        createExecutedTool("call_2", "calculate", """{"expr": "2+2"}""", "4"),
+                        UIMessagePart.Text("The answer is 4"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Calculate something"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Calculate something"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -110,18 +113,21 @@ class ClaudeProviderMessageTest {
 
     @Test
     fun `tool_use in assistant should be immediately followed by user message with tool_result`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Using tool"),
-                createExecutedTool("call_abc", "my_tool", "{}", "Tool output")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Using tool"),
+                        createExecutedTool("call_abc", "my_tool", "{}", "Tool output"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Use a tool"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Use a tool"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -145,31 +151,38 @@ class ClaudeProviderMessageTest {
         val nextMsg = result[assistantWithToolUseIndex + 1].jsonObject
         assertEquals("user", nextMsg["role"]?.jsonPrimitive?.content)
         val nextContent = nextMsg["content"]?.jsonArray
-        assertTrue("Next message should have tool_result",
-            nextContent?.any { it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result" } == true)
+        assertTrue(
+            "Next message should have tool_result",
+            nextContent?.any { it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result" } == true,
+        )
     }
 
     @Test
     fun `thinking blocks should be included in assistant content`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
-                UIMessagePart.Text("Here is my response")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Let me think about this..."),
+                        UIMessagePart.Text("Here is my response"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Question"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Question"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
         // Find assistant message
-        val assistantMsg = result.find {
-            it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
-        }?.jsonObject
+        val assistantMsg =
+            result
+                .find {
+                    it.jsonObject["role"]?.jsonPrimitive?.content == "assistant"
+                }?.jsonObject
 
         assertTrue("Should have assistant message", assistantMsg != null)
 
@@ -177,40 +190,48 @@ class ClaudeProviderMessageTest {
         assertTrue("Content should not be null", content != null)
 
         // Check for thinking block
-        val hasThinking = content!!.any {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "thinking"
-        }
+        val hasThinking =
+            content!!.any {
+                it.jsonObject["type"]?.jsonPrimitive?.content == "thinking"
+            }
         assertTrue("Should have thinking block", hasThinking)
 
         // Verify thinking content
-        val thinkingBlock = content.find {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "thinking"
-        }?.jsonObject
-        assertEquals("Let me think about this...",
-            thinkingBlock?.get("thinking")?.jsonPrimitive?.content)
+        val thinkingBlock =
+            content
+                .find {
+                    it.jsonObject["type"]?.jsonPrimitive?.content == "thinking"
+                }?.jsonObject
+        assertEquals(
+            "Let me think about this...",
+            thinkingBlock?.get("thinking")?.jsonPrimitive?.content,
+        )
     }
 
     @Test
     fun `multi-round reasoning and tools should maintain correct order`() {
         // Complex scenario with interleaved reasoning and tools
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Reasoning(reasoning = "Step 1: Search for info"),
-                UIMessagePart.Text("Searching..."),
-                createExecutedTool("call_1", "search", "{}", "Found data"),
-                UIMessagePart.Reasoning(reasoning = "Step 2: Analyze the data"),
-                UIMessagePart.Text("Analyzing..."),
-                createExecutedTool("call_2", "analyze", "{}", "Analysis complete"),
-                UIMessagePart.Reasoning(reasoning = "Step 3: Present results"),
-                UIMessagePart.Text("Here are the results")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Reasoning(reasoning = "Step 1: Search for info"),
+                        UIMessagePart.Text("Searching..."),
+                        createExecutedTool("call_1", "search", "{}", "Found data"),
+                        UIMessagePart.Reasoning(reasoning = "Step 2: Analyze the data"),
+                        UIMessagePart.Text("Analyzing..."),
+                        createExecutedTool("call_2", "analyze", "{}", "Analysis complete"),
+                        UIMessagePart.Reasoning(reasoning = "Step 3: Present results"),
+                        UIMessagePart.Text("Here are the results"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Analyze something"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Analyze something"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -251,29 +272,34 @@ class ClaudeProviderMessageTest {
                 val nextMsg = result[i + 1].jsonObject
                 assertEquals("user", nextMsg["role"]?.jsonPrimitive?.content)
                 val nextContent = nextMsg["content"]?.jsonArray
-                assertTrue("Should have tool_result in next message",
-                    nextContent?.any { it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result" } == true)
+                assertTrue(
+                    "Should have tool_result in next message",
+                    nextContent?.any { it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result" } == true,
+                )
             }
         }
     }
 
     @Test
     fun `parallel tool calls should be in same assistant message`() {
-        val assistantMessage = UIMessage(
-            role = MessageRole.ASSISTANT,
-            parts = listOf(
-                UIMessagePart.Text("Running multiple tools"),
-                createExecutedTool("call_1", "tool_a", "{}", "Result A"),
-                createExecutedTool("call_2", "tool_b", "{}", "Result B"),
-                createExecutedTool("call_3", "tool_c", "{}", "Result C"),
-                UIMessagePart.Text("All done")
+        val assistantMessage =
+            UIMessage(
+                role = MessageRole.ASSISTANT,
+                parts =
+                    listOf(
+                        UIMessagePart.Text("Running multiple tools"),
+                        createExecutedTool("call_1", "tool_a", "{}", "Result A"),
+                        createExecutedTool("call_2", "tool_b", "{}", "Result B"),
+                        createExecutedTool("call_3", "tool_c", "{}", "Result C"),
+                        UIMessagePart.Text("All done"),
+                    ),
             )
-        )
 
-        val messages = listOf(
-            UIMessage.user("Do multiple things"),
-            assistantMessage
-        )
+        val messages =
+            listOf(
+                UIMessage.user("Do multiple things"),
+                assistantMessage,
+            )
 
         val result = invokeBuildMessages(messages)
 
@@ -284,16 +310,18 @@ class ClaudeProviderMessageTest {
             if (msgObj["role"]?.jsonPrimitive?.content != "assistant") continue
 
             val content = msgObj["content"]?.jsonArray ?: continue
-            val toolUseBlocks = content.filter {
-                it.jsonObject["type"]?.jsonPrimitive?.content == "tool_use"
-            }
+            val toolUseBlocks =
+                content.filter {
+                    it.jsonObject["type"]?.jsonPrimitive?.content == "tool_use"
+                }
 
             if (toolUseBlocks.size == 3) {
                 foundAssistantWithMultipleTools = true
                 // Verify tool names
-                val toolNames = toolUseBlocks.map {
-                    it.jsonObject["name"]?.jsonPrimitive?.content
-                }
+                val toolNames =
+                    toolUseBlocks.map {
+                        it.jsonObject["name"]?.jsonPrimitive?.content
+                    }
                 assertTrue(toolNames.contains("tool_a"))
                 assertTrue(toolNames.contains("tool_b"))
                 assertTrue(toolNames.contains("tool_c"))
@@ -301,8 +329,10 @@ class ClaudeProviderMessageTest {
             }
         }
 
-        assertTrue("Should have assistant with 3 parallel tool_use blocks",
-            foundAssistantWithMultipleTools)
+        assertTrue(
+            "Should have assistant with 3 parallel tool_use blocks",
+            foundAssistantWithMultipleTools,
+        )
 
         // Verify corresponding tool_result blocks in user message
         var foundUserWithMultipleResults = false
@@ -311,9 +341,10 @@ class ClaudeProviderMessageTest {
             if (msgObj["role"]?.jsonPrimitive?.content != "user") continue
 
             val content = msgObj["content"]?.jsonArray ?: continue
-            val toolResultBlocks = content.filter {
-                it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result"
-            }
+            val toolResultBlocks =
+                content.filter {
+                    it.jsonObject["type"]?.jsonPrimitive?.content == "tool_result"
+                }
 
             if (toolResultBlocks.size == 3) {
                 foundUserWithMultipleResults = true
@@ -321,20 +352,24 @@ class ClaudeProviderMessageTest {
             }
         }
 
-        assertTrue("Should have user with 3 tool_result blocks",
-            foundUserWithMultipleResults)
+        assertTrue(
+            "Should have user with 3 tool_result blocks",
+            foundUserWithMultipleResults,
+        )
     }
 
     @Test
     fun `user messages should have correct content format`() {
-        val messages = listOf(
-            UIMessage(
-                role = MessageRole.USER,
-                parts = listOf(
-                    UIMessagePart.Text("Hello, how are you?")
-                )
+        val messages =
+            listOf(
+                UIMessage(
+                    role = MessageRole.USER,
+                    parts =
+                        listOf(
+                            UIMessagePart.Text("Hello, how are you?"),
+                        ),
+                ),
             )
-        )
 
         val result = invokeBuildMessages(messages)
 
@@ -346,9 +381,11 @@ class ClaudeProviderMessageTest {
         assertTrue("Content should not be null", content != null)
         assertTrue("Content should not be empty", content!!.isNotEmpty())
 
-        val textBlock = content.find {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "text"
-        }?.jsonObject
+        val textBlock =
+            content
+                .find {
+                    it.jsonObject["type"]?.jsonPrimitive?.content == "text"
+                }?.jsonObject
         assertEquals("Hello, how are you?", textBlock?.get("text")?.jsonPrimitive?.content)
     }
 
@@ -358,13 +395,12 @@ class ClaudeProviderMessageTest {
         callId: String,
         name: String,
         input: String,
-        output: String
-    ): UIMessagePart.Tool {
-        return UIMessagePart.Tool(
+        output: String,
+    ): UIMessagePart.Tool =
+        UIMessagePart.Tool(
             toolCallId = callId,
             toolName = name,
             input = input,
-            output = listOf(UIMessagePart.Text(output))
+            output = listOf(UIMessagePart.Text(output)),
         )
-    }
 }

@@ -35,7 +35,7 @@ fun PermissionManager(
             onOpenSettings = {
                 permissionState.openAppSettings()
                 permissionState.cancelPermissionRequest()
-            }
+            },
         )
     }
 

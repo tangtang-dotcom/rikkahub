@@ -23,17 +23,20 @@ import me.rerere.rikkahub.workflow.model.WorkflowDefinition
 internal class AppForegroundTriggerFamily(
     private val scope: CoroutineScope,
 ) : WorkflowTriggerFamily {
-
     override val name = "app_foreground"
 
     @Volatile private var matching: List<WorkflowDefinition> = emptyList()
+
     @Volatile private var fireCallback: TriggerFireCallback? = null
+
     @Volatile private var lastForegroundPackage: String? = null
 
-    override fun handles(spec: TriggerSpec): Boolean =
-        spec is TriggerSpec.AppLaunched || spec is TriggerSpec.AppClosed
+    override fun handles(spec: TriggerSpec): Boolean = spec is TriggerSpec.AppLaunched || spec is TriggerSpec.AppClosed
 
-    override suspend fun sync(matching: List<WorkflowDefinition>, callback: TriggerFireCallback) {
+    override suspend fun sync(
+        matching: List<WorkflowDefinition>,
+        callback: TriggerFireCallback,
+    ) {
         this.matching = matching
         this.fireCallback = callback
         AppForegroundDispatcher.bind(this)
@@ -50,7 +53,7 @@ internal class AppForegroundTriggerFamily(
         if (newPackage.isNullOrBlank()) return
         val prev = lastForegroundPackage
         lastForegroundPackage = newPackage
-        if (prev == newPackage) return  // no transition
+        if (prev == newPackage) return // no transition
         val cb = fireCallback ?: return
         val snap = matching
         if (snap.isEmpty()) return
@@ -58,11 +61,17 @@ internal class AppForegroundTriggerFamily(
         val fires = mutableListOf<Pair<String, TriggerSpec>>()
         for (wf in snap) {
             when (val t = wf.trigger) {
-                is TriggerSpec.AppLaunched ->
+                is TriggerSpec.AppLaunched -> {
                     if (t.packageName == newPackage) fires += wf.id to t
-                is TriggerSpec.AppClosed ->
+                }
+
+                is TriggerSpec.AppClosed -> {
                     if (prev != null && t.packageName == prev) fires += wf.id to t
-                else -> Unit
+                }
+
+                else -> {
+                    Unit
+                }
             }
         }
         if (fires.isEmpty()) return
@@ -75,14 +84,20 @@ internal class AppForegroundTriggerFamily(
         }
     }
 
-    companion object { private const val TAG = "WorkflowTrigger" }
+    companion object {
+        private const val TAG = "WorkflowTrigger"
+    }
 }
 
 /** Bridge from [me.rerere.rikkahub.service.RikkaAccessibilityService] to the family. */
 object AppForegroundDispatcher {
     @Volatile private var family: AppForegroundTriggerFamily? = null
+
     @Volatile private var foregroundConsumerCount: Int = 0
-    internal fun bind(f: AppForegroundTriggerFamily) { family = f }
+
+    internal fun bind(f: AppForegroundTriggerFamily) {
+        family = f
+    }
 
     /**
      * Track how many workflows currently NEED the foreground-package cache. The trigger
@@ -92,7 +107,9 @@ object AppForegroundDispatcher {
      * every TYPE_WINDOW_STATE_CHANGED event (which fires multiple times per app switch +
      * every dialog/menu pop), paying 24/7 for a feature most users won't enable.
      */
-    internal fun setForegroundConsumerCount(n: Int) { foregroundConsumerCount = n }
+    internal fun setForegroundConsumerCount(n: Int) {
+        foregroundConsumerCount = n
+    }
 
     /** Called from accessibility service's TYPE_WINDOW_STATE_CHANGED handler. */
     fun onForegroundChange(packageName: String?) {

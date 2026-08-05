@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,6 @@ import me.rerere.ai.ui.DiffMetadata
 import me.rerere.ai.ui.metadataAs
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.highlight.CodeHighlightText
-import androidx.compose.ui.res.stringResource
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ComputerTerminal01
 import me.rerere.hugeicons.stroke.FileAdd
@@ -59,7 +59,13 @@ object EditFileToolUI : ToolUIRenderer {
     @Composable
     override fun title(context: ToolUIContext): String {
         val path = context.arguments.getStringContent("path")
-        return if (path != null) stringResource(R.string.tool_ui_edit_file, path) else stringResource(R.string.tool_ui_edit_file_default)
+        return if (path !=
+            null
+        ) {
+            stringResource(R.string.tool_ui_edit_file, path)
+        } else {
+            stringResource(R.string.tool_ui_edit_file_default)
+        }
     }
 
     /**
@@ -68,7 +74,10 @@ object EditFileToolUI : ToolUIRenderer {
      */
     private fun diffOf(context: ToolUIContext): String? {
         if (context.tool.isExecuted) {
-            return context.tool.output.firstOrNull()?.metadataAs<DiffMetadata>()?.diff
+            return context.tool.output
+                .firstOrNull()
+                ?.metadataAs<DiffMetadata>()
+                ?.diff
         }
         val path = context.arguments.getStringContent("path") ?: return null
         val oldText = context.arguments.getStringContent("old_text") ?: return null
@@ -106,7 +115,10 @@ object EditFileToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val diff = remember(context) { diffOf(context) }
         if (diff == null) {
             DefaultToolPreview(context = context)
@@ -114,10 +126,11 @@ object EditFileToolUI : ToolUIRenderer {
         }
         val stats = remember(diff) { parseDiffStats(diff) }
         Column(
-            modifier = Modifier
-                .fillMaxHeight(0.8f)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxHeight(0.8f)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
@@ -162,12 +175,17 @@ object ReadFileToolUI : ToolUIRenderer {
     @Composable
     override fun title(context: ToolUIContext): String {
         val path = context.arguments.getStringContent("path")
-        return if (path != null) stringResource(R.string.tool_ui_read_file, path) else stringResource(R.string.tool_ui_read_file_default)
+        return if (path !=
+            null
+        ) {
+            stringResource(R.string.tool_ui_read_file, path)
+        } else {
+            stringResource(R.string.tool_ui_read_file_default)
+        }
     }
 
     /** 已执行时从输出 JSON 读取文件内容 */
-    private fun textOf(context: ToolUIContext): String? =
-        context.content.getStringContent("text")
+    private fun textOf(context: ToolUIContext): String? = context.content.getStringContent("text")
 
     override fun hasSummary(context: ToolUIContext): Boolean = textOf(context) != null
 
@@ -182,7 +200,10 @@ object ReadFileToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val text = remember(context) { textOf(context) }
         if (text == null) {
             DefaultToolPreview(context = context)
@@ -203,11 +224,16 @@ object WriteFileToolUI : ToolUIRenderer {
     @Composable
     override fun title(context: ToolUIContext): String {
         val path = context.arguments.getStringContent("path")
-        return if (path != null) stringResource(R.string.tool_ui_write_file, path) else stringResource(R.string.tool_ui_write_file_default)
+        return if (path !=
+            null
+        ) {
+            stringResource(R.string.tool_ui_write_file, path)
+        } else {
+            stringResource(R.string.tool_ui_write_file_default)
+        }
     }
 
-    private fun textOf(context: ToolUIContext): String? =
-        context.arguments.getStringContent("text")
+    private fun textOf(context: ToolUIContext): String? = context.arguments.getStringContent("text")
 
     override fun hasSummary(context: ToolUIContext): Boolean = textOf(context) != null
 
@@ -222,7 +248,10 @@ object WriteFileToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val text = remember(context) { textOf(context) }
         if (text == null) {
             DefaultToolPreview(context = context)
@@ -234,17 +263,23 @@ object WriteFileToolUI : ToolUIRenderer {
 
 /** 内联摘要: 按扩展名语法高亮展示文件内容首部若干行 */
 @Composable
-private fun FileContentSummary(text: String, path: String?, loading: Boolean) {
-    val preview = remember(text) {
-        text.lineSequence().take(FILE_SUMMARY_MAX_LINES).joinToString("\n")
-    }
+private fun FileContentSummary(
+    text: String,
+    path: String?,
+    loading: Boolean,
+) {
+    val preview =
+        remember(text) {
+            text.lineSequence().take(FILE_SUMMARY_MAX_LINES).joinToString("\n")
+        }
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-            .shimmer(isLoading = loading),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .shimmer(isLoading = loading),
     ) {
         CodeHighlightText(
             code = preview,
@@ -260,12 +295,16 @@ private fun FileContentSummary(text: String, path: String?, loading: Boolean) {
 
 /** BottomSheet 详情: 文件路径 + 按扩展名语法高亮的完整内容 */
 @Composable
-private fun FileContentPreview(path: String?, code: String) {
+private fun FileContentPreview(
+    path: String?,
+    code: String,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxHeight(0.8f)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxHeight(0.8f)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
@@ -296,7 +335,8 @@ object ShellToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String {
-        val command = context.arguments.getStringContent("command") ?: return stringResource(R.string.tool_ui_shell_default)
+        val command =
+            context.arguments.getStringContent("command") ?: return stringResource(R.string.tool_ui_shell_default)
         val preview = command.replace("\n", " ").trim()
         val truncated = if (preview.length > TITLE_MAX_CHARS) preview.take(TITLE_MAX_CHARS) + "…" else preview
         return stringResource(R.string.tool_ui_shell, truncated)
@@ -307,22 +347,24 @@ object ShellToolUI : ToolUIRenderer {
     @Composable
     override fun Summary(context: ToolUIContext) {
         val content = context.content ?: return
-        val combined = remember(content) {
-            listOf(content.getStringContent("stdout"), content.getStringContent("stderr"))
-                .filterNot { it.isNullOrBlank() }
-                .joinToString("\n")
-                .trim()
-        }
+        val combined =
+            remember(content) {
+                listOf(content.getStringContent("stdout"), content.getStringContent("stderr"))
+                    .filterNot { it.isNullOrBlank() }
+                    .joinToString("\n")
+                    .trim()
+            }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             ShellExitStatus(content, MaterialTheme.typography.labelSmall)
             if (combined.isNotEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.small)
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                        .shimmer(isLoading = context.loading),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                            .shimmer(isLoading = context.loading),
                 ) {
                     Text(
                         text = combined.lineSequence().take(SUMMARY_MAX_LINES).joinToString("\n"),
@@ -338,7 +380,10 @@ object ShellToolUI : ToolUIRenderer {
     }
 
     @Composable
-    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+    override fun Preview(
+        context: ToolUIContext,
+        onDismissRequest: () -> Unit,
+    ) {
         val content = context.content
         if (content == null) {
             DefaultToolPreview(context = context)
@@ -349,10 +394,11 @@ object ShellToolUI : ToolUIRenderer {
         val stdout = content.getStringContent("stdout").orEmpty()
         val stderr = content.getStringContent("stderr").orEmpty()
         Column(
-            modifier = Modifier
-                .fillMaxHeight(0.8f)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxHeight(0.8f)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
@@ -398,15 +444,19 @@ object ShellToolUI : ToolUIRenderer {
 
 /** Shell 退出状态文本: exit code 为 0 显示绿色, 超时或非零显示错误色 */
 @Composable
-private fun ShellExitStatus(content: JsonElement, style: androidx.compose.ui.text.TextStyle) {
+private fun ShellExitStatus(
+    content: JsonElement,
+    style: androidx.compose.ui.text.TextStyle,
+) {
     val exitCode = content.int("exitCode")
     val timedOut = content.boolean("timedOut") ?: false
     val ok = !timedOut && exitCode == 0
     Text(
-        text = when {
-            timedOut -> stringResource(R.string.tool_ui_shell_timeout)
-            else -> stringResource(R.string.tool_ui_shell_exit, exitCode?.toString() ?: "?")
-        },
+        text =
+            when {
+                timedOut -> stringResource(R.string.tool_ui_shell_timeout)
+                else -> stringResource(R.string.tool_ui_shell_exit, exitCode?.toString() ?: "?")
+            },
         style = style,
         color = if (ok) DiffAddedColor else MaterialTheme.colorScheme.error,
     )
@@ -414,47 +464,60 @@ private fun ShellExitStatus(content: JsonElement, style: androidx.compose.ui.tex
 
 /** 从工具输出 JSON 读取布尔字段 */
 private fun JsonElement?.boolean(key: String): Boolean? =
-    this?.jsonObjectOrNull?.get(key)?.jsonPrimitiveOrNull?.booleanOrNull
+    this
+        ?.jsonObjectOrNull
+        ?.get(key)
+        ?.jsonPrimitiveOrNull
+        ?.booleanOrNull
 
 /** 从工具输出 JSON 读取整型字段 */
 private fun JsonElement?.int(key: String): Int? =
-    this?.jsonObjectOrNull?.get(key)?.jsonPrimitiveOrNull?.intOrNull
+    this
+        ?.jsonObjectOrNull
+        ?.get(key)
+        ?.jsonPrimitiveOrNull
+        ?.intOrNull
 
 /** 从工具输出 JSON 读取长整型字段 */
 private fun JsonElement?.long(key: String): Long? =
-    this?.jsonObjectOrNull?.get(key)?.jsonPrimitiveOrNull?.longOrNull
+    this
+        ?.jsonObjectOrNull
+        ?.get(key)
+        ?.jsonPrimitiveOrNull
+        ?.longOrNull
 
 private const val FILE_SUMMARY_MAX_LINES = 10
 
 /** 由文件扩展名推断语法高亮语言 */
-private fun languageOf(path: String?): String = when (
-    path?.substringAfterLast('.', "")?.lowercase().orEmpty()
-) {
-    "kt", "kts" -> "kotlin"
-    "java" -> "java"
-    "js", "mjs", "cjs" -> "javascript"
-    "ts" -> "typescript"
-    "tsx" -> "tsx"
-    "jsx" -> "jsx"
-    "py" -> "python"
-    "rb" -> "ruby"
-    "go" -> "go"
-    "rs" -> "rust"
-    "c", "h" -> "c"
-    "cpp", "cc", "cxx", "hpp", "hxx" -> "cpp"
-    "cs" -> "csharp"
-    "swift" -> "swift"
-    "php" -> "php"
-    "sh", "bash", "zsh" -> "bash"
-    "json" -> "json"
-    "xml" -> "xml"
-    "html", "htm" -> "html"
-    "css" -> "css"
-    "scss" -> "scss"
-    "yaml", "yml" -> "yaml"
-    "toml" -> "toml"
-    "md", "markdown" -> "markdown"
-    "sql" -> "sql"
-    "gradle" -> "groovy"
-    else -> "plaintext"
-}
+private fun languageOf(path: String?): String =
+    when (
+        path?.substringAfterLast('.', "")?.lowercase().orEmpty()
+    ) {
+        "kt", "kts" -> "kotlin"
+        "java" -> "java"
+        "js", "mjs", "cjs" -> "javascript"
+        "ts" -> "typescript"
+        "tsx" -> "tsx"
+        "jsx" -> "jsx"
+        "py" -> "python"
+        "rb" -> "ruby"
+        "go" -> "go"
+        "rs" -> "rust"
+        "c", "h" -> "c"
+        "cpp", "cc", "cxx", "hpp", "hxx" -> "cpp"
+        "cs" -> "csharp"
+        "swift" -> "swift"
+        "php" -> "php"
+        "sh", "bash", "zsh" -> "bash"
+        "json" -> "json"
+        "xml" -> "xml"
+        "html", "htm" -> "html"
+        "css" -> "css"
+        "scss" -> "scss"
+        "yaml", "yml" -> "yaml"
+        "toml" -> "toml"
+        "md", "markdown" -> "markdown"
+        "sql" -> "sql"
+        "gradle" -> "groovy"
+        else -> "plaintext"
+    }

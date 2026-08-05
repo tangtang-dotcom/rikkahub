@@ -44,11 +44,17 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    val permissionState = rememberPermissionState(
-        permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setOf(
-            PermissionNotification
-        ) else emptySet(),
-    )
+    val permissionState =
+        rememberPermissionState(
+            permissions =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    setOf(
+                        PermissionNotification,
+                    )
+                } else {
+                    emptySet()
+                },
+        )
     PermissionManager(permissionState = permissionState)
 
     Scaffold(
@@ -61,16 +67,16 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                colors = CustomColors.topBarColors
+                colors = CustomColors.topBarColors,
             )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = CustomColors.topBarColors.containerColor
+        containerColor = CustomColors.topBarColors.containerColor,
     ) { contentPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding + PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 CardGroup(
@@ -84,13 +90,21 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                                 checked = displaySetting.showUpdates,
                                 onCheckedChange = {
                                     updateDisplaySetting(displaySetting.copy(showUpdates = it))
-                                }
+                                },
                             )
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_notification_message_generated)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_notification_message_generated_desc)) },
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_notification_message_generated),
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                stringResource(R.string.setting_display_page_notification_message_generated_desc),
+                            )
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableNotificationOnMessageGeneration,
@@ -98,21 +112,31 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                                     if (it && !permissionState.allPermissionsGranted) {
                                         permissionState.requestPermissions()
                                     }
-                                    updateDisplaySetting(displaySetting.copy(enableNotificationOnMessageGeneration = it))
-                                }
+                                    updateDisplaySetting(
+                                        displaySetting.copy(enableNotificationOnMessageGeneration = it),
+                                    )
+                                },
                             )
                         },
                     )
                     if (displaySetting.enableNotificationOnMessageGeneration) {
                         item(
-                            headlineContent = { Text(stringResource(R.string.setting_display_page_live_update_notification)) },
-                            supportingContent = { Text(stringResource(R.string.setting_display_page_live_update_notification_desc)) },
+                            headlineContent = {
+                                Text(
+                                    stringResource(R.string.setting_display_page_live_update_notification),
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    stringResource(R.string.setting_display_page_live_update_notification_desc),
+                                )
+                            },
                             trailingContent = {
                                 Switch(
                                     checked = displaySetting.enableLiveUpdateNotification,
                                     onCheckedChange = {
                                         updateDisplaySetting(displaySetting.copy(enableLiveUpdateNotification = it))
-                                    }
+                                    },
                                 )
                             },
                         )

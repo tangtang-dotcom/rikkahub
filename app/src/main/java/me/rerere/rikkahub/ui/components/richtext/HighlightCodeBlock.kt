@@ -54,10 +54,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import me.rerere.highlight.HighlightTextColorPalette
-import me.rerere.highlight.buildHighlightText
 import me.rerere.highlight.CodeHighlightText
 import me.rerere.highlight.CodeHighlighter
+import me.rerere.highlight.HighlightTextColorPalette
+import me.rerere.highlight.buildHighlightText
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowDown01
 import me.rerere.hugeicons.stroke.ArrowUp01
@@ -92,10 +92,11 @@ fun HighlightCodeBlock(
     language: String,
     modifier: Modifier = Modifier,
     completeCodeBlock: Boolean = true,
-    style: TextStyle? = TextStyle(
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-    ),
+    style: TextStyle? =
+        TextStyle(
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+        ),
 ) {
     val darkMode = LocalDarkMode.current
     val colorPalette = if (darkMode) AtomOneDarkPalette else AtomOneLightPalette
@@ -117,33 +118,36 @@ fun HighlightCodeBlock(
     val autoWrap = settings.displaySetting.codeBlockAutoWrap
     val showLineNumbers = settings.displaySetting.showLineNumbers
 
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*")
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                try {
-                    context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                        outputStream.write(code.toByteArray())
+    val createDocumentLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("*/*"),
+        ) { uri: Uri? ->
+            uri?.let {
+                scope.launch {
+                    try {
+                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                            outputStream.write(code.toByteArray())
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "HighlightCodeBlock: failed to save code to document", e)
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "HighlightCodeBlock: failed to save code to document", e)
                 }
             }
         }
-    }
 
     Column(
-        modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+        modifier =
+            modifier
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             HighlightCodeActions(
                 language = language,
@@ -161,24 +165,27 @@ fun HighlightCodeBlock(
             )
         }
         Column(
-            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         ) {
             when {
                 canInlinePreview && previewMode -> {
                     CodeBlockPreview(
                         code = code,
                         language = normalizedLanguage,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
                     )
                 }
+
                 completeCodeBlock && normalizedLanguage == "mermaid" -> {
                     Mermaid(
                         code = code,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+
                 else -> {
                     val textStyle = LocalTextStyle.current.merge(style)
                     val codeLines = remember(code) { code.lines() }
@@ -196,6 +203,7 @@ fun HighlightCodeBlock(
                                 colorPalette = colorPalette,
                             )
                         }
+
                         else -> {
                             CodeBlockDefault(
                                 displayCode = displayCode,
@@ -214,31 +222,33 @@ fun HighlightCodeBlock(
                     // 代码折叠按钮
                     if (settings.displaySetting.codeBlockAutoCollapse && codeLines.size > COLLAPSE_LINES) {
                         Box(
-                            modifier = Modifier
-                                .onClick {
-                                    isExpanded = !isExpanded
-                                }
-                                .fillMaxWidth(),
+                            modifier =
+                                Modifier
+                                    .onClick {
+                                        isExpanded = !isExpanded
+                                    }.fillMaxWidth(),
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .padding(vertical = 4.dp),
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.Center)
+                                        .padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
                                     imageVector = if (isExpanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(textStyle.fontSize.toDp())
+                                    modifier = Modifier.size(textStyle.fontSize.toDp()),
                                 )
                                 Text(
-                                    text = if (isExpanded) {
-                                        stringResource(id = R.string.code_block_collapse)
-                                    } else {
-                                        stringResource(id = R.string.code_block_expand)
-                                    },
+                                    text =
+                                        if (isExpanded) {
+                                            stringResource(id = R.string.code_block_collapse)
+                                        } else {
+                                            stringResource(id = R.string.code_block_expand)
+                                        },
                                     fontSize = textStyle.fontSize,
                                     lineHeight = textStyle.lineHeight,
                                 )
@@ -258,14 +268,15 @@ private fun CodeBlockWithLineNumbersWrapped(
     textStyle: TextStyle,
     colorPalette: HighlightTextColorPalette,
 ) {
-    val lineNumberWidth = remember(displayLines.size) {
-        displayLines.size.toString().length
-    }
+    val lineNumberWidth =
+        remember(displayLines.size) {
+            displayLines.size.toString().length
+        }
     SelectionContainer {
         Column {
             displayLines.forEachIndexed { index, line ->
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = (index + 1).toString().padStart(lineNumberWidth, ' '),
@@ -274,7 +285,7 @@ private fun CodeBlockWithLineNumbersWrapped(
                         fontFamily = JetbrainsMono,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         softWrap = false,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     )
                     CodeHighlightText(
                         code = line,
@@ -285,7 +296,7 @@ private fun CodeBlockWithLineNumbersWrapped(
                         overflow = TextOverflow.Visible,
                         softWrap = true,
                         fontFamily = JetbrainsMono,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -305,21 +316,23 @@ private fun CodeBlockDefault(
     scrollState: ScrollState,
 ) {
     Row(
-        modifier = Modifier.then(
-            if (autoWrap) {
-                Modifier
-            } else {
-                Modifier.horizontalScroll(scrollState)
-            }
-        )
+        modifier =
+            Modifier.then(
+                if (autoWrap) {
+                    Modifier
+                } else {
+                    Modifier.horizontalScroll(scrollState)
+                },
+            ),
     ) {
         // 行号列
         if (showLineNumbers) {
-            val lineNumberWidth = remember(displayLines.size) {
-                displayLines.size.toString().length
-            }
+            val lineNumberWidth =
+                remember(displayLines.size) {
+                    displayLines.size.toString().length
+                }
             Column(
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.padding(end = 8.dp),
             ) {
                 displayLines.forEachIndexed { index, _ ->
                     Text(
@@ -345,7 +358,7 @@ private fun CodeBlockDefault(
                 colors = colorPalette,
                 overflow = TextOverflow.Visible,
                 softWrap = autoWrap,
-                fontFamily = JetbrainsMono
+                fontFamily = JetbrainsMono,
             )
         }
     }
@@ -367,15 +380,16 @@ private fun HighlightCodeActions(
     val context = LocalContext.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = language,
             fontSize = 12.sp,
             lineHeight = 12.sp,
             fontFamily = JetbrainsMono,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-                .copy(alpha = 0.5f),
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant
+                    .copy(alpha = 0.5f),
         )
         Spacer(Modifier.weight(1f))
         Row(
@@ -389,51 +403,52 @@ private fun HighlightCodeActions(
                 imageVector = HugeIcons.Download04,
                 contentDescription = stringResource(id = R.string.chat_page_save),
                 tint = iconTint,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .onClick {
-                        val extension = when (language.lowercase()) {
-                            "kotlin" -> "kt"
-                            "java" -> "java"
-                            "python" -> "py"
-                            "javascript" -> "js"
-                            "typescript" -> "ts"
-                            "cpp", "c++" -> "cpp"
-                            "c" -> "c"
-                            "html" -> "html"
-                            "css" -> "css"
-                            "xml" -> "xml"
-                            "json" -> "json"
-                            "yaml", "yml" -> "yml"
-                            "markdown", "md" -> "md"
-                            "sql" -> "sql"
-                            "sh", "bash" -> "sh"
-                            "svg" -> "svg"
-                            else -> "txt"
-                        }
-                        createDocumentLauncher.launch(
-                            "code_${
-                                Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                            }.$extension"
-                        )
-                    }
-                    .padding(4.dp)
-                    .size(iconSize)
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .onClick {
+                            val extension =
+                                when (language.lowercase()) {
+                                    "kotlin" -> "kt"
+                                    "java" -> "java"
+                                    "python" -> "py"
+                                    "javascript" -> "js"
+                                    "typescript" -> "ts"
+                                    "cpp", "c++" -> "cpp"
+                                    "c" -> "c"
+                                    "html" -> "html"
+                                    "css" -> "css"
+                                    "xml" -> "xml"
+                                    "json" -> "json"
+                                    "yaml", "yml" -> "yml"
+                                    "markdown", "md" -> "md"
+                                    "sql" -> "sql"
+                                    "sh", "bash" -> "sh"
+                                    "svg" -> "svg"
+                                    else -> "txt"
+                                }
+                            createDocumentLauncher.launch(
+                                "code_${
+                                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                                }.$extension",
+                            )
+                        }.padding(4.dp)
+                        .size(iconSize),
             )
 
             Icon(
                 imageVector = HugeIcons.Copy01,
                 contentDescription = stringResource(id = R.string.code_block_copy),
                 tint = iconTint,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .onClick {
-                        scope.launch {
-                            clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
-                        }
-                    }
-                    .padding(4.dp)
-                    .size(iconSize)
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .onClick {
+                            scope.launch {
+                                clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
+                            }
+                        }.padding(4.dp)
+                        .size(iconSize),
             )
 
             val normalizedLanguage = language.lowercase()
@@ -442,13 +457,13 @@ private fun HighlightCodeActions(
                     imageVector = if (previewMode) HugeIcons.Code else HugeIcons.View,
                     contentDescription = if (previewMode) "Code" else stringResource(id = R.string.code_block_preview),
                     tint = iconTint,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .onClick {
-                            onTogglePreviewMode()
-                        }
-                        .padding(4.dp)
-                        .size(iconSize)
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .onClick {
+                                onTogglePreviewMode()
+                            }.padding(4.dp)
+                            .size(iconSize),
                 )
             }
 
@@ -457,15 +472,15 @@ private fun HighlightCodeActions(
                     imageVector = HugeIcons.Eye,
                     contentDescription = stringResource(id = R.string.code_block_preview),
                     tint = iconTint,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .onClick {
-                            val content = buildCodePreviewHtml(code = code, language = normalizedLanguage)
-                            val contentId = WebViewContentCache.store(context.cacheDir, content)
-                            navController.navigate(Screen.WebView(contentId = contentId))
-                        }
-                        .padding(4.dp)
-                        .size(iconSize)
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .onClick {
+                                val content = buildCodePreviewHtml(code = code, language = normalizedLanguage)
+                                val contentId = WebViewContentCache.store(context.cacheDir, content)
+                                navController.navigate(Screen.WebView(contentId = contentId))
+                            }.padding(4.dp)
+                            .size(iconSize),
                 )
             }
         }
@@ -478,17 +493,18 @@ private fun CodeBlockPreview(
     language: String,
     modifier: Modifier = Modifier,
 ) {
-    val state = rememberWebViewState(
-        data = buildCodePreviewHtml(code = code, language = language),
-        baseUrl = "https://rikkahub.local",
-        mimeType = "text/html",
-        settings = {
-            builtInZoomControls = true
-            displayZoomControls = false
-            useWideViewPort = true
-            loadWithOverviewMode = true
-        }
-    )
+    val state =
+        rememberWebViewState(
+            data = buildCodePreviewHtml(code = code, language = language),
+            baseUrl = "https://rikkahub.local",
+            mimeType = "text/html",
+            settings = {
+                builtInZoomControls = true
+                displayZoomControls = false
+                useWideViewPort = true
+                loadWithOverviewMode = true
+            },
+        )
 
     WebView(
         state = state,
@@ -496,40 +512,43 @@ private fun CodeBlockPreview(
     )
 }
 
-private fun buildCodePreviewHtml(code: String, language: String): String {
-    return if (language == "svg") {
+private fun buildCodePreviewHtml(
+    code: String,
+    language: String,
+): String =
+    if (language == "svg") {
         """<!DOCTYPE html><html><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;">$code</body></html>"""
     } else {
         code
     }
-}
 
 class HighlightCodeVisualTransformation(
     val language: String,
     val highlighter: CodeHighlighter,
-    val darkMode: Boolean
+    val darkMode: Boolean,
 ) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        val annotatedString = try {
-            val colorPalette = if (darkMode) AtomOneDarkPalette else AtomOneLightPalette
-            if (text.text.isEmpty()) {
-                AnnotatedString("")
-            } else {
-                val tokens = highlighter.highlight(text.text, language)
-                buildAnnotatedString {
-                    tokens.forEach { token ->
-                        buildHighlightText(token, colorPalette)
+        val annotatedString =
+            try {
+                val colorPalette = if (darkMode) AtomOneDarkPalette else AtomOneLightPalette
+                if (text.text.isEmpty()) {
+                    AnnotatedString("")
+                } else {
+                    val tokens = highlighter.highlight(text.text, language)
+                    buildAnnotatedString {
+                        tokens.forEach { token ->
+                            buildHighlightText(token, colorPalette)
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "HighlightCodeVisualTransformation: failed to highlight code", e)
+                AnnotatedString(text.text)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "HighlightCodeVisualTransformation: failed to highlight code", e)
-            AnnotatedString(text.text)
-        }
 
         return TransformedText(
             text = annotatedString,
-            offsetMapping = OffsetMapping.Identity
+            offsetMapping = OffsetMapping.Identity,
         )
     }
 }

@@ -10,11 +10,12 @@ import kotlin.uuid.Uuid
 
 class ShareHandlerVM(
     text: String,
-    private val settingsStore: SettingsStore
+    private val settingsStore: SettingsStore,
 ) : ViewModel() {
     val shareText = checkNotNull(text)
-    val settings = settingsStore.settingsFlow
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
+    val settings =
+        settingsStore.settingsFlow
+            .stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
 
     suspend fun updateAssistant(assistantId: Uuid) {
         settingsStore.updateAssistant(assistantId)

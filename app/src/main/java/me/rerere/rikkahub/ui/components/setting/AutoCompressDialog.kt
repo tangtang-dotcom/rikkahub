@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.setting
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.rikkahub.R
@@ -43,7 +45,7 @@ fun AutoCompressDialog(
     threshold: Int,
     tokenLimit: Long,
     onDismiss: () -> Unit,
-    onConfirm: (enabled: Boolean, mode: Int, base: Long, threshold: Int, tokenLimit: Long) -> Unit
+    onConfirm: (enabled: Boolean, mode: Int, base: Long, threshold: Int, tokenLimit: Long) -> Unit,
 ) {
     var currentEnabled by remember { mutableStateOf(enabled) }
     var currentMode by remember { mutableIntStateOf(mode) }
@@ -60,27 +62,27 @@ fun AutoCompressDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.setting_model_page_auto_compress_desc),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 // 总开关
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.setting_model_page_auto_compress_enable),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     Switch(
                         checked = currentEnabled,
-                        onCheckedChange = { currentEnabled = it }
+                        onCheckedChange = { currentEnabled = it },
                     )
                 }
 
@@ -88,16 +90,16 @@ fun AutoCompressDialog(
                     // 模式 A：百分比模式（基准 + 百分比）
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         RadioButton(
                             selected = currentMode == 0,
-                            onClick = { currentMode = 0 }
+                            onClick = { currentMode = 0 },
                         )
                         Text(
                             text = stringResource(R.string.setting_model_page_auto_compress_mode_percent),
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                     if (currentMode == 0) {
@@ -111,31 +113,35 @@ fun AutoCompressDialog(
                             label = { Text(stringResource(R.string.setting_model_page_auto_compress_base)) },
                             supportingText = { Text(stringResource(R.string.setting_model_page_auto_compress_m_unit)) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
                         )
 
                         OutlinedTextField(
                             value = currentThreshold,
-                            onValueChange = { currentThreshold = it },
+                            onValueChange = { value ->
+                                if (value.all { it.isDigit() }) {
+                                    currentThreshold = value
+                                }
+                            },
                             label = { Text(stringResource(R.string.setting_model_page_auto_compress_threshold)) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
                         )
                     }
 
                     // 模式 B：token 消耗模式
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         RadioButton(
                             selected = currentMode == 1,
-                            onClick = { currentMode = 1 }
+                            onClick = { currentMode = 1 },
                         )
                         Text(
                             text = stringResource(R.string.setting_model_page_auto_compress_mode_token),
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                     if (currentMode == 1) {
@@ -149,7 +155,7 @@ fun AutoCompressDialog(
                             label = { Text(stringResource(R.string.setting_model_page_auto_compress_token_limit)) },
                             supportingText = { Text(stringResource(R.string.setting_model_page_auto_compress_m_unit)) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
                         )
                     }
                 }
@@ -159,22 +165,50 @@ fun AutoCompressDialog(
                 Text(
                     text = stringResource(R.string.auto_compress_reset_warning),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
+                    val ctx = LocalContext.current
+                    if (currentEnabled) {
+                        when (currentMode) {
+                            0 -> {
+                                if (currentBase.isBlank() || parseMillion(currentBase) <= 0L) {
+                                    Toast
+                                        .makeText(
+                                            ctx,
+                                            ctx.getString(R.string.auto_compress_invalid_input),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    return@TextButton
+                                }
+                            }
+
+                            1 -> {
+                                if (currentTokenLimit.isBlank() || parseMillion(currentTokenLimit) <= 0L) {
+                                    Toast
+                                        .makeText(
+                                            ctx,
+                                            ctx.getString(R.string.auto_compress_invalid_input),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    return@TextButton
+                                }
+                            }
+                        }
+                    }
                     onConfirm(
                         currentEnabled,
                         currentMode,
                         parseMillion(currentBase),
                         currentThreshold.toIntOrNull()?.coerceIn(50, 95) ?: 80,
-                        parseMillion(currentTokenLimit)
+                        parseMillion(currentTokenLimit),
                     )
                     onDismiss()
-                }
+                },
             ) {
                 Text(stringResource(R.string.settings_confirm))
             }
@@ -183,12 +217,12 @@ fun AutoCompressDialog(
             TextButton(onClick = { onDismiss() }) {
                 Text(stringResource(R.string.settings_cancel))
             }
-        }
+        },
     )
 }
 
 /** 输入框允许的格式：非负整数或小数（可带一位小数点） */
-private val MILLION_INPUT_REGEX = Regex("^\\d*\\.?\\d*$")
+private val MILLION_INPUT_REGEX = Regex("^\\d+(\\.\\d+)?$")
 
 /** 以 M 为单位展示（1M = 1,000,000）：整数时省略小数部分 */
 private fun formatMillion(value: Long): String {

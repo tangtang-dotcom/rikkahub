@@ -10,7 +10,7 @@ private const val TAG = "CoroutineUtils"
 
 fun <T> Flow<T>.toMutableStateFlow(
     scope: CoroutineScope,
-    initial: T
+    initial: T,
 ): MutableStateFlow<T> {
     val stateFlow = MutableStateFlow(initial)
     scope.launch {

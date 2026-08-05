@@ -32,7 +32,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,37 +105,48 @@ fun SettingNotificationsPage() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Status
             Text(
                 text = stringResource(R.string.setting_page_notifications_status_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(start = 16.dp),
             )
             CardGroup {
                 item(
                     headlineContent = {
                         Text(
-                            if (bound) stringResource(R.string.setting_page_notifications_status_connected)
-                            else stringResource(R.string.setting_page_notifications_status_not_connected),
+                            if (bound) {
+                                stringResource(R.string.setting_page_notifications_status_connected)
+                            } else {
+                                stringResource(R.string.setting_page_notifications_status_not_connected)
+                            },
                             color = if (bound) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
-                    supportingContent = if (!bound) ({
-                        Text(stringResource(R.string.setting_page_notifications_status_help))
-                    }) else null,
+                    supportingContent =
+                        if (!bound) {
+                            (
+                                {
+                                    Text(stringResource(R.string.setting_page_notifications_status_help))
+                                }
+                            )
+                        } else {
+                            null
+                        },
                 )
                 item(
                     onClick = {
                         context.startActivity(
                             me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
-                                .notificationListenerSettingsIntent()
+                                .notificationListenerSettingsIntent(),
                         )
                     },
                     headlineContent = {
@@ -146,10 +157,11 @@ fun SettingNotificationsPage() {
                     headlineContent = {
                         val chatId = tg.defaultChatId
                         Text(
-                            if (chatId != null && tg.enabled)
+                            if (chatId != null && tg.enabled) {
                                 stringResource(R.string.setting_page_notifications_default_chat_set, chatId.toString())
-                            else
-                                stringResource(R.string.setting_page_notifications_default_chat_unset),
+                            } else {
+                                stringResource(R.string.setting_page_notifications_default_chat_unset)
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -161,7 +173,7 @@ fun SettingNotificationsPage() {
             Text(
                 text = stringResource(R.string.setting_page_notifications_whitelist_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
             )
             CardGroup {
                 item(
@@ -199,7 +211,7 @@ fun SettingNotificationsPage() {
                         scope.launch {
                             listenerPrefs.update { c ->
                                 c.copy(
-                                    whitelist = if (on) c.whitelist + pkg else c.whitelist - pkg
+                                    whitelist = if (on) c.whitelist + pkg else c.whitelist - pkg,
                                 )
                             }
                         }
@@ -211,14 +223,14 @@ fun SettingNotificationsPage() {
             Text(
                 text = stringResource(R.string.setting_page_notifications_recent_section),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
             )
             if (recent.isEmpty()) {
                 CardGroup {
                     item(
                         headlineContent = {
                             Text(stringResource(R.string.setting_page_notifications_recent_empty))
-                        }
+                        },
                     )
                 }
             } else {
@@ -230,8 +242,9 @@ fun SettingNotificationsPage() {
                             },
                             supportingContent = {
                                 Text(
-                                    text = entry.text.take(120).ifBlank { "(no text)" } + " · " +
-                                        formatRelativeTime(System.currentTimeMillis() - entry.postTimeMs),
+                                    text =
+                                        entry.text.take(120).ifBlank { "(no text)" } + " · " +
+                                            formatRelativeTime(System.currentTimeMillis() - entry.postTimeMs),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -255,11 +268,12 @@ private fun formatRelativeTime(deltaMs: Long): String {
 }
 
 @Composable
-private fun whitelistSummary(count: Int): String = when (count) {
-    0 -> stringResource(R.string.setting_page_notifications_whitelist_summary_zero)
-    1 -> stringResource(R.string.setting_page_notifications_whitelist_summary_n, 1)
-    else -> stringResource(R.string.setting_page_notifications_whitelist_summary_n_plural, count)
-}
+private fun whitelistSummary(count: Int): String =
+    when (count) {
+        0 -> stringResource(R.string.setting_page_notifications_whitelist_summary_zero)
+        1 -> stringResource(R.string.setting_page_notifications_whitelist_summary_n, 1)
+        else -> stringResource(R.string.setting_page_notifications_whitelist_summary_n_plural, count)
+    }
 
 private data class InstalledAppRow(
     val packageName: String,
@@ -308,10 +322,11 @@ private fun AppWhitelistPickerDialog(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = CircleShape,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
+                    colors =
+                        TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                        ),
                 )
                 FilterChip(
                     selected = showSelectedOnly,
@@ -328,13 +343,15 @@ private fun AppWhitelistPickerDialog(
                     }
                 } else {
                     val needle = query.trim().lowercase()
-                    val visible = list.filter { row ->
-                        val matchesQuery = needle.isEmpty() ||
-                            row.label.lowercase().contains(needle) ||
-                            row.packageName.lowercase().contains(needle)
-                        val matchesSelected = !showSelectedOnly || row.packageName in selected
-                        matchesQuery && matchesSelected
-                    }
+                    val visible =
+                        list.filter { row ->
+                            val matchesQuery =
+                                needle.isEmpty() ||
+                                    row.label.lowercase().contains(needle) ||
+                                    row.packageName.lowercase().contains(needle)
+                            val matchesSelected = !showSelectedOnly || row.packageName in selected
+                            matchesQuery && matchesSelected
+                        }
                     if (visible.isEmpty()) {
                         Text(
                             stringResource(R.string.setting_page_notifications_whitelist_picker_empty),
@@ -371,13 +388,19 @@ private fun AppWhitelistRow(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val ctx = LocalContext.current
-    val icon = remember(row.packageName) {
-        try { ctx.packageManager.getApplicationIcon(row.packageName) } catch (_: Throwable) { null }
-    }
+    val icon =
+        remember(row.packageName) {
+            try {
+                ctx.packageManager.getApplicationIcon(row.packageName)
+            } catch (_: Throwable) {
+                null
+            }
+        }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -412,8 +435,14 @@ private fun AppWhitelistRow(
  */
 private fun loadInstalledApps(ctx: Context): List<InstalledAppRow> {
     val pm = ctx.packageManager
+
     @Suppress("DEPRECATION")
-    val all = try { pm.getInstalledPackages(0) } catch (_: Throwable) { emptyList() }
+    val all =
+        try {
+            pm.getInstalledPackages(0)
+        } catch (_: Throwable) {
+            emptyList()
+        }
     val rows = mutableListOf<InstalledAppRow>()
     for (info in all) {
         val pkg = info.packageName
@@ -423,7 +452,12 @@ private fun loadInstalledApps(ctx: Context): List<InstalledAppRow> {
         val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
         val isUpdated = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
         if (isSystem && !isUpdated) continue
-        val label = try { appInfo.loadLabel(pm).toString() } catch (_: Throwable) { pkg }
+        val label =
+            try {
+                appInfo.loadLabel(pm).toString()
+            } catch (_: Throwable) {
+                pkg
+            }
         rows.add(InstalledAppRow(packageName = pkg, label = label))
     }
     rows.sortBy { it.label.lowercase() }

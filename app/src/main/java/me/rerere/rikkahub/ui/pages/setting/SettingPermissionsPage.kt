@@ -22,11 +22,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.permissions.PermissionInventory
 import me.rerere.rikkahub.data.permissions.PermissionInventory.GrantAction
@@ -56,17 +56,19 @@ fun SettingPermissionsPage() {
         rows = PermissionInventory.build(context)
     }
 
-    val runtimeRequester = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {
-        refreshNow()
-    }
+    val runtimeRequester =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) {
+            refreshNow()
+        }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) refreshNow()
-        }
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) refreshNow()
+            }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -86,12 +88,13 @@ fun SettingPermissionsPage() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Group.values().forEach { group ->
                 val rowsForGroup = grouped[group] ?: return@forEach
@@ -99,36 +102,53 @@ fun SettingPermissionsPage() {
                 Text(
                     text = sectionTitle(group),
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                 )
                 CardGroup {
                     rowsForGroup.forEach { row ->
                         val grantAction = row.grant
-                        val click: (() -> Unit)? = when {
-                            grantAction is GrantAction.Runtime
-                                && row.status != Status.GRANTED -> {
-                                { runtimeRequester.launch(grantAction.permission) }
+                        val click: (() -> Unit)? =
+                            when {
+                                grantAction is GrantAction.Runtime &&
+                                    row.status != Status.GRANTED -> {
+                                    { runtimeRequester.launch(grantAction.permission) }
+                                }
+
+                                grantAction is GrantAction.SystemSettings -> {
+                                    { context.startActivity(grantAction.intent) }
+                                }
+
+                                else -> {
+                                    null
+                                }
                             }
-                            grantAction is GrantAction.SystemSettings -> {
-                                { context.startActivity(grantAction.intent) }
-                            }
-                            else -> null
-                        }
                         item(
                             onClick = click,
                             headlineContent = { Text(row.label) },
                             supportingContent = { Text(row.description) },
                             trailingContent = {
-                                val statusText = when (row.status) {
-                                    Status.GRANTED -> stringResource(R.string.setting_page_permissions_status_granted)
-                                    Status.AUTO_GRANTED -> stringResource(R.string.setting_page_permissions_status_auto_granted)
-                                    Status.DENIED -> stringResource(R.string.setting_page_permissions_status_denied)
-                                }
-                                val tint = when (row.status) {
-                                    Status.GRANTED -> MaterialTheme.colorScheme.primary
-                                    Status.AUTO_GRANTED -> MaterialTheme.colorScheme.outline
-                                    Status.DENIED -> MaterialTheme.colorScheme.error
-                                }
+                                val statusText =
+                                    when (row.status) {
+                                        Status.GRANTED -> {
+                                            stringResource(R.string.setting_page_permissions_status_granted)
+                                        }
+
+                                        Status.AUTO_GRANTED -> {
+                                            stringResource(
+                                                R.string.setting_page_permissions_status_auto_granted,
+                                            )
+                                        }
+
+                                        Status.DENIED -> {
+                                            stringResource(R.string.setting_page_permissions_status_denied)
+                                        }
+                                    }
+                                val tint =
+                                    when (row.status) {
+                                        Status.GRANTED -> MaterialTheme.colorScheme.primary
+                                        Status.AUTO_GRANTED -> MaterialTheme.colorScheme.outline
+                                        Status.DENIED -> MaterialTheme.colorScheme.error
+                                    }
                                 Text(
                                     text = statusText,
                                     color = tint,
@@ -144,13 +164,21 @@ fun SettingPermissionsPage() {
 }
 
 @Composable
-private fun sectionTitle(group: Group): String = when (group) {
-    Group.ServicesAndIntegrations ->
-        stringResource(R.string.setting_page_permissions_group_services)
-    Group.SpecialAccess ->
-        stringResource(R.string.setting_page_permissions_group_special)
-    Group.Runtime ->
-        stringResource(R.string.setting_page_permissions_group_runtime)
-    Group.AutoGranted ->
-        stringResource(R.string.setting_page_permissions_group_auto)
-}
+private fun sectionTitle(group: Group): String =
+    when (group) {
+        Group.ServicesAndIntegrations -> {
+            stringResource(R.string.setting_page_permissions_group_services)
+        }
+
+        Group.SpecialAccess -> {
+            stringResource(R.string.setting_page_permissions_group_special)
+        }
+
+        Group.Runtime -> {
+            stringResource(R.string.setting_page_permissions_group_runtime)
+        }
+
+        Group.AutoGranted -> {
+            stringResource(R.string.setting_page_permissions_group_auto)
+        }
+    }

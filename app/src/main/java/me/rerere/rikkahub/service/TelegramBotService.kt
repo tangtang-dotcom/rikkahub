@@ -9,7 +9,6 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import kotlin.uuid.Uuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,11 +21,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Modality
 import me.rerere.ai.ui.UIMessage
@@ -50,10 +52,8 @@ import me.rerere.rikkahub.data.telegram.TelegramMyChatMember
 import me.rerere.rikkahub.data.telegram.parseCallbackQuery
 import me.rerere.rikkahub.data.telegram.parseIncoming
 import me.rerere.rikkahub.data.telegram.parseMyChatMember
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.koin.android.ext.android.inject
+import kotlin.uuid.Uuid
 
 /**
  * Foreground service that long-polls Telegram for incoming messages and routes them into the
@@ -66,7 +66,6 @@ import org.koin.android.ext.android.inject
  * also re-started after device boot via CronBootReceiver if config.enabled was true.
  */
 class TelegramBotService : Service() {
-
     // The DI-injected dependencies are `internal` (not `private`) because the command
     // handler extension functions in TelegramCommandHandlers.kt access them. Module-private
     // is the same practical scope — only :app classes can resolve TelegramBotService, and
@@ -79,6 +78,7 @@ class TelegramBotService : Service() {
     internal val settingsStore: SettingsStore by inject()
     internal val doctorChecks: me.rerere.rikkahub.ui.pages.setting.doctor.DoctorChecks by inject()
     internal val agentRunRepo: me.rerere.rikkahub.data.agentrun.AgentRunRepository by inject()
+
     // Phase 24 — shared long-poll stall tracker. The poll loop stamps it on every
     // getUpdates; the stall checker reads it; DoctorChecks reads it.
     private val pollStallTracker: me.rerere.rikkahub.data.telegram.TelegramPollStallTracker by inject()
@@ -86,6 +86,7 @@ class TelegramBotService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pollJob: Job? = null
     private var externalGenPumpJob: Job? = null
+
     // Phase 24 — the periodic poll-stall checker coroutine. Launched alongside the poll
     // loop in onStartCommand, cancelled with the service scope.
     private var pollStallCheckerJob: Job? = null
@@ -98,6 +99,7 @@ class TelegramBotService : Service() {
      * entirely so /stop and /new run the moment they arrive.
      */
     private val chatMutexes = java.util.concurrent.ConcurrentHashMap<Long, Mutex>()
+
     internal fun mutexFor(chatId: Long): Mutex = chatMutexes.getOrPut(chatId) { Mutex() }
 
     /**
@@ -108,8 +110,8 @@ class TelegramBotService : Service() {
      * interrupts the first's resume coroutine and the recorded scope can flip silently.
      */
     private val approvalMutexes = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
-    private fun approvalMutexFor(toolCallId: String): Mutex =
-        approvalMutexes.getOrPut(toolCallId) { Mutex() }
+
+    private fun approvalMutexFor(toolCallId: String): Mutex = approvalMutexes.getOrPut(toolCallId) { Mutex() }
 
     /**
      * Tracks the active handleLlmTurn coroutine per chat so /stop and /new can cancel it
@@ -134,7 +136,8 @@ class TelegramBotService : Service() {
      * to the wake — its reply lands in the in-app chat history but never reaches Telegram.
      */
     private val activeHandleIncomingConvs: java.util.concurrent.ConcurrentHashMap.KeySetView<Uuid, Boolean> =
-        java.util.concurrent.ConcurrentHashMap.newKeySet<Uuid>()
+        java.util.concurrent.ConcurrentHashMap
+            .newKeySet<Uuid>()
 
     /**
      * Deferred-removal jobs for [activeHandleIncomingConvs]. When [handleIncoming] exits,
@@ -167,7 +170,11 @@ class TelegramBotService : Service() {
         // startForegroundService() from a user-engaged context. We promote in onStartCommand.
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         try {
             startInForeground()
         } catch (e: Throwable) {
@@ -188,12 +195,13 @@ class TelegramBotService : Service() {
         // the poll loop (not the service). GUARDED like externalGenPumpJob below — every
         // onStartCommand would otherwise spawn a duplicate checker.
         if (pollStallCheckerJob?.isActive != true) {
-            pollStallTracker.markUpdate()  // fresh baseline so the checker doesn't fire on stale state
-            val checker = TelegramPollStallChecker(
-                tracker = pollStallTracker,
-                restartPollLoop = ::restartPollLoop,
-                onEscalate = ::escalatePollStallToFgsRestart,
-            )
+            pollStallTracker.markUpdate() // fresh baseline so the checker doesn't fire on stale state
+            val checker =
+                TelegramPollStallChecker(
+                    tracker = pollStallTracker,
+                    restartPollLoop = ::restartPollLoop,
+                    onEscalate = ::escalatePollStallToFgsRestart,
+                )
             pollStallCheckerJob = scope.launch { checker.monitor() }
         }
         // Refresh the slash-command menu Telegram shows users every time the bot starts
@@ -226,9 +234,13 @@ class TelegramBotService : Service() {
     private fun startInForeground() {
         val nm = getSystemService(NotificationManager::class.java)
         if (nm.getNotificationChannel(CHANNEL_ID) == null) {
-            nm.createNotificationChannel(NotificationChannel(
-                CHANNEL_ID, "Telegram bot", NotificationManager.IMPORTANCE_LOW
-            ))
+            nm.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "Telegram bot",
+                    NotificationManager.IMPORTANCE_LOW,
+                ),
+            )
         }
         val notif = buildForegroundNotification()
         // Android 14+ ties the runtime FGS type to the manifest declaration AND to a
@@ -252,12 +264,14 @@ class TelegramBotService : Service() {
      */
     private fun buildForegroundNotification(): android.app.Notification {
         val rejected = RejectedSenderLog.latest()
-        val body = if (rejected != null) {
-            "Rejected sender ${rejected.senderId} (chat ${rejected.chatId}). Add to whitelist if that was you."
-        } else {
-            "Routing inbound messages to RikkaHub"
-        }
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val body =
+            if (rejected != null) {
+                "Rejected sender ${rejected.senderId} (chat ${rejected.chatId}). Add to whitelist if that was you."
+            } else {
+                "Routing inbound messages to RikkaHub"
+            }
+        return NotificationCompat
+            .Builder(this, CHANNEL_ID)
             .setContentTitle("Telegram bot listening")
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
@@ -305,12 +319,20 @@ class TelegramBotService : Service() {
         // enough that legitimate inbound updates get skipped.
         var lastTokenSeen: String? = null
         while (true) {
-            val cfg = try { prefs.current() } catch (e: Throwable) {
-                android.util.Log.e(TAG, "pollLoop: prefs.current() failed", e); null
-            }
+            val cfg =
+                try {
+                    prefs.current()
+                } catch (e: Throwable) {
+                    android.util.Log.e(TAG, "pollLoop: prefs.current() failed", e)
+                    null
+                }
             if (cfg == null || !cfg.isUsable) {
-                android.util.Log.w(TAG, "pollLoop: cfg unusable (token_set=${cfg?.token?.isNotBlank()} enabled=${cfg?.enabled}); stopping")
-                stopSelf(); return
+                android.util.Log.w(
+                    TAG,
+                    "pollLoop: cfg unusable (token_set=${cfg?.token?.isNotBlank()} enabled=${cfg?.enabled}); stopping",
+                )
+                stopSelf()
+                return
             }
             if (lastTokenSeen != null && lastTokenSeen != cfg.token) {
                 android.util.Log.i(TAG, "pollLoop: token changed; resetting offset")
@@ -323,12 +345,16 @@ class TelegramBotService : Service() {
             // is off - while the device is interactive the CPU stays awake on its own, so
             // the lock is pure battery waste (see shouldHoldPollWakeLock). Released in
             // finally so a crash during getUpdates does not leak the wakelock.
-            val wakeLock = if (shouldHoldPollWakeLock(pm?.isInteractive)) {
-                pm?.newWakeLock(
-                    android.os.PowerManager.PARTIAL_WAKE_LOCK,
-                    "rikkahub:telegram_long_poll",
-                )?.also { it.setReferenceCounted(false) }
-            } else null
+            val wakeLock =
+                if (shouldHoldPollWakeLock(pm?.isInteractive)) {
+                    pm
+                        ?.newWakeLock(
+                            android.os.PowerManager.PARTIAL_WAKE_LOCK,
+                            "rikkahub:telegram_long_poll",
+                        )?.also { it.setReferenceCounted(false) }
+                } else {
+                    null
+                }
             try {
                 cycle++
                 wakeLock?.acquire(WAKELOCK_TIMEOUT_MS)
@@ -353,28 +379,52 @@ class TelegramBotService : Service() {
                     if (updateId != null && updateId >= offset) offset = updateId + 1
                     val incoming = parseIncoming(u)
                     if (incoming != null) {
-                        android.util.Log.i(TAG, "pollLoop: dispatching message ${incoming.messageId} from chat=${incoming.chatId} sender=${incoming.senderId}")
+                        android.util.Log.i(
+                            TAG,
+                            "pollLoop: dispatching message ${incoming.messageId} from chat=${incoming.chatId} sender=${incoming.senderId}",
+                        )
                         scope.launch {
-                            try { handleIncoming(cfg, incoming) }
-                            catch (e: Throwable) { android.util.Log.e(TAG, "handleIncoming threw for message ${incoming.messageId}", e) }
+                            try {
+                                handleIncoming(cfg, incoming)
+                            } catch (
+                                e: Throwable,
+                            ) {
+                                android.util.Log.e(TAG, "handleIncoming threw for message ${incoming.messageId}", e)
+                            }
                         }
                         continue
                     }
                     val cq = parseCallbackQuery(u)
                     if (cq != null) {
-                        android.util.Log.i(TAG, "pollLoop: dispatching callback_query ${cq.callbackQueryId} from chat=${cq.chatId} sender=${cq.senderId}")
+                        android.util.Log.i(
+                            TAG,
+                            "pollLoop: dispatching callback_query ${cq.callbackQueryId} from chat=${cq.chatId} sender=${cq.senderId}",
+                        )
                         scope.launch {
-                            try { handleCallbackQuery(cfg, cq) }
-                            catch (e: Throwable) { android.util.Log.e(TAG, "handleCallbackQuery threw for ${cq.callbackQueryId}", e) }
+                            try {
+                                handleCallbackQuery(cfg, cq)
+                            } catch (
+                                e: Throwable,
+                            ) {
+                                android.util.Log.e(TAG, "handleCallbackQuery threw for ${cq.callbackQueryId}", e)
+                            }
                         }
                         continue
                     }
                     val mcm = parseMyChatMember(u)
                     if (mcm != null) {
-                        android.util.Log.i(TAG, "pollLoop: my_chat_member chat=${mcm.chatId} newStatus=${mcm.newStatus}")
+                        android.util.Log.i(
+                            TAG,
+                            "pollLoop: my_chat_member chat=${mcm.chatId} newStatus=${mcm.newStatus}",
+                        )
                         scope.launch {
-                            try { handleMyChatMember(mcm) }
-                            catch (e: Throwable) { android.util.Log.e(TAG, "handleMyChatMember threw for chat=${mcm.chatId}", e) }
+                            try {
+                                handleMyChatMember(mcm)
+                            } catch (
+                                e: Throwable,
+                            ) {
+                                android.util.Log.e(TAG, "handleMyChatMember threw for chat=${mcm.chatId}", e)
+                            }
                         }
                         continue
                     }
@@ -398,7 +448,8 @@ class TelegramBotService : Service() {
                     android.util.Log.w(TAG, "pollLoop: bailing out; bot token rejected (${e.errorCode})")
                     runCatching { prefs.update { it.copy(enabled = false) } }
                     postTokenInvalidNotification(e.errorCode, e.description)
-                    stopSelf(); return
+                    stopSelf()
+                    return
                 }
                 consecutiveErrors++
                 // Honour Telegram's flood-control retry_after (429) so we don't hammer the
@@ -410,7 +461,10 @@ class TelegramBotService : Service() {
                 consecutiveErrors++
                 delay(computeBackoffMs(consecutiveErrors))
             } finally {
-                try { if (wakeLock?.isHeld == true) wakeLock.release() } catch (_: Throwable) {}
+                try {
+                    if (wakeLock?.isHeld == true) wakeLock.release()
+                } catch (_: Throwable) {
+                }
             }
         }
     }
@@ -477,22 +531,25 @@ class TelegramBotService : Service() {
             if (convId in activeHandleIncomingConvs) return@collect
             // Find the chat this conv is bound to. If none, the conv isn't a Telegram
             // conv; nothing to do.
-            val mapping = runCatching { chatRepo.getByConversationId(convId.toString()) }
-                .getOrNull() ?: return@collect
+            val mapping =
+                runCatching { chatRepo.getByConversationId(convId.toString()) }
+                    .getOrNull() ?: return@collect
 
             // Harvest the most-recent assistant text. Mirrors SubAgentEngine.harvestFinalText
             // but pulls from the live in-memory state when available so we get whatever the
             // last gen actually produced (DB write may lag a few hundred ms behind).
-            val text = runCatching {
-                val conv = chatService.getConversationFlow(convId).value
-                val selected = conv.messageNodes.mapNotNull { it.messages.getOrNull(it.selectIndex) }
-                val lastAssistant = selected.lastOrNull { it.role.name.equals("assistant", ignoreCase = true) }
-                lastAssistant?.parts
-                    ?.filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
-                    ?.joinToString("\n") { it.text }
-                    ?.trim()
-                    .orEmpty()
-            }.getOrDefault("")
+            val text =
+                runCatching {
+                    val conv = chatService.getConversationFlow(convId).value
+                    val selected = conv.messageNodes.mapNotNull { it.messages.getOrNull(it.selectIndex) }
+                    val lastAssistant = selected.lastOrNull { it.role.name.equals("assistant", ignoreCase = true) }
+                    lastAssistant
+                        ?.parts
+                        ?.filterIsInstance<me.rerere.ai.ui.UIMessagePart.Text>()
+                        ?.joinToString("\n") { it.text }
+                        ?.trim()
+                        .orEmpty()
+                }.getOrDefault("")
 
             if (text.isBlank()) {
                 android.util.Log.i(TAG, "external-gen-pump: convId=$convId → empty assistant text, skipping")
@@ -500,7 +557,10 @@ class TelegramBotService : Service() {
             }
             runCatching {
                 sendChunked(mapping.chatId, text, replyTo = null)
-                android.util.Log.i(TAG, "external-gen-pump: convId=$convId → pushed ${text.length} chars to Telegram chat ${mapping.chatId}")
+                android.util.Log.i(
+                    TAG,
+                    "external-gen-pump: convId=$convId → pushed ${text.length} chars to Telegram chat ${mapping.chatId}",
+                )
             }.onFailure {
                 android.util.Log.w(TAG, "external-gen-pump: send failed for convId=$convId", it)
             }
@@ -535,27 +595,35 @@ class TelegramBotService : Service() {
      * inbound message would hit a dead bot, and the auto-revive paths only retry when the
      * bot is `enabled=true` (which we've just flipped to false).
      */
-    private fun postTokenInvalidNotification(errorCode: Int, description: String) {
+    private fun postTokenInvalidNotification(
+        errorCode: Int,
+        description: String,
+    ) {
         try {
             val nm = applicationContext.getSystemService(android.app.NotificationManager::class.java)
             val channelId = "rikkahub_telegram_token_invalid"
             if (nm.getNotificationChannel(channelId) == null) {
                 nm.createNotificationChannel(
                     android.app.NotificationChannel(
-                        channelId, "Telegram bot errors",
-                        android.app.NotificationManager.IMPORTANCE_HIGH
-                    )
+                        channelId,
+                        "Telegram bot errors",
+                        android.app.NotificationManager.IMPORTANCE_HIGH,
+                    ),
                 )
             }
-            val builder = androidx.core.app.NotificationCompat.Builder(applicationContext, channelId)
-                .setContentTitle("Telegram bot disabled")
-                .setContentText("Token rejected (HTTP $errorCode). Set a new token in Settings → Telegram bot.")
-                .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(
-                    "Telegram returned $errorCode: $description. The bot has been disabled to stop retrying. Set a new token in Settings → Telegram bot, then re-enable."
-                ))
-                .setSmallIcon(android.R.drawable.stat_notify_error)
-                .setAutoCancel(true)
-            androidx.core.app.NotificationManagerCompat.from(applicationContext)
+            val builder =
+                androidx.core.app.NotificationCompat
+                    .Builder(applicationContext, channelId)
+                    .setContentTitle("Telegram bot disabled")
+                    .setContentText("Token rejected (HTTP $errorCode). Set a new token in Settings → Telegram bot.")
+                    .setStyle(
+                        androidx.core.app.NotificationCompat.BigTextStyle().bigText(
+                            "Telegram returned $errorCode: $description. The bot has been disabled to stop retrying. Set a new token in Settings → Telegram bot, then re-enable.",
+                        ),
+                    ).setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setAutoCancel(true)
+            androidx.core.app.NotificationManagerCompat
+                .from(applicationContext)
                 .notify(101, builder.build())
         } catch (_: SecurityException) {
             // POST_NOTIFICATIONS not granted — silent failure is fine
@@ -568,17 +636,21 @@ class TelegramBotService : Service() {
         cfg: me.rerere.rikkahub.data.telegram.TelegramBotConfig,
         m: TelegramIncomingMessage,
     ) {
-        val sender = m.senderId ?: run {
-            android.util.Log.w(TAG, "handleIncoming: dropping — no sender id")
-            return
-        }
+        val sender =
+            m.senderId ?: run {
+                android.util.Log.w(TAG, "handleIncoming: dropping — no sender id")
+                return
+            }
         // Strict whitelist: nobody is allowed unless their sender_id (or the chat_id, for
         // group routing) appears in cfg.whitelist. An empty whitelist drops everything —
         // that matches the UI's "Empty = nobody" promise. Without this, a freshly-enabled
         // bot whose owner forgot to fill in the whitelist would happily accept messages
         // from any random Telegram user who knows the bot's @username.
         if (sender !in cfg.whitelist && m.chatId !in cfg.whitelist) {
-            android.util.Log.w(TAG, "handleIncoming: dropping — sender=$sender chat=${m.chatId} not in whitelist=${cfg.whitelist}")
+            android.util.Log.w(
+                TAG,
+                "handleIncoming: dropping — sender=$sender chat=${m.chatId} not in whitelist=${cfg.whitelist}",
+            )
             // Stash the rejected sender so the foreground notification + UI can surface it.
             // First-time setup needs SOME way to discover the user's own chat_id, since
             // BotFather doesn't give it to you and the strict-whitelist policy means you
@@ -638,7 +710,8 @@ class TelegramBotService : Service() {
                         text = "⏳ A previous turn is still generating. Send /stop to cancel it.",
                         replyToMessageId = m.messageId,
                     )
-                } catch (_: Throwable) {}
+                } catch (_: Throwable) {
+                }
                 return
             }
         }
@@ -667,9 +740,17 @@ class TelegramBotService : Service() {
         m: TelegramIncomingMessage,
     ) {
         val (convId, wasCreated) = lookupOrCreateConversation(cfg, m.chatId)
-        android.util.Log.i(TAG, "handleIncoming: routing to conv=$convId wasCreated=$wasCreated text='${m.text.take(80)}' photos=${m.photoFileIds.size}")
+        android.util.Log.i(
+            TAG,
+            "handleIncoming: routing to conv=$convId wasCreated=$wasCreated text='${m.text.take(
+                80,
+            )}' photos=${m.photoFileIds.size}",
+        )
         // UX: tell Telegram "the bot is typing" so the user sees activity while we generate.
-        try { client.sendChatAction(m.chatId, "typing") } catch (_: Throwable) {}
+        try {
+            client.sendChatAction(m.chatId, "typing")
+        } catch (_: Throwable) {
+        }
         chatService.initializeConversation(convId)
         // Mark this conv browser-headless so browser tools route through
         // HeadlessBrowserSessionPool (no Activity launch on the user's phone) and
@@ -687,11 +768,12 @@ class TelegramBotService : Service() {
         // ~80 tokens × turn count of pure duplication.
         // Detect audio-class attachments BEFORE building the preamble so we can inject the
         // whisper_status hint in the same addendum. Voice / audio / video_note all count.
-        val hasAudioAttachment = m.attachments.any { att ->
-            att.kind == AttachmentKind.VOICE ||
-            att.kind == AttachmentKind.AUDIO ||
-            att.kind == AttachmentKind.VIDEO_NOTE
-        }
+        val hasAudioAttachment =
+            m.attachments.any { att ->
+                att.kind == AttachmentKind.VOICE ||
+                    att.kind == AttachmentKind.AUDIO ||
+                    att.kind == AttachmentKind.VIDEO_NOTE
+            }
         val hasPhotoAttachment = m.photoFileIds.isNotEmpty()
         me.rerere.rikkahub.data.ai.tools.ConversationSystemAddendum.set(
             convId,
@@ -709,59 +791,72 @@ class TelegramBotService : Service() {
         val downloadedAttachments = downloadInboundAttachments(client, m.chatId, m.attachments)
         val attachmentNote = buildAttachmentNote(downloadedAttachments)
 
-        val parts = buildList<UIMessagePart> {
-            addAll(imageParts)
-            // Build the user-visible text by joining the typed message with the structured
-            // photo / attachment notes for whatever arrived alongside it.
-            val combinedText = listOf(m.text, photoNote, attachmentNote)
-                .filter { it.isNotEmpty() }
-                .joinToString("\n\n")
-            // Only emit a Text part when there is actual content; an empty text triggers
-            // the "no reply" UX downstream and confuses the LLM.
-            if (combinedText.isNotEmpty()) add(UIMessagePart.Text(combinedText))
-            else if (imageParts.isNotEmpty()) add(UIMessagePart.Text("(photo)"))
-        }
+        val parts =
+            buildList<UIMessagePart> {
+                addAll(imageParts)
+                // Build the user-visible text by joining the typed message with the structured
+                // photo / attachment notes for whatever arrived alongside it.
+                val combinedText =
+                    listOf(m.text, photoNote, attachmentNote)
+                        .filter { it.isNotEmpty() }
+                        .joinToString("\n\n")
+                // Only emit a Text part when there is actual content; an empty text triggers
+                // the "no reply" UX downstream and confuses the LLM.
+                if (combinedText.isNotEmpty()) {
+                    add(UIMessagePart.Text(combinedText))
+                } else if (imageParts.isNotEmpty()) {
+                    add(UIMessagePart.Text("(photo)"))
+                }
+            }
         // Snapshot the conversation BEFORE sending so the streaming render can ignore the
         // previous turn's assistant content. Without this baseline, getGenerationJobStateFlow
         // briefly emits null between turns and `first { it == null }` returns immediately;
         // the placeholder then gets edited with the previous reply and finalized in that
         // stale state. Tracking the baseline lets us wait for the NEW turn to actually start
         // before declaring it done.
-        val baselineMessageCount = conversationRepo.getConversationById(convId)
-            ?.currentMessages?.size ?: 0
+        val baselineMessageCount =
+            conversationRepo
+                .getConversationById(convId)
+                ?.currentMessages
+                ?.size ?: 0
 
         chatService.sendMessage(convId, parts)
 
         // Phase 24 — open a cross-pillar ledger row for THIS Telegram turn. kind=telegram,
         // domain_id=conversation id; one row per turn (a fresh row each inbound message).
         // Marked terminal in the finally block below. Best-effort — never breaks the turn.
-        val ledgerId = agentRunRepo.open(
-            kind = me.rerere.rikkahub.data.agentrun.AgentRunKind.Telegram,
-            domainId = convId.toString(),
-            metadata = buildJsonObject {
-                put("chat_id", m.chatId.toString())
-                put("conversation_created", wasCreated)
-            },
-        )
+        val ledgerId =
+            agentRunRepo.open(
+                kind = me.rerere.rikkahub.data.agentrun.AgentRunKind.Telegram,
+                domainId = convId.toString(),
+                metadata =
+                    buildJsonObject {
+                        put("chat_id", m.chatId.toString())
+                        put("conversation_created", wasCreated)
+                    },
+            )
 
         // Fresh per-turn screenshot signal so the finalizer's "post the answer at the bottom"
         // decision reflects only THIS turn's auto-streamed photos.
-        me.rerere.rikkahub.data.telegram.TelegramStreamSignal.reset(convId.toString())
+        me.rerere.rikkahub.data.telegram.TelegramStreamSignal
+            .reset(convId.toString())
 
         // Send the streaming placeholder once. The per-iteration editJob below edits it
         // in place during active generation, then stops while we wait on the user (so we
         // don't burn battery firing edits every 600ms for hours if the user is away).
-        val placeholderId: Long? = try {
-            val res = client.sendMessage(
-                chatId = m.chatId,
-                text = STREAM_PLACEHOLDER,
-                replyToMessageId = m.messageId,
-            )
-            res["message_id"]?.jsonPrimitive?.longOrNull
-        } catch (e: Throwable) {
-            android.util.Log.w(TAG, "handleIncoming: placeholder send failed", e)
-            null
-        }
+        val placeholderId: Long? =
+            try {
+                val res =
+                    client.sendMessage(
+                        chatId = m.chatId,
+                        text = STREAM_PLACEHOLDER,
+                        replyToMessageId = m.messageId,
+                    )
+                res["message_id"]?.jsonPrimitive?.longOrNull
+            } catch (e: Throwable) {
+                android.util.Log.w(TAG, "handleIncoming: placeholder send failed", e)
+                null
+            }
 
         // Hold a session reference for the entire handleLlmTurn so the per-conversation
         // session isn't reaped by ChatService's onIdle callback while we're waiting on
@@ -802,61 +897,86 @@ class TelegramBotService : Service() {
                 // for hours; the prompt stays valid until they tap (or until app restart
                 // since the session is process-local). /stop still cancels via the
                 // built-in fast-path that bypasses the per-chat mutex.
-                val firstActive = if (iteration == 0) {
-                    kotlinx.coroutines.withTimeoutOrNull(10_000) {
+                val firstActive =
+                    if (iteration == 0) {
+                        kotlinx.coroutines.withTimeoutOrNull(10_000) {
+                            chatService.getGenerationJobStateFlow(convId).first { it != null }
+                        }
+                    } else {
                         chatService.getGenerationJobStateFlow(convId).first { it != null }
                     }
-                } else {
-                    chatService.getGenerationJobStateFlow(convId).first { it != null }
-                }
-                if (firstActive == null) break  // cold-start safety net only
+                if (firstActive == null) break // cold-start safety net only
 
                 // Generation is now active — start the streaming jobs for THIS cycle and
                 // tear them down the moment it pauses. Without this, the typing indicator
                 // and edit attempts would keep firing every few seconds during the
                 // user's possibly-long approval wait, wasting battery and Telegram quota.
-                val typingJob = scope.launch {
-                    while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
-                        try { client.sendChatAction(m.chatId, "typing") } catch (_: Throwable) {}
-                        delay(4_000)
+                val typingJob =
+                    scope.launch {
+                        while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
+                            try {
+                                client.sendChatAction(m.chatId, "typing")
+                            } catch (_: Throwable) {
+                            }
+                            delay(4_000)
+                        }
                     }
-                }
-                val editJob = if (placeholderId != null) scope.launch {
-                    var lastSent = ""
-                    var lastEditAtMs = 0L
-                    while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
-                        // Sleep in short steps so a fast burst of new content (long token
-                        // chunk landing all at once) can wake the loop early via the
-                        // burst threshold, instead of being stuck behind the full cadence.
-                        val pollSliceMs = 80L
-                        var sliceWaitedMs = 0L
-                        while (sliceWaitedMs < STREAM_EDIT_INTERVAL_MS) {
-                            delay(pollSliceMs)
-                            sliceWaitedMs += pollSliceMs
-                            val peek = renderAssistantStream(convId, finalizing = false, baselineMessageCount)
-                            val grew = peek.length - lastSent.length
-                            if (grew >= STREAM_EDIT_BURST_THRESHOLD_CHARS) {
-                                val sinceLast = System.currentTimeMillis() - lastEditAtMs
-                                if (sinceLast >= STREAM_EDIT_MIN_GAP_MS) break
+                val editJob =
+                    if (placeholderId != null) {
+                        scope.launch {
+                            var lastSent = ""
+                            var lastEditAtMs = 0L
+                            while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
+                                // Sleep in short steps so a fast burst of new content (long token
+                                // chunk landing all at once) can wake the loop early via the
+                                // burst threshold, instead of being stuck behind the full cadence.
+                                val pollSliceMs = 80L
+                                var sliceWaitedMs = 0L
+                                while (sliceWaitedMs < STREAM_EDIT_INTERVAL_MS) {
+                                    delay(pollSliceMs)
+                                    sliceWaitedMs += pollSliceMs
+                                    val peek = renderAssistantStream(convId, finalizing = false, baselineMessageCount)
+                                    val grew = peek.length - lastSent.length
+                                    if (grew >= STREAM_EDIT_BURST_THRESHOLD_CHARS) {
+                                        val sinceLast = System.currentTimeMillis() - lastEditAtMs
+                                        if (sinceLast >= STREAM_EDIT_MIN_GAP_MS) break
+                                    }
+                                }
+                                val rendered = renderAssistantStream(convId, finalizing = false, baselineMessageCount)
+                                if (rendered.isBlank() || rendered == lastSent) continue
+                                val cappedRaw = truncateForLiveEdit(rendered, MAX_CHARS)
+                                val capped = TelegramHtmlRenderer.render(cappedRaw)
+                                val ok =
+                                    try {
+                                        client.editMessageText(
+                                            m.chatId,
+                                            placeholderId,
+                                            capped,
+                                            parseMode = PARSE_MODE_HTML,
+                                        ) !=
+                                            null
+                                    } catch (_: Throwable) {
+                                        try {
+                                            client.editMessageText(
+                                                m.chatId,
+                                                placeholderId,
+                                                TelegramHtmlRenderer.stripHtml(capped),
+                                                parseMode = null,
+                                            ) !=
+                                                null
+                                        } catch (_: Throwable) {
+                                            false
+                                        }
+                                    }
+                                if (ok) {
+                                    lastSent = rendered
+                                    lastEditAtMs = System.currentTimeMillis()
+                                }
                             }
                         }
-                        val rendered = renderAssistantStream(convId, finalizing = false, baselineMessageCount)
-                        if (rendered.isBlank() || rendered == lastSent) continue
-                        val cappedRaw = truncateForLiveEdit(rendered, MAX_CHARS)
-                        val capped = TelegramHtmlRenderer.render(cappedRaw)
-                        val ok = try {
-                            client.editMessageText(m.chatId, placeholderId, capped, parseMode = PARSE_MODE_HTML) != null
-                        } catch (_: Throwable) {
-                            try {
-                                client.editMessageText(m.chatId, placeholderId, TelegramHtmlRenderer.stripHtml(capped), parseMode = null) != null
-                            } catch (_: Throwable) { false }
-                        }
-                        if (ok) {
-                            lastSent = rendered
-                            lastEditAtMs = System.currentTimeMillis()
-                        }
+                    } else {
+                        null
                     }
-                } else null
 
                 try {
                     // Wait for THIS job to complete (model produced reply OR paused for approval).
@@ -865,17 +985,27 @@ class TelegramBotService : Service() {
                     // cancelAndJoin (vs plain cancel) waits for any in-flight HTTP edit
                     // to actually finish, so a stale streaming edit can't land after the
                     // final reply and clobber the placeholder back to "running…".
-                    try { typingJob.cancelAndJoin() } catch (_: Throwable) {}
-                    try { editJob?.cancelAndJoin() } catch (_: Throwable) {}
+                    try {
+                        typingJob.cancelAndJoin()
+                    } catch (_: Throwable) {
+                    }
+                    try {
+                        editJob?.cancelAndJoin()
+                    } catch (_: Throwable) {
+                    }
                 }
 
                 // Enumerate any tool calls now sitting in Pending. Anything we haven't
                 // already sent a keyboard for gets a fresh approval prompt.
-                val pendingTools = chatService.getConversationFlow(convId).value
-                    .currentMessages.drop(baselineMessageCount)
-                    .flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
-                    .filter { it.isPending }
-                if (pendingTools.isEmpty()) break  // no approvals needed → done
+                val pendingTools =
+                    chatService
+                        .getConversationFlow(convId)
+                        .value
+                        .currentMessages
+                        .drop(baselineMessageCount)
+                        .flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
+                        .filter { it.isPending }
+                if (pendingTools.isEmpty()) break // no approvals needed → done
 
                 for (tool in pendingTools) {
                     if (tool.toolCallId in promptedToolCallIds) continue
@@ -906,10 +1036,13 @@ class TelegramBotService : Service() {
                             try {
                                 client.sendMessage(
                                     m.chatId,
-                                    "⛔ Auto-denied: <code>${TelegramHtmlRenderer.escape(tool.toolName)}</code> already failed ${recentFailures}× this turn. Telling the model to stop retrying.",
+                                    "⛔ Auto-denied: <code>${TelegramHtmlRenderer.escape(
+                                        tool.toolName,
+                                    )}</code> already failed $recentFailures× this turn. Telling the model to stop retrying.",
                                     parseMode = PARSE_MODE_HTML,
                                 )
-                            } catch (_: Throwable) {}
+                            } catch (_: Throwable) {
+                            }
                         }
                         continue
                     }
@@ -939,11 +1072,12 @@ class TelegramBotService : Service() {
             // collect lambda — which runs on a separate coroutine and can land after
             // handleIncoming exits on fast generations — duplicates the assistant text
             // into Telegram.
-            val removalJob = scope.launch {
-                delay(ACTIVE_INCOMING_LINGER_MS)
-                activeHandleIncomingConvs.remove(convId)
-                pendingActiveIncomingRemovals.remove(convId)
-            }
+            val removalJob =
+                scope.launch {
+                    delay(ACTIVE_INCOMING_LINGER_MS)
+                    activeHandleIncomingConvs.remove(convId)
+                    pendingActiveIncomingRemovals.remove(convId)
+                }
             pendingActiveIncomingRemovals.compute(convId) { _, existing ->
                 existing?.cancel()
                 removalJob
@@ -952,11 +1086,12 @@ class TelegramBotService : Service() {
             // Phase 24 — mark the ledger row terminal. cancelled (/stop or /new) →
             // cancelled; a generation error → failed; otherwise succeeded. Runs in the
             // finally so the row is closed even on the CancellationException re-throw path.
-            val ledgerStatus = when {
-                turnCancelled -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
-                generationError != null -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
-                else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
-            }
+            val ledgerStatus =
+                when {
+                    turnCancelled -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
+                    generationError != null -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
+                    else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
+                }
             agentRunRepo.markTerminal(
                 id = ledgerId,
                 status = ledgerStatus,
@@ -988,30 +1123,44 @@ class TelegramBotService : Service() {
                     // "no reply" hint. Most provider errors include a clear message body
                     // like "this model does not support image input" — which is exactly
                     // what the user needs to act on (switch model, drop attachment, etc.).
-                    val fallback = generationError?.let { e ->
-                        val msg = e.message?.takeIf { it.isNotBlank() } ?: e::class.simpleName ?: "unknown error"
-                        // Cap to leave room for the prefix and not blow Telegram's 4096
-                        // limit on an unbounded provider-error blob.
-                        val capped = if (msg.length <= 600) msg else msg.take(600) + "…"
-                        "⚠️ Generation failed: $capped"
-                    } ?: "(model called tools but didn't reply — try saying \"continue\", switch model with /model, or reset with /new)"
+                    val fallback =
+                        generationError?.let { e ->
+                            val msg = e.message?.takeIf { it.isNotBlank() } ?: e::class.simpleName ?: "unknown error"
+                            // Cap to leave room for the prefix and not blow Telegram's 4096
+                            // limit on an unbounded provider-error blob.
+                            val capped = if (msg.length <= 600) msg else msg.take(600) + "…"
+                            "⚠️ Generation failed: $capped"
+                        }
+                            ?: "(model called tools but didn't reply — try saying \"continue\", switch model with /model, or reset with /new)"
                     if (placeholderId != null) {
-                        try { client.editMessageText(m.chatId, placeholderId, fallback) } catch (_: Throwable) {}
+                        try {
+                            client.editMessageText(m.chatId, placeholderId, fallback)
+                        } catch (_: Throwable) {
+                        }
                     } else {
-                        try { client.sendMessage(m.chatId, fallback) } catch (_: Throwable) {}
+                        try {
+                            client.sendMessage(m.chatId, fallback)
+                        } catch (_: Throwable) {
+                        }
                     }
                 } else if (placeholderId != null) {
                     // We rescued the photo into a fresh Telegram message — clean up the
                     // placeholder so the chat doesn't show a leftover "thinking…" line.
-                    try { client.deleteMessage(m.chatId, placeholderId) } catch (_: Throwable) {}
+                    try {
+                        client.deleteMessage(m.chatId, placeholderId)
+                    } catch (_: Throwable) {
+                    }
                 }
             }
+
             placeholderId != null && finalReply.length <= MAX_CHARS &&
-                me.rerere.rikkahub.data.telegram.TelegramStreamSignal.count(convId.toString()) == 0 -> {
+                me.rerere.rikkahub.data.telegram.TelegramStreamSignal
+                    .count(convId.toString()) == 0 -> {
                 // Final fits in one message AND no screenshots streamed this turn; just edit
                 // the placeholder one last time (it's still the newest message).
                 editPlaceholderHtmlWithFallback(m.chatId, placeholderId, finalReply)
             }
+
             else -> {
                 // Either the reply overflowed one message, OR screenshots were auto-streamed
                 // during the turn. In the screenshot case the placeholder is now buried ABOVE
@@ -1022,7 +1171,10 @@ class TelegramBotService : Service() {
                 // Final reply overflowed Telegram's per-message limit. Drop the placeholder
                 // (delete or fold it into the first chunk) and send chunked.
                 if (placeholderId != null) {
-                    try { client.deleteMessage(m.chatId, placeholderId) } catch (_: Throwable) {}
+                    try {
+                        client.deleteMessage(m.chatId, placeholderId)
+                    } catch (_: Throwable) {
+                    }
                 }
                 sendChunked(m.chatId, finalReply, replyTo = m.messageId)
             }
@@ -1041,6 +1193,7 @@ class TelegramBotService : Service() {
      * into this turn's placeholder during the brief window where the new generation has
      * not yet appended its first chunk.
      */
+
     /**
      * Per-turn context for the LLM. Always included so the model knows:
      *  1. Which model it actually is (otherwise minimax/glm/kimi all hallucinate "I'm Claude")
@@ -1062,27 +1215,31 @@ class TelegramBotService : Service() {
         val effectiveModelId = assistant.chatModelId ?: s.chatModelId
         val provider = s.providers.firstOrNull { p -> p.models.any { it.id == effectiveModelId } }
         val model = provider?.models?.firstOrNull { it.id == effectiveModelId }
-        val modelName = model?.displayName?.takeIf { it.isNotBlank() }
-            ?: model?.modelId?.takeIf { it.isNotBlank() }
-            ?: "(unknown)"
+        val modelName =
+            model?.displayName?.takeIf { it.isNotBlank() }
+                ?: model?.modelId?.takeIf { it.isNotBlank() }
+                ?: "(unknown)"
         val providerName = provider?.name ?: "(unknown)"
 
         val recent = SlashCommandLog.recent(chatId, ttlMs = 15L * 60 * 1000)
         val nowMs = System.currentTimeMillis()
-        val recentLine = if (recent.isEmpty()) {
-            ""
-        } else {
-            val pretty = recent.joinToString(", ") { (cmd, ts) ->
-                val agoSec = ((nowMs - ts) / 1000).coerceAtLeast(0)
-                val ago = when {
-                    agoSec < 60 -> "${agoSec}s"
-                    agoSec < 3600 -> "${agoSec / 60}m"
-                    else -> "${agoSec / 3600}h"
-                }
-                "$cmd (${ago} ago)"
+        val recentLine =
+            if (recent.isEmpty()) {
+                ""
+            } else {
+                val pretty =
+                    recent.joinToString(", ") { (cmd, ts) ->
+                        val agoSec = ((nowMs - ts) / 1000).coerceAtLeast(0)
+                        val ago =
+                            when {
+                                agoSec < 60 -> "${agoSec}s"
+                                agoSec < 3600 -> "${agoSec / 60}m"
+                                else -> "${agoSec / 3600}h"
+                            }
+                        "$cmd ($ago ago)"
+                    }
+                "Recent app-side commands (handled by app, NOT by you, in last 15min): $pretty.\n"
             }
-            "Recent app-side commands (handled by app, NOT by you, in last 15min): $pretty.\n"
-        }
 
         return buildString {
             append("[agent_context (auto-injected by the host app, not the user; trust this over your priors):\n")
@@ -1090,12 +1247,20 @@ class TelegramBotService : Service() {
             append(modelName)
             append("\" via provider \"")
             append(providerName)
-            append("\". When the user asks what model you are, name THIS one. Do NOT claim to be Claude/GPT/Gemini unless that matches.\n")
+            append(
+                "\". When the user asks what model you are, name THIS one. Do NOT claim to be Claude/GPT/Gemini unless that matches.\n",
+            )
             append("Origin: Telegram. The user's Telegram chat_id is ")
             append(chatId)
-            append(" — use it ONLY as a tool-call argument when calling telegram_send_message / telegram_send_photo / telegram_send_document / when scheduling jobs that need to deliver output here. ")
-            append("DELIVERY DEFAULTS: when the user asks you to \"notify\", \"message\", \"ping\", \"remind\", \"alert\", \"text\", or otherwise reach them — including in scheduled jobs — DEFAULT TO telegram_send_message because they're talking to you here. Use post_notification (Android system tray) ONLY when they explicitly say \"phone notification\", \"Android notification\", \"system notification\", \"notification tray\", or words to that effect. If ambiguous, prefer telegram_send_message + briefly mention you're sending it to this chat. ")
-            append("PRIVACY RULES (MANDATORY): never quote, mention, paraphrase, summarise, or otherwise echo the chat_id in any user-visible text. Do not include it in confirmations, summaries, scheduled-job descriptions, or error messages. When you need to refer to the destination in your reply, say \"this chat\", \"your Telegram\", or \"here\" — never the numeric id. The chat_id is host-side metadata, not conversation content.\n")
+            append(
+                " — use it ONLY as a tool-call argument when calling telegram_send_message / telegram_send_photo / telegram_send_document / when scheduling jobs that need to deliver output here. ",
+            )
+            append(
+                "DELIVERY DEFAULTS: when the user asks you to \"notify\", \"message\", \"ping\", \"remind\", \"alert\", \"text\", or otherwise reach them — including in scheduled jobs — DEFAULT TO telegram_send_message because they're talking to you here. Use post_notification (Android system tray) ONLY when they explicitly say \"phone notification\", \"Android notification\", \"system notification\", \"notification tray\", or words to that effect. If ambiguous, prefer telegram_send_message + briefly mention you're sending it to this chat. ",
+            )
+            append(
+                "PRIVACY RULES (MANDATORY): never quote, mention, paraphrase, summarise, or otherwise echo the chat_id in any user-visible text. Do not include it in confirmations, summaries, scheduled-job descriptions, or error messages. When you need to refer to the destination in your reply, say \"this chat\", \"your Telegram\", or \"here\" — never the numeric id. The chat_id is host-side metadata, not conversation content.\n",
+            )
             if (recentLine.isNotEmpty()) append(recentLine)
             if (firstTurnOfChat) {
                 append("This is the first turn in this Telegram chat. Be concise; no need for a long welcome.\n")
@@ -1107,7 +1272,9 @@ class TelegramBotService : Service() {
                 append("with no arguments. Read its response. ")
                 append("Then: if `ready_to_transcribe: true`, call `transcribe_audio_file(path)` with the saved path ")
                 append("from the inbox manifest above. ")
-                append("If `ready_to_transcribe: false`, tell the user EXACTLY what's missing (use the `missing_steps` ")
+                append(
+                    "If `ready_to_transcribe: false`, tell the user EXACTLY what's missing (use the `missing_steps` ",
+                )
                 append("list verbatim) and quote the relevant entry from `install_commands` for them to confirm. ")
                 append("Do NOT begin installing on your own — the build takes ~5 minutes and downloads ~75 MB ")
                 append("on the user's data plan. Wait for an explicit yes before running install commands. ")
@@ -1146,18 +1313,24 @@ class TelegramBotService : Service() {
         // ChatService is the same source the in-app chat already streams from.
         val conv = chatService.getConversationFlow(convId).value
         val turnMessages = conv.currentMessages.drop(baselineMessageCount)
-        val lastAssistant = turnMessages.lastOrNull { it.role == MessageRole.ASSISTANT }
-            ?: return ""
+        val lastAssistant =
+            turnMessages.lastOrNull { it.role == MessageRole.ASSISTANT }
+                ?: return ""
         // Markdown is preserved here — TelegramHtmlRenderer further down the pipeline
         // converts it to Telegram-flavoured HTML. Stripping markdown locally would defeat
         // bold / italic / code rendering.
         val text = assistantTextOf(lastAssistant).trim()
         val toolSummary = assistantToolSummary(lastAssistant)
         val streamMarker = if (!finalizing && text.isNotEmpty()) " $STREAM_TICK" else ""
-        val tokenFooter = if (finalizing) tokenUsageFooter(
-            lastAssistant,
-            settingsStore.settingsFlow.value.displaySetting.showTokenUsage,
-        ) else ""
+        val tokenFooter =
+            if (finalizing) {
+                tokenUsageFooter(
+                    lastAssistant,
+                    settingsStore.settingsFlow.value.displaySetting.showTokenUsage,
+                )
+            } else {
+                ""
+            }
         return buildString {
             if (toolSummary.isNotEmpty()) {
                 append(toolSummary)
@@ -1180,19 +1353,33 @@ class TelegramBotService : Service() {
     ): Pair<kotlin.uuid.Uuid, Boolean> {
         val existing = chatRepo.getByChatId(chatId)
         if (existing != null) {
-            val asUuid = try { Uuid.parse(existing.conversationId) } catch (_: Throwable) { null }
+            val asUuid =
+                try {
+                    Uuid.parse(existing.conversationId)
+                } catch (_: Throwable) {
+                    null
+                }
             if (asUuid != null && conversationRepo.existsConversationById(asUuid)) return asUuid to false
-            chatRepo.deleteByChatId(chatId)  // dangling row — fall through to create
+            chatRepo.deleteByChatId(chatId) // dangling row — fall through to create
         }
-        val assistantUuid = cfg.assistantId?.let {
-            try { Uuid.parse(it) } catch (_: Throwable) { null }
-        } ?: settingsStore.settingsFlow.value.getCurrentAssistant().id
+        val assistantUuid =
+            cfg.assistantId?.let {
+                try {
+                    Uuid.parse(it)
+                } catch (_: Throwable) {
+                    null
+                }
+            } ?: settingsStore.settingsFlow.value
+                .getCurrentAssistant()
+                .id
         val convId = Uuid.random()
-        val conv = Conversation.ofId(
-            id = convId,
-            assistantId = assistantUuid,
-            newConversation = true,
-        ).copy(title = "[Telegram $chatId]")
+        val conv =
+            Conversation
+                .ofId(
+                    id = convId,
+                    assistantId = assistantUuid,
+                    newConversation = true,
+                ).copy(title = "[Telegram $chatId]")
         conversationRepo.insertConversation(conv)
         val now = System.currentTimeMillis()
         chatRepo.upsert(TelegramChatEntity(chatId, convId.toString(), now, now))
@@ -1203,7 +1390,11 @@ class TelegramBotService : Service() {
         m.parts.filterIsInstance<UIMessagePart.Text>().joinToString("") { it.text }
 
     /** Telegram caps a single sendMessage at 4096 chars; split on newlines where possible. */
-    internal suspend fun sendChunked(chatId: Long, text: String, replyTo: Long?) {
+    internal suspend fun sendChunked(
+        chatId: Long,
+        text: String,
+        replyTo: Long?,
+    ) {
         val chunks = chunk(text, MAX_CHARS)
         // A very long reply (e.g. a full audit report) becomes dozens of back-to-back
         // messages, which trips Telegram's per-chat flood limit (429: retry after N) and
@@ -1252,10 +1443,17 @@ class TelegramBotService : Service() {
         // message, so the bot token / chat content can't accidentally leak out.
         if (anyChunkFailed) {
             val cls = lastFailure?.javaClass?.simpleName.orEmpty()
-            val first = lastFailure?.message?.lineSequence()?.firstOrNull()?.take(120).orEmpty()
-            val notice = "⚠️ Reply too long for Telegram and the formatting was rejected by the API." +
-                (if (cls.isNotBlank()) " ($cls${if (first.isNotBlank()) ": $first" else ""})" else "") +
-                " Ask me to summarise, split the request, or save as a file."
+            val first =
+                lastFailure
+                    ?.message
+                    ?.lineSequence()
+                    ?.firstOrNull()
+                    ?.take(120)
+                    .orEmpty()
+            val notice =
+                "⚠️ Reply too long for Telegram and the formatting was rejected by the API." +
+                    (if (cls.isNotBlank()) " ($cls${if (first.isNotBlank()) ": $first" else ""})" else "") +
+                    " Ask me to summarise, split the request, or save as a file."
             runCatching {
                 client.sendMessage(chatId = chatId, text = notice, parseMode = null)
             }.onFailure {
@@ -1280,7 +1478,10 @@ class TelegramBotService : Service() {
             return null
         } catch (e: TelegramApiException) {
             if (e.errorCode != 429 || e.retryAfterSec == null) return e
-            android.util.Log.w(TAG, "sendWithFloodRetry: 429 flood-wait ${e.retryAfterSec}s; backing off then retrying once")
+            android.util.Log.w(
+                TAG,
+                "sendWithFloodRetry: 429 flood-wait ${e.retryAfterSec}s; backing off then retrying once",
+            )
             delay(e.retryAfterSec * 1000L + 250L)
         } catch (t: Throwable) {
             return t
@@ -1288,7 +1489,9 @@ class TelegramBotService : Service() {
         return try {
             client.sendMessage(chatId = chatId, text = text, parseMode = parseMode, replyToMessageId = replyToMessageId)
             null
-        } catch (t: Throwable) { t }
+        } catch (t: Throwable) {
+            t
+        }
     }
 
     /**
@@ -1297,10 +1500,17 @@ class TelegramBotService : Service() {
      * true if the document was delivered; false (temp file cleaned up) so the caller can fall
      * back to chunked send.
      */
-    private suspend fun trySendReplyAsDocument(chatId: Long, text: String, replyTo: Long?): Boolean {
+    private suspend fun trySendReplyAsDocument(
+        chatId: Long,
+        text: String,
+        replyTo: Long?,
+    ): Boolean {
         var file: java.io.File? = null
         return try {
-            file = java.io.File.createTempFile("rikkahub_reply_", ".md", cacheDir).apply { writeText(text) }
+            file =
+                java.io.File
+                    .createTempFile("rikkahub_reply_", ".md", cacheDir)
+                    .apply { writeText(text) }
             val preview = text.take(500).let { if (text.length > 500) "$it…" else it }
             sendWithFloodRetry(
                 chatId,
@@ -1314,20 +1524,39 @@ class TelegramBotService : Service() {
             android.util.Log.w(TAG, "trySendReplyAsDocument: failed, falling back to chunked send", t)
             false
         } finally {
-            try { file?.delete() } catch (_: Throwable) {}
+            try {
+                file?.delete()
+            } catch (_: Throwable) {
+            }
         }
     }
 
     /** Final-edit helper that mirrors the live edit's HTML-with-fallback behaviour. */
-    private suspend fun editPlaceholderHtmlWithFallback(chatId: Long, placeholderId: Long, finalReply: String) {
+    private suspend fun editPlaceholderHtmlWithFallback(
+        chatId: Long,
+        placeholderId: Long,
+        finalReply: String,
+    ) {
         val html = TelegramHtmlRenderer.render(finalReply)
-        val ok = try {
-            client.editMessageText(chatId, placeholderId, html, parseMode = PARSE_MODE_HTML) != null
-        } catch (_: Throwable) { false }
+        val ok =
+            try {
+                client.editMessageText(chatId, placeholderId, html, parseMode = PARSE_MODE_HTML) != null
+            } catch (_: Throwable) {
+                false
+            }
         if (!ok) {
             try {
-                client.editMessageText(chatId, placeholderId, TelegramHtmlRenderer.stripHtml(html).ifBlank { finalReply }, parseMode = null)
-            } catch (_: Throwable) { /* best effort */ }
+                client.editMessageText(
+                    chatId,
+                    placeholderId,
+                    TelegramHtmlRenderer.stripHtml(html).ifBlank {
+                        finalReply
+                    },
+                    parseMode = null,
+                )
+            } catch (_: Throwable) {
+                // best effort
+            }
         }
     }
 
@@ -1341,10 +1570,13 @@ class TelegramBotService : Service() {
      *    block, which then falls back to plain text on Telegram's parse.
      *  - Always append "…" to signal truncation to the user.
      */
-    private fun truncateForLiveEdit(s: String, max: Int): String {
+    private fun truncateForLiveEdit(
+        s: String,
+        max: Int,
+    ): String {
         if (s.length <= max) return s
         val window = 400
-        val hardCut = max - 4   // headroom for "…" and a possible "\n```"
+        val hardCut = max - 4 // headroom for "…" and a possible "\n```"
         val searchFrom = (hardCut - window).coerceAtLeast(0)
         val nl = s.lastIndexOf('\n', hardCut).let { if (it >= searchFrom) it else hardCut }
         var sub = s.substring(0, nl)
@@ -1354,7 +1586,10 @@ class TelegramBotService : Service() {
         return "$sub\n…"
     }
 
-    internal fun chunk(s: String, n: Int): List<String> = chunkForTelegram(s, n)
+    internal fun chunk(
+        s: String,
+        n: Int,
+    ): List<String> = chunkForTelegram(s, n)
 
     /**
      * Send an inline-keyboard approval prompt for [tool]. The prompt is its OWN Telegram
@@ -1374,7 +1609,11 @@ class TelegramBotService : Service() {
     // answers back through handleToolApproval(answer=…) — the same hook the in-app card uses.
     // Modelled on the Hermes clarify_gateway pattern; questions are asked one at a time.
 
-    private data class ClarifyQuestion(val id: String, val text: String, val options: List<String>)
+    private data class ClarifyQuestion(
+        val id: String,
+        val text: String,
+        val options: List<String>,
+    )
 
     private class ClarifyPending(
         val chatId: Long,
@@ -1385,6 +1624,7 @@ class TelegramBotService : Service() {
         val answers = LinkedHashMap<String, String>()
         var currentIdx = 0
         var awaitingText = false
+
         /** message_id of the question currently on screen, so we can clear its keyboard once answered. */
         var questionMessageId: Long? = null
     }
@@ -1393,25 +1633,35 @@ class TelegramBotService : Service() {
     private val clarifyPending = java.util.concurrent.ConcurrentHashMap<String, ClarifyPending>()
 
     private fun parseClarifyQuestions(input: String): List<ClarifyQuestion> {
-        val obj = runCatching {
-            kotlinx.serialization.json.Json.parseToJsonElement(input.ifBlank { "{}" }).jsonObject
-        }.getOrNull() ?: return emptyList()
+        val obj =
+            runCatching {
+                kotlinx.serialization.json.Json
+                    .parseToJsonElement(input.ifBlank { "{}" })
+                    .jsonObject
+            }.getOrNull() ?: return emptyList()
         val arr = obj["questions"]?.jsonArray ?: return emptyList()
         return arr.mapIndexedNotNull { i, el ->
             val q = (el as? kotlinx.serialization.json.JsonObject) ?: return@mapIndexedNotNull null
-            val text = q["question"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
-                ?: return@mapIndexedNotNull null
+            val text =
+                q["question"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                    ?: return@mapIndexedNotNull null
             val id = q["id"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() } ?: "q$i"
-            val options = q["options"]?.jsonArray
-                ?.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf { o -> o.isNotBlank() } }
-                ?: emptyList()
+            val options =
+                q["options"]
+                    ?.jsonArray
+                    ?.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf { o -> o.isNotBlank() } }
+                    ?: emptyList()
             ClarifyQuestion(id, text, options)
         }
     }
 
     /** Begin an interactive ask_user prompt over Telegram. If the questions can't be parsed,
      *  deny the call with an "ask in plain text" reason so the turn never hangs. */
-    private suspend fun startClarify(chatId: Long, convId: Uuid, tool: UIMessagePart.Tool) {
+    private suspend fun startClarify(
+        chatId: Long,
+        convId: Uuid,
+        tool: UIMessagePart.Tool,
+    ) {
         val questions = parseClarifyQuestions(tool.input)
         if (questions.isEmpty()) {
             chatService.handleToolApproval(
@@ -1429,38 +1679,66 @@ class TelegramBotService : Service() {
     }
 
     private suspend fun sendClarifyQuestion(entry: ClarifyPending) {
-        val q = entry.questions.getOrNull(entry.currentIdx) ?: run { finalizeClarify(entry); return }
-        val header = if (entry.questions.size > 1)
-            "❓ <b>Question ${entry.currentIdx + 1}/${entry.questions.size}</b>\n\n" else "❓ "
+        val q =
+            entry.questions.getOrNull(entry.currentIdx) ?: run {
+                finalizeClarify(entry)
+                return
+            }
+        val header =
+            if (entry.questions.size > 1) {
+                "❓ <b>Question ${entry.currentIdx + 1}/${entry.questions.size}</b>\n\n"
+            } else {
+                "❓ "
+            }
         val body = header + TelegramHtmlRenderer.escape(q.text)
-        val res = if (q.options.isEmpty()) {
-            entry.awaitingText = true
-            runCatching {
-                client.sendMessage(entry.chatId, "$body\n\n<i>Reply with your answer.</i>", parseMode = PARSE_MODE_HTML)
-            }.getOrNull()
-        } else {
-            entry.awaitingText = false
-            runCatching {
-                client.sendMessage(
-                    entry.chatId, body, parseMode = PARSE_MODE_HTML,
-                    replyMarkup = buildClarifyKeyboard(entry.toolCallId, entry.currentIdx, q.options),
-                )
-            }.getOrNull()
-        }
+        val res =
+            if (q.options.isEmpty()) {
+                entry.awaitingText = true
+                runCatching {
+                    client.sendMessage(
+                        entry.chatId,
+                        "$body\n\n<i>Reply with your answer.</i>",
+                        parseMode = PARSE_MODE_HTML,
+                    )
+                }.getOrNull()
+            } else {
+                entry.awaitingText = false
+                runCatching {
+                    client.sendMessage(
+                        entry.chatId,
+                        body,
+                        parseMode = PARSE_MODE_HTML,
+                        replyMarkup = buildClarifyKeyboard(entry.toolCallId, entry.currentIdx, q.options),
+                    )
+                }.getOrNull()
+            }
         entry.questionMessageId = res?.get("message_id")?.jsonPrimitive?.longOrNull
     }
 
     private suspend fun handleClarifyCallback(cq: TelegramCallbackQuery) {
         val parts = cq.data.removePrefix(CLARIFY_CB_PREFIX).split(":", limit = 3)
-        if (parts.size != 3) { client.answerCallbackQuery(cq.callbackQueryId, "malformed"); return }
+        if (parts.size != 3) {
+            client.answerCallbackQuery(cq.callbackQueryId, "malformed")
+            return
+        }
         val qIdx = parts[0].toIntOrNull()
         val sel = parts[1]
         val toolCallId = parts[2]
         val entry = clarifyPending[toolCallId]
-        if (entry == null) { client.answerCallbackQuery(cq.callbackQueryId, "question expired"); return }
-        if (qIdx != entry.currentIdx) { client.answerCallbackQuery(cq.callbackQueryId, "already answered"); return }
-        val q = entry.questions.getOrNull(entry.currentIdx)
-            ?: run { client.answerCallbackQuery(cq.callbackQueryId, "done"); return }
+        if (entry == null) {
+            client.answerCallbackQuery(cq.callbackQueryId, "question expired")
+            return
+        }
+        if (qIdx != entry.currentIdx) {
+            client.answerCallbackQuery(cq.callbackQueryId, "already answered")
+            return
+        }
+        val q =
+            entry.questions.getOrNull(entry.currentIdx)
+                ?: run {
+                    client.answerCallbackQuery(cq.callbackQueryId, "done")
+                    return
+                }
         if (sel == "o") {
             entry.awaitingText = true
             client.answerCallbackQuery(cq.callbackQueryId, "Type your answer")
@@ -1474,14 +1752,20 @@ class TelegramBotService : Service() {
             return
         }
         val chosen = sel.toIntOrNull()?.let { q.options.getOrNull(it) }
-        if (chosen == null) { client.answerCallbackQuery(cq.callbackQueryId, "unknown option"); return }
+        if (chosen == null) {
+            client.answerCallbackQuery(cq.callbackQueryId, "unknown option")
+            return
+        }
         client.answerCallbackQuery(cq.callbackQueryId, "✓ ${chosen.take(28)}")
         recordAndAdvance(entry, q, chosen)
     }
 
     /** Consume a free-form message as the answer to a clarify question awaiting text. Returns
      *  true when consumed — the caller must NOT then treat the message as a new prompt. */
-    private suspend fun tryResolveClarifyText(chatId: Long, text: String): Boolean {
+    private suspend fun tryResolveClarifyText(
+        chatId: Long,
+        text: String,
+    ): Boolean {
         if (text.isBlank()) return false
         val entry = clarifyPending.values.firstOrNull { it.chatId == chatId && it.awaitingText } ?: return false
         val q = entry.questions.getOrNull(entry.currentIdx) ?: return false
@@ -1490,7 +1774,11 @@ class TelegramBotService : Service() {
         return true
     }
 
-    private suspend fun recordAndAdvance(entry: ClarifyPending, q: ClarifyQuestion, answer: String) {
+    private suspend fun recordAndAdvance(
+        entry: ClarifyPending,
+        q: ClarifyQuestion,
+        answer: String,
+    ) {
         entry.answers[q.id] = answer
         // Clear the just-answered question's inline keyboard and show what was picked, so the
         // buttons don't linger looking still-tappable. Editing the text without a replyMarkup
@@ -1511,13 +1799,17 @@ class TelegramBotService : Service() {
 
     private fun finalizeClarify(entry: ClarifyPending) {
         clarifyPending.remove(entry.toolCallId)
-        val answerJson = buildJsonObject {
-            put("answers", buildJsonObject {
-                entry.questions.forEach { q ->
-                    put(q.id, kotlinx.serialization.json.JsonPrimitive(entry.answers[q.id] ?: ""))
-                }
-            })
-        }.toString()
+        val answerJson =
+            buildJsonObject {
+                put(
+                    "answers",
+                    buildJsonObject {
+                        entry.questions.forEach { q ->
+                            put(q.id, kotlinx.serialization.json.JsonPrimitive(entry.answers[q.id] ?: ""))
+                        }
+                    },
+                )
+            }.toString()
         chatService.handleToolApproval(
             conversationId = entry.convId,
             toolCallId = entry.toolCallId,
@@ -1541,94 +1833,110 @@ class TelegramBotService : Service() {
         // approval message in human-readable form via WorkflowApprovalRenderer (with key-name
         // redaction for token / password / private_key etc). Any tool the renderers don't
         // recognise falls back to the generic args display.
-        val mcpRendered: String? = runCatching {
-            val parsed = kotlinx.serialization.json.Json.parseToJsonElement(
-                tool.input.ifBlank { "{}" }
-            ) as? kotlinx.serialization.json.JsonObject
-            parsed?.let {
-                me.rerere.rikkahub.data.ai.mcp.control.McpApprovalRenderer.render(tool.toolName, it)
-            }
-        }.getOrNull()
+        val mcpRendered: String? =
+            runCatching {
+                val parsed =
+                    kotlinx.serialization.json.Json.parseToJsonElement(
+                        tool.input.ifBlank { "{}" },
+                    ) as? kotlinx.serialization.json.JsonObject
+                parsed?.let {
+                    me.rerere.rikkahub.data.ai.mcp.control.McpApprovalRenderer
+                        .render(tool.toolName, it)
+                }
+            }.getOrNull()
         // Workflow_* mutators render their args in plain multi-line form ("Create workflow X / When: … / Do: …").
         // The plain variant is then escaped + wrapped in <pre> by the standard path, so the
         // existing approval-card chrome stays consistent across tools.
-        val workflowRendered: String? = runCatching {
-            if (me.rerere.rikkahub.workflow.tools.WorkflowApprovalRenderer.isWorkflowTool(tool.toolName)
-                && tool.toolName !in setOf("workflow_list", "workflow_get")) {
-                me.rerere.rikkahub.workflow.tools.WorkflowApprovalRenderer.renderPlain(
-                    tool.toolName, tool.input.ifBlank { "{}" },
-                )
-            } else null
-        }.getOrNull()
-        val argsPreview = workflowRendered
-            ?: mcpRendered
-            ?: formatArgsForDisplay(tool.input).ifEmpty { "(no args)" }
-        val text = buildString {
-            append("⚠️ <b>Permission required</b>\n\n")
-            append("Tool: <code>")
-            append(TelegramHtmlRenderer.escape(tool.toolName))
-            append("</code>\n")
-            append("in: <pre>")
-            append(TelegramHtmlRenderer.escape(argsPreview))
-            append("</pre>")
-            // schedule_job is special: approving SCHEDULES a future autonomous run, not
-            // just one tool. Surface that here so the user knows what they're authorising
-            // — every tool the cron prompt invokes will run without further approval.
-            // (HARDLINE blocks still apply at fire time, regardless of approval scope.)
-            if (tool.toolName == "schedule_job") {
-                append("\n\n<i>⏰ Scheduled jobs run autonomously without per-tool approval. ")
-                append("Approving this lets the job run with full tool access whenever it ")
-                append("fires. Hardline-blocked commands (rm -rf /, mkfs, shutdown, …) still ")
-                append("cannot run.</i>")
-                // Surface mode-specific detail (mirrors the in-app approval card).
-                val jobInput = runCatching {
-                    kotlinx.serialization.json.Json.parseToJsonElement(tool.input.ifBlank { "{}" })
-                        .jsonObject
-                }.getOrNull()
-                val mode = jobInput?.get("mode")?.jsonPrimitive?.contentOrNull
-                when (mode) {
-                    "direct" -> {
-                        // Inside this branch jobInput is smart-cast to non-null
-                        // (mode being non-null implies the jobInput?.get(...) chain succeeded).
-                        val actions = runCatching {
-                            (jobInput.get("actions") as? kotlinx.serialization.json.JsonArray)
+        val workflowRendered: String? =
+            runCatching {
+                if (me.rerere.rikkahub.workflow.tools.WorkflowApprovalRenderer
+                        .isWorkflowTool(tool.toolName) &&
+                    tool.toolName !in setOf("workflow_list", "workflow_get")
+                ) {
+                    me.rerere.rikkahub.workflow.tools.WorkflowApprovalRenderer.renderPlain(
+                        tool.toolName,
+                        tool.input.ifBlank { "{}" },
+                    )
+                } else {
+                    null
+                }
+            }.getOrNull()
+        val argsPreview =
+            workflowRendered
+                ?: mcpRendered
+                ?: formatArgsForDisplay(tool.input).ifEmpty { "(no args)" }
+        val text =
+            buildString {
+                append("⚠️ <b>Permission required</b>\n\n")
+                append("Tool: <code>")
+                append(TelegramHtmlRenderer.escape(tool.toolName))
+                append("</code>\n")
+                append("in: <pre>")
+                append(TelegramHtmlRenderer.escape(argsPreview))
+                append("</pre>")
+                // schedule_job is special: approving SCHEDULES a future autonomous run, not
+                // just one tool. Surface that here so the user knows what they're authorising
+                // — every tool the cron prompt invokes will run without further approval.
+                // (HARDLINE blocks still apply at fire time, regardless of approval scope.)
+                if (tool.toolName == "schedule_job") {
+                    append("\n\n<i>⏰ Scheduled jobs run autonomously without per-tool approval. ")
+                    append("Approving this lets the job run with full tool access whenever it ")
+                    append("fires. Hardline-blocked commands (rm -rf /, mkfs, shutdown, …) still ")
+                    append("cannot run.</i>")
+                    // Surface mode-specific detail (mirrors the in-app approval card).
+                    val jobInput =
+                        runCatching {
+                            kotlinx.serialization.json.Json
+                                .parseToJsonElement(tool.input.ifBlank { "{}" })
+                                .jsonObject
                         }.getOrNull()
-                        if (actions != null && actions.isNotEmpty()) {
-                            append("\n\n<b>Actions:</b>")
-                            actions.forEachIndexed { i, el ->
-                                val obj = el as? JsonObject
-                                val toolName = obj?.get("tool")?.jsonPrimitive?.contentOrNull ?: "?"
-                                val args = obj?.get("args")?.toString().orEmpty()
-                                val truncatedArgs = if (args.length > 120) args.take(120) + "…" else args
-                                append("\n  ${i + 1}. <code>")
-                                append(TelegramHtmlRenderer.escape(toolName))
-                                append("</code> ")
-                                append(TelegramHtmlRenderer.escape(truncatedArgs))
+                    val mode = jobInput?.get("mode")?.jsonPrimitive?.contentOrNull
+                    when (mode) {
+                        "direct" -> {
+                            // Inside this branch jobInput is smart-cast to non-null
+                            // (mode being non-null implies the jobInput?.get(...) chain succeeded).
+                            val actions =
+                                runCatching {
+                                    (jobInput.get("actions") as? kotlinx.serialization.json.JsonArray)
+                                }.getOrNull()
+                            if (actions != null && actions.isNotEmpty()) {
+                                append("\n\n<b>Actions:</b>")
+                                actions.forEachIndexed { i, el ->
+                                    val obj = el as? JsonObject
+                                    val toolName = obj?.get("tool")?.jsonPrimitive?.contentOrNull ?: "?"
+                                    val args = obj?.get("args")?.toString().orEmpty()
+                                    val truncatedArgs = if (args.length > 120) args.take(120) + "…" else args
+                                    append("\n  ${i + 1}. <code>")
+                                    append(TelegramHtmlRenderer.escape(toolName))
+                                    append("</code> ")
+                                    append(TelegramHtmlRenderer.escape(truncatedArgs))
+                                }
                             }
                         }
-                    }
-                    "llm" -> {
-                        val prompt = jobInput.get("prompt")?.jsonPrimitive?.contentOrNull ?: ""
-                        if (prompt.isNotEmpty()) {
-                            val truncatedPrompt = if (prompt.length > 200) prompt.take(200) + "…" else prompt
-                            append("\n\n<b>Prompt:</b> ")
-                            append(TelegramHtmlRenderer.escape(truncatedPrompt))
+
+                        "llm" -> {
+                            val prompt = jobInput.get("prompt")?.jsonPrimitive?.contentOrNull ?: ""
+                            if (prompt.isNotEmpty()) {
+                                val truncatedPrompt = if (prompt.length > 200) prompt.take(200) + "…" else prompt
+                                append("\n\n<b>Prompt:</b> ")
+                                append(TelegramHtmlRenderer.escape(truncatedPrompt))
+                            }
                         }
                     }
                 }
             }
-        }
-        val res = try {
-            client.sendMessage(
-                chatId = chatId,
-                text = text,
-                parseMode = PARSE_MODE_HTML,
-                replyMarkup = buildApprovalKeyboard(tool.toolCallId, tool.toolName),
-            )
-        } catch (e: Throwable) {
-            android.util.Log.w(TAG, "approval prompt send failed", e)
-            null
-        }
+        val res =
+            try {
+                client.sendMessage(
+                    chatId = chatId,
+                    text = text,
+                    parseMode = PARSE_MODE_HTML,
+                    replyMarkup = buildApprovalKeyboard(tool.toolCallId, tool.toolName),
+                )
+            } catch (e: Throwable) {
+                android.util.Log.w(TAG, "approval prompt send failed", e)
+                null
+            }
         val msgId = res?.get("message_id")?.jsonPrimitive?.longOrNull
         if (msgId != null) {
             ApprovalPromptRegistry.register(tool.toolCallId, chatId, msgId)
@@ -1648,16 +1956,23 @@ class TelegramBotService : Service() {
         val s = settingsStore.settingsFlow.value
         val assistant = s.getCurrentAssistant()
         val effectiveModelId = assistant.chatModelId ?: s.chatModelId
-        val enabledProviders = s.providers
-            .filter { it.enabled }
-            .filter { p -> p.models.any { it.type == me.rerere.ai.provider.ModelType.CHAT } }
-        val currentPair = enabledProviders
-            .flatMap { p -> p.models.map { p to it } }
-            .firstOrNull { (_, m) -> m.id == effectiveModelId }
-        val currentHeader = if (currentPair != null) {
-            val name = currentPair.second.displayName.ifBlank { currentPair.second.modelId }
-            "🧠 Current model: <b>${TelegramHtmlRenderer.escape(name)}</b> (${TelegramHtmlRenderer.escape(currentPair.first.name)})\n\n"
-        } else "🧠 Current model: <i>not set</i>\n\n"
+        val enabledProviders =
+            s.providers
+                .filter { it.enabled }
+                .filter { p -> p.models.any { it.type == me.rerere.ai.provider.ModelType.CHAT } }
+        val currentPair =
+            enabledProviders
+                .flatMap { p -> p.models.map { p to it } }
+                .firstOrNull { (_, m) -> m.id == effectiveModelId }
+        val currentHeader =
+            if (currentPair != null) {
+                val name = currentPair.second.displayName.ifBlank { currentPair.second.modelId }
+                "🧠 Current model: <b>${TelegramHtmlRenderer.escape(
+                    name,
+                )}</b> (${TelegramHtmlRenderer.escape(currentPair.first.name)})\n\n"
+            } else {
+                "🧠 Current model: <i>not set</i>\n\n"
+            }
 
         if (cq.data == PROVIDER_CB_BACK) {
             // Re-render step 1. Drop stale model tokens; keep provider tokens valid so
@@ -1684,17 +1999,20 @@ class TelegramBotService : Service() {
         val parts = rest.split(":", limit = 2)
         val token = parts[0]
         val requestedPage = parts.getOrNull(1)?.toIntOrNull() ?: 0
-        val providerId = ProviderPickRegistry.resolve(token) ?: run {
-            client.answerCallbackQuery(cq.callbackQueryId, "model picker has expired — send /model again")
-            return
-        }
-        val provider = enabledProviders.firstOrNull { it.id.toString() == providerId } ?: run {
-            client.answerCallbackQuery(cq.callbackQueryId, "provider no longer available")
-            return
-        }
-        val providerModels = provider.models
-            .filter { it.type == me.rerere.ai.provider.ModelType.CHAT }
-            .map { provider to it }
+        val providerId =
+            ProviderPickRegistry.resolve(token) ?: run {
+                client.answerCallbackQuery(cq.callbackQueryId, "model picker has expired — send /model again")
+                return
+            }
+        val provider =
+            enabledProviders.firstOrNull { it.id.toString() == providerId } ?: run {
+                client.answerCallbackQuery(cq.callbackQueryId, "provider no longer available")
+                return
+            }
+        val providerModels =
+            provider.models
+                .filter { it.type == me.rerere.ai.provider.ModelType.CHAT }
+                .map { provider to it }
         if (providerModels.isEmpty()) {
             client.answerCallbackQuery(cq.callbackQueryId, "no chat models in ${provider.name}")
             return
@@ -1707,21 +2025,29 @@ class TelegramBotService : Service() {
         // previous page (or the previous provider) won't resolve.
         ModelPickRegistry.clear()
         client.answerCallbackQuery(cq.callbackQueryId, "")
-        val newText = buildModelPickerText(
-            currentHeader = currentHeader,
-            providerName = provider.name,
-            modelCount = providerModels.size,
-            page = page,
-        )
-        val keyboard = buildModelKeyboard(
-            allModels = providerModels,
-            page = page,
-            providerToken = token,
-            currentModelId = effectiveModelId,
-            showBackButton = enabledProviders.size >= 2,
-        )
+        val newText =
+            buildModelPickerText(
+                currentHeader = currentHeader,
+                providerName = provider.name,
+                modelCount = providerModels.size,
+                page = page,
+            )
+        val keyboard =
+            buildModelKeyboard(
+                allModels = providerModels,
+                page = page,
+                providerToken = token,
+                currentModelId = effectiveModelId,
+                showBackButton = enabledProviders.size >= 2,
+            )
         try {
-            client.editMessageText(cq.chatId, cq.messageId, newText, parseMode = PARSE_MODE_HTML, replyMarkup = keyboard)
+            client.editMessageText(
+                cq.chatId,
+                cq.messageId,
+                newText,
+                parseMode = PARSE_MODE_HTML,
+                replyMarkup = keyboard,
+            )
         } catch (e: Throwable) {
             android.util.Log.w(TAG, "handleProviderPickCallback: model-list edit failed", e)
         }
@@ -1734,14 +2060,17 @@ class TelegramBotService : Service() {
      */
     private suspend fun handleModelPickCallback(cq: TelegramCallbackQuery) {
         val token = cq.data.removePrefix(MODEL_CB_PREFIX)
-        val modelId = ModelPickRegistry.resolve(token) ?: run {
-            client.answerCallbackQuery(cq.callbackQueryId, "model picker has expired — send /model again")
-            return
-        }
+        val modelId =
+            ModelPickRegistry.resolve(token) ?: run {
+                client.answerCallbackQuery(cq.callbackQueryId, "model picker has expired — send /model again")
+                return
+            }
         val s = settingsStore.settingsFlow.value
         val assistant = s.getCurrentAssistant()
-        val match = s.providers.flatMap { p -> p.models.map { p to it } }
-            .firstOrNull { (_, m) -> m.id.toString() == modelId }
+        val match =
+            s.providers
+                .flatMap { p -> p.models.map { p to it } }
+                .firstOrNull { (_, m) -> m.id.toString() == modelId }
         if (match == null) {
             client.answerCallbackQuery(cq.callbackQueryId, "model no longer available")
             return
@@ -1749,21 +2078,23 @@ class TelegramBotService : Service() {
         val (provider, model) = match
         settingsStore.update { settings ->
             settings.copy(
-                assistants = settings.assistants.map {
-                    if (it.id == assistant.id) it.copy(chatModelId = model.id) else it
-                }
+                assistants =
+                    settings.assistants.map {
+                        if (it.id == assistant.id) it.copy(chatModelId = model.id) else it
+                    },
             )
         }
         val name = model.displayName.ifBlank { model.modelId }
         client.answerCallbackQuery(cq.callbackQueryId, "✅ $name")
         try {
-            val newText = buildString {
-                append("🔄 Switched to <b>")
-                append(TelegramHtmlRenderer.escape(name))
-                append("</b> (")
-                append(TelegramHtmlRenderer.escape(provider.name))
-                append(")")
-            }
+            val newText =
+                buildString {
+                    append("🔄 Switched to <b>")
+                    append(TelegramHtmlRenderer.escape(name))
+                    append("</b> (")
+                    append(TelegramHtmlRenderer.escape(provider.name))
+                    append(")")
+                }
             client.editMessageText(cq.chatId, cq.messageId, newText, parseMode = PARSE_MODE_HTML)
         } catch (e: Throwable) {
             android.util.Log.w(TAG, "handleModelPickCallback: switched-confirmation edit failed", e)
@@ -1798,20 +2129,29 @@ class TelegramBotService : Service() {
         // get their own prefix so the parsing branches stay small.
         when {
             cq.data.startsWith(MODEL_CB_PREFIX) -> {
-                handleModelPickCallback(cq); return
+                handleModelPickCallback(cq)
+                return
             }
+
             cq.data.startsWith(PROVIDER_CB_PREFIX) -> {
-                handleProviderPickCallback(cq); return
+                handleProviderPickCallback(cq)
+                return
             }
+
             cq.data.startsWith(DOCTOR_FIX_CB_PREFIX) -> {
-                handleDoctorFixCallback(cq); return
+                handleDoctorFixCallback(cq)
+                return
             }
+
             cq.data.startsWith(CLARIFY_CB_PREFIX) -> {
-                handleClarifyCallback(cq); return
+                handleClarifyCallback(cq)
+                return
             }
+
             cq.data.startsWith(APPROVAL_CB_PREFIX) -> {
                 // Falls through to the approval-handling block below.
             }
+
             else -> {
                 client.answerCallbackQuery(cq.callbackQueryId, "unknown action")
                 return
@@ -1827,14 +2167,16 @@ class TelegramBotService : Service() {
         val toolCallId = parts[2]
 
         // Find the active conversation for this chat.
-        val mapping = chatRepo.getByChatId(cq.chatId) ?: run {
-            client.answerCallbackQuery(cq.callbackQueryId, "no active conversation")
-            return
-        }
-        val convId = runCatching { Uuid.parse(mapping.conversationId) }.getOrNull() ?: run {
-            client.answerCallbackQuery(cq.callbackQueryId, "could not resolve conversation")
-            return
-        }
+        val mapping =
+            chatRepo.getByChatId(cq.chatId) ?: run {
+                client.answerCallbackQuery(cq.callbackQueryId, "no active conversation")
+                return
+            }
+        val convId =
+            runCatching { Uuid.parse(mapping.conversationId) }.getOrNull() ?: run {
+                client.answerCallbackQuery(cq.callbackQueryId, "could not resolve conversation")
+                return
+            }
 
         // Hydrate the in-memory ChatService session from disk if it's blank (post-restart
         // path). Without this the lookup below would miss the Pending tool persisted
@@ -1851,9 +2193,13 @@ class TelegramBotService : Service() {
         val approvalMutex = approvalMutexFor(toolCallId)
         approvalMutex.withLock {
             // Look up the tool to recover its name (callback_data only carries the call id).
-            val tool = chatService.getConversationFlow(convId).value
-                .currentMessages.flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
-                .firstOrNull { it.toolCallId == toolCallId }
+            val tool =
+                chatService
+                    .getConversationFlow(convId)
+                    .value
+                    .currentMessages
+                    .flatMap { it.parts.filterIsInstance<UIMessagePart.Tool>() }
+                    .firstOrNull { it.toolCallId == toolCallId }
             val toolName = tool?.toolName ?: ""
             if (tool == null) {
                 client.answerCallbackQuery(cq.callbackQueryId, "tool no longer active")
@@ -1864,16 +2210,29 @@ class TelegramBotService : Service() {
                 return@withLock
             }
 
-            val (approved, scope, label) = when (scopeChar) {
-                APPROVAL_CB_ONCE -> Triple(true, ChatService.ApprovalScope.Once, "✅ Approved (once)")
-                APPROVAL_CB_CHAT -> Triple(true, ChatService.ApprovalScope.ChatScope, "💬 Approved (this chat)")
-                APPROVAL_CB_ALWAYS -> Triple(true, ChatService.ApprovalScope.Always, "∞ Approved (always)")
-                APPROVAL_CB_DENY -> Triple(false, ChatService.ApprovalScope.Once, "❌ Denied")
-                else -> {
-                    client.answerCallbackQuery(cq.callbackQueryId, "unknown scope")
-                    return@withLock
+            val (approved, scope, label) =
+                when (scopeChar) {
+                    APPROVAL_CB_ONCE -> {
+                        Triple(true, ChatService.ApprovalScope.Once, "✅ Approved (once)")
+                    }
+
+                    APPROVAL_CB_CHAT -> {
+                        Triple(true, ChatService.ApprovalScope.ChatScope, "💬 Approved (this chat)")
+                    }
+
+                    APPROVAL_CB_ALWAYS -> {
+                        Triple(true, ChatService.ApprovalScope.Always, "∞ Approved (always)")
+                    }
+
+                    APPROVAL_CB_DENY -> {
+                        Triple(false, ChatService.ApprovalScope.Once, "❌ Denied")
+                    }
+
+                    else -> {
+                        client.answerCallbackQuery(cq.callbackQueryId, "unknown scope")
+                        return@withLock
+                    }
                 }
-            }
 
             // Ack the tap FIRST so Telegram's button spinner clears immediately. If we
             // ack only after handleToolApproval (which cancels prior generation, mutates
@@ -1882,7 +2241,10 @@ class TelegramBotService : Service() {
             // double-taps.
             val ackStart = System.currentTimeMillis()
             client.answerCallbackQuery(cq.callbackQueryId, label)
-            android.util.Log.i(TAG, "cb:${cq.callbackQueryId} ACKED in ${System.currentTimeMillis() - ackStart} ms (total ${System.currentTimeMillis() - cbStartMs} ms since START)")
+            android.util.Log.i(
+                TAG,
+                "cb:${cq.callbackQueryId} ACKED in ${System.currentTimeMillis() - ackStart} ms (total ${System.currentTimeMillis() - cbStartMs} ms since START)",
+            )
 
             chatService.handleToolApproval(
                 conversationId = convId,
@@ -1897,23 +2259,31 @@ class TelegramBotService : Service() {
             // hitting Telegram's per-chat rate limit because edit-A was still in flight
             // while ack-B was being requested. The Mutex(toolCallId) is per-tool-call so
             // releasing it here is safe — there are no more state-sensitive operations.
-            val newText = buildString {
-                append("<b>")
-                append(TelegramHtmlRenderer.escape(label))
-                append("</b>\n")
-                append("Tool: <code>")
-                append(TelegramHtmlRenderer.escape(toolName))
-                append("</code>")
-            }
+            val newText =
+                buildString {
+                    append("<b>")
+                    append(TelegramHtmlRenderer.escape(label))
+                    append("</b>\n")
+                    append("Tool: <code>")
+                    append(TelegramHtmlRenderer.escape(toolName))
+                    append("</code>")
+                }
             // The local `scope` here is the ApprovalScope from the destructured Triple
             // above — needs the qualified field reference to dispatch on the bot's scope.
             this@TelegramBotService.scope.launch {
                 try {
                     val editStart = System.currentTimeMillis()
                     client.editMessageText(cq.chatId, cq.messageId, newText, parseMode = PARSE_MODE_HTML)
-                    android.util.Log.i(TAG, "cb:${cq.callbackQueryId} EDITED in ${System.currentTimeMillis() - editStart} ms (total ${System.currentTimeMillis() - cbStartMs} ms since START)")
+                    android.util.Log.i(
+                        TAG,
+                        "cb:${cq.callbackQueryId} EDITED in ${System.currentTimeMillis() - editStart} ms (total ${System.currentTimeMillis() - cbStartMs} ms since START)",
+                    )
                 } catch (e: Throwable) {
-                    android.util.Log.w(TAG, "cb:${cq.callbackQueryId} EDIT FAILED: ${e.message ?: e::class.simpleName}", e)
+                    android.util.Log.w(
+                        TAG,
+                        "cb:${cq.callbackQueryId} EDIT FAILED: ${e.message ?: e::class.simpleName}",
+                        e,
+                    )
                 }
             }
             ApprovalPromptRegistry.clear(toolCallId)
@@ -2026,14 +2396,24 @@ class TelegramBotService : Service() {
          * approval the user might still tap stays addressable.
          */
         object ApprovalPromptRegistry {
-            data class Entry(val chatId: Long, val messageId: Long)
+            data class Entry(
+                val chatId: Long,
+                val messageId: Long,
+            )
+
             private const val MAX_ENTRIES = 256
             private val byCallId = java.util.concurrent.ConcurrentHashMap<String, Entry>()
+
             // Tracks insertion order so we know which entry is oldest when we hit the cap.
             // Bounded LinkedHashMap on the same key set would do this for us, but we need
             // concurrent reads, so we pair the concurrent map with a synchronised deque.
             private val insertionOrder = java.util.concurrent.LinkedBlockingDeque<String>()
-            fun register(toolCallId: String, chatId: Long, messageId: Long) {
+
+            fun register(
+                toolCallId: String,
+                chatId: Long,
+                messageId: Long,
+            ) {
                 val wasNew = byCallId.put(toolCallId, Entry(chatId, messageId)) == null
                 if (wasNew) {
                     insertionOrder.addLast(toolCallId)
@@ -2050,19 +2430,24 @@ class TelegramBotService : Service() {
                 // (re-registering the same toolCallId re-uses the original slot). No
                 // structural change to insertionOrder needed.
             }
+
             fun get(toolCallId: String): Entry? = byCallId[toolCallId]
+
             fun clear(toolCallId: String) {
                 if (byCallId.remove(toolCallId) != null) {
                     insertionOrder.remove(toolCallId)
                 }
             }
+
             /** Drop every prompt we registered for [chatId]. Called on /new so a reset
              *  conversation doesn't leave stale (toolCallId → messageId) lookups behind. */
             fun clearChat(chatId: Long) {
-                val toRemove = byCallId.entries.asSequence()
-                    .filter { it.value.chatId == chatId }
-                    .map { it.key }
-                    .toList()
+                val toRemove =
+                    byCallId.entries
+                        .asSequence()
+                        .filter { it.value.chatId == chatId }
+                        .map { it.key }
+                        .toList()
                 for (k in toRemove) {
                     byCallId.remove(k)
                     insertionOrder.remove(k)
@@ -2072,12 +2457,12 @@ class TelegramBotService : Service() {
             /** Snapshot of every entry whose chatId == [chatId]. Used by /stop and /new
              *  to edit each registered keyboard message in place to "Cancelled" before
              *  clearing the registry — without this the user sees orphan buttons forever. */
-            fun snapshotForChat(chatId: Long): List<Pair<String, Entry>> {
-                return byCallId.entries.asSequence()
+            fun snapshotForChat(chatId: Long): List<Pair<String, Entry>> =
+                byCallId.entries
+                    .asSequence()
                     .filter { it.value.chatId == chatId }
                     .map { it.key to it.value }
                     .toList()
-            }
         }
 
         /**
@@ -2087,14 +2472,27 @@ class TelegramBotService : Service() {
          * their chat_id into the whitelist UI. Without this you'd have to dig through
          * logcat to discover your own Telegram chat_id.
          */
-        data class RejectedSender(val senderId: Long, val chatId: Long, val atMs: Long)
+        data class RejectedSender(
+            val senderId: Long,
+            val chatId: Long,
+            val atMs: Long,
+        )
+
         object RejectedSenderLog {
             @Volatile private var last: RejectedSender? = null
-            fun record(senderId: Long, chatId: Long) {
+
+            fun record(
+                senderId: Long,
+                chatId: Long,
+            ) {
                 last = RejectedSender(senderId, chatId, System.currentTimeMillis())
             }
+
             fun latest(): RejectedSender? = last
-            fun clear() { last = null }
+
+            fun clear() {
+                last = null
+            }
         }
 
         /**
@@ -2105,6 +2503,7 @@ class TelegramBotService : Service() {
          */
         object SlashCommandLog {
             private const val MAX_PER_CHAT = 8
+
             // MutableList values are always accessed under the list's own monitor. CHM
             // provides safe get/putIfAbsent so we can obtain the list atomically; all
             // mutations then go through synchronized(list) so record() and recent() never
@@ -2114,7 +2513,10 @@ class TelegramBotService : Service() {
             // partially-updated list.
             private val byChat = java.util.concurrent.ConcurrentHashMap<Long, MutableList<Pair<String, Long>>>()
 
-            fun record(chatId: Long, display: String) {
+            fun record(
+                chatId: Long,
+                display: String,
+            ) {
                 val now = System.currentTimeMillis()
                 val list = byChat.getOrPut(chatId) { mutableListOf() }
                 synchronized(list) {
@@ -2123,7 +2525,10 @@ class TelegramBotService : Service() {
                 }
             }
 
-            fun recent(chatId: Long, ttlMs: Long): List<Pair<String, Long>> {
+            fun recent(
+                chatId: Long,
+                ttlMs: Long,
+            ): List<Pair<String, Long>> {
                 val list = byChat[chatId] ?: return emptyList()
                 val cutoff = System.currentTimeMillis() - ttlMs
                 synchronized(list) {
@@ -2141,17 +2546,18 @@ class TelegramBotService : Service() {
          * Telegram caps each description at 256 chars and the command at 32 chars; keep
          * descriptions short.
          */
-        val BUILT_IN_COMMANDS: List<Pair<String, String>> = listOf(
-            "start" to "Show a quick welcome and the most useful commands",
-            "help" to "List every built-in slash command",
-            "new" to "Start a fresh conversation (clears history)",
-            "stop" to "Cancel the current generation immediately",
-            "status" to "Show service state, current model, assistant, and rate limit",
-            "model" to "Show or switch the chat model. Usage: /model [name]",
-            "ratelimit" to "Show or set the assistant's max output tokens. Usage: /ratelimit [number|clear]",
-            "doctor" to "Run app diagnostics — perms, services, DB, network, Termux",
-            "stream" to "Show or toggle auto-streamed screenshots. Usage: /stream [on|off]",
-        )
+        val BUILT_IN_COMMANDS: List<Pair<String, String>> =
+            listOf(
+                "start" to "Show a quick welcome and the most useful commands",
+                "help" to "List every built-in slash command",
+                "new" to "Start a fresh conversation (clears history)",
+                "stop" to "Cancel the current generation immediately",
+                "status" to "Show service state, current model, assistant, and rate limit",
+                "model" to "Show or switch the chat model. Usage: /model [name]",
+                "ratelimit" to "Show or set the assistant's max output tokens. Usage: /ratelimit [number|clear]",
+                "doctor" to "Run app diagnostics — perms, services, DB, network, Termux",
+                "stream" to "Show or toggle auto-streamed screenshots. Usage: /stream [on|off]",
+            )
 
         /** Set whenever the service is alive AND its long-poll loop is running. */
         @Volatile var isRunning: Boolean = false
@@ -2171,4 +2577,3 @@ class TelegramBotService : Service() {
         }
     }
 }
-

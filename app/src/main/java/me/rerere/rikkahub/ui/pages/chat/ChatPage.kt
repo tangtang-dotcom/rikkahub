@@ -47,9 +47,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -73,19 +73,19 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.service.ChatError
+import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
+import me.rerere.rikkahub.ui.components.ai.AutoTaskDialog
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
-import me.rerere.rikkahub.ui.components.ai.AutoTaskDialog
-import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
-import me.rerere.rikkahub.ui.components.ai.readAutoTaskConfig
-import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
+import me.rerere.rikkahub.ui.components.ai.readAutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
+import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
+import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
+import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
-import me.rerere.rikkahub.ui.components.setting.AutoCompressDialog
-import me.rerere.rikkahub.ui.components.setting.ToolOutputDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
@@ -103,12 +103,18 @@ import java.io.File
 import kotlin.uuid.Uuid
 
 @Composable
-fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
-    val vm: ChatVM = koinViewModel(
-        parameters = {
-            parametersOf(id.toString())
-        }
-    )
+fun ChatPage(
+    id: Uuid,
+    text: String?,
+    files: List<Uri>,
+    nodeId: Uuid? = null,
+) {
+    val vm: ChatVM =
+        koinViewModel(
+            parameters = {
+                parametersOf(id.toString())
+            },
+        )
     val filesManager: FilesManager = koinInject()
     val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
@@ -138,7 +144,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
         }
     }
 
-    @Suppress("DEPRECATION")  // LocalWindowInfo replaces this in a future Compose bump
+    @Suppress("DEPRECATION") // LocalWindowInfo replaces this in a future Compose bump
     val windowAdaptiveInfo = currentWindowDpSize()
     val isBigScreen =
         windowAdaptiveInfo.width > windowAdaptiveInfo.height && windowAdaptiveInfo.width >= 1100.dp
@@ -157,21 +163,23 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
     LaunchedEffect(files, text) {
         if (files.isNotEmpty()) {
             val localFiles = filesManager.createChatFilesByContents(files)
-            val contentTypes = files.mapNotNull { file ->
-                filesManager.getFileMimeType(file)
-            }
-            val parts = buildList {
-                localFiles.forEachIndexed { index, file ->
-                    val type = contentTypes.getOrNull(index)
-                    if (type?.startsWith("image/") == true) {
-                        add(UIMessagePart.Image(url = file.toString()))
-                    } else if (type?.startsWith("video/") == true) {
-                        add(UIMessagePart.Video(url = file.toString()))
-                    } else if (type?.startsWith("audio/") == true) {
-                        add(UIMessagePart.Audio(url = file.toString()))
+            val contentTypes =
+                files.mapNotNull { file ->
+                    filesManager.getFileMimeType(file)
+                }
+            val parts =
+                buildList {
+                    localFiles.forEachIndexed { index, file ->
+                        val type = contentTypes.getOrNull(index)
+                        if (type?.startsWith("image/") == true) {
+                            add(UIMessagePart.Image(url = file.toString()))
+                        } else if (type?.startsWith("video/") == true) {
+                            add(UIMessagePart.Video(url = file.toString()))
+                        } else if (type?.startsWith("audio/") == true) {
+                            add(UIMessagePart.Audio(url = file.toString()))
+                        }
                     }
                 }
-            }
             inputState.messageContent = parts
         }
         text?.base64Decode()?.let { decodedText ->
@@ -204,9 +212,9 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                         navController = navController,
                         current = conversation,
                         vm = vm,
-                        settings = setting
+                        settings = setting,
                     )
-                }
+                },
             ) {
                 ChatPageContent(
                     inputState = inputState,
@@ -236,9 +244,9 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                         navController = navController,
                         current = conversation,
                         vm = vm,
-                        settings = setting
+                        settings = setting,
                     )
-                }
+                },
             ) {
                 ChatPageContent(
                     inputState = inputState,
@@ -280,7 +288,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                 TextButton(onClick = { vm.cancelAutoCompress() }) {
                     Text(stringResource(R.string.settings_cancel))
                 }
-            }
+            },
         )
     }
 }
@@ -315,23 +323,25 @@ private fun ChatPageContent(
     var showAutoTaskDialog by remember { mutableStateOf(false) }
     var autoTaskConfig by remember { mutableStateOf(readAutoTaskConfig(context)) }
 
-    val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
-        assistant.workspaceId?.let { workspaceId ->
-            listOf(
-                WorkspaceCompletionProvider(
-                    workspaceId = workspaceId.toString(),
-                    repository = workspaceRepository,
-                    currentCwd = conversation.workspaceCwd,
-                )
-            )
-        }.orEmpty()
-    }
+    val completionProviders =
+        remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
+            assistant.workspaceId
+                ?.let { workspaceId ->
+                    listOf(
+                        WorkspaceCompletionProvider(
+                            workspaceId = workspaceId.toString(),
+                            repository = workspaceRepository,
+                            currentCwd = conversation.workspaceCwd,
+                        ),
+                    )
+                }.orEmpty()
+        }
 
     TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
 
     Surface(
         color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
     ) {
         AssistantBackground(setting = setting, modifier = Modifier.hazeSource(hazeState))
         Scaffold(
@@ -350,7 +360,7 @@ private fun ChatPageContent(
                     },
                     onUpdateTitle = {
                         vm.updateTitle(it)
-                    }
+                    },
                 )
             },
             bottomBar = {
@@ -369,14 +379,15 @@ private fun ChatPageContent(
                         val current = setting.getCurrentAssistant()
                         vm.updateSettings(
                             setting.copy(
-                                assistants = setting.assistants.map { assistant ->
-                                    if (assistant.id == current.id) {
-                                        assistant.copy(enableWebSearch = !enableWebSearch)
-                                    } else {
-                                        assistant
-                                    }
-                                }
-                            )
+                                assistants =
+                                    setting.assistants.map { assistant ->
+                                        if (assistant.id == current.id) {
+                                            assistant.copy(enableWebSearch = !enableWebSearch)
+                                        } else {
+                                            assistant
+                                        }
+                                    },
+                            ),
                         )
                     },
                     onSendClick = {
@@ -420,21 +431,22 @@ private fun ChatPageContent(
                     onUpdateAssistant = {
                         vm.updateSettings(
                             setting.copy(
-                                assistants = setting.assistants.map { assistant ->
-                                    if (assistant.id == it.id) {
-                                        it
-                                    } else {
-                                        assistant
-                                    }
-                                }
-                            )
+                                assistants =
+                                    setting.assistants.map { assistant ->
+                                        if (assistant.id == it.id) {
+                                            it
+                                        } else {
+                                            assistant
+                                        }
+                                    },
+                            ),
                         )
                     },
                     onUpdateSearchService = { index ->
                         vm.updateSettings(
                             setting.copy(
-                                searchServiceSelected = index
-                            )
+                                searchServiceSelected = index,
+                            ),
                         )
                     },
                     onMoreClick = {
@@ -483,14 +495,16 @@ private fun ChatPageContent(
                 onUpdateMessage = { newNode ->
                     vm.updateConversation(
                         conversation.copy(
-                            messageNodes = conversation.messageNodes.map { node ->
-                                if (node.id == newNode.id) {
-                                    newNode
-                                } else {
-                                    node
-                                }
-                            }
-                        ))
+                            messageNodes =
+                                conversation.messageNodes.map { node ->
+                                    if (node.id == newNode.id) {
+                                        newNode
+                                    } else {
+                                        node
+                                    }
+                                },
+                        ),
+                    )
                     vm.saveConversationAsync()
                 },
                 onClickSuggestion = { suggestion ->
@@ -580,40 +594,45 @@ private fun ChatFilesPickerSheet(
 
     var cameraOutputUri by remember { mutableStateOf<Uri?>(null) }
     var cameraOutputFile by remember { mutableStateOf<File?>(null) }
-    val (_, launchCameraCrop) = useCropLauncher(
-        onCroppedImageReady = { croppedUri ->
-            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
-            dismissAll()
-        },
-        onCleanup = {
-            cameraOutputFile?.delete()
-            cameraOutputFile = null
-            cameraOutputUri = null
-        }
-    )
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captureSuccessful ->
-        if (captureSuccessful && cameraOutputUri != null) {
-            if (setting.displaySetting.skipCropImage) {
-                inputState.addImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)))
+    val (_, launchCameraCrop) =
+        useCropLauncher(
+            onCroppedImageReady = { croppedUri ->
+                inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+                dismissAll()
+            },
+            onCleanup = {
                 cameraOutputFile?.delete()
                 cameraOutputFile = null
                 cameraOutputUri = null
-                dismissAll()
+            },
+        )
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captureSuccessful ->
+            if (captureSuccessful && cameraOutputUri != null) {
+                if (setting.displaySetting.skipCropImage) {
+                    inputState.addImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)))
+                    cameraOutputFile?.delete()
+                    cameraOutputFile = null
+                    cameraOutputUri = null
+                    dismissAll()
+                } else {
+                    launchCameraCrop(cameraOutputUri!!)
+                }
             } else {
-                launchCameraCrop(cameraOutputUri!!)
+                cameraOutputFile?.delete()
+                cameraOutputFile = null
+                cameraOutputUri = null
             }
-        } else {
-            cameraOutputFile?.delete()
-            cameraOutputFile = null
-            cameraOutputUri = null
         }
-    }
     val onLaunchCamera: () -> Unit = {
         if (cameraPermission.allRequiredPermissionsGranted) {
             cameraOutputFile = context.cacheDir.resolve("camera_${Uuid.random()}.jpg")
-            cameraOutputUri = FileProvider.getUriForFile(
-                context, "${context.packageName}.fileprovider", cameraOutputFile!!
-            )
+            cameraOutputUri =
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    cameraOutputFile!!,
+                )
             cameraLauncher.launch(cameraOutputUri!!)
         } else {
             cameraPermission.requestPermissions()
@@ -621,16 +640,17 @@ private fun ChatFilesPickerSheet(
     }
 
     var preCropTempFile by remember { mutableStateOf<File?>(null) }
-    val (_, launchImageCrop) = useCropLauncher(
-        onCroppedImageReady = { croppedUri ->
-            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
-            dismissAll()
-        },
-        onCleanup = {
-            preCropTempFile?.delete()
-            preCropTempFile = null
-        }
-    )
+    val (_, launchImageCrop) =
+        useCropLauncher(
+            onCroppedImageReady = { croppedUri ->
+                inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+                dismissAll()
+            },
+            onCleanup = {
+                preCropTempFile?.delete()
+                preCropTempFile = null
+            },
+        )
     val imagePickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
             if (selectedUris.isNotEmpty()) {
@@ -643,8 +663,9 @@ private fun ChatFilesPickerSheet(
                     runCatching {
                         val source = selectedUris.first()
                         // HEIF/HEIC（尤其 HDR HEIF）交给 UCrop 前先解码转为 JPEG，规避裁剪解码失败
-                        val converted = ImageUtils.isHeifImage(context, source) &&
-                            ImageUtils.convertHeifToJpeg(context, source, tempFile)
+                        val converted =
+                            ImageUtils.isHeifImage(context, source) &&
+                                ImageUtils.convertHeifToJpeg(context, source, tempFile)
                         if (!converted) {
                             context.contentResolver.openInputStream(source)?.use { input ->
                                 tempFile.outputStream().use { output -> input.copyTo(output) }
@@ -684,27 +705,29 @@ private fun ChatFilesPickerSheet(
     val filePickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             if (uris.isNotEmpty()) {
-                val documents = uris.mapNotNull { uri ->
-                    val fileName = filesManager.getFileNameFromUri(uri) ?: "file"
-                    val mime = filesManager.getFileMimeType(uri) ?: "text/plain"
-                    if (isAllowedFileType(fileName, mime)) {
-                        val localUri = filesManager.createChatFilesByContents(listOf(uri)).firstOrNull()
-                            ?: run {
-                                toaster.show(
-                                    context.getString(R.string.chat_input_file_read_failed, fileName),
-                                    type = ToastType.Error
-                                )
-                                return@mapNotNull null
-                            }
-                        UIMessagePart.Document(url = localUri.toString(), fileName = fileName, mime = mime)
-                    } else {
-                        toaster.show(
-                            context.getString(R.string.chat_input_unsupported_file_type, fileName),
-                            type = ToastType.Error
-                        )
-                        null
+                val documents =
+                    uris.mapNotNull { uri ->
+                        val fileName = filesManager.getFileNameFromUri(uri) ?: "file"
+                        val mime = filesManager.getFileMimeType(uri) ?: "text/plain"
+                        if (isAllowedFileType(fileName, mime)) {
+                            val localUri =
+                                filesManager.createChatFilesByContents(listOf(uri)).firstOrNull()
+                                    ?: run {
+                                        toaster.show(
+                                            context.getString(R.string.chat_input_file_read_failed, fileName),
+                                            type = ToastType.Error,
+                                        )
+                                        return@mapNotNull null
+                                    }
+                            UIMessagePart.Document(url = localUri.toString(), fileName = fileName, mime = mime)
+                        } else {
+                            toaster.show(
+                                context.getString(R.string.chat_input_unsupported_file_type, fileName),
+                                type = ToastType.Error,
+                            )
+                            null
+                        }
                     }
-                }
                 if (documents.isNotEmpty()) {
                     inputState.addFiles(documents)
                     dismissAll()
@@ -712,10 +735,11 @@ private fun ChatFilesPickerSheet(
             }
         }
 
-    val filesSheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-    )
+    val filesSheetState =
+        rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        )
     ModalBottomSheet(
         sheetState = filesSheetState,
         onDismissRequest = { dismissAll() },
@@ -731,14 +755,15 @@ private fun ChatFilesPickerSheet(
             onUpdateAssistant = {
                 vm.updateSettings(
                     setting.copy(
-                        assistants = setting.assistants.map { assistant ->
-                            if (assistant.id == it.id) {
-                                it
-                            } else {
-                                assistant
-                            }
-                        }
-                    )
+                        assistants =
+                            setting.assistants.map { assistant ->
+                                if (assistant.id == it.id) {
+                                    it
+                                } else {
+                                    assistant
+                                }
+                            },
+                    ),
                 )
             },
             onUpdateConversation = {
@@ -771,13 +796,14 @@ private fun ChatFilesPickerSheet(
             tokenLimit = setting.autoCompressTokenLimit,
             onDismiss = { showAutoCompressDialog = false },
             onConfirm = { enabled, mode, base, threshold, tokenLimit ->
-                val newSettings = setting.copy(
-                    autoCompressEnabled = enabled,
-                    autoCompressMode = mode,
-                    autoCompressTokenBase = base,
-                    autoCompressThreshold = threshold,
-                    autoCompressTokenLimit = tokenLimit,
-                )
+                val newSettings =
+                    setting.copy(
+                        autoCompressEnabled = enabled,
+                        autoCompressMode = mode,
+                        autoCompressTokenBase = base,
+                        autoCompressThreshold = threshold,
+                        autoCompressTokenLimit = tokenLimit,
+                    )
                 vm.updateSettings(newSettings)
                 // 用户重设阈值/模式 → 触发点 = 当前累计值 + 新阈值
                 vm.resetAutoCompressTriggerPoint(newSettings)
@@ -805,13 +831,14 @@ private fun TopBar(
     previewMode: Boolean,
     onClickMenu: () -> Unit,
     onNewChat: () -> Unit,
-    onUpdateTitle: (String) -> Unit
+    onUpdateTitle: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
-    val titleState = useEditState<String> {
-        onUpdateTitle(it)
-    }
+    val titleState =
+        useEditState<String> {
+            onUpdateTitle(it)
+        }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -820,7 +847,7 @@ private fun TopBar(
                 IconButton(
                     onClick = {
                         scope.launch { drawerState.open() }
-                    }
+                    },
                 ) {
                     Icon(HugeIcons.Menu03, "Messages")
                 }
@@ -850,13 +877,18 @@ private fun TopBar(
                     )
                     if (model != null && provider != null) {
                         Text(
-                            text = "${assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
+                            text = "${assistant.name.ifBlank {
+                                stringResource(
+                                    R.string.assistant_page_default_assistant,
+                                )
+                            }} / ${model.displayName} (${provider.name})",
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             color = LocalContentColor.current.copy(0.65f),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 8.sp,
-                            )
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 8.sp,
+                                ),
                         )
                     }
                 }
@@ -866,7 +898,7 @@ private fun TopBar(
             IconButton(
                 onClick = {
                     onClickMenu()
-                }
+                },
             ) {
                 Icon(if (previewMode) HugeIcons.Cancel01 else HugeIcons.LeftToRightListBullet, "Chat Options")
             }
@@ -874,7 +906,7 @@ private fun TopBar(
             IconButton(
                 onClick = {
                     onNewChat()
-                }
+                },
             ) {
                 Icon(HugeIcons.MessageAdd01, "New Message")
             }
@@ -900,7 +932,7 @@ private fun TopBar(
                 TextButton(
                     onClick = {
                         titleState.confirm()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.chat_page_save))
                 }
@@ -909,11 +941,11 @@ private fun TopBar(
                 TextButton(
                     onClick = {
                         titleState.dismiss()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.chat_page_cancel))
                 }
-            }
+            },
         )
     }
 }

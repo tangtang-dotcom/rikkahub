@@ -88,7 +88,7 @@ private class CardGroupScopeImpl : CardGroupScope {
                 leadingContent = leadingContent,
                 trailingContent = trailingContent,
                 colors = colors,
-            )
+            ),
         )
     }
 }
@@ -116,25 +116,27 @@ private fun CardGroupListItem(
 
     ListItem(
         headlineContent = item.headlineContent,
-        modifier = item.modifier
-            .fillMaxWidth()
-            .clip(
-                RoundedCornerShape(
-                    topStart = topCorner,
-                    topEnd = topCorner,
-                    bottomStart = bottomCorner,
-                    bottomEnd = bottomCorner,
-                )
-            )
-            .then(
-                if (item.onClick != null) {
-                    Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onClick = item.onClick,
-                    )
-                } else Modifier
-            ),
+        modifier =
+            item.modifier
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(
+                        topStart = topCorner,
+                        topEnd = topCorner,
+                        bottomStart = bottomCorner,
+                        bottomEnd = bottomCorner,
+                    ),
+                ).then(
+                    if (item.onClick != null) {
+                        Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = LocalIndication.current,
+                            onClick = item.onClick,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
         overlineContent = item.overlineContent,
         supportingContent = item.supportingContent,
         leadingContent = item.leadingContent,
@@ -165,11 +167,12 @@ fun CardGroup(
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
                 ProvideTextStyle(MaterialTheme.typography.titleSmallEmphasized) {
                     Box(
-                        modifier = Modifier
-                            .padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
-                            .then(
-                                if (onClick != null) Modifier.clickable { onClick() } else Modifier
-                            )
+                        modifier =
+                            Modifier
+                                .padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
+                                .then(
+                                    if (onClick != null) Modifier.clickable { onClick() } else Modifier,
+                                ),
                     ) {
                         title()
                     }
@@ -201,9 +204,10 @@ private fun CardGroupPreview() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
         ) {
             CardGroup(
                 modifier = Modifier.padding(horizontal = 16.dp),

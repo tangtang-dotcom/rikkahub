@@ -25,59 +25,76 @@ import me.rerere.ai.ui.UIMessagePart
  * Both are gated by the per-assistant `Reliability` Local Tools toggle.
  */
 
-fun checkAppUpdatesTool(checker: GitHubReleaseChecker): Tool = Tool(
-    name = "check_app_updates",
-    description = """
-        Check GitHub Releases for a newer version of rikkahub-agent than the one currently
-        installed. Read-only. Returns the current version, the latest tag, whether an update
-        is available, the release URL, and the release body for context. Use when the user
-        asks "any updates?" or to schedule a periodic update reminder via cron.
-    """.trimIndent().replace("\n", " "),
-    parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
-    execute = {
-        val payload = when (val result = checker.check()) {
-            is GitHubReleaseChecker.CheckResult.Available -> buildJsonObject {
-                put("update_available", true)
-                put("current", result.current)
-                put("latest", result.latest.tag_name)
-                put("name", result.latest.name)
-                put("url", result.latest.html_url)
-                put("published_at", result.latest.published_at)
-                put("body", result.latest.body)
-            }
-            is GitHubReleaseChecker.CheckResult.UpToDate -> buildJsonObject {
-                put("update_available", false)
-                put("current", result.current)
-                put("latest", result.latest.tag_name)
-            }
-            is GitHubReleaseChecker.CheckResult.Failed -> buildJsonObject {
-                put("error", "check_failed")
-                put("detail", result.message)
-            }
-        }
-        listOf(UIMessagePart.Text(payload.toString()))
-    },
-)
+fun checkAppUpdatesTool(checker: GitHubReleaseChecker): Tool =
+    Tool(
+        name = "check_app_updates",
+        description =
+            """
+            Check GitHub Releases for a newer version of rikkahub-agent than the one currently
+            installed. Read-only. Returns the current version, the latest tag, whether an update
+            is available, the release URL, and the release body for context. Use when the user
+            asks "any updates?" or to schedule a periodic update reminder via cron.
+            """.trimIndent().replace("\n", " "),
+        parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
+        execute = {
+            val payload =
+                when (val result = checker.check()) {
+                    is GitHubReleaseChecker.CheckResult.Available -> {
+                        buildJsonObject {
+                            put("update_available", true)
+                            put("current", result.current)
+                            put("latest", result.latest.tag_name)
+                            put("name", result.latest.name)
+                            put("url", result.latest.html_url)
+                            put("published_at", result.latest.published_at)
+                            put("body", result.latest.body)
+                        }
+                    }
 
-fun generateBugReportTool(context: Context, builder: BugReportBuilder): Tool = Tool(
-    name = "generate_bug_report",
-    description = "Build a bug-report ZIP: last ~5000 lines of secret-redacted logcat + app/device/Android version + a README listing what's excluded (conversations, tokens, hosts, memories all stay private). Returns absolute path + content:// URI for ACTION_SEND share. File lives in app cache.",
-    parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
-    needsApproval = { true },
-    execute = {
-        val zip = builder.build()
-        val authority = "${context.packageName}.fileprovider"
-        val uri = runCatching {
-            FileProvider.getUriForFile(context, authority, zip)
-        }.getOrNull()
-        val payload = buildJsonObject {
-            put("ok", true)
-            put("path", zip.absolutePath)
-            put("size_bytes", zip.length())
-            if (uri != null) put("content_uri", uri.toString())
-            put("share_intent_action", Intent.ACTION_SEND)
-            put("mime_type", "application/zip")
-        }
-        listOf(UIMessagePart.Text(payload.toString()))
-    },
-)
+                    is GitHubReleaseChecker.CheckResult.UpToDate -> {
+                        buildJsonObject {
+                            put("update_available", false)
+                            put("current", result.current)
+                            put("latest", result.latest.tag_name)
+                        }
+                    }
+
+                    is GitHubReleaseChecker.CheckResult.Failed -> {
+                        buildJsonObject {
+                            put("error", "check_failed")
+                            put("detail", result.message)
+                        }
+                    }
+                }
+            listOf(UIMessagePart.Text(payload.toString()))
+        },
+    )
+
+fun generateBugReportTool(
+    context: Context,
+    builder: BugReportBuilder,
+): Tool =
+    Tool(
+        name = "generate_bug_report",
+        description = "Build a bug-report ZIP: last ~5000 lines of secret-redacted logcat + app/device/Android version + a README listing what's excluded (conversations, tokens, hosts, memories all stay private). Returns absolute path + content:// URI for ACTION_SEND share. File lives in app cache.",
+        parameters = { InputSchema.Obj(properties = buildJsonObject {}, required = emptyList()) },
+        needsApproval = { true },
+        execute = {
+            val zip = builder.build()
+            val authority = "${context.packageName}.fileprovider"
+            val uri =
+                runCatching {
+                    FileProvider.getUriForFile(context, authority, zip)
+                }.getOrNull()
+            val payload =
+                buildJsonObject {
+                    put("ok", true)
+                    put("path", zip.absolutePath)
+                    put("size_bytes", zip.length())
+                    if (uri != null) put("content_uri", uri.toString())
+                    put("share_intent_action", Intent.ACTION_SEND)
+                    put("mime_type", "application/zip")
+                }
+            listOf(UIMessagePart.Text(payload.toString()))
+        },
+    )

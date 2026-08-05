@@ -19,7 +19,6 @@ import me.rerere.rikkahub.data.model.Conversation
  *   - Future Compose / Telegram surfaces collect the same numbers.
  */
 object TokenBudgetTracker {
-
     data class Totals(
         val inputTokens: Long,
         val outputTokens: Long,
@@ -31,9 +30,9 @@ object TokenBudgetTracker {
 
     enum class BudgetStatus {
         UNDER_SOFT,
-        WARN,            // crossed soft, below hard
-        OVER_HARD,       // crossed hard
-        NO_BUDGET,       // no caps configured
+        WARN, // crossed soft, below hard
+        OVER_HARD, // crossed hard
+        NO_BUDGET, // no caps configured
     }
 
     data class Snapshot(
@@ -56,8 +55,11 @@ object TokenBudgetTracker {
             input += usage.promptTokens.toLong()
             output += usage.completionTokens.toLong()
             cached += usage.cachedTokens.toLong()
-            val totalThis = (usage.totalTokens.takeIf { it > 0 }
-                ?: (usage.promptTokens + usage.completionTokens)).toLong()
+            val totalThis =
+                (
+                    usage.totalTokens.takeIf { it > 0 }
+                        ?: (usage.promptTokens + usage.completionTokens)
+                ).toLong()
             total += totalThis
             if (totalThis > perMax) perMax = totalThis
             count++
@@ -72,7 +74,11 @@ object TokenBudgetTracker {
         )
     }
 
-    fun classify(totals: Totals, softCap: Int?, hardCap: Int?): BudgetStatus {
+    fun classify(
+        totals: Totals,
+        softCap: Int?,
+        hardCap: Int?,
+    ): BudgetStatus {
         // No budget configured → no-budget. Spec calls this "off"; tool surface shows
         // numbers but doesn't recommend action.
         if (softCap == null && hardCap == null) return BudgetStatus.NO_BUDGET
@@ -81,7 +87,11 @@ object TokenBudgetTracker {
         return BudgetStatus.UNDER_SOFT
     }
 
-    fun snapshot(conversation: Conversation, softCap: Int?, hardCap: Int?): Snapshot {
+    fun snapshot(
+        conversation: Conversation,
+        softCap: Int?,
+        hardCap: Int?,
+    ): Snapshot {
         val totals = aggregate(conversation)
         return Snapshot(
             totals = totals,

@@ -21,11 +21,14 @@ fun BackButton(modifier: Modifier = Modifier) {
         },
         modifier = modifier,
         shapes = IconButtonDefaults.shapes(),
-        colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = CustomColors.listItemColors.containerColor),
+        colors =
+            IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = CustomColors.listItemColors.containerColor,
+            ),
     ) {
         Icon(
             imageVector = HugeIcons.ArrowLeft01,
-            contentDescription = stringResource(R.string.back)
+            contentDescription = stringResource(R.string.back),
         )
     }
 }
