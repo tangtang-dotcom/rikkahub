@@ -254,8 +254,13 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     if (trimmed.isNotBlank()) combined.add(trimmed)
                 }
             }
-            combined.joinToString("\n").takeIf { it.isNotBlank() }?.also { Log.i(TAG, "performLocalOcr: 识别成功，字符数=${it.length}") }
-                ?: also { Log.w(TAG, "performLocalOcr: 识别结果空白: $url") }
+            val ocrResult = combined.joinToString("\n").takeIf { it.isNotBlank() }
+            if (ocrResult == null) {
+                Log.w(TAG, "performLocalOcr: 识别结果空白: $url")
+            } else {
+                Log.i(TAG, "performLocalOcr: 识别成功，字符数=${ocrResult.length}")
+            }
+            ocrResult
         }.getOrNull()
     }
 }
