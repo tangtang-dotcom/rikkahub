@@ -42,6 +42,14 @@ private const val TAG = "OcrTransformer"
 private const val OCR_TIMEOUT_MS = 60_000L
 
 object OcrTransformer : InputMessageTransformer, KoinComponent {
+    /** 本地 ML Kit recognizer（复用实例，避免每次新建/关闭） */
+    private val chineseRecognizer by lazy {
+        TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
+    }
+    private val latinRecognizer by lazy {
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    }
+
     private val cache by lazy {
         val context = get<Context>()
         val json = Json { allowStructuredMapKeys = true }
@@ -199,9 +207,20 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             val image: InputImage = when {
                 url.startsWith("file://") -> InputImage.fromFilePath(context, Uri.parse(url))
                 url.startsWith("content://") -> {
-                    val input = context.contentResolver.openInputStream(Uri.parse(url))
-                        ?: return@runCatching null
-                    val bitmap = BitmapFactory.decodeStream(input)
+                    // 采样解码（防高清相册大图 OOM）：先量尺寸，再按需采样（最长边 <= 2048）
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    context.contentResolver.openInputStream(Uri.parse(url))?.use { ins ->
+                        BitmapFactory.decodeStream(ins, null, bounds)
+                    }
+                    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+                    var sample = 1
+                    while (bounds.outWidth / sample > 2048 || bounds.outHeight / sample > 2048) {
+                        sample *= 2
+                    }
+                    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+                    val bitmap = context.contentResolver.openInputStream(Uri.parse(url))?.use { ins ->
+                        BitmapFactory.decodeStream(ins, null, opts)
+                    }
                     if (bitmap == null) return@runCatching null
                     // ML Kit 16.x 已移除单参 fromBitmap(Bitmap) 重载；decodeStream 产出的位图
                     // 未应用 EXIF 旋转，rotationDegrees 传 0 保持原语义
@@ -210,26 +229,19 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                 else -> return@runCatching null
             }
 
-            // 中文模型（涵盖中日韩字符）+ 拉丁模型（英文等）同时识别，合并结果
-            val chinese = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
-            val latin = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-            try {
-                val chineseText = runCatching { chinese.process(image).await() }.getOrNull()?.text?.trim()
-                val latinText = runCatching { latin.process(image).await() }.getOrNull()?.text?.trim()
+            // 中文模型（涵盖中日韩字符）+ 拉丁模型（英文等）同时识别，合并结果（复用实例，避免每次新建）
+            val chineseText = runCatching { chineseRecognizer.process(image).await() }.getOrNull()?.text?.trim()
+            val latinText = runCatching { latinRecognizer.process(image).await() }.getOrNull()?.text?.trim()
 
-                // 合并去重：保留行级并集，按出现顺序
-                val combined = LinkedHashSet<String>()
-                listOfNotNull(chineseText, latinText).forEach { text ->
-                    text.lines().forEach { line ->
-                        val trimmed = line.trim()
-                        if (trimmed.isNotBlank()) combined.add(trimmed)
-                    }
+            // 合并去重：保留行级并集，按出现顺序
+            val combined = LinkedHashSet<String>()
+            listOfNotNull(chineseText, latinText).forEach { text ->
+                text.lines().forEach { line ->
+                    val trimmed = line.trim()
+                    if (trimmed.isNotBlank()) combined.add(trimmed)
                 }
-                combined.joinToString("\n").takeIf { it.isNotBlank() }
-            } finally {
-                chinese.close()
-                latin.close()
             }
+            combined.joinToString("\n").takeIf { it.isNotBlank() }
         }.getOrNull()
     }
 }
