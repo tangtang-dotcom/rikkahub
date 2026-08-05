@@ -13,6 +13,9 @@
 [![Last Commit](https://img.shields.io/github/last-commit/xiwangone/rikkahub-agents?color=yellow&label=最近提交&logo=github)](https://github.com/xiwangone/rikkahub-agents/commits/master)
 
 [![下载最新版](https://img.shields.io/badge/⬇️-下载最新版-2ea44f?style=for-the-badge&logo=android)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
+[![Reasonix Agents 开发中](https://img.shields.io/badge/🧪-Reasonix%20Agents%20开发中-8b5cf6?style=for-the-badge)](https://github.com/xiwangone/reasonix-agents)
+
+**🤝 相关项目：[Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Reasonix 的 Android 原生客户端 · AI 编码助手（开发中）
 
 [**English**](README_EN.md) | **简体中文**
 
@@ -27,6 +30,7 @@
 | 🔵 **RikkaHub（官方）** | https://github.com/rikkahub/rikkahub | **官方上游项目，本仓库的代码来源** |
 | 🟢 **ExTV/rikkahub-agent（原版）** | https://github.com/ExTV/rikkahub-agent | **原版 Fork，本仓库基于此** |
 | 🟡 **本仓库（AI 协助维护版）** | https://github.com/xiwangone/rikkahub-agents | **AI 协助合并上游 + 编译** |
+| 🟣 **Reasonix Agents（并列项目）** | https://github.com/xiwangone/reasonix-agents | **Reasonix 的 Android 原生客户端（开发中）** |
 
 > ### ⚠️ 使用须知
 >
