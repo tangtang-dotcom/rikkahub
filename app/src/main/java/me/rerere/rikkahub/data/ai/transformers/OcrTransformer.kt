@@ -77,7 +77,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         }
 
         val hasImages = messages.any { message ->
-            message.parts.any { it is UIMessagePart.Image && it.url.startsWith("file:") }
+            message.parts.any { it is UIMessagePart.Image && (it.url.startsWith("file:") || it.url.startsWith("content:")) }
         }
         if (!hasImages) return messages
 
@@ -86,7 +86,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                 // 仅当存在未被缓存的图片（真正需要 OCR）时才显示提示；历史图片已缓存则跳过，避免每次无图对话都出现"正在识别图片"
                 val needsActualOcr = messages.any { message ->
                     message.parts.any {
-                        it is UIMessagePart.Image && it.url.startsWith("file:") && cache.get(it.url) == null
+                        it is UIMessagePart.Image && (it.url.startsWith("file:") || it.url.startsWith("content:")) && cache.get(it.url) == null
                     }
                 }
                 val settings = get<SettingsStore>().settingsFlow.value
@@ -103,7 +103,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     message.copy(
                         parts = message.parts.map { part ->
                             when {
-                                part is UIMessagePart.Image && part.url.startsWith("file:") -> {
+                                part is UIMessagePart.Image && (part.url.startsWith("file:") || part.url.startsWith("content:")) -> {
                                     UIMessagePart.Text(
                                         performOcr(
                                             part,
