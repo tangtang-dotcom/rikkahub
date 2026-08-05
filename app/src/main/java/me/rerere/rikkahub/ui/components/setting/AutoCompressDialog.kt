@@ -54,6 +54,9 @@ fun AutoCompressDialog(
     var currentThreshold by remember { mutableStateOf(threshold.toString()) }
     var currentTokenLimit by remember { mutableStateOf(formatMillion(tokenLimit)) }
 
+    // Composable 作用域获取 Context（供 onClick 等非 Composable 回调使用）
+    val ctx = LocalContext.current
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = {
@@ -172,7 +175,6 @@ fun AutoCompressDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val ctx = LocalContext.current
                     if (currentEnabled) {
                         when (currentMode) {
                             0 -> {
