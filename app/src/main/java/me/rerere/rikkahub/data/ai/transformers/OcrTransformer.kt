@@ -216,7 +216,10 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     context.contentResolver.openInputStream(Uri.parse(url))?.use { ins ->
                         BitmapFactory.decodeStream(ins, null, bounds)
                     }
-                    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+                    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+                        Log.w(TAG, "performLocalOcr: content:// 解码失败（bounds 无尺寸）: $url")
+                        return@runCatching null
+                    }
                     var sample = 1
                     while (bounds.outWidth / sample > 2048 || bounds.outHeight / sample > 2048) {
                         sample *= 2
@@ -225,17 +228,23 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     val bitmap = context.contentResolver.openInputStream(Uri.parse(url))?.use { ins ->
                         BitmapFactory.decodeStream(ins, null, opts)
                     }
-                    if (bitmap == null) return@runCatching null
+                    if (bitmap == null) {
+                        Log.w(TAG, "performLocalOcr: content:// 采样解码失败（bitmap null）: $url")
+                        return@runCatching null
+                    }
                     // ML Kit 16.x 已移除单参 fromBitmap(Bitmap) 重载；decodeStream 产出的位图
                     // 未应用 EXIF 旋转，rotationDegrees 传 0 保持原语义
                     InputImage.fromBitmap(bitmap, 0)
                 }
-                else -> return@runCatching null
+                else -> {
+                    Log.w(TAG, "performLocalOcr: 不支持的 URL 格式: $url")
+                    return@runCatching null
+                }
             }
 
             // 中文模型（涵盖中日韩字符）+ 拉丁模型（英文等）同时识别，合并结果（复用实例，避免每次新建）
-            val chineseText = runCatching { chineseRecognizer.process(image).await() }.getOrNull()?.text?.trim()
-            val latinText = runCatching { latinRecognizer.process(image).await() }.getOrNull()?.text?.trim()
+            val chineseText = runCatching { chineseRecognizer.process(image).await() }.onFailure { e -> Log.w(TAG, "performLocalOcr: 中文识别异常", e) }.getOrNull()?.text?.trim()
+            val latinText = runCatching { latinRecognizer.process(image).await() }.onFailure { e -> Log.w(TAG, "performLocalOcr: 拉丁识别异常", e) }.getOrNull()?.text?.trim()
 
             // 合并去重：保留行级并集，按出现顺序
             val combined = LinkedHashSet<String>()
@@ -245,7 +254,8 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     if (trimmed.isNotBlank()) combined.add(trimmed)
                 }
             }
-            combined.joinToString("\n").takeIf { it.isNotBlank() }
+            combined.joinToString("\n").takeIf { it.isNotBlank() }?.also { Log.i(TAG, "performLocalOcr: 识别成功，字符数=${it.length}") }
+                ?: also { Log.w(TAG, "performLocalOcr: 识别结果空白: $url") }
         }.getOrNull()
     }
 }
