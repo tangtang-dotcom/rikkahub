@@ -27,10 +27,10 @@
 
 | Project | Link | Description |
 |------|------|------|
-| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | **Official upstream, source of this code** |
-| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | **Original fork this repo is based on** |
 | 🟡 **This Repo (AI-Maintained)** | https://github.com/xiwangone/rikkahub-agents | **AI auto-merges upstream + builds** |
 | 🟣 **Reasonix Agents (sibling project)** | https://github.com/xiwangone/reasonix-agents | **Native Android client for Reasonix (in development)** |
+| 🔵 **RikkaHub (Official)** | https://github.com/rikkahub/rikkahub | **Official upstream, source of this code** |
+| 🟢 **ExTV/rikkahub-agent (Original Fork)** | https://github.com/ExTV/rikkahub-agent | **Original fork this repo is based on** |
 
 > ### ⚠️ Usage Notice
 >
