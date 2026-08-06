@@ -695,7 +695,7 @@ class ChatCompletionsAPI(
                     reasoningPart = null // 清空，下一个 group 可能有新的 reasoning
 
                     // 紧跟 tool 结果消息
-                    group.tools.forEach { tool ->
+                    group.tools.sortedBy { it.name }.forEach { tool ->
                         add(
                             buildJsonObject {
                                 put("role", "tool")
