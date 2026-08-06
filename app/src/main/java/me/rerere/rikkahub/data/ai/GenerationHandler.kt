@@ -981,8 +981,8 @@ class GenerationHandler(
             // cached prefix, the volatile part sits after it. See SystemPromptBuilder.
             val (stableSystem, volatileSystem) = systemPromptBuilder.buildSections(
                 assistantPrompt = effectiveSystemPrompt,
-                memoryPrompt = memoryPrompt,
-                recentChatsPrompt = recentChatsPrompt,
+                memoryPrompt = "",
+                recentChatsPrompt = "",
                 toolPrompts = toolPrompts,
                 systemAddendum = systemAddendum,
             )
@@ -995,6 +995,17 @@ class GenerationHandler(
             }
             addAll(messages.ageOldToolImages())
             addAll(messages.limitContext(assistant.contextMessageLimit))
+            // volatile 移出 SYSTEM：memory/recentChats 追加到消息末尾，让 SYSTEM 字节冻结
+            val dynamicContext = buildString {
+                if (memoryPrompt.isNotBlank()) {
+                    append(memoryPrompt)
+                    if (recentChatsPrompt.isNotBlank()) appendLine()
+                }
+                if (recentChatsPrompt.isNotBlank()) append(recentChatsPrompt)
+            }
+            if (dynamicContext.isNotBlank()) {
+                add(UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text(dynamicContext))))
+            }
         }.transforms(
             transformers = transformers,
             context = context,
