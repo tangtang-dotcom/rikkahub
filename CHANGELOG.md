@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-08-06
+
+- **功能** 缓存命中优化（目标 50%→90%+）：`limitContext` 改「保前缀、只从末尾回收」（`c378dd4`）；tool schema 规范化排序保证跨轮前缀字节稳定（`8fd0645` / `7613917`）
+- **修复** tool 规范化排序编译错误 — `BuiltInTools`(sealed class) 用 `simpleName`、`UIMessagePart.Tool` 用 `toolName` 排序，修复 `:ai:compileReleaseKotlin` 失败（`13bed253`）
+- **chore** versionName 同步 2.4.5 → 2.45.2（与 release 对齐，`2f75b3d`）
+
 ## 2026-08-05
 
 - **功能** P0 凭证加密 — providers 含 apiKey/私钥以 AES-GCM 密文入库（AndroidKeyStore），读路径解密失败回退原文平滑升级；备份规则注释同步（`5404e61`）
