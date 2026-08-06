@@ -75,7 +75,7 @@ object AppLogRecorder {
         if (job?.isActive == true) return
         job =
             scope.launch {
-                var process: Process? = null
+                var process: java.lang.Process? = null
                 try {
                     val pid = Process.myPid()
                     process =
