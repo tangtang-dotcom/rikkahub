@@ -4,7 +4,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import me.rerere.rikkahub.data.log.AppLog
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -266,7 +266,7 @@ class ChatService(
         }.onFailure {
             // Don't let a teardown hiccup escape, but don't swallow it silently either —
             // a failure here can leave the lifecycle observer registered (slow leak).
-            Log.w(TAG, "cleanup failed", it)
+            AppLog.w(TAG, "cleanup failed", it)
         }
 
     // ---- Session 管理 ----
@@ -285,14 +285,14 @@ class ChatService(
                 onIdle = { removeSession(it) },
             ).also {
                 _sessionsVersion.value++
-                Log.i(TAG, "createSession: $id (total: ${sessions.size + 1})")
+                AppLog.i(TAG, "createSession: $id (total: ${sessions.size + 1})")
             }
         }
 
     private fun removeSession(conversationId: Uuid) {
         val session = sessions[conversationId] ?: return
         if (session.isInUse) {
-            Log.d(TAG, "removeSession: skipped $conversationId (still in use)")
+            AppLog.d(TAG, "removeSession: skipped $conversationId (still in use)")
             return
         }
         if (sessions.remove(conversationId, session)) {
@@ -303,7 +303,7 @@ class ChatService(
             // sessions where many conversations cycle in and out of memory.
             sessionMutexes.remove(conversationId)
             _sessionsVersion.value++
-            Log.i(TAG, "removeSession: $conversationId (remaining: ${sessions.size})")
+            AppLog.i(TAG, "removeSession: $conversationId (remaining: ${sessions.size})")
         }
     }
 
@@ -318,7 +318,7 @@ class ChatService(
         session.cleanup()
         sessionMutexes.remove(conversationId)
         _sessionsVersion.value++
-        Log.i(TAG, "dropSession: $conversationId (remaining: ${sessions.size})")
+        AppLog.i(TAG, "dropSession: $conversationId (remaining: ${sessions.size})")
     }
 
     // ---- 引用管理 ----
@@ -546,7 +546,7 @@ class ChatService(
                     if (match.format != null && parsed != null) {
                         runCatching { match.format.invoke(parsed) }
                             .onFailure {
-                                Log.w(
+                                AppLog.w(
                                     "FastPathRouter",
                                     "formatter for intent=${match.intent} threw; falling back to raw text",
                                     it,
@@ -643,7 +643,7 @@ class ChatService(
                     val node = conversation.getMessageNodeByMessage(message)
                     val indexAt = conversation.messageNodes.indexOf(node)
                     if (indexAt < 0) {
-                        Log.w(TAG, "regenerateAtMessage: node for message ${message.id} not in conversation; skipping")
+                        AppLog.w(TAG, "regenerateAtMessage: node for message ${message.id} not in conversation; skipping")
                         return@launch
                     }
                     if (message.role == MessageRole.USER) {
@@ -1144,7 +1144,7 @@ class ChatService(
                 val final = getConversationFlow(conversationId).value
                 saveConversation(conversationId, final)
             }.onFailure { saveErr ->
-                Log.w(TAG, "handleMessageComplete: failure-path save failed", saveErr)
+                AppLog.w(TAG, "handleMessageComplete: failure-path save failed", saveErr)
             }
 
             it.printStackTrace()
@@ -1171,7 +1171,7 @@ class ChatService(
         if (workspaceId.isNullOrBlank()) return emptyList()
         val workspace = workspaceRepository.getById(workspaceId) ?: return emptyList()
         if (workspace.shellStatus != WorkspaceShellStatus.READY.name) {
-            Log.d(
+            AppLog.d(
                 TAG,
                 "createWorkspaceToolsIfReady: skip workspace tools, workspace=$workspaceId, status=${workspace.shellStatus}",
             )
@@ -1329,7 +1329,7 @@ class ChatService(
             // the next message sees title.isBlank()==true, tries again, 429s again,
             // and the user gets a popup per message until they switch models. Match
             // the generateSuggestion pattern (log only) to keep the surface quiet.
-            Log.w(TAG, "generateTitle failed", it)
+            AppLog.w(TAG, "generateTitle failed", it)
         }
     }
 
@@ -1396,7 +1396,7 @@ class ChatService(
         }.onFailure {
             // Suggestion generation is auxiliary — log only, don't push onto the
             // user-facing error stream (mirrors the generateTitle failure handling).
-            Log.w(TAG, "generateSuggestion failed", it)
+            AppLog.w(TAG, "generateSuggestion failed", it)
         }
     }
 
@@ -1721,7 +1721,7 @@ class ChatService(
             }
         if (deletedFiles.isNotEmpty()) {
             filesManager.deleteChatFiles(deletedFiles)
-            Log.w(TAG, "checkFilesDelete: $deletedFiles")
+            AppLog.w(TAG, "checkFilesDelete: $deletedFiles")
         }
     }
 
@@ -1744,7 +1744,7 @@ class ChatService(
                     conversationRepo.getConversationById(conversation.id)?.messageNodes?.isNotEmpty() == true
                 }.getOrDefault(false)
             if (storedHasContent) {
-                Log.w(
+                AppLog.w(
                     TAG,
                     "saveConversation: refusing to overwrite non-empty $conversationId with empty snapshot — likely an unhydrated session",
                 )

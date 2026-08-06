@@ -51,7 +51,7 @@ import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Share03
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.data.log.AppLogRecorder
+import me.rerere.rikkahub.data.log.AppLog
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import java.io.File
@@ -67,15 +67,15 @@ import java.util.Locale
 @Composable
 fun AppLogPage(onBack: () -> Unit) {
     val context = LocalContext.current
-    var enabled by remember { mutableStateOf(AppLogRecorder.isEnabled(context)) }
+    var enabled by remember { mutableStateOf(AppLog.isEnabled(context)) }
     var keyword by remember { mutableStateOf("") }
-    var logs by remember { mutableStateOf(AppLogRecorder.getLogs()) }
+    var logs by remember { mutableStateOf(AppLog.getLogs()) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     // 开启记录时每 1s 刷新一次日志快照
     LaunchedEffect(Unit) {
         while (true) {
-            logs = AppLogRecorder.getLogs()
+            logs = AppLog.getLogs()
             delay(1_000L)
         }
     }
@@ -109,15 +109,15 @@ fun AppLogPage(onBack: () -> Unit) {
                 actions = {
                     IconButton(
                         onClick = {
-                            shareLogs(context, AppLogRecorder.exportText(keywordTrimmed))
+                            shareLogs(context, AppLog.exportText(keywordTrimmed))
                         },
                     ) {
                         Icon(HugeIcons.Share03, stringResource(R.string.log_page_export))
                     }
                     IconButton(
                         onClick = {
-                            AppLogRecorder.clear()
-                            logs = AppLogRecorder.getLogs()
+                            AppLog.clear()
+                            logs = AppLog.getLogs()
                         },
                     ) {
                         Icon(HugeIcons.Delete01, null)
@@ -165,7 +165,7 @@ fun AppLogPage(onBack: () -> Unit) {
                         checked = enabled,
                         onCheckedChange = { newValue ->
                             enabled = newValue
-                            AppLogRecorder.setEnabled(context, newValue)
+                            AppLog.setEnabled(context, newValue)
                         },
                     )
                 }
@@ -201,7 +201,7 @@ fun AppLogPage(onBack: () -> Unit) {
                 TextButton(
                     onClick = {
                         if (filteredLogs.isNotEmpty()) {
-                            copyToClipboard(context, AppLogRecorder.exportText(keywordTrimmed))
+                            copyToClipboard(context, AppLog.exportText(keywordTrimmed))
                         }
                     },
                 ) {
@@ -242,7 +242,7 @@ fun AppLogPage(onBack: () -> Unit) {
 
 @Composable
 private fun AppLogCard(
-    entry: AppLogRecorder.Entry,
+    entry: AppLog.Entry,
     onClick: () -> Unit,
 ) {
     val dateFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
@@ -291,7 +291,7 @@ private fun AppLogCard(
     }
 }
 
-private fun formatEntry(entry: AppLogRecorder.Entry): String {
+private fun formatEntry(entry: AppLog.Entry): String {
     val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(entry.timestamp)
     return "$time ${entry.level} ${entry.tag}: ${entry.message}"
 }

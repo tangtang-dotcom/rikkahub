@@ -3,7 +3,7 @@ package me.rerere.rikkahub.data.ai.transformers
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
+import me.rerere.rikkahub.data.log.AppLog
 import androidx.core.net.toUri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -131,7 +131,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
     ): String = runCatching {
         // Check cache first
         cache.get(part.url)?.let { cachedResult ->
-            Log.i(TAG, "performOcr: Using cached result for ${part.url}")
+            AppLog.i(TAG, "performOcr: Using cached result for ${part.url}")
             return cachedResult
         }
 
@@ -149,7 +149,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             cache.put(part.url, ocrResult)
             return ocrResult
         }
-        Log.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
+        AppLog.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
         onFallbackToAi()
 
         val model = settings.findModelById(settings.ocrModelId) ?: return "[Image]"
@@ -173,13 +173,13 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             )
         }
         if (result == null) {
-            Log.w(TAG, "performOcr: timed out after ${OCR_TIMEOUT_MS}ms for ${part.url}")
+            AppLog.w(TAG, "performOcr: timed out after ${OCR_TIMEOUT_MS}ms for ${part.url}")
             // Not cached: a timeout is usually transient/config-related, so a later retry
             // should be allowed to reach the model again.
             return "[Image: could not be read — the OCR model did not respond in time]"
         }
         val content = result.choices[0].message?.toText() ?: "[ERROR, OCR failed]"
-        Log.i(TAG, "performOcr: $content")
+        AppLog.i(TAG, "performOcr: $content")
         val ocrResult = """
             <image_file_ocr>
                $content
@@ -217,7 +217,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                         BitmapFactory.decodeStream(ins, null, bounds)
                     }
                     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-                        Log.w(TAG, "performLocalOcr: content:// 解码失败（bounds 无尺寸）: $url")
+                        AppLog.w(TAG, "performLocalOcr: content:// 解码失败（bounds 无尺寸）: $url")
                         return@runCatching null
                     }
                     var sample = 1
@@ -229,7 +229,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                         BitmapFactory.decodeStream(ins, null, opts)
                     }
                     if (bitmap == null) {
-                        Log.w(TAG, "performLocalOcr: content:// 采样解码失败（bitmap null）: $url")
+                        AppLog.w(TAG, "performLocalOcr: content:// 采样解码失败（bitmap null）: $url")
                         return@runCatching null
                     }
                     // ML Kit 16.x 已移除单参 fromBitmap(Bitmap) 重载；decodeStream 产出的位图
@@ -237,14 +237,14 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                     InputImage.fromBitmap(bitmap, 0)
                 }
                 else -> {
-                    Log.w(TAG, "performLocalOcr: 不支持的 URL 格式: $url")
+                    AppLog.w(TAG, "performLocalOcr: 不支持的 URL 格式: $url")
                     return@runCatching null
                 }
             }
 
             // 中文模型（涵盖中日韩字符）+ 拉丁模型（英文等）同时识别，合并结果（复用实例，避免每次新建）
-            val chineseText = runCatching { chineseRecognizer.process(image).await() }.onFailure { e -> Log.w(TAG, "performLocalOcr: 中文识别异常", e) }.getOrNull()?.text?.trim()
-            val latinText = runCatching { latinRecognizer.process(image).await() }.onFailure { e -> Log.w(TAG, "performLocalOcr: 拉丁识别异常", e) }.getOrNull()?.text?.trim()
+            val chineseText = runCatching { chineseRecognizer.process(image).await() }.onFailure { e -> AppLog.w(TAG, "performLocalOcr: 中文识别异常", e) }.getOrNull()?.text?.trim()
+            val latinText = runCatching { latinRecognizer.process(image).await() }.onFailure { e -> AppLog.w(TAG, "performLocalOcr: 拉丁识别异常", e) }.getOrNull()?.text?.trim()
 
             // 合并去重：保留行级并集，按出现顺序
             val combined = LinkedHashSet<String>()
@@ -256,9 +256,9 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             }
             val ocrResult = combined.joinToString("\n").takeIf { it.isNotBlank() }
             if (ocrResult == null) {
-                Log.w(TAG, "performLocalOcr: 识别结果空白: $url")
+                AppLog.w(TAG, "performLocalOcr: 识别结果空白: $url")
             } else {
-                Log.i(TAG, "performLocalOcr: 识别成功，字符数=${ocrResult.length}")
+                AppLog.i(TAG, "performLocalOcr: 识别成功，字符数=${ocrResult.length}")
             }
             ocrResult
         }.getOrNull()
