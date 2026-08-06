@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.AddCircle
-import me.rerere.hugeicons.stroke.CoinDollar
+import me.rerere.hugeicons.stroke.CoinsDollar
 import me.rerere.hugeicons.stroke.Delete02
 import me.rerere.hugeicons.stroke.Eye
 import me.rerere.hugeicons.stroke.Key01
@@ -97,7 +97,7 @@ fun SettingQuotaPage() {
                     title = { Text(stringResource(R.string.quota_master_switch)) },
                 ) {
                     item(
-                        leadingContent = { Icon(HugeIcons.CoinDollar, null) },
+                        leadingContent = { Icon(HugeIcons.CoinsDollar, null) },
                         headlineContent = { Text(stringResource(R.string.quota_enable)) },
                         supportingContent = { Text(stringResource(R.string.quota_enable_desc)) },
                         trailingContent = {
@@ -270,7 +270,7 @@ fun SettingQuotaPage() {
                                     }
                                 }
                             },
-                            leadingContent = { Icon(HugeIcons.CoinDollar, null) },
+                            leadingContent = { Icon(HugeIcons.CoinsDollar, null) },
                             headlineContent = { Text(platform.label) },
                             supportingContent = { Text(platform.consoleUrl) },
                         )

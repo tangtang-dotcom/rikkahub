@@ -4,7 +4,6 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import me.rerere.rikkahub.data.log.AppLog
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -85,6 +84,7 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.log.AppLog
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.Conversation
@@ -643,7 +643,10 @@ class ChatService(
                     val node = conversation.getMessageNodeByMessage(message)
                     val indexAt = conversation.messageNodes.indexOf(node)
                     if (indexAt < 0) {
-                        AppLog.w(TAG, "regenerateAtMessage: node for message ${message.id} not in conversation; skipping")
+                        AppLog.w(
+                            TAG,
+                            "regenerateAtMessage: node for message ${message.id} not in conversation; skipping",
+                        )
                         return@launch
                     }
                     if (message.role == MessageRole.USER) {
@@ -725,7 +728,7 @@ class ChatService(
                             Unit
                         }
                     }
-                }.onFailure { Log.w(TAG, "approval grant write failed", it) }
+                }.onFailure { AppLog.w(TAG, "approval grant write failed", it) }
             }
         }
 

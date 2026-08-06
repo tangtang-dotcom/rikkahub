@@ -50,8 +50,8 @@ import me.rerere.hugeicons.stroke.Book03
 import me.rerere.hugeicons.stroke.Bookshelf01
 import me.rerere.hugeicons.stroke.Brain02
 import me.rerere.hugeicons.stroke.Clapping01
-import me.rerere.hugeicons.stroke.CoinDollar
 import me.rerere.hugeicons.stroke.Clock02
+import me.rerere.hugeicons.stroke.CoinsDollar
 import me.rerere.hugeicons.stroke.Connect
 import me.rerere.hugeicons.stroke.Console
 import me.rerere.hugeicons.stroke.Database02
@@ -300,7 +300,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingQuota) },
-                        leadingContent = { Icon(HugeIcons.CoinDollar, null) },
+                        leadingContent = { Icon(HugeIcons.CoinsDollar, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_quota_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_quota)) },
                     )

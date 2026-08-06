@@ -106,7 +106,7 @@ object QuotaOverlay {
                 }
                 snapshot.snapshots.forEach { snap ->
                     val row =
-                        TextView(app).apply {
+                        TextView(dot.context).apply {
                             text =
                                 buildString {
                                     append(snap.rawText.take(30))
