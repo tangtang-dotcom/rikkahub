@@ -345,4 +345,12 @@ val appModule =
                 localRuntimePreferences = get(),
             )
         }
+
+        single {
+            me.rerere.rikkahub.data.quota.QuotaPreferences(get())
+        }
+
+        single {
+            me.rerere.rikkahub.data.quota.QuotaCredentialManager(get())
+        }
     }

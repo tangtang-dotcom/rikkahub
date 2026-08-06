@@ -1952,5 +1952,26 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_files_page_selected_count">已选 %1$d 项</string>
   <string name="setting_files_page_batch_delete">批量删除</string>
   <string name="setting_files_page_batch_delete_confirm">确认删除所选 %1$d 个文件？</string>
+
+  <!-- Quota / 额度查询 -->
+  <string name="quota_page_title">额度查询</string>
+  <string name="quota_master_switch">额度查询</string>
+  <string name="quota_enable">开启额度查询</string>
+  <string name="quota_enable_desc">通过内置 WebView 打开控制台查看使用量</string>
+  <string name="quota_overlay_enable">额度悬浮窗</string>
+  <string name="quota_overlay_enable_desc">在屏幕上显示可拖动的状态点</string>
+  <string name="quota_providers_title">提供商</string>
+  <string name="quota_add_provider">添加提供商</string>
+  <string name="quota_unnamed">未命名提供商</string>
+  <string name="quota_no_url">未配置网址</string>
+  <string name="quota_presets_title">预设模板</string>
+  <string name="setting_page_quota">额度查询</string>
+  <string name="setting_page_quota_desc">查询平台控制台使用量与余额</string>
+  <string name="quota_auth_type">鉴权方式</string>
+  <string name="quota_credential_saved">凭证已保存</string>
+  <string name="quota_grab_credential">登录后捕获凭证</string>
+  <string name="quota_manage_credential">管理凭证</string>
+  <string name="quota_clear_credential">清除凭证</string>
+  <string name="quota_credential_masked">脱敏: %1$s</string>
 </resources>
 

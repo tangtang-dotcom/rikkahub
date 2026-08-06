@@ -50,6 +50,7 @@ import me.rerere.hugeicons.stroke.Book03
 import me.rerere.hugeicons.stroke.Bookshelf01
 import me.rerere.hugeicons.stroke.Brain02
 import me.rerere.hugeicons.stroke.Clapping01
+import me.rerere.hugeicons.stroke.CoinDollar
 import me.rerere.hugeicons.stroke.Clock02
 import me.rerere.hugeicons.stroke.Connect
 import me.rerere.hugeicons.stroke.Console
@@ -296,6 +297,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.Earth, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_browser_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_browser)) },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingQuota) },
+                        leadingContent = { Icon(HugeIcons.CoinDollar, null) },
+                        supportingContent = { Text(stringResource(R.string.setting_page_quota_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_quota)) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingTermux) },

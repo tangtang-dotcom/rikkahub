@@ -122,6 +122,8 @@ import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
+import me.rerere.rikkahub.ui.pages.setting.SettingQuotaPage
+import me.rerere.rikkahub.ui.pages.setting.QuotaConsolePage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingTTSPage
@@ -422,6 +424,14 @@ class RouteActivity : ComponentActivity() {
                                 WebViewPage(key.url, key.contentId)
                             }
 
+                            entry<Screen.SettingQuota> {
+                                SettingQuotaPage()
+                            }
+
+                            entry<Screen.QuotaConsole> { key ->
+                                QuotaConsolePage(key.providerId)
+                            }
+
                             entry<Screen.SettingTheme> {
                                 SettingThemePage()
                             }
@@ -712,6 +722,12 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data class WebView(val url: String = "", val contentId: String = "") : Screen
+
+    @Serializable
+    data object SettingQuota : Screen
+
+    @Serializable
+    data class QuotaConsole(val providerId: String) : Screen
 
     @Serializable
     data object SettingTheme : Screen

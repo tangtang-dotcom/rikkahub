@@ -1950,4 +1950,25 @@
   <string name="setting_files_page_selected_count">Selected %1$d items</string>
   <string name="setting_files_page_batch_delete">Batch Delete</string>
   <string name="setting_files_page_batch_delete_confirm">Delete the %1$d selected files?</string>
+
+  <!-- Quota / 额度查询 -->
+  <string name="quota_page_title">Quota Query</string>
+  <string name="quota_master_switch">Quota Query</string>
+  <string name="quota_enable">Enable Quota Query</string>
+  <string name="quota_enable_desc">Open console via WebView to check usage</string>
+  <string name="quota_overlay_enable">Quota Overlay</string>
+  <string name="quota_overlay_enable_desc">Show a draggable status dot on screen</string>
+  <string name="quota_providers_title">Providers</string>
+  <string name="quota_add_provider">Add Provider</string>
+  <string name="quota_unnamed">Unnamed Provider</string>
+  <string name="quota_no_url">No URL configured</string>
+  <string name="quota_presets_title">Preset Templates</string>
+  <string name="setting_page_quota">Quota Query</string>
+  <string name="setting_page_quota_desc">Check platform console usage and balance</string>
+  <string name="quota_auth_type">Auth Type</string>
+  <string name="quota_credential_saved">Credential saved</string>
+  <string name="quota_grab_credential">Grab credential after login</string>
+  <string name="quota_manage_credential">Manage Credential</string>
+  <string name="quota_clear_credential">Clear Credential</string>
+  <string name="quota_credential_masked">Masked: %1$s</string>
 </resources>
