@@ -497,7 +497,7 @@ class ChatCompletionsAPI(
 
             if (params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()) {
                 putJsonArray("tools") {
-                    params.tools.forEach { tool ->
+                    params.tools.sortedBy { it.name }.forEach { tool ->
                         add(
                             buildJsonObject {
                                 put("type", "function")

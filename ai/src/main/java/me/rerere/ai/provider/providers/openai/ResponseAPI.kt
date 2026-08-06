@@ -273,7 +273,7 @@ class ResponseAPI(
             if (useFunctionTools || params.model.tools.isNotEmpty()) {
                 putJsonArray("tools") {
                     if (useFunctionTools) {
-                        params.tools.forEach { tool ->
+                        params.tools.sortedBy { it.name }.forEach { tool ->
                             add(
                                 buildJsonObject {
                                     put("type", "function")

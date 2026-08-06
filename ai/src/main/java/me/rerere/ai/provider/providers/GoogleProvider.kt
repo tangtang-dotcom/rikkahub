@@ -505,7 +505,7 @@ class GoogleProvider(
                                 put(
                                     "functionDeclarations",
                                     buildJsonArray {
-                                        params.tools.forEach { tool ->
+                                        params.tools.sortedBy { it.name }.forEach { tool ->
                                             add(
                                                 buildJsonObject {
                                                     put("name", JsonPrimitive(tool.name))
