@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
 import me.rerere.common.android.LogEntry
 import me.rerere.common.android.Logging
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -46,12 +48,23 @@ import me.rerere.rikkahub.ui.components.ui.JsonTree
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.JsonInstantPretty
+import me.rerere.rikkahub.utils.LogRedactor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
 fun LogPage() {
+    var showAppLog by remember { mutableStateOf(false) }
+    if (showAppLog) {
+        AppLogPage(onBack = { showAppLog = false })
+    } else {
+        LogPageContent(onShowAppLog = { showAppLog = true })
+    }
+}
+
+@Composable
+private fun LogPageContent(onShowAppLog: () -> Unit) {
     var logs by remember { mutableStateOf(Logging.getRecentLogs()) }
     var requestLoggingEnabled by remember { mutableStateOf(Logging.isRequestLoggingEnabled()) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -85,6 +98,7 @@ fun LogPage() {
                 requestLoggingEnabled = it
                 Logging.setRequestLoggingEnabled(it)
             },
+            onShowAppLog = onShowAppLog,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -98,6 +112,7 @@ private fun UnifiedLogList(
     logs: List<LogEntry>,
     requestLoggingEnabled: Boolean,
     onRequestLoggingChange: (Boolean) -> Unit,
+    onShowAppLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedLog by remember { mutableStateOf<LogEntry.RequestLog?>(null) }
@@ -114,6 +129,10 @@ private fun UnifiedLogList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(16.dp),
     ) {
+        item {
+            AppLogEntryCard(onClick = onShowAppLog)
+        }
+
         item {
             RequestLoggingSwitchCard(
                 enabled = requestLoggingEnabled,
@@ -146,6 +165,44 @@ private fun UnifiedLogList(
             sheetState = sheetState,
         ) {
             RequestLogDetail(log)
+        }
+    }
+}
+
+@Composable
+private fun AppLogEntryCard(onClick: () -> Unit) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
+        colors = CustomColors.cardColorsOnSurfaceContainer,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.log_page_app_logs_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = stringResource(R.string.log_page_app_logs_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = HugeIcons.ArrowRight01,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -286,7 +343,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
             }
 
             item {
-                DetailSection("URL", log.url)
+                DetailSection("URL", LogRedactor.maskUrl(log.url))
             }
 
             item {
@@ -337,9 +394,11 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp),
                     )
+                    // 显示前兜底脱敏：即使旧记录 / 其他路径写入的日志包含明文 token 也不暴露
+                    val maskedBody = remember(body) { LogRedactor.maskText(body) }
                     val jsonElement =
-                        remember(body) {
-                            runCatching { JsonInstantPretty.parseToJsonElement(body) }.getOrNull()
+                        remember(maskedBody) {
+                            runCatching { JsonInstantPretty.parseToJsonElement(maskedBody) }.getOrNull()
                         }
                     if (jsonElement != null) {
                         JsonTree(
@@ -349,7 +408,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                         )
                     } else {
                         Text(
-                            text = body,
+                            text = maskedBody,
                             fontFamily = JetbrainsMono,
                             modifier = Modifier.padding(top = 4.dp),
                         )
@@ -408,7 +467,8 @@ private fun HeaderItem(
             color = MaterialTheme.colorScheme.primary,
         )
         Text(
-            text = value,
+            // 输出前对敏感请求头（Authorization 等）兜底脱敏，避免明文 Bearer sk-xxx 暴露
+            text = LogRedactor.maskHeader(key, value),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = JetbrainsMono,
         )

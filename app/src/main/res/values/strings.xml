@@ -1844,6 +1844,17 @@
   <string name="setting_mcp_page_name_invalid">Name can only contain English letters and numbers</string>
   <string name="log_page_record_requests">Record requests</string>
   <string name="log_page_record_requests_desc">Capture request headers, bodies, and response metadata</string>
+  <string name="log_page_app_logs_title">App Logs</string>
+  <string name="log_page_app_logs_desc">App-level logs (OcrTransformer / ChatService etc.)</string>
+  <string name="log_page_record_app_logs">Record app logs</string>
+  <string name="log_page_record_app_logs_desc">Capture app-level logcat logs from this process (OcrTransformer / ChatService / performLocalOcr)</string>
+  <string name="log_page_search_hint">Search log keywords</string>
+  <string name="log_page_copy_all">Copy all</string>
+  <string name="log_page_export">Export</string>
+  <string name="log_page_export_empty">No logs to export</string>
+  <string name="log_page_copied">Copied</string>
+  <string name="log_page_no_logs">No logs yet. Turn on the switch above to start recording.</string>
+  <string name="log_page_log_count">%1$d entries</string>
   <string name="codex_provider_description">Uses the OpenAI Codex OAuth and Responses API flow. This integration depends on Codex service compatibility.</string>
   <string name="codex_sign_in">Sign in with OpenAI OAuth</string>
   <string name="codex_enable">Enable Codex</string>

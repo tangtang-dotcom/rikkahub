@@ -43,6 +43,7 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
+import me.rerere.rikkahub.ui.components.ai.MAX_AUTO_TASK_TRIGGER_COUNT
 import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
@@ -511,28 +512,47 @@ class ChatVM(
 
     /**
      * 调度自动任务：根据配置的触发模式启动定时器或空闲监听。
-     * 触发后自动清除配置（一次性触发）。
+     *  - 模式 0（可触发次数）：会话空闲时自动发送，达到设置次数或次数上限后自动停止
+     *  - 模式 1（定时触发）：会话空闲达设定秒数后自动发送一次，触发后清除（一次性触发）
      */
     fun scheduleAutoTask(config: AutoTaskConfig) {
         cancelAutoTask()
 
-        if (config.intervalSeconds <= 0) return
+        if (config.mode == 0 && config.triggerCount <= 0) return
+        if (config.mode == 1 && config.intervalSeconds <= 0) return
 
         autoTaskJob =
             viewModelScope.launch {
                 when (config.mode) {
                     0 -> {
-                        // 固定时间触发：延迟指定秒数后发送
-                        delay(config.intervalSeconds * 1000L)
-                        handleMessageSend(
-                            listOf(UIMessagePart.Text(config.message)),
-                            answer = true,
-                        )
+                        // 可触发次数：等待会话空闲后自动发送，到达设置次数或次数上限（100）后自动停止触发
+                        val limit = config.triggerCount.coerceIn(1, MAX_AUTO_TASK_TRIGGER_COUNT)
+                        var triggered = 0
+                        while (triggered < limit && isActive) {
+                            // 等待当前生成中的回复完成
+                            val job = conversationJob.value
+                            if (job != null && job.isActive) {
+                                try {
+                                    withTimeoutOrNull(300_000L) {
+                                        conversationJob.first { it == null || !it.isActive }
+                                    }
+                                } catch (_: Exception) {
+                                }
+                            }
+                            // 短暂冷却，避免上一轮回复刚结束立即连发
+                            delay(1_000L)
+                            if (!isActive) break
+                            handleMessageSend(
+                                listOf(UIMessagePart.Text(config.message)),
+                                answer = true,
+                            )
+                            triggered++
+                        }
                         writeAutoTaskConfig(context, AutoTaskConfig())
                     }
 
                     1 -> {
-                        // 不定时触发：监听会话空闲状态
+                        // 定时触发：监听会话空闲状态，空闲达设定秒数后自动发送（原不定时逻辑）
                         while (isActive) {
                             val job = conversationJob.value
                             if (job != null && job.isActive) {

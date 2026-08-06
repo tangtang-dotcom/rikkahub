@@ -2,6 +2,7 @@ package me.rerere.rikkahub.data.ai
 
 import me.rerere.common.android.LogEntry
 import me.rerere.common.android.Logging
+import me.rerere.rikkahub.utils.LogRedactor
 import okhttp3.Interceptor
 import okhttp3.Response
 import okio.Buffer
@@ -15,11 +16,13 @@ class RequestLoggingInterceptor : Interceptor {
         val request = chain.request()
         val startTime = System.currentTimeMillis()
 
-        val requestHeaders = request.headers.toMap()
+        // 记录前对敏感信息脱敏：Authorization / api-key 等 header 值、URL query 中的 key、body 中的明文 token
+        val requestHeaders = LogRedactor.maskHeaders(request.headers.toMap())
+        val requestUrl = LogRedactor.maskUrl(request.url.toString())
         val requestBody = request.body?.let { body ->
             val buffer = Buffer()
             body.writeTo(buffer)
-            buffer.readUtf8()
+            LogRedactor.maskText(buffer.readUtf8())
         }
 
         val response: Response
@@ -32,7 +35,7 @@ class RequestLoggingInterceptor : Interceptor {
             Logging.logRequest(
                 LogEntry.RequestLog(
                     tag = "HTTP",
-                    url = request.url.toString(),
+                    url = requestUrl,
                     method = request.method,
                     requestHeaders = requestHeaders,
                     requestBody = requestBody,
@@ -48,7 +51,7 @@ class RequestLoggingInterceptor : Interceptor {
         Logging.logRequest(
             LogEntry.RequestLog(
                 tag = "HTTP",
-                url = request.url.toString(),
+                url = requestUrl,
                 method = request.method,
                 requestHeaders = requestHeaders,
                 requestBody = requestBody,
