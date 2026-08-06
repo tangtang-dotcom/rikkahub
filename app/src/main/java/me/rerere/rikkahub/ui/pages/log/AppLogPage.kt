@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.delay
 import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.ArrowLeft01
 import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Share03
@@ -101,7 +100,7 @@ fun AppLogPage(onBack: () -> Unit) {
                 navigationIcon = {
                     FilledTonalIconButton(onClick = onBack) {
                         Icon(
-                            imageVector = ArrowLeft01,
+                            imageVector = HugeIcons.ArrowLeft01,
                             contentDescription = stringResource(R.string.back),
                         )
                     }
