@@ -542,7 +542,7 @@ class GoogleProvider(
                 put(
                     "tools",
                     buildJsonArray {
-                        params.model.tools.sortedBy { it.name }.forEach { builtInTool ->
+                        params.model.tools.sortedBy { it::class.simpleName.orEmpty() }.forEach { builtInTool ->
                             when (builtInTool) {
                                 BuiltInTools.Search -> {
                                     add(
@@ -765,7 +765,7 @@ class GoogleProvider(
 
                 is PartGroup.Tools -> {
                     // 添加 functionCall 到 parts 缓冲
-                    group.tools.sortedBy { it.name }.forEach { tool ->
+                    group.tools.sortedBy { it.toolName }.forEach { tool ->
                         val effective =
                             if (
                                 tool.metadata
