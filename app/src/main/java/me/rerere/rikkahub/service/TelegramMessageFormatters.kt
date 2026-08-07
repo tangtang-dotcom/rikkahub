@@ -81,15 +81,16 @@ internal fun formatOutputForDisplay(outText: String, executed: Boolean): String 
 
 /**
  * Token-usage footer for the final reply. Mirrors the in-app ChatMessageNerdLine:
- * input tokens (with cached annotation if any), output tokens, tok/s, wall-clock.
+ * input tokens (with cached count + hit-%), output tokens, tok/s, wall-clock.
  * Returns empty string when usage is missing or [showTokenUsage] is false.
  */
 internal fun tokenUsageFooter(m: UIMessage, showTokenUsage: Boolean): String {
     val usage = m.usage ?: return ""
     if (!showTokenUsage) return ""
     val parts = mutableListOf<String>()
-    val input = if (usage.cachedTokens > 0) {
-        "${compactNumber(usage.promptTokens)}↑ (${compactNumber(usage.cachedTokens)} cached)"
+    val input = if (usage.cachedTokens > 0 && usage.promptTokens > 0) {
+        val pct = usage.cachedTokens.toDouble() / usage.promptTokens.toDouble() * 100.0
+        "${compactNumber(usage.promptTokens)}↑ (${compactNumber(usage.cachedTokens)} cached · ${String.format(java.util.Locale.US, "%.1f%%", pct)})"
     } else {
         "${compactNumber(usage.promptTokens)}↑"
     }

@@ -77,10 +77,11 @@ fun ChatMessageNerdLine(
                         },
                         content = {
                             Text(text = "${usage.promptTokens.formatNumber()} 输入")
-                            // Cached tokens
-                            if (usage.cachedTokens > 0) {
+                            // Cached tokens (count + hit-%)
+                            if (usage.cachedTokens > 0 && usage.promptTokens > 0) {
+                                val pct = usage.cachedTokens.toDouble() / usage.promptTokens.toDouble() * 100.0
                                 Text(
-                                    text = "(${message.usage?.cachedTokens?.formatNumber() ?: "0"} 命中缓存)",
+                                    text = "(${message.usage?.cachedTokens?.formatNumber() ?: "0"} 命中 · ${String.format(java.util.Locale.US, "%.1f%%", pct)})",
                                 )
                             }
                         },
@@ -159,8 +160,9 @@ fun ChatMessageNerdLine(
                                     val statsText =
                                         buildString {
                                             append("↑${usage.promptTokens.formatNumber()} tokens")
-                                            if (usage.cachedTokens > 0) {
-                                                append(" (${usage.cachedTokens.formatNumber()} cached)")
+                                            if (usage.cachedTokens > 0 && usage.promptTokens > 0) {
+                                                val pct = usage.cachedTokens.toDouble() / usage.promptTokens.toDouble() * 100.0
+                                                append(" (${usage.cachedTokens.formatNumber()} cached · ${String.format(java.util.Locale.US, "%.1f%%", pct)})")
                                             }
                                             append(" ↓${usage.completionTokens.formatNumber()} tokens")
                                             val finish = message.finishedAt
