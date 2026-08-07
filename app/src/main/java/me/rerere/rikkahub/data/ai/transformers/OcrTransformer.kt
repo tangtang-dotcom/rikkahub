@@ -102,12 +102,10 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
                                 cache.get(it.url) == null
                         }
                     }
-                val settings = get<SettingsStore>().settingsFlow.value
-                val localOcrEnabled = settings.ocrLocalEnabled
                 if (needsActualOcr) {
                     // 区分提示：本地 OCR 开启时先显示本地识别，回退 AI 时由 performOcr 切换
                     ctx.processingStatus.value =
-                        if (localOcrEnabled) {
+                        if (true) {
                             ctx.context.getString(R.string.ocr_status_local_recognizing)
                         } else {
                             ctx.context.getString(R.string.ocr_status_ai_recognizing)
@@ -156,9 +154,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             }
 
             // 本地 ML Kit OCR 优先（离线、免费、稳定）
-            val settings = get<SettingsStore>().settingsFlow.value
-            val localOcrEnabled = settings.ocrLocalEnabled
-            val localResult = if (localOcrEnabled) performLocalOcr(part.url) else null
+            val localResult = performLocalOcr(part.url)
             if (!localResult.isNullOrBlank()) {
                 val ocrResult =
                     """
