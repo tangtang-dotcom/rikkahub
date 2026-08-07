@@ -17,6 +17,11 @@ import me.rerere.rikkahub.data.model.Conversation
  *   - LLM-callable tool (`check_token_usage`) returns the totals + budget status so the
  *     model can self-stop or notify the user.
  *   - Future Compose / Telegram surfaces collect the same numbers.
+ *
+ * Budget classification (v1.1 — 2026-08-07):
+ *   classify() uses perMessageMax (single-message peak = real context-window size)
+ *   instead of totalTokens (sum of all turns with context overlap → inflated).
+ *   totalTokens is still tracked for informational display but is NOT used for caps.
  */
 object TokenBudgetTracker {
     data class Totals(
@@ -82,8 +87,11 @@ object TokenBudgetTracker {
         // No budget configured → no-budget. Spec calls this "off"; tool surface shows
         // numbers but doesn't recommend action.
         if (softCap == null && hardCap == null) return BudgetStatus.NO_BUDGET
-        if (hardCap != null && totals.totalTokens >= hardCap) return BudgetStatus.OVER_HARD
-        if (softCap != null && totals.totalTokens >= softCap) return BudgetStatus.WARN
+        // Use perMessageMax (single-message peak = real context-window size)
+        // instead of totalTokens (sum of all turns — includes repeated context).
+        val actual = totals.perMessageMax
+        if (hardCap != null && actual >= hardCap) return BudgetStatus.OVER_HARD
+        if (softCap != null && actual >= softCap) return BudgetStatus.WARN
         return BudgetStatus.UNDER_SOFT
     }
 

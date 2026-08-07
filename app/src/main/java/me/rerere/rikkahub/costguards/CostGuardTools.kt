@@ -22,6 +22,9 @@ import kotlin.uuid.Uuid
  * hard token caps and a simple budget classification (UNDER_SOFT / WARN / OVER_HARD /
  * NO_BUDGET). The model is expected to self-throttle on WARN and stop on OVER_HARD.
  *
+ * Budget classification uses per_message_max (single-message peak = real context-window
+ * size), not total_tokens (sum which double-counts repeated context across turns).
+ *
  * v2 (Phase 15.5) will add the live header pill + GenerationHandler-side auto-stop
  * integration. Ship the data surface first so the LLM can react in the meantime.
  *
@@ -52,11 +55,11 @@ fun checkTokenUsageTool(
         description =
             """
             Read the running input + output token totals (including cached tokens) for a conversation and compare them
-            against the assistant's soft / hard token-budget caps. Use to self-throttle on a
-            long-running task: WARN means slow down or wrap up; OVER_HARD means stop and ask
-            the user before continuing. Returns NO_BUDGET when no caps are configured (the
-            defaults). If conversation_id is omitted, reports against the assistant's current
-            chat. Read-only.
+            against the assistant's soft / hard token-budget caps. Budget classification uses per_message_max
+            (single-message peak = real context-window size), not total_tokens (sum which double-counts repeated
+            context across turns). Use to self-throttle on a long-running task: WARN means slow down or wrap up;
+            OVER_HARD means stop and ask the user before continuing. Returns NO_BUDGET when no caps are configured
+            (the defaults). If conversation_id is omitted, reports against the assistant's current chat. Read-only.
             """.trimIndent().replace("\n", " "),
         parameters = {
             InputSchema.Obj(

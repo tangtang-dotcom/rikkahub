@@ -77,26 +77,43 @@ class TokenBudgetTrackerTest {
     }
 
     @Test fun `classify NO_BUDGET when both caps null`() {
-        val totals = TokenBudgetTracker.Totals(0, 0, 0, 0, 0)
+        val totals = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 0, perMessageMax = 0, messageCount = 0,
+        )
         assertEquals(TokenBudgetTracker.BudgetStatus.NO_BUDGET,
             TokenBudgetTracker.classify(totals, null, null))
     }
 
-    @Test fun `classify UNDER_SOFT when below soft cap`() {
-        val totals = TokenBudgetTracker.Totals(0, 0, 5_000, 0, 1)
+    @Test fun `classify UNDER_SOFT when perMessageMax below soft cap`() {
+        val totals = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 999_999, // inflated by context overlap, ignored
+            perMessageMax = 5_000, messageCount = 1,
+        )
         assertEquals(TokenBudgetTracker.BudgetStatus.UNDER_SOFT,
             TokenBudgetTracker.classify(totals, softCap = 50_000, hardCap = 200_000))
     }
 
-    @Test fun `classify WARN when above soft below hard`() {
-        val totals = TokenBudgetTracker.Totals(0, 0, 75_000, 0, 1)
+    @Test fun `classify WARN when perMessageMax above soft below hard`() {
+        val totals = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 0, // totalTokens ignored for classification
+            perMessageMax = 75_000, messageCount = 1,
+        )
         assertEquals(TokenBudgetTracker.BudgetStatus.WARN,
             TokenBudgetTracker.classify(totals, softCap = 50_000, hardCap = 200_000))
     }
 
-    @Test fun `classify OVER_HARD when at or above hard`() {
-        val atCap = TokenBudgetTracker.Totals(0, 0, 200_000, 0, 1)
-        val overCap = TokenBudgetTracker.Totals(0, 0, 250_000, 0, 1)
+    @Test fun `classify OVER_HARD when perMessageMax at or above hard`() {
+        val atCap = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 0, perMessageMax = 200_000, messageCount = 1,
+        )
+        val overCap = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 0, perMessageMax = 250_000, messageCount = 1,
+        )
         assertEquals(TokenBudgetTracker.BudgetStatus.OVER_HARD,
             TokenBudgetTracker.classify(atCap, softCap = 50_000, hardCap = 200_000))
         assertEquals(TokenBudgetTracker.BudgetStatus.OVER_HARD,
@@ -104,8 +121,22 @@ class TokenBudgetTrackerTest {
     }
 
     @Test fun `classify with only hard cap configured`() {
-        val totals = TokenBudgetTracker.Totals(0, 0, 100_000, 0, 1)
+        val totals = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 0, perMessageMax = 100_000, messageCount = 1,
+        )
         assertEquals(TokenBudgetTracker.BudgetStatus.UNDER_SOFT,
             TokenBudgetTracker.classify(totals, softCap = null, hardCap = 200_000))
+    }
+
+    @Test fun `classify ignores inflated totalTokens — uses perMessageMax`() {
+        // totalTokens = 500_000 (inflated by context overlap) but perMessageMax = 30_000 (real window).
+        // hard=200_000, so perMessageMax=30k → UNDER_SOFT (not OVER_HARD).
+        val totals = TokenBudgetTracker.Totals(
+            inputTokens = 0, outputTokens = 0, cachedTokens = 0,
+            totalTokens = 500_000, perMessageMax = 30_000, messageCount = 10,
+        )
+        assertEquals(TokenBudgetTracker.BudgetStatus.UNDER_SOFT,
+            TokenBudgetTracker.classify(totals, softCap = 50_000, hardCap = 200_000))
     }
 }
