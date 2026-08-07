@@ -273,7 +273,6 @@ private fun MainPage(vm: DebugVM) {
             }
         }
 
-        }
 
         var markdown by remember { mutableStateOf("") }
         MarkdownBlock(markdown, modifier = Modifier.fillMaxWidth())

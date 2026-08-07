@@ -302,7 +302,6 @@ val dataSourceModule =
         }
 
         single {
-        single {
             CodexAccountRepository(
                 store = CodexCredentialStore(context = get(), json = get()),
                 client = get(named("codex")),
