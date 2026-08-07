@@ -130,6 +130,7 @@ import me.rerere.rikkahub.ui.pages.assistant.detail.CustomBodies
 import me.rerere.rikkahub.ui.pages.assistant.detail.CustomHeaders
 import me.rerere.rikkahub.ui.pages.setting.components.CodexProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.GrokProviderConfigure
+import me.rerere.rikkahub.ui.pages.setting.components.ReasonixProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConnectionTester
 import me.rerere.rikkahub.ui.pages.setting.components.SettingProviderBalanceOption
@@ -246,7 +247,11 @@ fun SettingProviderDetailPage(
                         }) {
                             Icon(HugeIcons.Cancel01, null)
                         }
-                    } else if (provider !is ProviderSetting.Codex && provider !is ProviderSetting.Grok) {
+                    } else if (
+                        provider !is ProviderSetting.Codex &&
+                        provider !is ProviderSetting.Grok &&
+                        provider !is ProviderSetting.Reasonix
+                    ) {
                         val shareSheetState = rememberShareSheetState()
                         ShareSheet(shareSheetState)
                         IconButton(
@@ -341,6 +346,13 @@ private fun SettingProviderConfigPage(
     }
     if (provider is ProviderSetting.Grok) {
         GrokProviderConfigure(
+            provider = provider,
+            onEdit = onEdit,
+        )
+        return
+    }
+    if (provider is ProviderSetting.Reasonix) {
+        ReasonixProviderConfigure(
             provider = provider,
             onEdit = onEdit,
         )
