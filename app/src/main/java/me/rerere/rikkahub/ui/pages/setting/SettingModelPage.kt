@@ -162,19 +162,6 @@ private fun ModelSettingsPage(
                 onSelect = { vm.updateSettings(settings.copy(ocrModelId = it.id)) },
             )
         }
-        item {
-            CardGroup(title = { Text(stringResource(R.string.setting_model_page_ocr_local)) }) {
-                item(
-                    headlineContent = { Text(stringResource(R.string.setting_model_page_ocr_local)) },
-                    supportingContent = { Text(stringResource(R.string.setting_model_page_ocr_local_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = settings.ocrLocalEnabled,
-                            onCheckedChange = {
-                                vm.updateSettings(settings.copy(ocrLocalEnabled = it))
-                            },
-                        )
-                    },
                 )
             }
         }
