@@ -59,8 +59,8 @@ class ReasonixProvider(
         }
         return models.mapIndexed { index, info ->
             Model(
-                modelId = info.ref.ifBlank { info.name },
-                displayName = info.label ?: info.name,
+                modelId = info.ref.ifBlank { info.model },
+                displayName = info.model.ifBlank { info.ref },
                 id = Uuid.random(),
                 type = ModelType.CHAT,
                 abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),

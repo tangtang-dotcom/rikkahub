@@ -82,7 +82,7 @@ class ReasonixApi(
     suspend fun getModels(): List<ReasonixModelInfo> = withContext(Dispatchers.IO) {
         val body = get("/models") ?: return@withContext emptyList()
         runCatching {
-            json.decodeFromString<List<ReasonixModelInfo>>(body)
+            json.decodeFromString<ReasonixModelsResponse>(body).models
         }.getOrElse { emptyList() }
     }
 

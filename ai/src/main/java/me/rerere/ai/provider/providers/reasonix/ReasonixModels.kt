@@ -200,9 +200,17 @@ data class CheckpointInfo(
 // ── /models 端点（运行时模型切换） ──
 
 @Serializable
+data class ReasonixModelsResponse(
+    val current: String = "",
+    val default: String = "",
+    val label: String = "",
+    val models: List<ReasonixModelInfo> = emptyList(),
+)
+
+@Serializable
 data class ReasonixModelInfo(
-    val name: String = "",
     val ref: String = "",
-    val current: Boolean = false,
-    val label: String? = null,
+    val provider: String = "",
+    val model: String = "",
+    val kind: String = "",
 )
