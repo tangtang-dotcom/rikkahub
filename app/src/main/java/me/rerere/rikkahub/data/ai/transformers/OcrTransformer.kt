@@ -169,6 +169,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
             AppLog.i(TAG, "performOcr: local OCR empty, falling back to AI OCR")
             onFallbackToAi()
 
+            val settings = get<SettingsStore>().settingsFlow.value
             val model = settings.findModelById(settings.ocrModelId) ?: return "[Image]"
             val providerSetting = model.findProvider(settings.providers) ?: return "[Image]"
             val provider = get<ProviderManager>().getProviderByType(providerSetting)
