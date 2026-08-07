@@ -933,6 +933,9 @@ class DoctorChecks(
 
                             // OAuth, no API key
                             is me.rerere.ai.provider.ProviderSetting.Grok -> p.enabled // OAuth, no API key
+
+                            // Basic Auth / Bearer token, no API key
+                            is me.rerere.ai.provider.ProviderSetting.Reasonix -> p.enabled
                         }
                     }
                 add(

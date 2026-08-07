@@ -473,6 +473,68 @@ sealed class ProviderSetting {
             )
     }
 
+    @Serializable
+    @SerialName("reasonix")
+    data class Reasonix(
+        override var id: Uuid = Uuid.random(),
+        override var enabled: Boolean = false,
+        override var name: String = "Reasonix",
+        override var models: List<Model> = emptyList(),
+        override val balanceOption: BalanceOption = BalanceOption(),
+        @Transient override val builtIn: Boolean = false,
+        @Transient override val description: @Composable (() -> Unit) = {},
+        @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        var baseUrl: String = "http://47.76.110.203:10002",
+        var username: String = "",
+        var password: String = "",
+        var token: String = "",
+    ) : ProviderSetting() {
+        override fun addModel(model: Model): ProviderSetting = copy(models = models + model)
+
+        override fun editModel(model: Model): ProviderSetting =
+            copy(
+                models =
+                    models.map {
+                        if (it.id == model.id) model.copy() else it
+                    },
+            )
+
+        override fun delModel(model: Model): ProviderSetting = copy(models = models.filter { it.id != model.id })
+
+        override fun moveMove(
+            from: Int,
+            to: Int,
+        ): ProviderSetting =
+            copy(
+                models =
+                    models.toMutableList().apply {
+                        val model = removeAt(from)
+                        add(to, model)
+                    },
+            )
+
+        override fun copyProvider(
+            id: Uuid,
+            enabled: Boolean,
+            name: String,
+            models: List<Model>,
+            balanceOption: BalanceOption,
+            builtIn: Boolean,
+            description: @Composable (() -> Unit),
+            shortDescription: @Composable (() -> Unit),
+        ): ProviderSetting =
+            copy(
+                id = id,
+                enabled = enabled,
+                name = name,
+                models = models,
+                builtIn = builtIn,
+                description = description,
+                shortDescription = shortDescription,
+                balanceOption = balanceOption,
+            )
+    }
+
     companion object {
         // Types presented to the user when adding / converting a provider. AICore is
         // intentionally NOT in this list: it is a singleton built-in (one per device,
@@ -485,6 +547,7 @@ sealed class ProviderSetting {
                 OpenAI::class,
                 Google::class,
                 Claude::class,
+                Reasonix::class,
             )
         }
     }

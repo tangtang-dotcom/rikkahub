@@ -143,6 +143,10 @@ fun ProviderConfigure(
             is ProviderSetting.Grok -> {
                 Unit
             }
+
+            is ProviderSetting.Reasonix -> {
+                Unit
+            }
         }
     }
 }
@@ -168,6 +172,9 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
 
             // OAuth, no API key
             is ProviderSetting.Grok -> "" // OAuth, no API key
+
+            // Basic Auth / Bearer, no API key
+            is ProviderSetting.Reasonix -> ""
         }
     val sourceBaseUrl =
         when (this) {
@@ -187,6 +194,9 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
 
             // OAuth, no base URL
             is ProviderSetting.Grok -> "" // OAuth, no base URL
+
+            // Basic Auth / Bearer, no base URL
+            is ProviderSetting.Reasonix -> ""
         }
     val targetDefaultBaseUrl =
         when (type) {
@@ -297,6 +307,9 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
 
             // OAuth, no base URL
             is ProviderSetting.Grok -> return "" // OAuth, no base URL
+
+            // Basic Auth / Bearer, base URL is required
+            is ProviderSetting.Reasonix -> return ""
         }
     }
     return when (this) {
@@ -307,6 +320,7 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
         is ProviderSetting.LiteRtLocal -> ""
         is ProviderSetting.Codex -> ""
         is ProviderSetting.Grok -> ""
+        is ProviderSetting.Reasonix -> ProviderSetting.Reasonix().baseUrl
     }
 }
 
@@ -329,6 +343,9 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
 
         // no base URL to reset
         is ProviderSetting.Grok -> this // no base URL to reset
+
+        // Basic Auth / Bearer, reset to default
+        is ProviderSetting.Reasonix -> this.copy(baseUrl = defaultBaseUrl)
     }
 }
 
@@ -351,6 +368,9 @@ internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
 
             // no base URL concept
             is ProviderSetting.Grok -> return true // no base URL concept
+
+            // Basic Auth / Bearer, has base URL
+            is ProviderSetting.Reasonix -> this.baseUrl
         }
     return baseUrl == defaultBaseUrlForReset()
 }

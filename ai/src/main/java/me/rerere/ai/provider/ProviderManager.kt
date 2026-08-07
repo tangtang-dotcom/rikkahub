@@ -5,6 +5,7 @@ import me.rerere.ai.provider.providers.AICoreProvider
 import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
+import me.rerere.ai.provider.providers.reasonix.ReasonixProvider
 import okhttp3.OkHttpClient
 
 /**
@@ -23,6 +24,7 @@ class ProviderManager(
         registerProvider("google", GoogleProvider(client, context))
         registerProvider("claude", ClaudeProvider(client, context))
         registerProvider("aicore", AICoreProvider(context))
+        registerProvider("reasonix", ReasonixProvider())
     }
 
     /**
@@ -63,6 +65,7 @@ class ProviderManager(
             is ProviderSetting.LiteRtLocal -> getProvider("local_litert")
             is ProviderSetting.Codex -> getProvider("codex")
             is ProviderSetting.Grok -> getProvider("grok")
+            is ProviderSetting.Reasonix -> getProvider("reasonix")
         } as Provider<T>
     }
 }
