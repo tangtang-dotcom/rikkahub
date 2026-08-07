@@ -73,9 +73,6 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         ctx: TransformerContext,
         messages: List<UIMessage>,
     ): List<UIMessage> {
-        if (ctx.model.inputModalities.contains(Modality.IMAGE)) {
-            return messages
-        }
 
         val hasImages =
             messages.any { message ->
