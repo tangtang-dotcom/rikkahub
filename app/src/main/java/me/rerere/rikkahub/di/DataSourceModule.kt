@@ -24,7 +24,6 @@ import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.RikkaHubAPI
-import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.codex.CodexAccountRepository
 import me.rerere.rikkahub.data.codex.CodexCredentialStore
 import me.rerere.rikkahub.data.codex.CodexOAuthManager
@@ -303,9 +302,6 @@ val dataSourceModule =
         }
 
         single {
-            SponsorAPI.create(get())
-        }
-
         single {
             CodexAccountRepository(
                 store = CodexCredentialStore(context = get(), json = get()),
