@@ -22,7 +22,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.View
+import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.R
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /**
  * Reasonix Provider 配置页。
@@ -49,7 +52,7 @@ fun ReasonixProviderConfigure(
         onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
         label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
         modifier = Modifier.fillMaxWidth(),
-        isError = provider.baseUrl.isNotBlank() && !provider.baseUrl.isValidBaseUrl(),
+        isError = provider.baseUrl.isNotBlank() && provider.baseUrl.toHttpUrlOrNull() == null,
     )
 
     OutlinedTextField(
