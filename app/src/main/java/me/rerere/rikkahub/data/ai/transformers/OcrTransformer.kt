@@ -74,6 +74,11 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         messages: List<UIMessage>,
     ): List<UIMessage> {
 
+        // 视觉模型：图片直接发给模型看，不需要 OCR
+        if (ctx.model.inputModalities.contains(Modality.IMAGE)) {
+            return messages
+        }
+
         val hasImages =
             messages.any { message ->
                 message.parts.any {
