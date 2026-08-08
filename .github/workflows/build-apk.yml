@@ -87,13 +87,21 @@ jobs:
           done
 
       - name: 上传 APK 到 Release
-        # 仅 workflow_dispatch（手动填 release_tag）创建/上传 Release；push 只构建验证，防覆盖已有 Release
-        if: github.event_name == 'workflow_dispatch'
+        # push 与 workflow_dispatch 都尝试发版：push 时仅当 versionName 无对应 Release 才自动创建
+        # （自动发版闭环：push 新版本号 → 构建 → Release → App 检查更新可检测）；
+        # 已存在则跳过创建，仅刷新上传（workflow_dispatch 手动 release_tag 覆盖时同理）。
         run: |
           # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
-          DEFAULT_TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          DEFAULT_TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*\"\(.*\)\".*/\\1/')
           TAG="${RELEASE_TAG:-$DEFAULT_TAG}"
           echo "Release TAG: $TAG"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            # push 自动发版：Release 已存在则跳过（避免每 push 都重建同名 Release）
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Release $TAG 已存在，push 自动发版跳过（如需更新请手动 workflow_dispatch）"
+              exit 0
+            fi
+          fi
           # Release 不存在则创建（避免 release not found）——保持统一样式
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
             --title "🚀 RikkaHub Agents $TAG" \
