@@ -1307,7 +1307,6 @@
   <string name="aicore_provider_short_description">本地運行 — 無需 API 金鑰，無需網路</string>
   <string name="litert_provider_description">透過 LiteRT-LM 在裝置上運行 .litertlm 模型。從設定 → 本地 · LiteRT（Google AI Edge Gallery 白名單）中選擇精選模型 — 推論時無需 API 金鑰，無需網路。</string>
   <string name="litert_provider_short_description">本地運行 — LiteRT-LM</string>
-  <string name="setting_provider_page_restore_local_llm">恢復本地 LLM</string>
   <string name="setting_litert_import_local">從本機匯入</string>
   <string name="setting_files_page_select_all">全選</string>
   <string name="setting_files_page_cancel">取消</string>
