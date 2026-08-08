@@ -58,7 +58,8 @@ class UpdateChecker(
                                             ).build(),
                                     ).await()
                             if (response.isSuccessful) {
-                                json.decodeFromString<UpdateInfo>(response.body.string())
+                                // GitHub Releases API: releases/latest 响应 → UpdateInfo
+                                parseGitHubRelease(response.body.string())
                             } else {
                                 throw Exception("Failed to fetch update info")
                             }
@@ -70,6 +71,45 @@ class UpdateChecker(
         }.catch {
             emit(UiState.Error(it))
         }.flowOn(Dispatchers.IO)
+
+    /**
+     * 解析 GitHub Releases `releases/latest` 响应为 [UpdateInfo]。
+     * 兼容字段：tag_name / published_at / body / assets[].{name, browser_download_url, size}
+     */
+    private fun parseGitHubRelease(body: String): UpdateInfo {
+        val release = json.decodeFromString<GitHubRelease>(body)
+        val version = release.tag_name.removePrefix("v")
+        return UpdateInfo(
+            version = version,
+            publishedAt = release.published_at.orEmpty(),
+            changelog = release.body.orEmpty(),
+            downloads =
+                release.assets
+                    .filter { it.browser_download_url.isNotBlank() }
+                    .map { asset ->
+                        UpdateDownload(
+                            name = asset.name,
+                            url = asset.browser_download_url,
+                            size = asset.size?.toString().orEmpty(),
+                        )
+                    },
+        )
+    }
+
+    @Serializable
+    private data class GitHubRelease(
+        val tag_name: String = "",
+        val published_at: String? = null,
+        val body: String? = null,
+        val assets: List<GitHubAsset> = emptyList(),
+    )
+
+    @Serializable
+    private data class GitHubAsset(
+        val name: String = "",
+        val browser_download_url: String = "",
+        val size: Long? = null,
+    )
 
     fun downloadUpdate(
         context: Context,

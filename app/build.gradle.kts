@@ -77,13 +77,13 @@ android {
             )
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
-            buildConfigField("String", "UPDATE_API_URL", "\"\"")
+            buildConfigField("String", "UPDATE_API_URL", "\"https://api.github.com/repos/xiwangone/rikkahub-agents/releases/latest\"")
         }
         debug {
             applicationIdSuffix = ".debug"
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
-            buildConfigField("String", "UPDATE_API_URL", "\"\"")
+            buildConfigField("String", "UPDATE_API_URL", "\"https://api.github.com/repos/xiwangone/rikkahub-agents/releases/latest\"")
         }
     }
     compileOptions {
