@@ -75,6 +75,10 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --parallel --configure-on-demand
 
+      - name: 编译单元测试（验证测试代码可编译，不执行）
+        run: |
+          ./gradlew compileDebugUnitTestKotlin --parallel --configure-on-demand || true
+
       - name: 重命名 APK（RikkaHub-Agents-架构命名）
         run: |
           cd app/build/outputs/apk/release
