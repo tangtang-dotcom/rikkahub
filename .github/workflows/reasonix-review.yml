@@ -1,12 +1,6 @@
 name: Reasonix 审查
 
 on:
-  push:
-    branches: [master]
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '.github/workflows/*.yml'
   workflow_dispatch:
     inputs:
       fix:
@@ -58,7 +52,8 @@ jobs:
             "$ECS_USER@$ECS_HOST" \
             "cd /root/repo && git fetch origin master && git checkout --force $REVIEW_SHA && \
              reasonix run --model open-reasonix/deepseek-v4-flash --permission-mode acceptEdits --effort high --max-steps 30 \"审查 HEAD~1..HEAD 的改动，输出 Blocking/Should-fix 问题清单，写入 /tmp/review.txt\"; rc=\$?; \
-             git checkout -f -B master origin/master || true; exit \$rc" > review_result.txt 2>&1 \
+             git checkout -f -B master origin/master || true; \
+             git clean -fd -- .review-* .reasonix 2>/dev/null || true; exit \$rc" > review_result.txt 2>&1 \
             || echo "REVIEW_FAILED" >> review_result.txt
           echo "=== review 结果（前 60 行）==="
           head -60 review_result.txt
@@ -112,6 +107,8 @@ jobs:
             git add -A
             git commit -m "fix: Reasonix 审查后自动修复" || echo "无变更可提交"
             git push origin master
+            # 4. 清理审查残留文件，避免污染下次提交
+            git clean -fd -- .review-* .reasonix 2>/dev/null || true
           REMOTE_EOF
           echo "=== 修复闭环完成 ==="
 
