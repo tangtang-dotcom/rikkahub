@@ -969,7 +969,6 @@ class GenerationHandler(
                 } else {
                     assistant.systemPrompt
                 }
-            val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
             val memoryPrompt = if (assistant.enableMemory) {
                 buildMemoryPrompt(memories = memories)
             } else ""
