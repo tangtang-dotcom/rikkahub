@@ -149,7 +149,7 @@ fun ReasonixProviderConfigure(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.setting_provider_page_enable))
+        Text("启用 Web 桥")
         Switch(
             checked = provider.webBridgeEnabled,
             onCheckedChange = { onEdit(provider.copy(webBridgeEnabled = it)) },
