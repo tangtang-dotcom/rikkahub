@@ -59,6 +59,31 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
           npm install -g pnpm
 
+      - name: 版本号自动 bump（push 时当前版本已有 Release 则补丁号+1）
+        # 小修复自动区分：2.45.3 已有 Release → 自动 bump 为 2.45.4（versionCode+1）
+        # 避免小修复永远无法发版；workflow_dispatch 手动发版不 bump（用输入 release_tag 控制）
+        if: github.event_name == 'push'
+        run: |
+          VER=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts)
+          CODE=$(awk '/versionCode/{print $2; exit}' app/build.gradle.kts)
+          if gh release view "$VER" >/dev/null 2>&1; then
+            echo "版本 $VER 已有 Release，自动 bump 补丁号"
+            # 标准补丁号递增：2.45.3 → 2.45.4；2.45.9 → 2.45.10
+            NEW_VER=$(echo "$VER" | awk -F. '{ if (NF>=3) { $3=$3+1; print $1"."$2"."$3 } else { print $0".1" } }')
+            NEW_CODE=$((CODE + 1))
+            sed -i "s/versionCode = $CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+            sed -i "s/versionName = \"$VER\"/versionName = \"$NEW_VER\"/" app/build.gradle.kts
+            echo "bumped: $VER → $NEW_VER (versionCode $CODE → $NEW_CODE)"
+            # 提交版本号推进，避免下次 push 重复 bump
+            git config user.name "Auto Version Bot"
+            git config user.email "bot@rikkahub-agents.local"
+            git add app/build.gradle.kts
+            git commit -m "chore: 自动 bump 版本号 $VER → $NEW_VER（versionCode $NEW_CODE）"
+            git push origin master
+          else
+            echo "版本 $VER 无 Release，保持原版本"
+          fi
+
       - name: 固定签名构建 (overwrite-install)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
