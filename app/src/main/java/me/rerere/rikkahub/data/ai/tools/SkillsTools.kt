@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import java.io.File
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive

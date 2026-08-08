@@ -55,15 +55,16 @@ jobs:
              git checkout -f -B master origin/master || true; \
              git clean -fd -- .review-* .reasonix 2>/dev/null || true; exit \$rc" > review_result.txt 2>&1 \
             || echo "REVIEW_FAILED" >> review_result.txt
-          echo "=== review 结果（前 60 行）==="
-          head -60 review_result.txt
-
-      - name: 上传 review 结果
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reasonix-review
-          path: review_result.txt
+          echo "=== 审查状态 ==="
+          if grep -q "REVIEW_FAILED" review_result.txt; then
+            echo "❌ 审查失败（详见会话记录 /root/.reasonix/projects/-root-repo/sessions/）"
+            echo "失败原因："
+            tail -5 review_result.txt
+          else
+            echo "✅ 审查完成（结论见 ECS 会话记录 /root/.reasonix/projects/-root-repo/sessions/ 最新会话）"
+            # 只显示结论摘要行（Blocking/Should-fix 行），不贴全文
+            grep -E "Blocking|Should-fix|结论|✅|⚠️" review_result.txt | head -15 || true
+          fi
 
   reasonix-fix:
     # 仅手动触发且 fix=true 时执行修复闭环（双保险：inputs 上下文在 job-level if 可能不可用）
@@ -111,10 +112,3 @@ jobs:
             git clean -fd -- .review-* .reasonix 2>/dev/null || true
           REMOTE_EOF
           echo "=== 修复闭环完成 ==="
-
-      - name: 上传修复日志
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reasonix-fix-log
-          path: /dev/null
