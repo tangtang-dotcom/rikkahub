@@ -139,23 +139,38 @@ fun ReasonixProviderConfigure(
 
     // ── Web 桥设置（手机 Web 服务反向隧道到 ECS，供 reasonix 调用手机能力）──
     HorizontalDivider()
-    Text(
-        text = "Web 桥（反向隧道）",
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-    )
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("启用 Web 桥")
+        Column {
+            Text(
+                text = "Web 桥（反向隧道）",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Switch(
             checked = provider.webBridgeEnabled,
             onCheckedChange = { onEdit(provider.copy(webBridgeEnabled = it)) },
         )
     }
     if (provider.webBridgeEnabled) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(10.dp),
+            ) {
         Text(
             text = "启动后自动：① 打开手机 Web 服务（:${provider.webBridgeLocalPort}）② 通过 SSH 反向隧道把手机端口映射到 ECS。切换 Reasonix 会话即自动连接。",
             style = MaterialTheme.typography.bodySmall,
@@ -269,6 +284,8 @@ fun ReasonixProviderConfigure(
                 enabled = bridgeState.webServerRunning || bridgeState.tunnelConnected,
             ) {
                 Text("停止")
+            }
+        }
             }
         }
     }

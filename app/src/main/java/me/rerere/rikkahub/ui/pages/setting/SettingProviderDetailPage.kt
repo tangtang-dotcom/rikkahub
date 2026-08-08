@@ -352,10 +352,20 @@ private fun SettingProviderConfigPage(
         return
     }
     if (provider is ProviderSetting.Reasonix) {
-        ReasonixProviderConfigure(
-            provider = provider,
-            onEdit = onEdit,
-        )
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            ReasonixProviderConfigure(
+                provider = provider,
+                onEdit = onEdit,
+            )
+        }
         return
     }
     var internalProvider by remember(provider) { mutableStateOf(provider) }
