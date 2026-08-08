@@ -113,6 +113,21 @@ jobs:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
 
+      - name: Telegram 构建通知
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          STATUS="${{ job.status }}"
+          if [ "$STATUS" = "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
+          MSG="${EMOJI} RikkaHub Agents 构建 ${STATUS}"
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MSG}
+          ${URL}" || true
+
       - name: 构建失败通知（Server酱）
         if: failure()
         env:
