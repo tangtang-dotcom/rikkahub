@@ -86,6 +86,13 @@ jobs:
             [ -f "$apk" ] && mv "$apk" "RikkaHub-Agents-${apk#app-}" || true
           done
 
+      - name: 上传 APK (artifact)
+        # 先保产物：发版（下一步）失败也不丢 APK；artifact 永远存在供下载实测
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikkahub-agents-release
+          path: app/build/outputs/apk/release/*.apk
+
       - name: 上传 APK 到 Release
         # push 与 workflow_dispatch 都尝试发版：push 时仅当 versionName 无对应 Release 才自动创建
         # （自动发版闭环：push 新版本号 → 构建 → Release → App 检查更新可检测）；
@@ -116,12 +123,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ inputs.release_tag }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-
-      - name: 上传 APK (artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikkahub-agents-release
-          path: app/build/outputs/apk/release/*.apk
 
       - name: Telegram 构建通知
         if: always()
