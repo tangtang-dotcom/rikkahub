@@ -976,32 +976,30 @@ class GenerationHandler(
                 buildRecentChatsPrompt(assistant, conversationRepo)
             } else ""
             val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
-            // Split into stable (assistant + tools) and volatile (memory + recent chats +
-            // addendum) so prompt caching survives memory injection: the stable part is the
-            // cached prefix, the volatile part sits after it. See SystemPromptBuilder.
-            val (stableSystem, volatileSystem) = systemPromptBuilder.buildSections(
+            // volatile 全部移出 SYSTEM：memory/recentChats/addendum 追加到消息末尾，
+            // 让 SYSTEM 只含 stable（assistant + tools）字节冻结，前缀缓存跨轮稳定
+            // （memory 开启、Telegram addendum 注入也不破缓存）。
+            val (stableSystem, _) = systemPromptBuilder.buildSections(
                 assistantPrompt = effectiveSystemPrompt,
                 memoryPrompt = "",
                 recentChatsPrompt = "",
                 toolPrompts = toolPrompts,
-                systemAddendum = systemAddendum,
+                systemAddendum = "",
             )
-            val systemParts = buildList {
-                if (stableSystem.isNotBlank()) add(UIMessagePart.Text(stableSystem))
-                if (volatileSystem.isNotBlank()) add(UIMessagePart.Text(volatileSystem))
+            if (stableSystem.isNotBlank()) {
+                add(UIMessage(role = MessageRole.SYSTEM, parts = listOf(UIMessagePart.Text(stableSystem))))
             }
-            if (systemParts.isNotEmpty()) {
-                add(UIMessage(role = MessageRole.SYSTEM, parts = systemParts))
-            }
-            addAll(messages.ageOldToolImages())
-            addAll(messages.limitContext(assistant.contextMessageLimit))
-            // volatile 移出 SYSTEM：memory/recentChats 追加到消息末尾，让 SYSTEM 字节冻结
+            addAll(messages.limitContext(assistant.contextMessageLimit).ageOldToolImages())
             val dynamicContext = buildString {
                 if (memoryPrompt.isNotBlank()) {
                     append(memoryPrompt)
-                    if (recentChatsPrompt.isNotBlank()) appendLine()
+                    if (recentChatsPrompt.isNotBlank() || !systemAddendum.isNullOrBlank()) appendLine()
                 }
-                if (recentChatsPrompt.isNotBlank()) append(recentChatsPrompt)
+                if (recentChatsPrompt.isNotBlank()) {
+                    append(recentChatsPrompt)
+                    if (!systemAddendum.isNullOrBlank()) appendLine()
+                }
+                if (!systemAddendum.isNullOrBlank()) append(systemAddendum)
             }
             if (dynamicContext.isNotBlank()) {
                 add(UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text(dynamicContext))))
