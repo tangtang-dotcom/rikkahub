@@ -65,7 +65,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           VER=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts)
-          CODE=$(awk '/versionCode/{print $2; exit}' app/build.gradle.kts)
+          CODE=$(awk '/versionCode = /{print $3; exit}' app/build.gradle.kts)
           if gh release view "$VER" >/dev/null 2>&1; then
             echo "版本 $VER 已有 Release，自动 bump 补丁号"
             # 标准补丁号递增：2.45.3 → 2.45.4；2.45.9 → 2.45.10
