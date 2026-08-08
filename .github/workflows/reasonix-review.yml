@@ -33,31 +33,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 安装 sshpass
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq sshpass >/dev/null 2>&1
-
       - name: SSH 到 ECS 运行 reasonix review
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
           ECS_USER: ${{ secrets.ECS_USER }}
-          ECS_PASS: ${{ secrets.ECS_PASS }}
+          ECS_REVIEW_KEY: ${{ secrets.ECS_REVIEW_KEY }}
           # 精确到本次 push 的 commit，避免 ECS git pull 拉到更新的 master 造成审查偏差
           REVIEW_SHA: ${{ github.sha }}
         run: |
-          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_PASS" ]; then
-            echo "::warning::未配置 ECS_HOST/ECS_USER/ECS_PASS Secrets，跳过 review"
+          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_REVIEW_KEY" ]; then
+            echo "::warning::未配置 ECS_HOST/ECS_USER/ECS_REVIEW_KEY Secrets，跳过 review"
             echo "SKIPPED_NO_SECRETS" > review_result.txt
             exit 0
           fi
+          # 写入临时私钥（密钥认证；ECS 密码认证已禁用，2026-08-09 起改用密钥）
+          echo "$ECS_REVIEW_KEY" > /tmp/review_key
+          chmod 600 /tmp/review_key
           # review 以 HEAD~1（父提交）为 base，对比本次 commit 的变更。
           # 捕获 review 退出码 rc；恢复 master（-f 丢弃残留文件）用 || true 隔离恢复失败；
           # 最后 exit $rc 保留原始失败信号，避免被恢复命令吞掉（review 失败 → workflow 失败）
-          sshpass -p "$ECS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+          # 注意：review 命令内部调 skill 被权限阻止，改用 run 收集（2026-08-05 纪律）
+          ssh -i /tmp/review_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
             "$ECS_USER@$ECS_HOST" \
             "cd /root/repo && git fetch origin master && git checkout --force $REVIEW_SHA && \
-             reasonix review --base HEAD~1 --commit HEAD; rc=\$?; \
+             reasonix run --permission-mode acceptEdits --effort high --max-steps 30 \"审查 HEAD~1..HEAD 的改动，输出 Blocking/Should-fix 问题清单，写入 /tmp/review.txt\"; rc=\$?; \
              git checkout -f -B master origin/master || true; exit \$rc" > review_result.txt 2>&1 \
             || echo "REVIEW_FAILED" >> review_result.txt
           echo "=== review 结果（前 60 行）==="
@@ -81,22 +80,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 安装 sshpass
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq sshpass >/dev/null 2>&1
-
       - name: SSH 到 ECS 修复 + 编译 + 提交
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
           ECS_USER: ${{ secrets.ECS_USER }}
-          ECS_PASS: ${{ secrets.ECS_PASS }}
+          ECS_REVIEW_KEY: ${{ secrets.ECS_REVIEW_KEY }}
         run: |
-          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_PASS" ]; then
+          if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_REVIEW_KEY" ]; then
             echo "::warning::未配置 ECS secrets，跳过修复"
             exit 0
           fi
-          sshpass -p "$ECS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+          echo "$ECS_REVIEW_KEY" > /tmp/review_key
+          chmod 600 /tmp/review_key
+          ssh -i /tmp/review_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
             "$ECS_USER@$ECS_HOST" 'bash -s' << 'REMOTE_EOF'
             set -e
             cd /root/repo
