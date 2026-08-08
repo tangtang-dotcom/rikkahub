@@ -189,6 +189,7 @@ val dataSourceModule =
                 memoryRepo = get(),
                 conversationRepo = get(),
                 aiLoggingManager = get(),
+                systemPromptBuilder = get(),
             )
         }
 
