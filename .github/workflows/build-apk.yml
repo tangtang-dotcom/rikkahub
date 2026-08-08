@@ -37,6 +37,12 @@ jobs:
       - name: 设置 Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Ktlint 静态检查（不阻断，输出风格报告）
+        run: |
+          curl -sSLO https://github.com/pinterest/ktlint/releases/latest/download/ktlint
+          chmod +x ktlint
+          ./ktlint app/src/main/java 2>&1 | tail -30 || true
+
       - name: 缓存 Gradle（依赖/编译缓存，加速构建）
         uses: actions/cache@v4
         with:
@@ -87,11 +93,7 @@ jobs:
           # Release 不存在则创建（避免 release not found）——保持统一样式
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
             --title "🚀 RikkaHub Agents $TAG" \
-            --notes "## ✨ v$TAG
-
-            ### 📦 安装包
-            - ARM64 优化包
-            - Universal 通用包" || true
+            --notes "$(git log --oneline --no-merges $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~10)..HEAD 2>/dev/null | head -40 | sed 's/^/- /' || echo '## ✨ v$TAG\n\n### 📦 安装包\n- ARM64 优化包\n- Universal 通用包')" || true
           cd app/build/outputs/apk/release
                     for apk in *.apk; do
             # 文件已在上一步统一重命名（RikkaHub-Agents-*），直接上传

@@ -6,14 +6,17 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.util.KeyRoulette
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -172,5 +175,67 @@ class ChatCompletionsAPIPromptCacheTest {
                 assertNull(block.jsonObject["cache_control"])
             }
         }
+    }
+
+    @Test
+    fun `non-openrouter multi-part system joins into single string preserving stable prefix`() {
+        // 回归：非 OpenRouter（DeepSeek/OpenAI 兼容）通道下，SYSTEM 多 part（stable+volatile）
+        // 应合并为单字符串，且顺序为 stable 在前 volatile 在后——前缀缓存不被 volatile 破坏。
+        val request =
+            buildRequest(
+                messages =
+                    listOf(
+                        UIMessage(
+                            role = MessageRole.SYSTEM,
+                            parts =
+                                listOf(
+                                    UIMessagePart.Text("stable assistant prompt"),
+                                    UIMessagePart.Text("volatile memory content"),
+                                ),
+                        ),
+                        UIMessage.user("question"),
+                    ),
+                params = TextGenerationParams(model = Model(modelId = "deepseek-v4-flash")),
+                providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.deepseek.com/v1", promptCaching = true),
+            )
+        val msgs = request["messages"]!!.jsonArray
+        val system = msgs.first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
+        // 非 OpenRouter 不注入 cache_control
+        assertNoCacheControl(request)
+        // content 应为单字符串（合并），且 stable 段在 volatile 前
+        val content = system["content"]!!.jsonPrimitive.content
+        assertTrue(content.startsWith("stable assistant prompt"))
+        assertTrue(content.indexOf("stable assistant prompt") < content.indexOf("volatile memory content"))
+        assertTrue(content.contains("\n"))
+    }
+
+    @Test
+    fun `openrouter multi-part system keeps content blocks with cache control on first block`() {
+        // 回归：OpenRouter 通道下，SYSTEM 多 part 保留为 content 数组（stable 在前），
+        // cache_control 落在首个 block——volatile 变化不影响 stable 前缀。
+        val request =
+            buildRequest(
+                messages =
+                    listOf(
+                        UIMessage(
+                            role = MessageRole.SYSTEM,
+                            parts =
+                                listOf(
+                                    UIMessagePart.Text("stable assistant prompt"),
+                                    UIMessagePart.Text("volatile memory content"),
+                                ),
+                        ),
+                        UIMessage.user("question"),
+                    ),
+                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
+                providerSetting = openRouter(),
+            )
+        val msgs = request["messages"]!!.jsonArray
+        val system = msgs.first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
+        val blocks = system["content"]!!.jsonArray
+        // 两个 content block（stable + volatile）
+        assertEquals(2, blocks.size)
+        // cache_control 在第一个 block（stable）上
+        assertEquals("ephemeral", blocks.first().jsonObject["cache_control"]!!.jsonObject["type"]!!.jsonPrimitive.content)
     }
 }
