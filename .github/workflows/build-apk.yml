@@ -92,7 +92,8 @@ jobs:
         # 已存在则跳过创建，仅刷新上传（workflow_dispatch 手动 release_tag 覆盖时同理）。
         run: |
           # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
-          DEFAULT_TAG=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*\"\(.*\)\".*/\\1/')
+          # 注：sed 捕获组在 YAML 转义易坏（\\1 变字面量），改用 awk 提取引号内版本号
+          DEFAULT_TAG=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts)
           TAG="${RELEASE_TAG:-$DEFAULT_TAG}"
           echo "Release TAG: $TAG"
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
