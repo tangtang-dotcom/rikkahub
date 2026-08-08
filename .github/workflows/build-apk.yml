@@ -185,7 +185,7 @@ jobs:
             --data-urlencode "text=${MSG}
           ${URL}" || true
 
-      - name: 构建失败通知（Server酱）
+      - name: 构建失败通知（Server）
         if: failure()
         env:
           SC_KEY: ${{ secrets.SERVERCHAN_KEY }}

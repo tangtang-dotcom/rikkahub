@@ -50,7 +50,7 @@ jobs:
             echo "has_update=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 上游更新通知（Server酱，仅定时/仅检查模式）
+      - name: 上游更新通知（Server，仅定时/仅检查模式）
         if: steps.check.outputs.has_update == 'true' && github.event_name == 'schedule'
         env:
           SC_KEY: ${{ secrets.SERVERCHAN_KEY }}
