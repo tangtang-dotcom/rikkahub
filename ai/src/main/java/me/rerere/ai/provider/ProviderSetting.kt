@@ -492,7 +492,7 @@ sealed class ProviderSetting {
         var connectionMode: String = "serve",
         // ── Web 桥（手机 Web 服务反向隧道到 ECS，供 reasonix 访问）──
         var webBridgeEnabled: Boolean = false,
-        var webBridgeEcsHost: String = "47.76.110.203",
+        var webBridgeEcsHost: String = "",
         var webBridgeEcsPort: Int = 22,
         var webBridgeEcsUser: String = "root",
         var webBridgeRemotePort: Int = 8080,

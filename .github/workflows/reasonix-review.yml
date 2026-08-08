@@ -18,7 +18,7 @@ on:
 permissions:
   contents: write
 
-# 并发控制：同一时间仅跑一个 review/fix，避免 ECS /root/repo 互相踩踏
+# 并发控制：同一时间仅跑一个 review/fix，避免服务器 /root/repo 互相踩踏
 concurrency:
   group: reasonix-review
   cancel-in-progress: false
@@ -33,12 +33,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: SSH 到 ECS 运行 reasonix review
+      - name: SSH 到服务器运行 reasonix 审查
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
           ECS_USER: ${{ secrets.ECS_USER }}
           ECS_REVIEW_KEY: ${{ secrets.ECS_REVIEW_KEY }}
-          # 精确到本次 push 的 commit，避免 ECS git pull 拉到更新的 master 造成审查偏差
+          # 精确到本次 push 的 commit，避免服务器 git pull 拉到更新的 master 造成审查偏差
           REVIEW_SHA: ${{ github.sha }}
         run: |
           if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_REVIEW_KEY" ]; then
@@ -46,7 +46,7 @@ jobs:
             echo "SKIPPED_NO_SECRETS" > review_result.txt
             exit 0
           fi
-          # 写入临时私钥（密钥认证；ECS 密码认证已禁用，2026-08-09 起改用密钥）
+          # 写入临时私钥（密钥认证；服务器密码认证已禁用，2026-08-09 起改用密钥）
           echo "$ECS_REVIEW_KEY" > /tmp/review_key
           chmod 600 /tmp/review_key
           # review 以 HEAD~1（父提交）为 base，对比本次 commit 的变更。
@@ -80,7 +80,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: SSH 到 ECS 修复 + 编译 + 提交
+      - name: SSH 到服务器修复 + 编译 + 提交
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
           ECS_USER: ${{ secrets.ECS_USER }}

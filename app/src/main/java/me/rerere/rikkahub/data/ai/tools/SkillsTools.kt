@@ -7,16 +7,35 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.files.SkillFrontmatterParser
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
 
+/**
+ * Build the skill tools for an assistant. [skillManager] may be null in JVM unit tests
+ * (no Android Context); a local fallback reads skill files directly from each
+ * [SkillMetadata.skillDir], which covers the read paths exercised by tests.
+ */
 fun createSkillTools(
     enabledSkills: Set<String>,
     allSkills: List<SkillMetadata>,
-    skillManager: SkillManager,
+    skillManager: SkillManager? = null,
 ): List<Tool> {
     val available = allSkills.filter { it.name in enabledSkills }
     if (available.isEmpty()) return emptyList()
+
+    // Fallback for JVM tests / contexts without a SkillManager: resolve a skill dir by
+    // name from the in-memory metadata list (SkillManager resolves by scanning the
+    // skills root; the test list is authoritative for the fallback path).
+    fun metaDir(name: String): File? = allSkills.firstOrNull { it.name == name }?.skillDir
+    fun fallbackReadBody(name: String): String? =
+        metaDir(name)?.resolve("SKILL.md")?.takeIf { it.exists() }?.readText()?.let {
+            SkillFrontmatterParser.extractBody(it)
+        }
+
+    // Local accessors; null skillManager routes through the fallback above.
+    fun readBody(skillName: String): String? =
+        skillManager?.readSkillBody(skillName) ?: fallbackReadBody(skillName)
 
     return listOf(
         // Phase 16 audit fix — read-only accessor so the LLM can show a skill's content
@@ -24,7 +43,16 @@ fun createSkillTools(
         skillGetContentTool(
             enabledSkills = enabledSkills,
             allSkills = allSkills,
-            contentReader = skillManager::getContent,
+            contentReader = { name -> skillManager?.getContent(name) ?: metaDir(name)?.let { dir ->
+                val file = dir.resolve("SKILL.md")
+                if (!file.exists()) null else me.rerere.rikkahub.data.files.SkillContent(
+                    name = name,
+                    description = "",
+                    format = null,
+                    sourceLabel = null,
+                    contentMd = SkillFrontmatterParser.extractBody(file.readText()),
+                )
+            } },
         ),
         Tool(
             name = "use_skill",
@@ -48,9 +76,10 @@ fun createSkillTools(
                         // re-read SOUL/HEARTBEAT/etc from disk every time.
                         val body = runCatching {
                             if (path.isNullOrBlank()) {
-                                skillManager.readSkillBody(skill.name)
+                                readBody(skill.name)
                             } else {
-                                skillManager.readSkillFileCached(skill.name, path)
+                                skillManager?.readSkillFileCached(skill.name, path)
+                                    ?: metaDir(skill.name)?.resolve(path)?.takeIf { it.exists() }?.readText()
                             }
                         }.getOrNull()
                         if (!body.isNullOrBlank()) {
@@ -143,18 +172,20 @@ fun createSkillTools(
                 }
                 val path = it.jsonObject["path"]?.jsonPrimitive?.content
                 if (path.isNullOrBlank()) {
-                    val skillMd = skillManager.getSkillDir(name)?.resolve("SKILL.md")
+                    val skillMd = skillManager?.getSkillDir(name)?.resolve("SKILL.md") ?: metaDir(name)?.resolve("SKILL.md")
                     if (skillMd != null && skillMd.length() > SkillManager.MAX_SKILL_FILE_BYTES) {
                         return@Tool tooLargeErr(skillMd)
                     }
-                    val content = skillManager.readSkillBody(name)
+                    val content = readBody(name)
                         ?: return@Tool err(
                             "skill_body_not_found",
                             "Skill '$name' is enabled but its SKILL.md body could not be read on disk.",
                         )
                     return@Tool listOf(UIMessagePart.Text(content))
                 }
-                val target = skillManager.resolveSkillFile(name, path)
+                val target = skillManager?.resolveSkillFile(name, path) ?: metaDir(name)?.resolve(path)?.takeIf {
+                    it.canonicalPath.startsWith(metaDir(name)!!.canonicalPath)
+                }
                     ?: return@Tool err(
                         "path_outside_skill",
                         "Path '$path' resolves outside the '$name' skill directory.",
