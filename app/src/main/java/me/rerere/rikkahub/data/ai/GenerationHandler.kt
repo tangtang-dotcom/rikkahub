@@ -278,7 +278,6 @@ class GenerationHandler(
     private val memoryRepo: MemoryRepository,
     private val conversationRepo: ConversationRepository,
     private val aiLoggingManager: AILoggingManager,
-    private val systemPromptBuilder: SystemPromptBuilder,
 ) {
     fun generateText(
         settings: Settings,
@@ -969,41 +968,33 @@ class GenerationHandler(
                 } else {
                     assistant.systemPrompt
                 }
-            val memoryPrompt = if (assistant.enableMemory) {
-                buildMemoryPrompt(memories = memories)
-            } else ""
-            val recentChatsPrompt = if (assistant.enableRecentChatsReference) {
-                buildRecentChatsPrompt(assistant, conversationRepo)
-            } else ""
             val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
-            // volatile 全部移出 SYSTEM：memory/recentChats/addendum 追加到消息末尾，
-            // 让 SYSTEM 只含 stable（assistant + tools）字节冻结，前缀缓存跨轮稳定
-            // （memory 开启、Telegram addendum 注入也不破缓存）。
-            val (stableSystem, _) = systemPromptBuilder.buildSections(
-                assistantPrompt = effectiveSystemPrompt,
-                memoryPrompt = "",
-                recentChatsPrompt = "",
-                toolPrompts = toolPrompts,
-                systemAddendum = "",
-            )
-            if (stableSystem.isNotBlank()) {
-                add(UIMessage(role = MessageRole.SYSTEM, parts = listOf(UIMessagePart.Text(stableSystem))))
+            // 对照版（test/cache-official）：完全官方写法——buildString 单 SYSTEM
+            // （assistant + memory + tools），无 stable/volatile 分段、无 recentChats/addendum。
+            // 保留 e1033fac 的单行 addAll（消息重复添加修复）。
+            val system = buildString {
+                val effectiveSystemPrompt =
+                    if (assistant.allowConversationSystemPrompt && !conversationSystemPrompt.isNullOrBlank()) {
+                        conversationSystemPrompt
+                    } else {
+                        assistant.systemPrompt
+                    }
+                if (effectiveSystemPrompt.isNotBlank()) {
+                    append(effectiveSystemPrompt)
+                }
+                if (assistant.enableMemory) {
+                    appendLine()
+                    append(buildMemoryPrompt(memories = memories))
+                }
+                toolPrompts.forEach { toolPrompt ->
+                    if (toolPrompt.isNotBlank()) {
+                        appendLine()
+                        append(toolPrompt)
+                    }
+                }
             }
+            if (system.isNotBlank()) add(UIMessage.system(prompt = system))
             addAll(messages.limitContext(assistant.contextMessageLimit).ageOldToolImages())
-            val dynamicContext = buildString {
-                if (memoryPrompt.isNotBlank()) {
-                    append(memoryPrompt)
-                    if (recentChatsPrompt.isNotBlank() || !systemAddendum.isNullOrBlank()) appendLine()
-                }
-                if (recentChatsPrompt.isNotBlank()) {
-                    append(recentChatsPrompt)
-                    if (!systemAddendum.isNullOrBlank()) appendLine()
-                }
-                if (!systemAddendum.isNullOrBlank()) append(systemAddendum)
-            }
-            if (dynamicContext.isNotBlank()) {
-                add(UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text(dynamicContext))))
-            }
         }.transforms(
             transformers = transformers,
             context = context,

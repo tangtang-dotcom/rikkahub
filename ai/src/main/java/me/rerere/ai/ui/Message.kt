@@ -316,18 +316,16 @@ private const val CONTEXT_KEEP_RATIO = 0.5f
 fun List<UIMessage>.limitContext(limit: Int): List<UIMessage> {
     if (limit <= 0 || this.size <= limit) return this
 
-    // 固定保留的头部条数（稳定前缀，随对话增长不变）；末尾保留剩余的 limit - prefixKeep 条
-    val prefixKeep = (limit * CONTEXT_KEEP_RATIO).roundToInt().coerceIn(1, limit - 1)
-    val tailKeep = limit - prefixKeep
+    // 截断后回落到的目标条数, 以及两次截断之间截断点前进的步幅
+    // limit 为 1 时无法构造滞回(步幅至少为 1), 此时退化为逐条平移的滑动窗口
+    val target = (limit * CONTEXT_KEEP_RATIO).roundToInt().coerceIn(1, limit)
+    val stride = (limit - target).coerceAtLeast(1)
 
-    // 头部窗口：稳定前缀 [0, prefixKeep)，永不裁剪，保证缓存前缀字节级稳定
-    val head = this.subList(0, prefixKeep)
-    // 尾部窗口：从安全边界（避免半截 tool）开始保留最新上下文；尾部调整不影响前缀稳定
-    val tailStart = alignContextStart(this.size - tailKeep)
-    // 若尾部起点已落入头部前缀内（保留区间基本覆盖全文），则不裁剪
-    if (tailStart <= prefixKeep) return this
+    // 每越过一级台阶, 截断点前进 stride 条; 台阶之内截断点不动
+    // 上界兜底保证至少保留一条消息, 正常路径(limit >= 2)不会触发
+    val startIndex = (((this.size - limit) / stride + 1) * stride).coerceAtMost(this.size - 1)
 
-    return head + this.subList(tailStart, this.size)
+    return this.subList(alignContextStart(startIndex), this.size)
 }
 
 /**
