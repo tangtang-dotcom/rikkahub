@@ -175,41 +175,43 @@ fun SettingQuotaPage() {
                             },
                         )
 
-                        // 展开：编辑表单
+                        // 展开：编辑表单（必须经 item() 包裹，否则渲染位置错乱）
                         if (editingIndex == index) {
-                            ProviderEditSection(
-                                provider = provider,
-                                onUpdate = { updated ->
-                                    scope.launch {
-                                        quotaPreferences.setProviders(
-                                            providers.toMutableList().also { it[index] = updated },
-                                        )
-                                    }
-                                },
-                                onOpenConsole = {
-                                    navController.navigate(Screen.QuotaConsole(provider.id))
-                                },
-                                onDelete = {
-                                    scope.launch {
-                                        quotaPreferences.setProviders(
-                                            providers.toMutableList().also { it.removeAt(index) },
-                                        )
-                                        editingIndex = null
-                                    }
-                                },
-                                onManageCredential = {
-                                    credentialDialogIndex = index
-                                    scope.launch {
-                                        maskedValue = credentialManager.getMaskedValue(provider.id)
-                                    }
-                                },
-                                onClearCredential = {
-                                    scope.launch {
-                                        credentialManager.clearCredential(provider.id)
-                                        maskedValue = ""
-                                    }
-                                },
-                            )
+                            item {
+                                ProviderEditSection(
+                                    provider = provider,
+                                    onUpdate = { updated ->
+                                        scope.launch {
+                                            quotaPreferences.setProviders(
+                                                providers.toMutableList().also { it[index] = updated },
+                                            )
+                                        }
+                                    },
+                                    onOpenConsole = {
+                                        navController.navigate(Screen.QuotaConsole(provider.id))
+                                    },
+                                    onDelete = {
+                                        scope.launch {
+                                            quotaPreferences.setProviders(
+                                                providers.toMutableList().also { it.removeAt(index) },
+                                            )
+                                            editingIndex = null
+                                        }
+                                    },
+                                    onManageCredential = {
+                                        credentialDialogIndex = index
+                                        scope.launch {
+                                            maskedValue = credentialManager.getMaskedValue(provider.id)
+                                        }
+                                    },
+                                    onClearCredential = {
+                                        scope.launch {
+                                            credentialManager.clearCredential(provider.id)
+                                            maskedValue = ""
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
 
