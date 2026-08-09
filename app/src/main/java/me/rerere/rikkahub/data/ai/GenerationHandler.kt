@@ -976,34 +976,23 @@ class GenerationHandler(
                 buildRecentChatsPrompt(assistant, conversationRepo)
             } else ""
             val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
-            // volatile 全部移出 SYSTEM：memory/recentChats/addendum 追加到消息末尾，
-            // 让 SYSTEM 只含 stable（assistant + tools）字节冻结，前缀缓存跨轮稳定
-            // （memory 开启、Telegram addendum 注入也不破缓存）。
-            val (stableSystem, _) = systemPromptBuilder.buildSections(
+            // 对照版（test/extv-style）：ExTV 写法——SystemPromptBuilder stable/volatile 分段，
+            // volatile（memory/recentChats/addendum）在 SYSTEM 内。保留单行 addAll 修复。
+            val (stableSystem, volatileSystem) = systemPromptBuilder.buildSections(
                 assistantPrompt = effectiveSystemPrompt,
-                memoryPrompt = "",
-                recentChatsPrompt = "",
+                memoryPrompt = memoryPrompt,
+                recentChatsPrompt = recentChatsPrompt,
                 toolPrompts = toolPrompts,
-                systemAddendum = "",
+                systemAddendum = systemAddendum,
             )
-            if (stableSystem.isNotBlank()) {
-                add(UIMessage(role = MessageRole.SYSTEM, parts = listOf(UIMessagePart.Text(stableSystem))))
+            val systemParts = buildList {
+                if (stableSystem.isNotBlank()) add(UIMessagePart.Text(stableSystem))
+                if (volatileSystem.isNotBlank()) add(UIMessagePart.Text(volatileSystem))
+            }
+            if (systemParts.isNotEmpty()) {
+                add(UIMessage(role = MessageRole.SYSTEM, parts = systemParts))
             }
             addAll(messages.limitContext(assistant.contextMessageLimit).ageOldToolImages())
-            val dynamicContext = buildString {
-                if (memoryPrompt.isNotBlank()) {
-                    append(memoryPrompt)
-                    if (recentChatsPrompt.isNotBlank() || !systemAddendum.isNullOrBlank()) appendLine()
-                }
-                if (recentChatsPrompt.isNotBlank()) {
-                    append(recentChatsPrompt)
-                    if (!systemAddendum.isNullOrBlank()) appendLine()
-                }
-                if (!systemAddendum.isNullOrBlank()) append(systemAddendum)
-            }
-            if (dynamicContext.isNotBlank()) {
-                add(UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text(dynamicContext))))
-            }
         }.transforms(
             transformers = transformers,
             context = context,
