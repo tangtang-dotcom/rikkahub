@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -291,6 +292,10 @@ fun VaultPage() {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         var sessionMode by remember { mutableStateOf(false) }
+                        // 进入页面时从 DataStore 读回上次签发的会话模式（避免退出重进丢失）
+                        LaunchedEffect(Unit) {
+                            sessionMode = vaultSessionManager.getSessionMode()
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),

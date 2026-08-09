@@ -86,6 +86,14 @@ class VaultSessionManager(private val context: Context) {
         context.vaultSessionStore.edit { it.clear() }
     }
 
+    /** 读取当前会话模式（true=当场有效，false=TTL 30min）。用于 UI 回显。 */
+    suspend fun getSessionMode(): Boolean =
+        context.vaultSessionStore.data.first()[Keys.SESSION_MODE] ?: false
+
+    /** 读取当前会话是否已签发（secret 存在即为已签发）。 */
+    suspend fun hasSession(): Boolean =
+        context.vaultSessionStore.data.first()[Keys.SECRET] != null
+
     private fun sign(secretB64: String, expiry: Long): String {
         val mac = Mac.getInstance("HmacSHA256")
         val key = SecretKeySpec(Base64.decode(secretB64, Base64.NO_WRAP), "HmacSHA256")

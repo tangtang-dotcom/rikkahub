@@ -81,7 +81,8 @@ class ReasonixWebBridge(
             privateKeyPath = privateKeyPath,
             password = password,
         )
-        _state.value = _state.value.copy(tunnelConnected = ok)
+        // 成功时清空上次失败的 message（避免「✅已连接 + 红字残留」矛盾显示）
+        _state.value = _state.value.copy(tunnelConnected = ok, message = if (ok) "" else _state.value.message)
         ok
     }
 
