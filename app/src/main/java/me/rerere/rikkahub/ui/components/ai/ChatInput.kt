@@ -92,6 +92,7 @@ import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
+import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.R
@@ -135,6 +136,7 @@ fun ChatInput(
     onUpdateAssistant: (Assistant) -> Unit,
     onUpdateSearchService: (Int) -> Unit,
     onMoreClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     onAutoClick: () -> Unit = {},
     onCancelClick: () -> Unit,
     onSendClick: () -> Unit,
@@ -325,6 +327,16 @@ fun ChatInput(
                             Icon(
                                 imageVector = HugeIcons.Zap,
                                 contentDescription = stringResource(R.string.auto_task_mode_count),
+                            )
+                        }
+
+                        // 全局设置快捷入口（免切出到设置 tab）
+                        ActionIconButton(
+                            onClick = onSettingsClick,
+                        ) {
+                            Icon(
+                                imageVector = HugeIcons.Settings03,
+                                contentDescription = stringResource(R.string.settings),
                             )
                         }
 
