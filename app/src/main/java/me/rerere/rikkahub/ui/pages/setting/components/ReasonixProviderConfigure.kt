@@ -282,13 +282,27 @@ fun ReasonixProviderConfigure(
                 onCheckedChange = { saveToVault = it },
             )
         }
-        generatedKeyInfo?.let {
+        generatedKeyInfo?.let { info ->
             Text(
-                text = it,
+                text = info,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
             )
+            // 复制公钥按钮：一键复制 ssh-rsa 公钥（避免截图 OCR 出错）
+            if (info.contains("ssh-rsa")) {
+                OutlinedButton(
+                    onClick = {
+                        val pub = info.substringAfter("ssh-rsa").substringBefore("\n").let { "ssh-rsa$it" }
+                        val clipboard = genContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("web-bridge-public-key", pub))
+                        generatedKeyInfo = "✅ 公钥已复制！请粘贴发给我/添加到 ECS ~/.ssh/authorized_keys\n$pub"
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("复制公钥")
+                }
+            }
         }
         OutlinedTextField(
             value = provider.webBridgePassword,
