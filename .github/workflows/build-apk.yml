@@ -7,6 +7,11 @@ on:
         description: '自定义 Release tag（默认取 versionName，如 2.4.5-beta.1）'
         required: false
         type: string
+      create_release:
+        description: '创建/更新 GitHub Release（正式发版勾选；不勾则仅构建 APK，不上传 Release）'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [master]
     paths-ignore:
@@ -121,9 +126,9 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: 上传 APK 到 Release
-        # push 与 workflow_dispatch 都尝试发版：push 时仅当 versionName 无对应 Release 才自动创建
-        # （自动发版闭环：push 新版本号 → 构建 → Release → App 检查更新可检测）；
-        # 已存在则跳过创建，仅刷新上传（workflow_dispatch 手动 release_tag 覆盖时同理）。
+        # push 自动发版（新版本号自动创建 Release）；workflow_dispatch 仅当 create_release=true 才发版
+        # （手动 CI 默认只构建 + artifact，Release 由正式发版勾选 create_release 控制）
+        if: github.event_name == 'push' || inputs.create_release == true
         run: |
           # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
           # 注：sed 捕获组在 YAML 转义易坏（\\1 变字面量），改用 awk 提取引号内版本号
