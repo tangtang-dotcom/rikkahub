@@ -293,7 +293,7 @@ fun ReasonixProviderConfigure(
             )
             // 复制公钥按钮：一键复制 ssh-rsa 公钥（避免截图 OCR 出错）
             if (info.contains("ssh-rsa")) {
-                OutlinedButton(
+                androidx.compose.material3.OutlinedButton(
                     onClick = {
                         val pub = info.substringAfter("ssh-rsa").substringBefore("\n").let { "ssh-rsa$it" }
                         val clipboard = genContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
