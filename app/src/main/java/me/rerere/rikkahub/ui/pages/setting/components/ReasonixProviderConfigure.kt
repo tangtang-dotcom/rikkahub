@@ -258,8 +258,10 @@ fun ReasonixProviderConfigure(
                                 val dir = java.io.File(genContext.filesDir, "ssh_keys").apply { mkdirs() }
                                 val file = java.io.File(dir, "web_bridge_rsa")
                                 file.writeText(key.privateKeyPem)
-                                file.setReadable(false, true)
-                                file.setWritable(false, true)
+                                // 权限 0600：仅 owner 可读可写（setReadable(false) 会移除权限导致 JSch EACCES）
+                                file.setReadable(true, true)
+                                file.setWritable(true, true)
+                                file.setExecutable(false)
                                 onEdit(provider.copy(webBridgePrivateKeyPath = file.absolutePath))
                                 generatedKeyInfo = "✅ 已生成到 ${file.absolutePath}\n公钥请添加到 ECS ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
                             }
