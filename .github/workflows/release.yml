@@ -110,29 +110,12 @@ jobs:
           echo "Release TAG: $TAG (prerelease=$PRERELEASE)"
           # Release 已存在则保留（只刷新资产）；不存在则创建
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            # 自动生成 notes：git log 按类型分组
+            # 自动生成 notes：git log 最近提交
+            NOTES=$(git log --oneline --no-merges -40 HEAD 2>/dev/null | head -40 || echo "v$TAG")
             gh release create "$TAG" \
               --title "🚀 RikkaHub Agents $TAG" \
               --prerelease="$PRERELEASE" \
-              --notes "$(git log --oneline --no-merges $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~10)..HEAD 2>/dev/null | head -60 | awk '
-                function classify(msg,    m) {
-                  if (msg ~ /^feat|^✨/) return "✨ 新增"
-                  if (msg ~ /^fix|^🐛/) return "🔨 修复"
-                  if (msg ~ /^ci|^chore|^🔧/) return "🔧 维护"
-                  return "📝 其他"
-                }
-                {
-                  msg = $0; sub(/^[0-9a-f]+ /, "", msg)
-                  cat = classify(msg)
-                  items[cat] = items[cat] "\n- " msg
-                }
-                END {
-                  order[1]="✨ 新增"; order[2]="🔨 修复"; order[3]="🔧 维护"; order[4]="📝 其他"
-                  for (i=1; i<=4; i++) {
-                    c = order[i]
-                    if (items[c] != "") { print "### " c; print items[c]; print "" }
-                  }
-                }' || echo '## ✨ v$TAG')
+              --notes "$NOTES"
           else
             echo "Release $TAG 已存在，仅刷新资产"
           fi
