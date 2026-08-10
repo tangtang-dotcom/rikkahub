@@ -84,6 +84,12 @@ fun VaultPage() {
     val vaultSessionManager: VaultSessionManager = koinInject()
     val biometricEnabled by vaultPreferences.biometricEnabled.collectAsState(initial = true)
 
+    // 会话列表（页面级 state，签发/撤销后刷新）
+    var sessionListState by remember { mutableStateOf<List<me.rerere.rikkahub.data.vault.VaultSessionInfo>>(emptyList()) }
+    fun refreshSessionList() {
+        scope.launch { sessionListState = vaultSessionManager.listSessions() }
+    }
+
     // ── 局部函数（必须先定义，供下方 launcher lambda 引用）──
     fun refreshCount() {
         scope.launch { credentialCount = repository.count() }
@@ -353,6 +359,7 @@ fun VaultPage() {
                                         } else {
                                             context.getString(R.string.vault_session_issued_ttl)
                                         }
+                                        refreshSessionList()
                                     }.onFailure { e ->
                                         sessionResult = context.getString(R.string.vault_export_failed, e.message ?: "")
                                     }
@@ -413,22 +420,17 @@ fun VaultPage() {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        var sessionList by remember { mutableStateOf<List<me.rerere.rikkahub.data.vault.VaultSessionInfo>>(emptyList()) }
-                        // 刷新会话列表（进入页面 + 签发/撤销后）
-                        suspend fun refreshSessionList() {
-                            sessionList = vaultSessionManager.listSessions()
-                        }
                         LaunchedEffect(Unit) {
                             refreshSessionList()
                         }
-                        if (sessionList.isEmpty()) {
+                        if (sessionListState.isEmpty()) {
                             Text(
                                 stringResource(R.string.vault_session_empty),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
-                            sessionList.forEach { s ->
+                            sessionListState.forEach { s ->
                                 androidx.compose.material3.Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
