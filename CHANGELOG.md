@@ -7,27 +7,19 @@
 
 ## 2026-08-10
 
-- **修复** Room 迁移链断裂导致 2.45.6 闪退 — v29 迁移误判「v28 未发布」只写 `AutoMigration(27→29)`，而 v28 已随 2.45.5（Vault MVP）发布；已装 2.45.5 的用户升级 2.45.6 时 Room 找不到 28→29 迁移路径抛 IllegalStateException。新增手写 `Migration_28_29`（建 `vault_audit_log` 表 + 2 索引），与 27→29 并存，Room 按设备版本自动选路径
+- **修复** Room 迁移链断裂导致 2.45.6 闪退 — v29 迁移误判「v28 未发布」只写 `AutoMigration(27→29)`，而 v28 已随 2.45.5（Vault MVP）发布；已装 2.45.5 的用户升级 2.45.6 时 Room 找不到 28→29 迁移路径抛 IllegalStateException。新增手写 `Migration_28_29`（建 `vault_audit_log` 表 + 2 索引），与 27→29 并存，Room 按设备版本自动选路径（`198a8d85`）
+- **功能** Vault 会话双模式 — 「30min TTL / 当场有效」持久化回显（退出重进不丢模式选择）+ `getSessionMode/hasSession` 读取方法（`90206b0c`）
+- **功能** 聊天输入框全局设置快捷入口 — ⚡ 闪电旁新增齿轮图标，免切出设置 tab（`20ac3857`）
+- **功能** Web 桥公钥一键复制按钮 — 生成密钥后可直接复制 ssh-rsa 公钥，杜绝截图 OCR 错误（`1f3c65e3`）
+- **修复** Web 桥 SSH 私钥文件权限 0600 — `setReadable(false)` 误移除权限致 JSch `EACCES Permission denied`（`d86be0f5`）
+- **修复** Web 桥隧道成功后清空上次失败红字 — 避免「✅已连接 + auth fail」矛盾显示（`90206b0c`）
+- **功能** 悬浮窗小圆点常态 + 卡片动画展开收起 — 18dp 状态色圆点（绿/黄/红/灰），点击以圆点为锚 scale+淡入展开，收起反向动画；UNKNOWN 状态色白→灰（`7f157343`）
+- **修复** 额度页 ProviderEditSection 未包 item() — 违反 CardGroup DSL 致展开表单不渲染 + 条目点击失效（`e342a4bf`）
+- **chore** 版本号由发版控制 — build-apk.yml 纯编译（去 bump/发版/release_tag），release.yml 发版时 bump versionName→release_tag；新增 release.yml 发版专用工作流；删除 reasonix-review.yml 审查工作流（`0999dcde` / `54281400`）
+- **ci** 构建加速 — Gradle 构建缓存 + 配置缓存 + ktlint 固定版本 + 缓存 key 精准化（`e3267654` / `ad5e2c7d`）
+- **ci** 缓存防堆积 — 依赖缓存(libs 指纹) + 构建缓存固定 key，不再每构建存全量快照（`6078e671`）
+- **ci** 统一 APK 命名 `RikkaHub-Agents-版本号-架构-release`（`29e6b809`）
 - **chore** versionName 2.45.6 → 2.45.7（versionCode 176）
-
-## 2026-08-09
-
-- **功能** 密钥库凭证体系 MVP（Credential Vault）— 设置页「Credential Vault」入口 + 密钥列表三级页（分组展示/小眼睛显隐/新增/编辑/删除）+ SAF 文件导入 load-creds.sh + AES-GCM 密文入库（AndroidKeyStore 托管密钥）（`3b933718` / `bea70707`）
-- **修复** VaultCredentialDao `ORDER BY group` — `group` 为 SQLite 保留字，KSP 编译失败；先后尝试反引号转义（KSP 报 No property named value），最终改为非保留字列名 `grp`（`09cf384d` / `bea70707`）
-- **功能** 安全凭证库统一命名 + 多语言（中/繁/英）+ 设置入口移至模型与服务第一项 + 页面文本全部资源化（`fd230859`）
-- **功能** 加回 OCR 模型设置与提示词选项（对照官方，OcrPrompt.kt + SettingModelPage/SettingModelPromptPage）+ 硬编码资源化第一批（AutoTaskDialog/ChatInput/NerdLine 11 处）（`07a084ad`）
-- **功能** Doctor 诊断页资源化 — label/FixAction 改 @StringRes + 三语言资源包 150 key（`bad1417e`）
-- **功能** Vault 指纹门禁 — 查看凭证明文前 BiometricPrompt 验证（复用 ToolHostActivity 承载）+ 开关偏好（`dc2a0e04`）
-- **功能** Vault 导出 — 口令加密 .vault 包（PBKDF2-HMAC-SHA256 20 万次 + AES-GCM）+ SAF 保存 + 导出前指纹门禁（`bc9e4590`）
-- **功能** Vault 密钥分组下拉选择/新建 + 加密备份恢复（.vault 含分组）（`33f27bb7`）
-- **功能** 密钥调用审计日志 — 每次查看/导出/备份留痕 + 双上限清理（500 条 / 30 天）（`58865775`）
-- **功能** 日志页三级分类 — 请求/文本/应用 Tab 切换 + 文本搜索 + 入口更名「日志」（`e2e5a870`）
-- **功能** Vault 阶段 2 — 会话 token（HMAC-SHA256，30 分钟 TTL）+ 解密 API（POST /api/vault/decrypt）+ 解锁会话 UI（`b375d990`）
-- **功能** 累计 token 行双指标 — 本轮命中率 + 平均命中率（UI 中文/复制英文）（`bc45e614` / `c6b695e5`）
-- **功能** Web 设置页分两区（正常 Web + Web 桥全局配置）+ 提供商编辑页隐藏类型切换（去掉其他配置里的 Reasonix 选项）（`d0db6eac`）
-- **chore** 清理 90 个孤儿资源 key（doctor_ detail/工具名 + vault_/log_，三语言同步）+ 更新 3 处过时注释（`5667946e`）
-- **chore** versionName 2.45.3 → 2.45.5（versionCode 174）
-
 ## 2026-08-06
 
 - **功能** 缓存命中优化（目标 50%→90%+）：`limitContext` 改「保前缀、只从末尾回收」（`c378dd4`）；tool schema 规范化排序保证跨轮前缀字节稳定（`8fd0645` / `7613917`）
