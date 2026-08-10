@@ -72,23 +72,23 @@ jobs:
           git push origin master || true
 
       - name: 固定签名构建 (overwrite-install)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -n "$SIGNING_KEYSTORE" ]; then
-            echo "$SIGNING_KEYSTORE" | base64 -d > keystore.jks
-            sed -i "s|keystore.properties|local.properties|" app/build.gradle.kts 2>/dev/null || true
-            echo "sdk.dir=$ANDROID_HOME" > local.properties
-            echo "keystore.path=$GITHUB_WORKSPACE/keystore.jks" >> local.properties
-            echo "keystore.password=$KEYSTORE_PASS" >> local.properties
-            echo "keystore.alias=$KEYSTORE_ALIAS" >> local.properties
-          fi
+          KEYSTORE="$HOME/rikkahub.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+          echo "storeFile=$KEYSTORE" >> local.properties
+          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=$KEY_ALIAS" >> local.properties
+          echo "keyPassword=$KEY_PASSWORD" >> local.properties
           chmod +x gradlew
           # --build-cache 复用本地构建缓存；--configuration-cache 增量配置解析
           ./gradlew :app:assembleRelease --stacktrace --no-daemon --parallel --build-cache --configuration-cache
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
 
       - name: 重命名 APK（RikkaHub-Agents-版本号-架构命名）
         run: |
