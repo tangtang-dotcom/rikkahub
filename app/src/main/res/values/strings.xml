@@ -2104,6 +2104,9 @@
   <string name="setting_web_bridge_ssh_port">SSH port</string>
   <string name="setting_web_bridge_remote_port">Remote port</string>
   <string name="setting_web_bridge_remote_port_desc">Port on ECS that maps to the phone web server</string>
+  <string name="setting_web_bridge_switch">Web bridge master switch</string>
+  <string name="setting_web_bridge_switch_desc">Enable Web bridge for Reasonix</string>
+  <string name="setting_web_bridge_switch_desc_detail">On: sync global config (host/user/ports) to Reasonix provider and enable it. Off: disable.</string>
   <string name="vault_session_mode_ttl">30 分钟</string>
   <string name="vault_session_mode_manual">当场有效</string>
   <string name="vault_session_mode_ttl_desc">Token 30 分钟后自动过期，需重新指纹验证签发</string>

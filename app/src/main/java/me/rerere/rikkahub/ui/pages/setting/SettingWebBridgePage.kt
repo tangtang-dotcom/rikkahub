@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import me.rerere.rikkahub.R
+import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
@@ -65,6 +67,25 @@ fun SettingWebBridgePage() {
         mutableStateOf(settings.webBridgeRemotePort.toString())
     }
 
+    /** 全局开关开启：把全局配置同步到所有 Reasonix provider 并启用（改一次即可）。 */
+    fun syncToReasonixProviders(settings: Settings, enabled: Boolean): Settings {
+        val newProviders =
+            settings.providers.map { p ->
+                if (p is ProviderSetting.Reasonix) {
+                    p.copy(
+                        webBridgeEnabled = enabled,
+                        webBridgeEcsHost = settings.webBridgeEcsHost,
+                        webBridgeEcsUser = settings.webBridgeEcsUser,
+                        webBridgeEcsPort = settings.webBridgeEcsPort,
+                        webBridgeRemotePort = settings.webBridgeRemotePort,
+                    )
+                } else {
+                    p
+                }
+            }
+        return settings.copy(providers = newProviders)
+    }
+
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -82,6 +103,32 @@ fun SettingWebBridgePage() {
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            // 总开关：开启时同步全局配置到 Reasonix provider 并启用
+            item {
+                CardGroup(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                    title = { Text(stringResource(R.string.setting_web_bridge_switch)) },
+                ) {
+                    item(
+                        headlineContent = { Text(stringResource(R.string.setting_web_bridge_switch_desc)) },
+                        supportingContent = { Text(stringResource(R.string.setting_web_bridge_switch_desc_detail)) },
+                        trailingContent = {
+                            Switch(
+                                checked = settings.providers.any { it is ProviderSetting.Reasonix && it.webBridgeEnabled },
+                                onCheckedChange = { enabled ->
+                                    scope.launch {
+                                        settingsStore.update { s -> syncToReasonixProviders(s, enabled) }
+                                    }
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+
             item {
                 CardGroup(
                     modifier =
