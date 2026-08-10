@@ -260,7 +260,7 @@ fun ReasonixProviderConfigure(
                                 vaultRepo.save(
                                     name = "WEB_BRIDGE_SSH_KEY",
                                     value = key.privateKeyPem,
-                                    description = "Web 桥 SSH 私钥（${provider.name}，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成）",
+                                    description = "Web 桥 SSH 私钥（${provider.name}，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成；私钥路径：${file.absolutePath}）",
                                     group = "SSH",
                                 )
                                 generatedKeyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\\n已写私钥路径：${file.absolutePath}\\n公钥请添加到 ECS ~/.ssh/authorized_keys：\\n${key.publicKeyLine}"
