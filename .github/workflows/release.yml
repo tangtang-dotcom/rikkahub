@@ -49,6 +49,22 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
           npm install -g pnpm
 
+      - name: 发版时 bump 版本号（versionName/versionCode → release_tag）
+        # 版本号由发版输入控制：构建前把 versionName 设为 release_tag，versionCode 递增
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          OLD_CODE=$(awk '/versionCode = /{print $3; exit}' app/build.gradle.kts)
+          NEW_CODE=$((OLD_CODE + 1))
+          sed -i "s/versionName = \"[^\"]*\"/versionName = \"$TAG\"/" app/build.gradle.kts
+          sed -i "s/versionCode = $OLD_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+          echo "bump: versionName → $TAG, versionCode $OLD_CODE → $NEW_CODE"
+          # 提交版本号推进（发版即改版本，push 触发 build-apk 仅编译验证）
+          git config user.name "Release Bot"
+          git config user.email "release@rikkahub-agents.local"
+          git add app/build.gradle.kts
+          git commit -m "chore: bump versionName=$TAG versionCode=$NEW_CODE（release.yml 发版）"
+          git push origin master || true
+
       - name: 固定签名构建 (overwrite-install)
         run: |
           if [ -n "$SIGNING_KEYSTORE" ]; then

@@ -3,12 +3,8 @@ name: 编译 APK · Release
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: '自定义 Release tag（默认取 versionName，如 2.4.5-beta.1）'
-        required: false
-        type: string
-      create_release:
-        description: '创建/更新 GitHub Release（正式发版勾选；不勾则仅构建 APK，不上传 Release）'
+      nothing:
+        description: '手动触发编译（不发版；发版走 release.yml 工作流，版本号由发版输入控制）'
         required: false
         type: boolean
         default: false
@@ -64,31 +60,6 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
           npm install -g pnpm
 
-      - name: 版本号自动 bump（push 时当前版本已有 Release 则补丁号+1）
-        # 小修复自动区分：2.45.3 已有 Release → 自动 bump 为 2.45.4（versionCode+1）
-        # 避免小修复永远无法发版；workflow_dispatch 手动发版不 bump（用输入 release_tag 控制）
-        if: github.event_name == 'push'
-        run: |
-          VER=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts)
-          CODE=$(awk '/versionCode = /{print $3; exit}' app/build.gradle.kts)
-          if gh release view "$VER" >/dev/null 2>&1; then
-            echo "版本 $VER 已有 Release，自动 bump 补丁号"
-            # 标准补丁号递增：2.45.3 → 2.45.4；2.45.9 → 2.45.10
-            NEW_VER=$(echo "$VER" | awk -F. '{ if (NF>=3) { $3=$3+1; print $1"."$2"."$3 } else { print $0".1" } }')
-            NEW_CODE=$((CODE + 1))
-            sed -i "s/versionCode = $CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
-            sed -i "s/versionName = \"$VER\"/versionName = \"$NEW_VER\"/" app/build.gradle.kts
-            echo "bumped: $VER → $NEW_VER (versionCode $CODE → $NEW_CODE)"
-            # 提交版本号推进，避免下次 push 重复 bump
-            git config user.name "Auto Version Bot"
-            git config user.email "bot@rikkahub-agents.local"
-            git add app/build.gradle.kts
-            git commit -m "chore: 自动 bump 版本号 $VER → $NEW_VER（versionCode $NEW_CODE）"
-            git push origin master
-          else
-            echo "版本 $VER 无 Release，保持原版本"
-          fi
-
       - name: 固定签名构建 (overwrite-install)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -124,56 +95,6 @@ jobs:
         with:
           name: rikkahub-agents-release
           path: app/build/outputs/apk/release/*.apk
-
-      - name: 上传 APK 到 Release
-        # push 自动发版（新版本号自动创建 Release）；workflow_dispatch 仅当 create_release=true 才发版
-        # （手动 CI 默认只构建 + artifact，Release 由正式发版勾选 create_release 控制）
-        if: github.event_name == 'push' || inputs.create_release == true
-        run: |
-          # 动态读取 versionName 作为默认 tag，可用 workflow_dispatch 的 release_tag 覆盖
-          # 注：sed 捕获组在 YAML 转义易坏（\\1 变字面量），改用 awk 提取引号内版本号
-          DEFAULT_TAG=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts)
-          TAG="${RELEASE_TAG:-$DEFAULT_TAG}"
-          echo "Release TAG: $TAG"
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            # push 自动发版：Release 已存在则跳过（避免每 push 都重建同名 Release）
-            if gh release view "$TAG" >/dev/null 2>&1; then
-              echo "Release $TAG 已存在，push 自动发版跳过（如需更新请手动 workflow_dispatch）"
-              exit 0
-            fi
-          fi
-          # Release 不存在则创建（避免 release not found）——保持统一样式
-          # notes 自动生成：git log 按类型分组（✨新增/🔨修复/🔧维护/📝其他）
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
-            --title "🚀 RikkaHub Agents $TAG" \
-            --notes "$(git log --oneline --no-merges $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~10)..HEAD 2>/dev/null | head -60 | awk '
-              function classify(msg,    m) {
-                if (msg ~ /^feat|^✨/) return "✨ 新增"
-                if (msg ~ /^fix|^🐛/) return "🔨 修复"
-                if (msg ~ /^ci|^chore|^🔧/) return "🔧 维护"
-                return "📝 其他"
-              }
-              {
-                msg = $0; sub(/^[0-9a-f]+ /, "", msg)
-                cat = classify(msg)
-                items[cat] = items[cat] "\n- " msg
-              }
-              END {
-                order[1]="✨ 新增"; order[2]="🔨 修复"; order[3]="🔧 维护"; order[4]="📝 其他"
-                for (i=1; i<=4; i++) {
-                  c = order[i]
-                  if (items[c] != "") { print "### " c; print items[c]; print "" }
-                }
-              }' || echo '## ✨ v$TAG\n\n### 📦 安装包\n- ARM64 优化包\n- Universal 通用包')" || true
-          cd app/build/outputs/apk/release
-                    for apk in *.apk; do
-            # 文件已在上一步统一重命名（RikkaHub-Agents-*），直接上传
-            gh release upload "$TAG" "$apk" --clobber
-          done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
 
       - name: Telegram 构建通知
         if: always()
