@@ -73,6 +73,7 @@ jobs:
 
       - name: 固定签名构建 (overwrite-install)
         env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -87,8 +88,6 @@ jobs:
           chmod +x gradlew
           # --build-cache 复用本地构建缓存；--configuration-cache 增量配置解析
           ./gradlew :app:assembleRelease --stacktrace --no-daemon --parallel --build-cache --configuration-cache
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       - name: 重命名 APK（RikkaHub-Agents-版本号-架构命名）
         run: |
