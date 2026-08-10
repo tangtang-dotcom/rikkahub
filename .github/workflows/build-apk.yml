@@ -66,6 +66,13 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
           npm install -g pnpm
 
+      - name: 缓存 web-ui 依赖（bun.lock 变化才重建）
+        uses: actions/cache@v4
+        with:
+          path: web-ui/node_modules
+          key: webui-${{ hashFiles('bun.lock') }}
+          restore-keys: webui-
+
       - name: 固定签名构建 (overwrite-install)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
