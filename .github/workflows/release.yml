@@ -32,16 +32,16 @@ jobs:
       - name: 设置 Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 缓存 Gradle
+      - name: 缓存 Gradle（依赖 + 构建缓存，加速构建）
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/build-cache-1
             ~/.gradle/wrapper
-            ~/.android/build-cache
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', 'build.gradle.kts', 'settings.gradle.kts') }}
           restore-keys: |
-            gradle-${{ runner.os }}-
+            ${{ runner.os }}-gradle-
 
       - name: 安装 bun & pnpm
         run: |
@@ -78,7 +78,8 @@ jobs:
             EOF
           fi
           chmod +x gradlew
-          ./gradlew :app:assembleRelease --stacktrace --no-daemon
+          # --build-cache 复用本地构建缓存；--configuration-cache 增量配置解析
+          ./gradlew :app:assembleRelease --stacktrace --no-daemon --parallel --build-cache --configuration-cache
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
