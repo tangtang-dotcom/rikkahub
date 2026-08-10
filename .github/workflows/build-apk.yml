@@ -40,17 +40,19 @@ jobs:
 
       - name: Ktlint 静态检查（不阻断，输出风格报告）
         run: |
-          curl -sSLO https://github.com/pinterest/ktlint/releases/latest/download/ktlint
+          # 固定版本避免每次下载 latest 波动
+          curl -sSLO https://github.com/pinterest/ktlint/releases/download/1.5.0/ktlint
           chmod +x ktlint
           ./ktlint app/src/main/java 2>&1 | tail -30 || true
 
-      - name: 缓存 Gradle（依赖/编译缓存，加速构建）
+      - name: 缓存 Gradle（依赖 + 构建缓存，加速构建）
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/build-cache-1
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', 'build.gradle.kts', 'settings.gradle.kts') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -74,11 +76,12 @@ jobs:
           echo "keyAlias=$KEY_ALIAS" >> local.properties
           echo "keyPassword=$KEY_PASSWORD" >> local.properties
           chmod +x gradlew
-          ./gradlew assembleRelease --parallel --configure-on-demand
+          # --build-cache 复用本地构建缓存；--configuration-cache 增量配置解析
+          ./gradlew assembleRelease --parallel --build-cache --configuration-cache
 
       - name: 编译单元测试（验证测试代码可编译，不执行）
         run: |
-          ./gradlew compileDebugUnitTestKotlin --parallel --configure-on-demand || true
+          ./gradlew compileDebugUnitTestKotlin --parallel --build-cache --configuration-cache || true
 
       - name: 重命名 APK（统一命名：RikkaHub-Agents-版本号-架构-release）
         run: |
