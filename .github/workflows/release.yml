@@ -74,12 +74,10 @@ jobs:
           if [ -n "$SIGNING_KEYSTORE" ]; then
             echo "$SIGNING_KEYSTORE" | base64 -d > keystore.jks
             sed -i "s|keystore.properties|local.properties|" app/build.gradle.kts 2>/dev/null || true
-            cat > local.properties <<EOF
-            sdk.dir=$ANDROID_HOME
-            keystore.path=$GITHUB_WORKSPACE/keystore.jks
-            keystore.password=$KEYSTORE_PASS
-            keystore.alias=$KEYSTORE_ALIAS
-            EOF
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
+            echo "keystore.path=$GITHUB_WORKSPACE/keystore.jks" >> local.properties
+            echo "keystore.password=$KEYSTORE_PASS" >> local.properties
+            echo "keystore.alias=$KEYSTORE_ALIAS" >> local.properties
           fi
           chmod +x gradlew
           # --build-cache 复用本地构建缓存；--configuration-cache 增量配置解析
