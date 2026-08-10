@@ -244,26 +244,28 @@ fun ReasonixProviderConfigure(
                     val key = SshKeyGenerator.generate()
                     genScope.launch {
                         runCatching {
+                            // 统一：先生成私钥文件（先删旧文件避免 EACCES——旧版 000 权限无法覆盖）
+                            val dir = java.io.File(genContext.filesDir, "ssh_keys").apply { mkdirs() }
+                            val file = java.io.File(dir, "web_bridge_rsa")
+                            if (file.exists()) file.delete()
+                            file.writeText(key.privateKeyPem)
+                            // 权限 0600：仅 owner 可读可写（setReadable(false) 会移除权限导致 JSch EACCES）
+                            file.setReadable(true, true)
+                            file.setWritable(true, true)
+                            file.setExecutable(false)
+                            onEdit(provider.copy(webBridgePrivateKeyPath = file.absolutePath))
+
                             if (saveToVault) {
-                                // 保存到密钥库：分组 SSH + 描述
+                                // 保存到密钥库：分组 SSH + 描述（同时已写路径文件，Web 桥可读）
                                 vaultRepo.save(
                                     name = "WEB_BRIDGE_SSH_KEY",
                                     value = key.privateKeyPem,
                                     description = "Web 桥 SSH 私钥（${provider.name}，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成）",
                                     group = "SSH",
                                 )
-                                generatedKeyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\n公钥请添加到 ECS ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                generatedKeyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\\n已写私钥路径：${file.absolutePath}\\n公钥请添加到 ECS ~/.ssh/authorized_keys：\\n${key.publicKeyLine}"
                             } else {
-                                // 保存到 App 文件目录
-                                val dir = java.io.File(genContext.filesDir, "ssh_keys").apply { mkdirs() }
-                                val file = java.io.File(dir, "web_bridge_rsa")
-                                file.writeText(key.privateKeyPem)
-                                // 权限 0600：仅 owner 可读可写（setReadable(false) 会移除权限导致 JSch EACCES）
-                                file.setReadable(true, true)
-                                file.setWritable(true, true)
-                                file.setExecutable(false)
-                                onEdit(provider.copy(webBridgePrivateKeyPath = file.absolutePath))
-                                generatedKeyInfo = "✅ 已生成到 ${file.absolutePath}\n公钥请添加到 ECS ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                generatedKeyInfo = "✅ 已生成到 ${file.absolutePath}\\n公钥请添加到 ECS ~/.ssh/authorized_keys：\\n${key.publicKeyLine}"
                             }
                         }.onFailure { e ->
                             generatedKeyInfo = "❌ 生成失败: ${e.message}"
