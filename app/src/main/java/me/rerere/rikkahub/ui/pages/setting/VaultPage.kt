@@ -292,9 +292,14 @@ fun VaultPage() {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         var sessionMode by remember { mutableStateOf(false) }
-                        // 进入页面时从 DataStore 读回上次签发的会话模式（避免退出重进丢失）
+                        var sessionToken by remember { mutableStateOf<String?>(null) }
+                        // 进入页面时从 DataStore 读回上次签发的会话模式 + 会话状态（避免退出重进丢失）
                         LaunchedEffect(Unit) {
                             sessionMode = vaultSessionManager.getSessionMode()
+                            if (vaultSessionManager.hasSession()) {
+                                // 会话已签发：重新生成同一 token 用于展示/复制（secret 持久化，token 可重算）
+                                sessionToken = vaultSessionManager.reissueToken()
+                            }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -342,7 +347,12 @@ fun VaultPage() {
                                         }
                                         val token = vaultSessionManager.issueToken(sessionMode = sessionMode)
                                         sessionToken = token
-                                        sessionResult = context.getString(R.string.vault_session_issued)
+                                        // 动态文案：当场有效 vs 30 分钟（Bug 2 修复）
+                                        sessionResult = if (sessionMode) {
+                                            context.getString(R.string.vault_session_issued_manual)
+                                        } else {
+                                            context.getString(R.string.vault_session_issued_ttl)
+                                        }
                                     }.onFailure { e ->
                                         sessionResult = context.getString(R.string.vault_export_failed, e.message ?: "")
                                     }

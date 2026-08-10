@@ -94,6 +94,23 @@ class VaultSessionManager(private val context: Context) {
     suspend fun hasSession(): Boolean =
         context.vaultSessionStore.data.first()[Keys.SECRET] != null
 
+    /**
+     * 重新生成同一会话 token（secret 已持久化，不刷新、不改变有效期）。
+     * 用于页面重进时恢复展示（token 本身不落盘，展示后即弃）。
+     * 返回 null 表示无有效会话。
+     */
+    suspend fun reissueToken(): String? {
+        val prefs = context.vaultSessionStore.data.first()
+        val secretB64 = prefs[Keys.SECRET] ?: return null
+        val created = prefs[Keys.CREATED_AT] ?: return null
+        val sessionMode = prefs[Keys.SESSION_MODE] ?: false
+        // 与 issueToken 相同的过期计算：Session 模式 Long.MAX_VALUE；TTL 模式 30min
+        val expiry = if (sessionMode) Long.MAX_VALUE else created + TTL_MS
+        // 已过期则不恢复
+        if (!sessionMode && System.currentTimeMillis() > expiry) return null
+        return sign(secretB64, expiry)
+    }
+
     private fun sign(secretB64: String, expiry: Long): String {
         val mac = Mac.getInstance("HmacSHA256")
         val key = SecretKeySpec(Base64.decode(secretB64, Base64.NO_WRAP), "HmacSHA256")
