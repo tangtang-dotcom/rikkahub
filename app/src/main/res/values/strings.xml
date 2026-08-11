@@ -905,6 +905,7 @@
   <string name="setting_page_tts_service_desc">Configure text-to-speech and speech recognition providers</string>
   <string name="setting_page_tts_settings">TTS Settings</string>
   <string name="setting_page_web_server">Web Server</string>
+  <string name="setting_page_web_capability">Web Capability</string>
   <string name="setting_page_web_server_address_note">Address Notes</string>
   <string name="setting_page_web_server_address_note_desc">LAN Address: Uses device WiFi IP, accessible to other devices on the same network. Unavailable on mobile data.\nLocal Address: Uses localhost, accessible on this device only.\nmDNS Address: Uses .local hostname, accessible by name from other devices on the same network without knowing the IP.</string>
   <string name="setting_page_web_server_desc">Allow you access RikkaHub Agents via Web</string>
@@ -2102,6 +2103,12 @@
   <string name="vault_session_issued_ttl">Session token issued (valid 30 min)</string>
   <string name="vault_session_issued_manual">Session token issued (valid until session ends / manual revoke)</string>
   <string name="setting_web_bridge_title">Web bridge</string>
+  <string name="setting_web_bridge_connection">Connection</string>
+  <string name="setting_web_bridge_connect">Connect Web Bridge</string>
+  <string name="setting_web_bridge_disconnect">Stop</string>
+  <string name="setting_web_bridge_state_connected">✅ Tunnel connected (ECS:%1$d ← Phone:%2$d)</string>
+  <string name="setting_web_bridge_state_connecting">⏳ Web service started, connecting tunnel…</string>
+  <string name="setting_web_bridge_state_disconnected">Tunnel not connected</string>
   <string name="setting_web_bridge_desc">SSH reverse tunnel to ECS</string>
   <string name="setting_web_bridge_desc_detail">Map the phone web server to the ECS remote port, so remote services (Reasonix etc.) can call phone APIs over the tunnel.</string>
   <string name="setting_web_bridge_ecs_host">ECS host</string>

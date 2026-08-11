@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.data.ai.ReasonixWebBridge
 import me.rerere.rikkahub.data.vault.SshKeyGenerator
 import me.rerere.rikkahub.data.vault.CredentialVaultRepository
 import org.koin.compose.koinInject
@@ -340,6 +344,86 @@ fun SettingWebBridgePage() {
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(stringResource(R.string.web_bridge_copy_public_key))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 连接状态与操作（全局唯一控制点；provider 页只留引用开关）
+            item {
+                val webBridge: ReasonixWebBridge = koinInject()
+                val bridgeState by webBridge.state.collectAsState()
+                CardGroup(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                    title = { Text(stringResource(R.string.web_bridge_connection)) },
+                ) {
+                    item(
+                        headlineContent = {
+                            Text(
+                                text =
+                                    when {
+                                        bridgeState.tunnelConnected ->
+                                            stringResource(
+                                                R.string.web_bridge_state_connected,
+                                                settings.webBridgeRemotePort,
+                                                settings.webBridgeLocalPort,
+                                            )
+                                        bridgeState.webServerRunning ->
+                                            stringResource(R.string.web_bridge_state_connecting)
+                                        else -> stringResource(R.string.web_bridge_state_disconnected)
+                                    },
+                                color =
+                                    when {
+                                        bridgeState.tunnelConnected -> Color(0xFF22C55E)
+                                        bridgeState.webServerRunning -> Color(0xFFF59E0B)
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                            )
+                        },
+                    )
+                    if (bridgeState.message.isNotBlank()) {
+                        item {
+                            Text(
+                                text = bridgeState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                    item {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        webBridge.start(
+                                            ecsHost = settings.webBridgeEcsHost,
+                                            ecsPort = settings.webBridgeEcsPort,
+                                            ecsUser = settings.webBridgeEcsUser,
+                                            remoteTunnelPort = settings.webBridgeRemotePort,
+                                            localWebPort = settings.webBridgeLocalPort,
+                                            privateKeyPath = settings.webBridgePrivateKeyPath,
+                                            password = settings.webBridgePassword,
+                                        )
+                                    }
+                                },
+                                enabled = !bridgeState.tunnelConnected,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.web_bridge_connect))
+                            }
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { webBridge.stop() },
+                                enabled = bridgeState.webServerRunning || bridgeState.tunnelConnected,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.web_bridge_disconnect))
                             }
                         }
                     }

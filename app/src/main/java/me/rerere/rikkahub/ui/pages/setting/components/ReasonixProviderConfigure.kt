@@ -16,11 +16,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,16 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.View
 import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.data.ai.ReasonixWebBridge
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import me.rerere.rikkahub.ui.context.LocalSettings
-import org.koin.compose.koinInject
 
 /**
  * Reasonix Provider 配置页。
@@ -159,75 +153,10 @@ fun ReasonixProviderConfigure(
         )
     }
     Text(
-        text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力。详细配置（ECS 地址/端口/私钥）请在 设置 → Web 桥 中统一配置，此处以全局为准。",
+        text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力。连接控制（启动/停止/状态）请在 设置 → Web 能力 → Web 桥 中统一管理；本开关决定此提供商是否走 Web 桥（需先启动全局 Web 桥）。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    if (provider.webBridgeEnabled) {
-        val globalSettings = LocalSettings.current
-        val webBridge: ReasonixWebBridge = koinInject()
-        val scope = rememberCoroutineScope()
-        val bridgeState by webBridge.state.collectAsState()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = when {
-                    bridgeState.tunnelConnected -> "✅ 隧道已连接（ECS:${globalSettings.webBridgeRemotePort} ← 手机:${globalSettings.webBridgeLocalPort}）"
-                    bridgeState.webServerRunning -> "⏳ Web 服务已启动，隧道连接中…"
-                    else -> "隧道状态：未连接"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color =
-                    if (bridgeState.tunnelConnected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (bridgeState.message.isNotBlank()) {
-            Text(
-                text = bridgeState.message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            androidx.compose.material3.Button(
-                onClick = {
-                    scope.launch {
-                        webBridge.start(
-                            ecsHost = globalSettings.webBridgeEcsHost,
-                            ecsPort = globalSettings.webBridgeEcsPort,
-                            ecsUser = globalSettings.webBridgeEcsUser,
-                            remoteTunnelPort = globalSettings.webBridgeRemotePort,
-                            localWebPort = globalSettings.webBridgeLocalPort,
-                            privateKeyPath = globalSettings.webBridgePrivateKeyPath,
-                            password = globalSettings.webBridgePassword,
-                        )
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                enabled = !bridgeState.tunnelConnected,
-            ) {
-                Text(stringResource(R.string.reasonix_start_web_bridge))
-            }
-            androidx.compose.material3.OutlinedButton(
-                onClick = { webBridge.stop() },
-                modifier = Modifier.weight(1f),
-                enabled = bridgeState.webServerRunning || bridgeState.tunnelConnected,
-            ) {
-                Text(stringResource(R.string.reasonix_stop_web_bridge))
-            }
-        }
-    }
 
     // 分隔：Web 桥区块与下方「是否启用」（整个提供商开关）之间加间距，避免视觉拥挤
     Spacer(Modifier.height(8.dp))
