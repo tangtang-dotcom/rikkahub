@@ -1997,7 +1997,7 @@
   <string name="auto_task_idle_label">Idle minutes</string>
   <string name="auto_task_idle_hint">Auto-send after the conversation has been idle for the specified minutes (1-60).</string>
   <string name="auto_task_mode_random">Random idle</string>
-  <string name="auto_task_random_hint">Auto-send every 5–15 seconds of idle (random interval).</string>
+  <string name="auto_task_mode_random_hint">Auto-send every 5–15 seconds of idle (random interval).</string>
   <string name="auto_task_stop">Stop auto task</string>
   <string name="auto_task_tip">Note: count mode stops after reaching the set count; timer mode clears the auto task after triggering.</string>
   <string name="stats_total_input">Total input</string>

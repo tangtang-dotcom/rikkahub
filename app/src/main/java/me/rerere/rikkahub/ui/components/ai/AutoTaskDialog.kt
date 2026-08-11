@@ -171,7 +171,7 @@ fun AutoTaskDialog(
                 }
                 if (currentMode == 2) {
                     Text(
-                        text = stringResource(R.string.auto_task_random_hint),
+                        text = stringResource(R.string.auto_task_mode_random_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth(),
