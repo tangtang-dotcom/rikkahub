@@ -109,6 +109,10 @@ class ReasonixWebBridge(
             session.setConfig("StrictHostKeyChecking", "no")
             session.setConfig("ServerAliveInterval", "30")
             session.setConfig("ServerAliveCountMax", "3")
+            // mwiede/jsch 0.2.x 默认禁用 ssh-rsa（RSA/SHA1）签名（issue #75），
+            // 而 SshKeyGenerator 生成的私钥是 ssh-rsa 格式——必须显式开启，
+            // 否则服务器端即使放行也报 Auth fail for methods 'publickey'（issue #590）
+            session.setConfig("PubkeyAcceptedAlgorithms", "+ssh-rsa")
             session.connect(15_000)
 
             // 反向隧道：ECS 的 remoteTunnelPort → 手机的 localhost:localWebPort
