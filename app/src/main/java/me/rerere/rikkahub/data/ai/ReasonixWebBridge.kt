@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.data.ai
 
 import android.content.Context
-import android.util.Log
 import com.jcraft.jsch.JSch
+import com.jcraft.jsch.Logger as JSchLogger
 import com.jcraft.jsch.Session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.rerere.rikkahub.data.log.AppLog
 import me.rerere.rikkahub.service.WebServerService
 
 /**
@@ -67,7 +68,7 @@ class ReasonixWebBridge(
         }.onSuccess {
             _state.value = _state.value.copy(webServerRunning = true)
         }.onFailure { e ->
-            Log.e(TAG, "Failed to start web server", e)
+            AppLog.e(TAG, "Failed to start web server", e)
             _state.value = _state.value.copy(message = "Web 服务启动失败: ${e.message}")
         }
 
@@ -101,6 +102,13 @@ class ReasonixWebBridge(
             if (privateKeyPath.isNotBlank()) {
                 jsch.addIdentity(privateKeyPath)
             }
+            // JSch 握手/认证过程接到 App 日志（AppLog），开启「设置→日志→应用层日志」即可查看
+            JSch.setLogger(object : JSchLogger {
+                override fun isEnabled(level: Int): Boolean = true
+                override fun log(level: Int, message: String) {
+                    AppLog.d(TAG, "[jsch] $message")
+                }
+            })
             val session: Session = jsch.getSession(ecsUser, ecsHost, ecsPort)
             if (password.isNotBlank()) {
                 session.setPassword(password)
@@ -109,10 +117,8 @@ class ReasonixWebBridge(
             session.setConfig("StrictHostKeyChecking", "no")
             session.setConfig("ServerAliveInterval", "30")
             session.setConfig("ServerAliveCountMax", "3")
-            // mwiede/jsch 0.2.x 默认禁用 ssh-rsa（RSA/SHA1）签名（issue #75），
-            // 而 SshKeyGenerator 生成的私钥是 ssh-rsa 格式——必须显式开启，
-            // 否则服务器端即使放行也报 Auth fail for methods 'publickey'（issue #590）
-            session.setConfig("PubkeyAcceptedAlgorithms", "+ssh-rsa")
+            // RSA-2048 私钥走 rsa-sha2-256/512 签名（SshKeyGenerator 默认输出，
+            // mwiede/jsch 0.2.x 与 OpenSSH 8.8+ 均默认支持），无需额外算法配置。
             session.connect(15_000)
 
             // 反向隧道：ECS 的 remoteTunnelPort → 手机的 localhost:localWebPort
@@ -120,10 +126,10 @@ class ReasonixWebBridge(
             // bind_address 留空 = 监听 ECS 所有接口（reasonix 在本机访问 127.0.0.1 也可）
             sshSession = session
             session.setPortForwardingR("", remoteTunnelPort, "127.0.0.1", localWebPort)
-            Log.i(TAG, "SSH reverse tunnel established: ECS:$remoteTunnelPort -> local:$localWebPort")
+            AppLog.i(TAG, "SSH reverse tunnel established: ECS:$remoteTunnelPort -> local:$localWebPort")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "SSH tunnel failed", e)
+            AppLog.e(TAG, "SSH tunnel failed", e)
             _state.value = _state.value.copy(message = "隧道建立失败: ${e.message}")
             false
         }
