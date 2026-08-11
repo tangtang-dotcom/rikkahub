@@ -46,6 +46,7 @@ import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.MAX_AUTO_TASK_TRIGGER_COUNT
+import me.rerere.rikkahub.ui.components.ai.resolveAutoTaskMessage
 import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
@@ -566,7 +567,7 @@ class ChatVM(
                             delay(1_000L)
                             if (!isActive) break
                             handleMessageSend(
-                                listOf(UIMessagePart.Text(config.message)),
+                                listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
                                 answer = true,
                             )
                             triggered++
@@ -600,7 +601,7 @@ class ChatVM(
 
                             if (idleSeconds >= config.intervalSeconds && isActive) {
                                 handleMessageSend(
-                                    listOf(UIMessagePart.Text(config.message)),
+                                    listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
                                     answer = true,
                                 )
                                 writeAutoTaskConfig(context, AutoTaskConfig())
@@ -626,7 +627,7 @@ class ChatVM(
                             delay(randomDelay)
                             if (!isActive) break
                             handleMessageSend(
-                                listOf(UIMessagePart.Text(config.message)),
+                                listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
                                 answer = true,
                             )
                         }

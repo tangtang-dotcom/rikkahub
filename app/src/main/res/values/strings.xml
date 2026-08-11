@@ -1985,15 +1985,17 @@
   <string name="vault_save">Save</string>
   <string name="vault_show">Show</string>
   <string name="vault_hide">Hide</string>
-  <string name="auto_task_desc">Set up auto-reply messages; the app will send them automatically when conditions are met, no manual action needed.</string>
+  <string name="auto_task_desc">Set up auto tasks; the app sends a message to trigger the conversation automatically when conditions are met.</string>
   <string name="auto_task_reply_label">Reply content</string>
   <string name="auto_task_reply_placeholder">Continue</string>
+  <string name="auto_task_random_label">Random add-ons (optional)</string>
+  <string name="auto_task_random_hint">One per line; a random one is appended after the fixed content on each trigger. Empty = fixed content only.</string>
   <string name="auto_task_mode_count">Trigger count</string>
   <string name="auto_task_count_label">Trigger count</string>
   <string name="auto_task_count_hint">Up to 100 triggers; stops automatically after reaching the set or max count.</string>
   <string name="auto_task_mode_idle">Timer trigger</string>
-  <string name="auto_task_idle_label">Idle seconds</string>
-  <string name="auto_task_idle_hint">Auto-send after the conversation has been idle for the specified seconds.</string>
+  <string name="auto_task_idle_label">Idle minutes</string>
+  <string name="auto_task_idle_hint">Auto-send after the conversation has been idle for the specified minutes (1-60).</string>
   <string name="auto_task_mode_random">Random idle</string>
   <string name="auto_task_random_hint">Auto-send every 5–15 seconds of idle (random interval).</string>
   <string name="auto_task_stop">Stop auto task</string>
