@@ -24,7 +24,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -36,9 +35,8 @@ import me.rerere.hugeicons.stroke.View
 import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.ReasonixWebBridge
-import me.rerere.rikkahub.data.vault.CredentialVaultRepository
-import me.rerere.rikkahub.data.vault.SshKeyGenerator
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import me.rerere.rikkahub.ui.context.LocalSettings
 import org.koin.compose.koinInject
 
 /**
@@ -143,7 +141,7 @@ fun ReasonixProviderConfigure(
         },
     )
 
-    // ── Web 桥设置（手机 Web 服务反向隧道到 ECS，供 reasonix 调用手机能力）──
+    // ── Web 桥（反向隧道）──
     HorizontalDivider()
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -161,162 +159,12 @@ fun ReasonixProviderConfigure(
         )
     }
     Text(
-        text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力",
+        text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力。详细配置（ECS 地址/端口/私钥）请在 设置 → Web 桥 中统一配置，此处以全局为准。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     if (provider.webBridgeEnabled) {
-        androidx.compose.material3.Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(10.dp),
-            ) {
-        Text(
-            text = "启动后自动：① 打开手机 Web 服务（:${provider.webBridgeLocalPort}）② 通过 SSH 反向隧道把手机端口映射到 ECS。切换 Reasonix 会话即自动连接。",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        OutlinedTextField(
-            value = provider.webBridgeEcsHost,
-            onValueChange = { onEdit(provider.copy(webBridgeEcsHost = it.trim())) },
-            label = { Text("ECS 地址") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = provider.webBridgeEcsUser,
-            onValueChange = { onEdit(provider.copy(webBridgeEcsUser = it.trim())) },
-            label = { Text("ECS 用户名（默认 root）") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = provider.webBridgeEcsPort.toString(),
-            onValueChange = { v ->
-                v.toIntOrNull()?.let { onEdit(provider.copy(webBridgeEcsPort = it)) }
-            },
-            label = { Text("ECS SSH 端口") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = provider.webBridgeRemotePort.toString(),
-            onValueChange = { v ->
-                v.toIntOrNull()?.let { onEdit(provider.copy(webBridgeRemotePort = it)) }
-            },
-            label = { Text("ECS 侧隧道端口（reasonix 访问端口）") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = provider.webBridgeLocalPort.toString(),
-            onValueChange = { v ->
-                v.toIntOrNull()?.let { onEdit(provider.copy(webBridgeLocalPort = it)) }
-            },
-            label = { Text("手机 Web 服务端口") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = provider.webBridgePrivateKeyPath,
-            onValueChange = { onEdit(provider.copy(webBridgePrivateKeyPath = it.trim())) },
-            label = { Text("SSH 私钥路径（可选，留空则需密码）") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        // 生成新 SSH 密钥
-        var generatedKeyInfo by remember { mutableStateOf<String?>(null) }
-        var saveToVault by remember { mutableStateOf(true) }
-        val genScope = rememberCoroutineScope()
-        val genContext = LocalContext.current
-        val vaultRepo: CredentialVaultRepository = koinInject()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            androidx.compose.material3.OutlinedButton(
-                onClick = {
-                    val key = SshKeyGenerator.generate()
-                    genScope.launch {
-                        runCatching {
-                            // 统一：先生成私钥文件（先删旧文件避免 EACCES——旧版 000 权限无法覆盖）
-                            val dir = java.io.File(genContext.filesDir, "ssh_keys").apply { mkdirs() }
-                            val file = java.io.File(dir, "web_bridge_rsa")
-                            if (file.exists()) file.delete()
-                            file.writeText(key.privateKeyPem)
-                            // 权限 0600：仅 owner 可读可写（setReadable(false) 会移除权限导致 JSch EACCES）
-                            file.setReadable(true, true)
-                            file.setWritable(true, true)
-                            file.setExecutable(false)
-                            onEdit(provider.copy(webBridgePrivateKeyPath = file.absolutePath))
-
-                            if (saveToVault) {
-                                // 保存到密钥库：分组 SSH + 描述（同时已写路径文件，Web 桥可读）
-                                vaultRepo.save(
-                                    name = "WEB_BRIDGE_SSH_KEY",
-                                    value = key.privateKeyPem,
-                                    description = "Web 桥 SSH 私钥（${provider.name}，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成；私钥路径：${file.absolutePath}）",
-                                    group = "SSH",
-                                )
-                                generatedKeyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\\n已写私钥路径：${file.absolutePath}\\n公钥请添加到 ECS ~/.ssh/authorized_keys：\\n${key.publicKeyLine}"
-                            } else {
-                                generatedKeyInfo = "✅ 已生成到 ${file.absolutePath}\\n公钥请添加到 ECS ~/.ssh/authorized_keys：\\n${key.publicKeyLine}"
-                            }
-                        }.onFailure { e ->
-                            generatedKeyInfo = "❌ 生成失败: ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("生成新 SSH 密钥")
-            }
-            Text(
-                "保存到密钥库",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f),
-            )
-            androidx.compose.material3.Switch(
-                checked = saveToVault,
-                onCheckedChange = { saveToVault = it },
-            )
-        }
-        generatedKeyInfo?.let { info ->
-            Text(
-                text = info,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            // 复制公钥按钮：一键复制 ssh-rsa 公钥（避免截图 OCR 出错）
-            if (info.contains("ssh-rsa")) {
-                androidx.compose.material3.OutlinedButton(
-                    onClick = {
-                        val pub = info.substringAfter("ssh-rsa").substringBefore("\n").let { "ssh-rsa$it" }
-                        val clipboard = genContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("web-bridge-public-key", pub))
-                        generatedKeyInfo = "✅ 公钥已复制！请粘贴发给我/添加到 ECS ~/.ssh/authorized_keys\n$pub"
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("复制公钥")
-                }
-            }
-        }
-        OutlinedTextField(
-            value = provider.webBridgePassword,
-            onValueChange = { onEdit(provider.copy(webBridgePassword = it)) },
-            label = { Text("SSH 密码（可选，留空则用私钥）") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-        )
-
+        val globalSettings = LocalSettings.current
         val webBridge: ReasonixWebBridge = koinInject()
         val scope = rememberCoroutineScope()
         val bridgeState by webBridge.state.collectAsState()
@@ -327,7 +175,7 @@ fun ReasonixProviderConfigure(
         ) {
             Text(
                 text = when {
-                    bridgeState.tunnelConnected -> "✅ 隧道已连接（ECS:${provider.webBridgeRemotePort} ← 手机:${provider.webBridgeLocalPort}）"
+                    bridgeState.tunnelConnected -> "✅ 隧道已连接（ECS:${globalSettings.webBridgeRemotePort} ← 手机:${globalSettings.webBridgeLocalPort}）"
                     bridgeState.webServerRunning -> "⏳ Web 服务已启动，隧道连接中…"
                     else -> "隧道状态：未连接"
                 },
@@ -356,13 +204,13 @@ fun ReasonixProviderConfigure(
                 onClick = {
                     scope.launch {
                         webBridge.start(
-                            ecsHost = provider.webBridgeEcsHost,
-                            ecsPort = provider.webBridgeEcsPort,
-                            ecsUser = provider.webBridgeEcsUser,
-                            remoteTunnelPort = provider.webBridgeRemotePort,
-                            localWebPort = provider.webBridgeLocalPort,
-                            privateKeyPath = provider.webBridgePrivateKeyPath,
-                            password = provider.webBridgePassword,
+                            ecsHost = globalSettings.webBridgeEcsHost,
+                            ecsPort = globalSettings.webBridgeEcsPort,
+                            ecsUser = globalSettings.webBridgeEcsUser,
+                            remoteTunnelPort = globalSettings.webBridgeRemotePort,
+                            localWebPort = globalSettings.webBridgeLocalPort,
+                            privateKeyPath = globalSettings.webBridgePrivateKeyPath,
+                            password = globalSettings.webBridgePassword,
                         )
                     }
                 },
@@ -377,8 +225,6 @@ fun ReasonixProviderConfigure(
                 enabled = bridgeState.webServerRunning || bridgeState.tunnelConnected,
             ) {
                 Text("停止")
-            }
-        }
             }
         }
     }

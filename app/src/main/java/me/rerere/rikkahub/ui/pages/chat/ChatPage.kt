@@ -575,6 +575,11 @@ private fun ChatPageContent(
                     writeAutoTaskConfig(context, config)
                     vm.scheduleAutoTask(config)
                 },
+                onStop = {
+                    vm.cancelAutoTask()
+                    writeAutoTaskConfig(context, AutoTaskConfig())
+                    autoTaskConfig = AutoTaskConfig()
+                },
             )
         }
     }
