@@ -102,9 +102,10 @@ class ReasonixWebBridge(
             if (privateKeyPath.isNotBlank()) {
                 jsch.addIdentity(privateKeyPath)
             }
-            // JSch 握手/认证过程接到 App 日志（AppLog），开启「设置→日志→应用层日志」即可查看
+            // JSch 握手/认证过程接到 App 日志（AppLog），开启「设置→日志→应用层日志」即可查看。
+            // 只开 INFO 以上，避免 DEBUG 逐包刷屏撑爆日志 buffer
             JSch.setLogger(object : JSchLogger {
-                override fun isEnabled(level: Int): Boolean = true
+                override fun isEnabled(level: Int): Boolean = level >= JSchLogger.INFO
                 override fun log(level: Int, message: String) {
                     AppLog.d(TAG, "[jsch] $message")
                 }
@@ -148,6 +149,7 @@ class ReasonixWebBridge(
                 val intent =
                     android.content.Intent(context, WebServerService::class.java)
                         .setAction(WebServerService.ACTION_STOP)
+                        .putExtra(WebServerService.EXTRA_STOP_FROM_BRIDGE, true)
                 context.startService(intent)
             }.onSuccess {
                 _state.value = _state.value.copy(webServerRunning = false)
