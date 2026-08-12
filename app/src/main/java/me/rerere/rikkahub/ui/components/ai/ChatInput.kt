@@ -92,7 +92,6 @@ import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
-import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Upload02
 import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.R
@@ -136,7 +135,7 @@ fun ChatInput(
     onUpdateAssistant: (Assistant) -> Unit,
     onUpdateSearchService: (Int) -> Unit,
     onMoreClick: () -> Unit,
-    onSettingsClick: () -> Unit = {},
+    onVaultAuthorizeClick: () -> Unit = {},
     onAutoClick: () -> Unit = {},
     onCancelClick: () -> Unit,
     onSendClick: () -> Unit,
@@ -330,13 +329,13 @@ fun ChatInput(
                             )
                         }
 
-                        // 全局设置快捷入口（免切出到设置 tab）
+                        // Vault 授权快捷入口（指纹签发 token，AI 直接读；可随时撤销）
                         ActionIconButton(
-                            onClick = onSettingsClick,
+                            onClick = onVaultAuthorizeClick,
                         ) {
                             Icon(
-                                imageVector = HugeIcons.Settings03,
-                                contentDescription = stringResource(R.string.settings),
+                                imageVector = HugeIcons.LockKey,
+                                contentDescription = stringResource(R.string.vault_authorize_shortcut),
                             )
                         }
 

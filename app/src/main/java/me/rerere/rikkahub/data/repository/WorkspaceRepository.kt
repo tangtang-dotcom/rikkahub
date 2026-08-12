@@ -56,6 +56,9 @@ class WorkspaceRepository(
 
     suspend fun getById(id: String): WorkspaceEntity? = dao.getById(id)
 
+    /** 所有工作区（按创建顺序）。授权写沙箱 token 时取第一个（主工作区）。 */
+    suspend fun getAll(): List<WorkspaceEntity> = dao.getAll()
+
     suspend fun create(name: String): WorkspaceEntity {
         val id = Uuid.random().toString()
         val now = System.currentTimeMillis()

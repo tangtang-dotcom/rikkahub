@@ -330,6 +330,58 @@ private fun ChatPageContent(
     val toaster = LocalToaster.current
     val context = LocalContext.current
     val workspaceRepository: WorkspaceRepository = koinInject()
+    // Vault 授权（对话输入框 🔑）
+    val vaultSessionManager: me.rerere.rikkahub.data.vault.VaultSessionManager = koinInject()
+    val biometricBuffer: me.rerere.rikkahub.data.ai.tools.local.BiometricResultBuffer = koinInject()
+    var showVaultAuthDialog by remember { mutableStateOf(false) }
+    var vaultAuthorized by remember { mutableStateOf(false) }
+    var vaultAuthMsg by remember { mutableStateOf<String?>(null) }
+
+    fun checkVaultAuth() {
+        scope.launch {
+            runCatching {
+                val ws = workspaceRepository.getAll().firstOrNull() ?: return@launch
+                vaultAuthorized = workspaceRepository.readText(ws.id, "/workspace/credentials/vault-token").isNotBlank()
+            }
+        }
+    }
+    fun doVaultAuthorize(ttlMs: Long) {
+        scope.launch {
+            val ok = me.rerere.rikkahub.data.vault.VaultBiometric.authenticate(
+                context, biometricBuffer, context.getString(R.string.vault_authorize_title),
+            )
+            if (!ok) {
+                vaultAuthMsg = context.getString(R.string.vault_authorize_cancelled)
+                return@launch
+            }
+            runCatching {
+                val token = vaultSessionManager.issueSessionToken(ttlMs = ttlMs)
+                val ws = workspaceRepository.getAll().firstOrNull() ?: error("no workspace")
+                workspaceRepository.writeText(ws.id, "/workspace/credentials/vault-token", token, overwrite = true)
+                vaultAuthorized = true
+                vaultAuthMsg = context.getString(R.string.vault_authorize_success)
+            }.onFailure { e ->
+                vaultAuthMsg = "授权失败: ${e.message}"
+            }
+        }
+    }
+    fun doVaultRevoke() {
+        scope.launch {
+            runCatching {
+                vaultSessionManager.revokeAll()
+                val ws = workspaceRepository.getAll().firstOrNull()
+                if (ws != null) {
+                    runCatching { workspaceRepository.deleteFile(ws.id, "/workspace/credentials/vault-token") }
+                }
+                vaultAuthorized = false
+                vaultAuthMsg = context.getString(R.string.vault_authorize_revoked)
+            }.onFailure { e ->
+                vaultAuthMsg = "撤销失败: ${e.message}"
+            }
+        }
+    }
+    // 进入对话页时检查沙箱授权状态（token 文件是否存在）
+    LaunchedEffect(Unit) { checkVaultAuth() }
     var previewMode by rememberSaveable { mutableStateOf(false) }
     val hazeState = rememberHazeState()
     val assistant = setting.getCurrentAssistant()
@@ -466,8 +518,9 @@ private fun ChatPageContent(
                     onMoreClick = {
                         showFilesSheet = true
                     },
-                    onSettingsClick = {
-                        navController.navigate(Screen.Setting)
+                    onVaultAuthorizeClick = {
+                        checkVaultAuth()
+                        showVaultAuthDialog = true
                     },
                     onAutoClick = {
                         autoTaskConfig = readAutoTaskConfig(context)
@@ -582,6 +635,46 @@ private fun ChatPageContent(
                     autoTaskConfig = AutoTaskConfig()
                 },
                 hasActiveTask = vm.autoTaskActive.collectAsState().value,
+            )
+        }
+
+        // Vault 授权弹窗：签发 token 写沙箱（AI 直接读）/ 撤销
+        if (showVaultAuthDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showVaultAuthDialog = false },
+                title = { Text(stringResource(R.string.vault_authorize_dialog_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        vaultAuthMsg?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Text(
+                            text =
+                                if (vaultAuthorized) stringResource(R.string.vault_authorize_status_on)
+                                else stringResource(R.string.vault_authorize_status_off),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                },
+                confirmButton = {
+                    if (vaultAuthorized) {
+                        TextButton(onClick = { doVaultRevoke(); showVaultAuthDialog = false }) {
+                            Text(stringResource(R.string.vault_authorize_revoke), color = MaterialTheme.colorScheme.error)
+                        }
+                    } else {
+                        Row {
+                            TextButton(onClick = { doVaultAuthorize(30L * 60 * 1000); showVaultAuthDialog = false }) {
+                                Text(stringResource(R.string.vault_authorize_short))
+                            }
+                            TextButton(onClick = { doVaultAuthorize(Long.MAX_VALUE); showVaultAuthDialog = false }) {
+                                Text(stringResource(R.string.vault_authorize_forever))
+                            }
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showVaultAuthDialog = false }) { Text(stringResource(R.string.settings_cancel)) }
+                },
             )
         }
     }
