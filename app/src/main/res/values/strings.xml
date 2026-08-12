@@ -1999,6 +1999,23 @@
   <string name="auto_task_reply_label">Reply content</string>
   <string name="auto_task_reply_placeholder">Auto task mode. Think autonomously and execute what needs to be done.</string>
   <string name="auto_task_default_message">Auto task mode. Think autonomously and execute what needs to be done.</string>
+  <string name="emoji_cat_smile">Smile &amp; emotion</string>
+  <string name="emoji_cat_people">People &amp; body</string>
+  <string name="emoji_cat_parts">Components</string>
+  <string name="emoji_cat_animal">Animals &amp; nature</string>
+  <string name="emoji_cat_food">Food &amp; drink</string>
+  <string name="emoji_cat_travel">Travel &amp; places</string>
+  <string name="emoji_cat_activity">Activities</string>
+  <string name="emoji_cat_object">Objects</string>
+  <string name="emoji_cat_symbol">Symbols</string>
+  <string name="emoji_cat_flag">Flags</string>
+  <string name="token_input">input</string>
+  <string name="token_output">output</string>
+  <string name="workspace_err_load">Failed to load workspace files</string>
+  <string name="workspace_err_delete">Delete failed</string>
+  <string name="workspace_err_import">Import failed</string>
+  <string name="workspace_err_export">Export failed</string>
+  <string name="workspace_err_rootfs_install">Rootfs install failed</string>
   <string name="auto_task_random_label">Random add-ons (optional)</string>
   <string name="auto_task_random_hint">One per line; a random one is appended after the fixed content on each trigger. Empty = fixed content only.</string>
   <string name="auto_task_mode_count">Trigger count</string>
