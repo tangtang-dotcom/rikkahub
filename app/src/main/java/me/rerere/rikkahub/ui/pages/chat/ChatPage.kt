@@ -348,18 +348,7 @@ private fun ChatPageContent(
                 val ws = workspaceRepository.getAll().firstOrNull() ?: return@launch
                 // 读沙箱 token（LINUX 区/rootfs——授权用 importFile(LINUX) 写入，writeText 的 FILES 区沙箱不可见）
                 val token =
-                    try {
-                        val size = workspaceRepository.rootfsFileSize(ws.id, "/workspace/credentials/vault-token")
-                        if (size > 0) {
-                            val bos = java.io.ByteArrayOutputStream()
-                            workspaceRepository.exportRootfsFile(ws.id, "/workspace/credentials/vault-token", bos)
-                            bos.toString(Charsets.UTF_8)
-                        } else {
-                            ""
-                        }
-                    } catch (_: Exception) {
-                        ""
-                    }
+                    runCatching { workspaceRepository.readText(ws.id, "credentials/vault-token") }.getOrDefault("")
                 // 真校验：格式/过期/签名/会话存在（比只查文件存在准确——文件残留/过期 token 不再误报已授权）
                 vaultAuthorized = token.isNotBlank() && vaultSessionManager.verifyToken(token)
             }
@@ -380,7 +369,7 @@ private fun ChatPageContent(
                 val token = vaultSessionManager.issueSessionToken(ttlMs = ttlMs)
                 me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "token 签发成功 len=${token.length}")
                 val ws = workspaceRepository.getAll().firstOrNull() ?: error("no workspace")
-                val written = workspaceRepository.writeText(ws.id, "/workspace/credentials/vault-token", token, overwrite = true)
+                val written = workspaceRepository.writeText(ws.id, "credentials/vault-token", token, overwrite = true)
                 me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "写沙箱成功 ws.id=${ws.id} path=${written.path}")
                 vaultAuthorized = true
                 vaultAuthMsg = context.getString(R.string.vault_authorize_success)
@@ -400,8 +389,8 @@ private fun ChatPageContent(
                         runCatching {
                             workspaceRepository.deleteFile(
                                 ws.id,
-                                me.rerere.workspace.WorkspaceStorageArea.LINUX,
-                                "/workspace/credentials/vault-token",
+                                me.rerere.workspace.WorkspaceStorageArea.FILES,
+                                "credentials/vault-token",
                                 false,
                             )
                         }
