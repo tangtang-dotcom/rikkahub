@@ -346,7 +346,20 @@ private fun ChatPageContent(
         scope.launch {
             runCatching {
                 val ws = workspaceRepository.getAll().firstOrNull() ?: return@launch
-                val token = workspaceRepository.readText(ws.id, "/workspace/credentials/vault-token")
+                // 读沙箱 token（LINUX 区/rootfs——授权用 importFile(LINUX) 写入，writeText 的 FILES 区沙箱不可见）
+                val token =
+                    try {
+                        val size = workspaceRepository.rootfsFileSize(ws.id, "/workspace/credentials/vault-token")
+                        if (size > 0) {
+                            val bos = java.io.ByteArrayOutputStream()
+                            workspaceRepository.exportRootfsFile(ws.id, "/workspace/credentials/vault-token", bos)
+                            bos.toString(Charsets.UTF_8)
+                        } else {
+                            ""
+                        }
+                    } catch (_: Exception) {
+                        ""
+                    }
                 // 真校验：格式/过期/签名/会话存在（比只查文件存在准确——文件残留/过期 token 不再误报已授权）
                 vaultAuthorized = token.isNotBlank() && vaultSessionManager.verifyToken(token)
             }
@@ -387,7 +400,7 @@ private fun ChatPageContent(
                         runCatching {
                             workspaceRepository.deleteFile(
                                 ws.id,
-                                me.rerere.workspace.WorkspaceStorageArea.FILES,
+                                me.rerere.workspace.WorkspaceStorageArea.LINUX,
                                 "/workspace/credentials/vault-token",
                                 false,
                             )
