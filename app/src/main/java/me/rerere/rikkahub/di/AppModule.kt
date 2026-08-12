@@ -313,6 +313,7 @@ val appModule =
                 toolApprovalPreferences = get(),
                 workspaceRepository = get(),
                 folderRepository = get(),
+                compressedArchiveDao = get(),
             )
         }
 
