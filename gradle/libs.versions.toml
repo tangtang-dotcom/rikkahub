@@ -63,6 +63,7 @@ jmdns = "3.6.3"
 slf4j = "2.0.18"
 sqlite-android = "-SNAPSHOT"
 termux = "0.118.0"
+shizuku = "13.1.5"
 diffutils = "4.17"
 
 [libraries]
@@ -179,7 +180,6 @@ termux-terminal-view = { module = "com.termux.termux-app:terminal-view", version
 guava-listenablefuture = { module = "com.google.guava:listenablefuture", version = "9999.0-empty-to-avoid-conflict-with-guava" }
 # Shizuku (shizuku_exec): shell-UID privileges without root. 13.1.5 — Shizuku.newProcess is
 # PRIVATE in this version, so shizuku_exec uses bindUserService + our own AIDL service.
-shizuku = "13.1.5"
 shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
 shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
 
