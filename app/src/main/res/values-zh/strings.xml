@@ -2080,6 +2080,9 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="vault_import_failed">导入失败: %1$s</string>
   <string name="vault_biometric_export_title">验证以导出凭证</string>
   <string name="vault_biometric_view_title">验证以查看凭证</string>
+  <string name="vault_biometric_open_title">验证以打开安全凭证库</string>
+  <string name="vault_biometric_locked_hint">指纹/锁屏验证通过后才能查看密钥库内容</string>
+  <string name="vault_biometric_unlock">指纹解锁</string>
   <string name="vault_backup_title">加密备份 / 恢复</string>
   <string name="vault_backup_desc">将整个密钥库（含描述/分组）口令加密导出 .vault 包；也可从 .vault 包恢复。</string>
   <string name="vault_backup_button">备份</string>

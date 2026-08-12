@@ -2086,6 +2086,9 @@
   <string name="vault_import_failed">Import failed: %1$s</string>
   <string name="vault_biometric_export_title">Verify to export credentials</string>
   <string name="vault_biometric_view_title">Verify to view credential</string>
+  <string name="vault_biometric_open_title">Verify to open the credential vault</string>
+  <string name="vault_biometric_locked_hint">Unlock with fingerprint/screen lock to view vault contents</string>
+  <string name="vault_biometric_unlock">Unlock</string>
   <string name="vault_backup_title">Encrypted backup / restore</string>
   <string name="vault_backup_desc">Export the whole vault (incl. descriptions/groups) to a password-encrypted .vault package; restore from a .vault package too.</string>
   <string name="vault_backup_button">Backup</string>
