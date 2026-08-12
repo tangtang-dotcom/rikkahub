@@ -11,7 +11,7 @@ const val MAX_AUTO_TASK_TRIGGER_COUNT = 100
 /**
  * 自动任务配置：用户没空时 App 能自动发送消息激活会话继续任务。
  *
- * @param message 固定回复消息内容（如「继续」）
+ * @param message 固定回复消息内容（默认自动任务指令）
  * @param randomMessages 随机补充池（每行一条，触发时随机追加一条到固定内容后；空则仅用固定内容）
  * @param mode 触发模式：0 = 定时×次数（会话空闲 N 分钟后触发，共 M 次），1 = 随机空闲（空闲后 1 分钟内随机触发，持续直到停止）
  * @param triggerCount 可触发次数（仅 mode = 0 使用），上限 [MAX_AUTO_TASK_TRIGGER_COUNT]
@@ -19,7 +19,7 @@ const val MAX_AUTO_TASK_TRIGGER_COUNT = 100
  */
 @Stable
 data class AutoTaskConfig(
-    val message: String = "继续",
+    val message: String = "自动任务中。自主判断并执行当前需要做什么。",
     val randomMessages: List<String> = emptyList(),
     val mode: Int = 0, // 0: 定时×次数, 1: 随机空闲（1 分钟内随机）
     val triggerCount: Int = 1,
@@ -40,7 +40,7 @@ private const val PREF_AUTO_TASK_INTERVAL = "auto_task_interval"
 fun readAutoTaskConfig(context: Context): AutoTaskConfig {
     val prefs = context.getSharedPreferences("rikkahub.preferences", Context.MODE_PRIVATE)
     return AutoTaskConfig(
-        message = prefs.getString(PREF_AUTO_TASK_MESSAGE, "继续") ?: "继续",
+        message = prefs.getString(PREF_AUTO_TASK_MESSAGE, "自动任务中。自主判断并执行当前需要做什么。") ?: "自动任务中。自主判断并执行当前需要做什么。",
         randomMessages =
             prefs
                 .getString(PREF_AUTO_TASK_RANDOM_MESSAGES, "")
