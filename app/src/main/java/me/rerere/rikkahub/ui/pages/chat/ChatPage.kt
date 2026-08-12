@@ -638,8 +638,9 @@ private fun ChatPageContent(
             )
         }
 
-        // Vault 授权弹窗：签发 token 写沙箱（AI 直接读）/ 撤销
+        // Vault 授权弹窗：①授权（自动签发写沙箱）②授权时间 ③跳转凭证入口
         if (showVaultAuthDialog) {
+            var authForever by remember { mutableStateOf(false) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showVaultAuthDialog = false },
                 title = { Text(stringResource(R.string.vault_authorize_dialog_title)) },
@@ -648,12 +649,24 @@ private fun ChatPageContent(
                         vaultAuthMsg?.let {
                             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
+                        // 授权状态
                         Text(
                             text =
                                 if (vaultAuthorized) stringResource(R.string.vault_authorize_status_on)
                                 else stringResource(R.string.vault_authorize_status_off),
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        // ② 授权时间选择
+                        androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                androidx.compose.material3.RadioButton(selected = !authForever, onClick = { authForever = false })
+                                Text(stringResource(R.string.vault_authorize_short), style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                androidx.compose.material3.RadioButton(selected = authForever, onClick = { authForever = true })
+                                Text(stringResource(R.string.vault_authorize_forever), style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                     }
                 },
                 confirmButton = {
@@ -662,18 +675,18 @@ private fun ChatPageContent(
                             Text(stringResource(R.string.vault_authorize_revoke), color = MaterialTheme.colorScheme.error)
                         }
                     } else {
-                        Row {
-                            TextButton(onClick = { doVaultAuthorize(30L * 60 * 1000); showVaultAuthDialog = false }) {
-                                Text(stringResource(R.string.vault_authorize_short))
-                            }
-                            TextButton(onClick = { doVaultAuthorize(Long.MAX_VALUE); showVaultAuthDialog = false }) {
-                                Text(stringResource(R.string.vault_authorize_forever))
-                            }
-                        }
+                        // ① 主授权按钮：点按自动签发（用当前时间选项）并写沙箱
+                        TextButton(
+                            onClick = {
+                                doVaultAuthorize(if (authForever) Long.MAX_VALUE else 30L * 60 * 1000)
+                                showVaultAuthDialog = false
+                            },
+                        ) { Text(stringResource(R.string.vault_authorize_confirm)) }
                     }
                 },
                 dismissButton = {
                     Row {
+                        // ③ 跳转凭证相关入口
                         TextButton(
                             onClick = {
                                 showVaultAuthDialog = false
