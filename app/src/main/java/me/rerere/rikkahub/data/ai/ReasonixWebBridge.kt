@@ -63,7 +63,7 @@ class ReasonixWebBridge(
                 android.content.Intent(context, WebServerService::class.java)
                     .setAction(WebServerService.ACTION_START)
                     .putExtra(WebServerService.EXTRA_PORT, localWebPort)
-                    .putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, false)
+                    .putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, true)
             context.startForegroundService(intent)
         }.onSuccess {
             _state.value = _state.value.copy(webServerRunning = true)

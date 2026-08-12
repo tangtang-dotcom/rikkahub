@@ -786,7 +786,7 @@ data class Settings(
     val webBridgePassword: String = "",
     val webServerJwtEnabled: Boolean = false,
     val webServerAccessPassword: String = "",
-    val webServerLocalhostOnly: Boolean = false,
+    val webServerLocalhostOnly: Boolean = true,
     val aiLogLevel: AiLogLevel = AiLogLevel.INFO,
     val backupReminderConfig: BackupReminderConfig = BackupReminderConfig(),
     val launchCount: Int = 0,
