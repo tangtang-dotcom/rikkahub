@@ -41,8 +41,8 @@ import me.rerere.hugeicons.stroke.Key01
 import me.rerere.hugeicons.stroke.Lock
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.data.quota
-import me.rerere.rikkahub.data.log.AppLog.QuotaAuthType
+import me.rerere.rikkahub.data.log.AppLog
+import me.rerere.rikkahub.data.quota.QuotaAuthType
 import me.rerere.rikkahub.data.quota.QuotaCredentialManager
 import me.rerere.rikkahub.data.quota.QuotaPlatform
 import me.rerere.rikkahub.data.quota.QuotaPreferences
