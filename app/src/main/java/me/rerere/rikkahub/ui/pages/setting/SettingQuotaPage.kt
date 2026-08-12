@@ -150,7 +150,7 @@ fun SettingQuotaPage() {
                                     )
                                     if (provider.credential != null) {
                                         Text(
-                                            text = "🔐 凭证已保存 (${provider.authType.displayName})",
+                                            text = stringResource(R.string.quota_saved_credential_display, provider.authType.displayName),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                         )
@@ -444,11 +444,11 @@ private fun ProviderEditSection(
                 label = {
                     Text(
                         when (provider.authType) {
-                            QuotaAuthType.BEARER -> "Header 名 (默认 Authorization)"
-                            QuotaAuthType.BASIC -> "Header 名 (默认 Authorization)"
-                            QuotaAuthType.CUSTOM_HEADER -> "Header 名 (如 X-API-Key)"
-                            QuotaAuthType.QUERY_PARAM -> "参数名 (如 api_key)"
-                            else -> "键名"
+                            QuotaAuthType.BEARER -> stringResource(R.string.quota_header_default)
+                            QuotaAuthType.BASIC -> stringResource(R.string.quota_header_default)
+                            QuotaAuthType.CUSTOM_HEADER -> stringResource(R.string.quota_header_custom)
+                            QuotaAuthType.QUERY_PARAM -> stringResource(R.string.quota_param_name)
+                            else -> stringResource(R.string.quota_key_name)
                         },
                     )
                 },

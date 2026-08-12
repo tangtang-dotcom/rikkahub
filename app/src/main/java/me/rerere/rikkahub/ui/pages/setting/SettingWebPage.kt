@@ -75,8 +75,8 @@ fun SettingWebPage() {
                         leadingContent = {
                             Text(
                                 text =
-                                    if (serverState.isRunning) "● 运行中"
-                                    else "○ 已停止",
+                                    if (serverState.isRunning) stringResource(R.string.setting_web_server_status_running)
+                                    else stringResource(R.string.setting_web_server_status_stopped),
                                 color =
                                     if (serverState.isRunning) Color(0xFF22C55E)
                                     else Color.Gray,

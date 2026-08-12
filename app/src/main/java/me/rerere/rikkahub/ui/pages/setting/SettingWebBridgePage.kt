@@ -312,12 +312,20 @@ fun SettingWebBridgePage() {
                                         settingsStore.update { s -> s.copy(webBridgePrivateKeyPath = path) }
                                         keyInfo =
                                             if (toVault) {
-                                                "✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：$path\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                                context.getString(
+                                                    R.string.setting_web_bridge_gen_success_vault,
+                                                    path,
+                                                    key.publicKeyLine,
+                                                )
                                             } else {
-                                                "✅ 已生成到 $path\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                                context.getString(
+                                                    R.string.setting_web_bridge_gen_success,
+                                                    path,
+                                                    key.publicKeyLine,
+                                                )
                                             }
                                     }.onFailure { e ->
-                                        keyInfo = "❌ 生成失败: ${e.message}"
+                                        keyInfo = context.getString(R.string.setting_web_bridge_gen_failed, e.message ?: "")
                                     }
                                 }
                             },
@@ -326,7 +334,7 @@ fun SettingWebBridgePage() {
                             Text(stringResource(R.string.setting_web_bridge_gen_key_btn))
                         }
                         Text(
-                            "保存到密钥库",
+                            stringResource(R.string.setting_web_bridge_save_to_vault),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Switch(
@@ -347,7 +355,7 @@ fun SettingWebBridgePage() {
                                     val pub = info.substringAfter("ssh-rsa").substringBefore("\n").let { "ssh-rsa$it" }
                                     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                     clipboard.setPrimaryClip(android.content.ClipData.newPlainText("web-bridge-public-key", pub))
-                                    keyInfo = "✅ 公钥已复制！请粘贴到服务器 ~/.ssh/authorized_keys\n$pub"
+                                    keyInfo = context.getString(R.string.setting_web_bridge_copy_success, pub)
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {

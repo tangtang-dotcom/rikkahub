@@ -64,7 +64,7 @@ fun ReasonixProviderConfigure(
 
     // 连接方式选择
     Text(
-        text = "连接方式",
+        text = stringResource(R.string.reasonix_connection_mode),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
     )
@@ -72,7 +72,7 @@ fun ReasonixProviderConfigure(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        listOf("serve" to "serve（HTTP/SSE 直连）", "ssh" to "SSH 反向隧道").forEach { (mode, label) ->
+        listOf("serve" to stringResource(R.string.reasonix_mode_serve), "ssh" to stringResource(R.string.reasonix_mode_ssh)).forEach { (mode, label) ->
             androidx.compose.material3.FilterChip(
                 selected = provider.connectionMode == mode,
                 onClick = { onEdit(provider.copy(connectionMode = mode)) },
@@ -83,9 +83,9 @@ fun ReasonixProviderConfigure(
     Text(
         text =
             if (provider.connectionMode == "serve") {
-                "直连 Reasonix serve 的 HTTP API，需填写 baseUrl + Basic Auth 用户名/密码。"
+                stringResource(R.string.reasonix_mode_serve_desc)
             } else {
-                "通过 SSH 反向隧道访问手机 Web 服务（开发中，需配合 Web 桥）。"
+                stringResource(R.string.reasonix_mode_ssh_desc)
             },
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -143,7 +143,7 @@ fun ReasonixProviderConfigure(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Web 桥（反向隧道）",
+            text = stringResource(R.string.reasonix_web_bridge_section),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -153,7 +153,7 @@ fun ReasonixProviderConfigure(
         )
     }
     Text(
-        text = "手机 Web 服务反向隧道到服务器，供 Reasonix 调用手机能力。连接控制（启动/停止/状态）请在 设置 → Web 能力 → Web 桥 中统一管理；本开关决定此提供商是否走 Web 桥（需先启动全局 Web 桥）。",
+        text = stringResource(R.string.reasonix_web_bridge_desc),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -176,8 +176,7 @@ fun ReasonixProviderConfigure(
     }
 
     Text(
-        text = "Reasonix 会话由服务端管理（自动压缩/缓存优化继承）。" +
-            "关闭本开关即继续使用原客户端，互不影响。",
+        text = stringResource(R.string.reasonix_session_server_managed),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

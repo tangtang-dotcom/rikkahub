@@ -883,6 +883,8 @@
 本地地址：使用 localhost，仅限本设备访问。
 mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过名称访问，无需知道 IP。</string>
   <string name="setting_page_web_server_desc">允许你通过网页访问 RikkaHub Agents</string>
+  <string name="setting_web_server_status_running">● 运行中</string>
+  <string name="setting_web_server_status_stopped">○ 已停止</string>
   <string name="setting_page_web_server_error">错误</string>
   <string name="setting_page_web_server_jwt_enable">启用身份验证</string>
   <string name="setting_page_web_server_jwt_enable_desc">访问网页界面时需要密码验证</string>
@@ -2153,6 +2155,11 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_web_bridge_password">SSH 密码</string>
   <string name="setting_web_bridge_password_desc">可选，留空则使用私钥</string>
   <string name="setting_web_bridge_gen_key">生成 SSH 密钥</string>
+  <string name="setting_web_bridge_save_to_vault">保存到密钥库</string>
+  <string name="setting_web_bridge_gen_success_vault">✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：%1$s\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n%2$s</string>
+  <string name="setting_web_bridge_gen_success">✅ 已生成到 %1$s\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n%2$s</string>
+  <string name="setting_web_bridge_gen_failed">❌ 生成失败: %1$s</string>
+  <string name="setting_web_bridge_copy_success">✅ 公钥已复制！请粘贴到服务器 ~/.ssh/authorized_keys\n%1$s</string>
   <string name="setting_web_bridge_gen_key_desc">生成新密钥对，保存到密钥库并自动填写路径</string>
   <string name="setting_web_bridge_gen_key_btn">生成新 SSH 密钥</string>
 
@@ -2206,6 +2213,28 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="quota_credential_manage">凭证管理</string>
   <string name="quota_clear_credential_btn">清除凭证</string>
   <string name="reasonix_base_url_example">例：http://&lt;服务器地址&gt;</string>
+  <string name="reasonix_connection_mode">连接方式</string>
+  <string name="reasonix_mode_serve">serve（HTTP/SSE 直连）</string>
+  <string name="reasonix_mode_ssh">SSH 反向隧道</string>
+  <string name="reasonix_mode_serve_desc">直连 Reasonix serve 的 HTTP API，需填写 baseUrl + Basic Auth 用户名/密码。</string>
+  <string name="reasonix_mode_ssh_desc">通过 SSH 反向隧道访问手机 Web 服务（开发中，需配合 Web 桥）。</string>
+  <string name="reasonix_web_bridge_section">Web 桥（反向隧道）</string>
+  <string name="reasonix_web_bridge_desc">手机 Web 服务反向隧道到服务器，供 Reasonix 调用手机能力。连接控制（启动/停止/状态）请在 设置 → Web 能力 → Web 桥 中统一管理；本开关决定此提供商是否走 Web 桥。</string>
+  <string name="quota_capture_credential">捕获凭证</string>
+  <string name="quota_saved_auto_login">✓ 凭证已保存，下次自动登录</string>
+  <string name="quota_login_capture">请在 WebView 中登录平台，然后点击 🔑 捕获凭证</string>
+  <string name="quota_parse_result">解析结果</string>
+  <string name="quota_status_green">🟢 充足</string>
+  <string name="quota_status_yellow">🟡 紧张</string>
+  <string name="quota_status_red">🔴 危险</string>
+  <string name="quota_status_unknown">⚫ 未知</string>
+  <string name="quota_parse_failed">解析失败: %1$s</string>
+  <string name="quota_saved_credential_display">🔐 凭证已保存 (%1$s)</string>
+  <string name="quota_header_default">Header 名 (默认 Authorization)</string>
+  <string name="quota_header_custom">Header 名 (如 X-API-Key)</string>
+  <string name="quota_param_name">参数名 (如 api_key)</string>
+  <string name="quota_key_name">键名</string>
+  <string name="reasonix_session_server_managed">Reasonix 会话由服务端管理（自动压缩/缓存优化继承）。关闭本开关即继续使用原客户端，互不影响。</string>
   <string name="reasonix_username_basic">用户名（Basic Auth）</string>
   <string name="reasonix_password_basic">密码（Basic Auth）</string>
   <string name="reasonix_token_serve">Token（serve token 模式，可选）</string>

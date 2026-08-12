@@ -344,7 +344,9 @@ private fun ChatPageContent(
         scope.launch {
             runCatching {
                 val ws = workspaceRepository.getAll().firstOrNull() ?: return@launch
-                vaultAuthorized = workspaceRepository.readText(ws.id, "/workspace/credentials/vault-token").isNotBlank()
+                val token = workspaceRepository.readText(ws.id, "/workspace/credentials/vault-token")
+                // 真校验：格式/过期/签名/会话存在（比只查文件存在准确——文件残留/过期 token 不再误报已授权）
+                vaultAuthorized = token.isNotBlank() && vaultSessionManager.verifyToken(token)
             }
         }
     }
