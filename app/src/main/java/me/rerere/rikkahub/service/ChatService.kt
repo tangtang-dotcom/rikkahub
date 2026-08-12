@@ -166,6 +166,7 @@ class ChatService(
     private val toolApprovalPreferences: me.rerere.rikkahub.data.preferences.ToolApprovalPreferences,
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
+    private val compressedArchiveDao: me.rerere.rikkahub.data.db.dao.CompressedArchiveDao,
 ) {
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
@@ -1453,13 +1454,12 @@ class ChatService(
             // 大工具输出块不再因固定 256 消息/块超压缩模型窗口
             fun splitMessages(messages: List<UIMessage>): List<List<UIMessage>> {
                 if (messages.size <= maxMessagesPerChunk) return listOf(messages)
-                val budgetPlanner = me.rerere.rikkahub.data.ai.ContextBudgetPlanner()
-                val targetBlockTokens = 6000
+                val targetBlockTokens = 6000L
                 val chunks = mutableListOf<List<UIMessage>>()
                 var current = mutableListOf<UIMessage>()
                 var currentTokens = 0L
                 for (msg in messages) {
-                    val msgTokens = budgetPlanner.estimateMessageTokens(msg)
+                    val msgTokens = me.rerere.rikkahub.data.ai.ContextBudgetPlanner.estimateMessageTokens(msg)
                     if (current.isNotEmpty() && currentTokens + msgTokens > targetBlockTokens) {
                         chunks.add(current)
                         current = mutableListOf()
@@ -1523,6 +1523,24 @@ class ChatService(
                     messageNodes = newMessageNodes,
                     chatSuggestions = emptyList(),
                 )
+
+            // T10: 压缩前归档原始消息（可追溯；UI 回看后续可选）
+            runCatching {
+                val archiveJson =
+                    kotlinx.serialization.json.Json.encodeToString(
+                        kotlinx.serialization.builtins.ListSerializer(UIMessage.serializer()),
+                        messagesToCompress,
+                    )
+                compressedArchiveDao.insert(
+                    me.rerere.rikkahub.data.db.entity.CompressedArchiveEntity(
+                        conversationId = conversationId.toString(),
+                        compressedAtMs = System.currentTimeMillis(),
+                        archiveJson = archiveJson,
+                    )
+                )
+            }.onFailure { e ->
+                AppLog.w(TAG, "归档压缩历史失败: ${e.message}")
+            }
 
             saveConversation(conversationId, newConversation)
         }
