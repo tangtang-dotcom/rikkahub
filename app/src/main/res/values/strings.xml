@@ -2003,9 +2003,9 @@
   <string name="auto_task_count_hint">Up to 100 triggers; stops automatically after reaching the set or max count.</string>
   <string name="auto_task_mode_idle">Timer trigger</string>
   <string name="auto_task_idle_label">Idle minutes</string>
-  <string name="auto_task_idle_hint">Auto-send after the conversation has been idle for the specified minutes (1-60).</string>
+  <string name="auto_task_idle_hint">Trigger after the conversation has been idle for the specified minutes (1-60, shared by count/random modes; random picks inside this window).</string>
   <string name="auto_task_mode_random">Random idle</string>
-  <string name="auto_task_mode_random_hint">Auto-send every 5–15 seconds of idle (random interval).</string>
+  <string name="auto_task_mode_random_hint">Triggers at a random idle time inside the configured window (1 min = 30-60s, 2 min = 60-120s…), continues until stopped.</string>
   <string name="auto_task_stop">Stop auto task</string>
   <string name="auto_task_tip">Note: count mode stops after reaching the set count; timer mode clears the auto task after triggering.</string>
   <string name="stats_total_input">Total input</string>

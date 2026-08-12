@@ -13,17 +13,17 @@ const val MAX_AUTO_TASK_TRIGGER_COUNT = 100
  *
  * @param message 固定回复消息内容（如「继续」）
  * @param randomMessages 随机补充池（每行一条，触发时随机追加一条到固定内容后；空则仅用固定内容）
- * @param mode 触发模式：0 = 可触发次数，1 = 定时触发（会话空闲），2 = 随机空闲（5-15 秒随机间隔）
+ * @param mode 触发模式：0 = 定时×次数（会话空闲 N 分钟后触发，共 M 次），1 = 随机空闲（空闲后 1 分钟内随机触发，持续直到停止）
  * @param triggerCount 可触发次数（仅 mode = 0 使用），上限 [MAX_AUTO_TASK_TRIGGER_COUNT]
- * @param intervalSeconds 定时触发模式下的会话空闲秒数（仅 mode = 1 使用；UI 以分钟填写，存储秒）
+ * @param intervalSeconds 定时触发模式下的会话空闲秒数（仅 mode = 0 使用；UI 以分钟填写，存储秒，默认 1 分钟）
  */
 @Stable
 data class AutoTaskConfig(
     val message: String = "继续",
     val randomMessages: List<String> = emptyList(),
-    val mode: Int = 0, // 0: 可触发次数, 1: 定时触发, 2: 随机空闲（5-15s 随机）
+    val mode: Int = 0, // 0: 定时×次数, 1: 随机空闲（1 分钟内随机）
     val triggerCount: Int = 1,
-    val intervalSeconds: Int = 300, // 默认 5 分钟
+    val intervalSeconds: Int = 60, // 默认 1 分钟
 )
 
 // ---- SharedPreferences keys ----

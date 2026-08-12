@@ -123,7 +123,7 @@ fun AutoTaskDialog(
                     )
                 }
 
-                // 模式 B：定时触发（会话空闲）
+                // 模式 B：随机空闲（持续触发，直到停止）
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
@@ -133,43 +133,12 @@ fun AutoTaskDialog(
                         onClick = { currentMode = 1 },
                     )
                     Text(
-                        text = stringResource(R.string.auto_task_mode_idle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (currentMode == 1) {
-                    OutlinedTextField(
-                        value = currentInterval,
-                        onValueChange = { value ->
-                            if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
-                                currentInterval = value
-                            }
-                        },
-                        label = { Text(stringResource(R.string.auto_task_idle_label)) },
-                        supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
-
-                // 模式 C：随机空闲（5-15 秒随机）
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    RadioButton(
-                        selected = currentMode == 2,
-                        onClick = { currentMode = 2 },
-                    )
-                    Text(
                         text = stringResource(R.string.auto_task_mode_random),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
                 }
-                if (currentMode == 2) {
+                if (currentMode == 1) {
                     Text(
                         text = stringResource(R.string.auto_task_mode_random_hint),
                         style = MaterialTheme.typography.bodySmall,
@@ -177,6 +146,21 @@ fun AutoTaskDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+
+                // ③ 空闲时间设置（定时/随机共用）
+                OutlinedTextField(
+                    value = currentInterval,
+                    onValueChange = { value ->
+                        if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
+                            currentInterval = value
+                        }
+                    },
+                    label = { Text(stringResource(R.string.auto_task_idle_label)) },
+                    supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
 
                 Spacer(modifier = Modifier.height(4.dp))
 

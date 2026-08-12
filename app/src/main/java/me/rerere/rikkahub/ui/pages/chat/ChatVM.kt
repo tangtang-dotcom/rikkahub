@@ -550,7 +550,7 @@ class ChatVM(
             viewModelScope.launch {
                 when (config.mode) {
                     0 -> {
-                        // 可触发次数：等待会话空闲后自动发送，到达设置次数或次数上限（100）后自动停止触发
+                        // 次数触发：每次会话空闲达设定秒数后自动发送，到达设置次数或上限（100）后自动停止
                         val limit = config.triggerCount.coerceIn(1, MAX_AUTO_TASK_TRIGGER_COUNT)
                         var triggered = 0
                         while (triggered < limit && isActive) {
@@ -564,8 +564,17 @@ class ChatVM(
                                 } catch (_: Exception) {
                                 }
                             }
-                            // 短暂冷却，避免上一轮回复刚结束立即连发
-                            delay(1_000L)
+                            // 会话空闲计时：空闲达设定秒数后触发
+                            var idleSeconds = 0
+                            while (idleSeconds < config.intervalSeconds && isActive) {
+                                delay(1_000L)
+                                val currentJob = conversationJob.value
+                                if (currentJob != null && currentJob.isActive) {
+                                    idleSeconds = 0
+                                    break
+                                }
+                                idleSeconds++
+                            }
                             if (!isActive) break
                             handleMessageSend(
                                 listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
@@ -577,7 +586,9 @@ class ChatVM(
                     }
 
                     1 -> {
-                        // 定时触发：监听会话空闲状态，空闲达设定秒数后自动发送（原不定时逻辑）
+                        // 随机空闲：会话空闲达「随机延迟」后触发（持续直到手动停止）。
+                        // 延迟区间：设置 X 分钟 → 触发在 [(X-1)*60+30, X*60] 秒随机
+                        // （1 分钟 = 30-60s 随机；2 分钟 = 60-120s 随机；以此类推）
                         while (isActive) {
                             val job = conversationJob.value
                             if (job != null && job.isActive) {
@@ -589,48 +600,26 @@ class ChatVM(
                                 }
                             }
 
-                            var idleSeconds = 0
-                            while (idleSeconds < config.intervalSeconds && isActive) {
+                            val minDelayMs = maxOf(30_000L, (config.intervalSeconds - 60L).coerceAtLeast(0L) * 1000L)
+                            val maxDelayMs = (config.intervalSeconds * 1000L).coerceAtLeast(minDelayMs)
+                            val targetMs = (minDelayMs..maxDelayMs).random()
+                            var idleMs = 0L
+                            while (idleMs < targetMs && isActive) {
                                 delay(1_000L)
                                 val currentJob = conversationJob.value
                                 if (currentJob != null && currentJob.isActive) {
-                                    idleSeconds = 0
+                                    idleMs = 0
                                     break
                                 }
-                                idleSeconds++
+                                idleMs += 1_000L
                             }
 
-                            if (idleSeconds >= config.intervalSeconds && isActive) {
+                            if (idleMs >= targetMs && isActive) {
                                 handleMessageSend(
                                     listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
                                     answer = true,
                                 )
-                                writeAutoTaskConfig(context, AutoTaskConfig())
-                                break
                             }
-                        }
-                    }
-
-                    2 -> {
-                        // 随机空闲：空闲后 5-15 秒随机间隔自动发送，持续触发（直到停止）
-                        while (isActive) {
-                            val job = conversationJob.value
-                            if (job != null && job.isActive) {
-                                try {
-                                    withTimeoutOrNull(300_000L) {
-                                        conversationJob.first { it == null || !it.isActive }
-                                    }
-                                } catch (_: Exception) {
-                                }
-                            }
-
-                            val randomDelay = (5L..15L).random() * 1000L
-                            delay(randomDelay)
-                            if (!isActive) break
-                            handleMessageSend(
-                                listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
-                                answer = true,
-                            )
                         }
                         writeAutoTaskConfig(context, AutoTaskConfig())
                     }
