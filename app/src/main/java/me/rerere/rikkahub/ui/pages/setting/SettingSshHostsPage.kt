@@ -173,8 +173,8 @@ private fun SshHostEditDialog(
     var showVaultPicker by remember { mutableStateOf(false) }
     var showTemplatePicker by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) { vaultEntries = vaultRepo.getAll() }
-    val serverTemplates = vaultEntries.filter { it.group == "server" }
-    val keyCandidates = vaultEntries.filter { it.group != "server" }
+    val serverTemplates = vaultEntries.filter { it.grp == "server" }
+    val keyCandidates = vaultEntries.filter { it.grp != "server" }
 
     AlertDialog(
         onDismissRequest = onDismiss,
