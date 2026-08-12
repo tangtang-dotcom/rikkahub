@@ -100,7 +100,19 @@ class ReasonixWebBridge(
         try {
             val jsch = JSch()
             if (privateKeyPath.isNotBlank()) {
+                val keyFile = java.io.File(privateKeyPath)
+                if (!keyFile.exists()) {
+                    AppLog.e(TAG, "SSH private key file not found: $privateKeyPath")
+                    _state.value = _state.value.copy(message = "私钥文件不存在: $privateKeyPath（请点「生成 SSH 密钥」自动填写路径）")
+                    return@withContext false
+                }
+                if (keyFile.length() == 0L) {
+                    AppLog.e(TAG, "SSH private key file is empty: $privateKeyPath")
+                    _state.value = _state.value.copy(message = "私钥文件为空: $privateKeyPath（请重新生成 SSH 密钥）")
+                    return@withContext false
+                }
                 jsch.addIdentity(privateKeyPath)
+                AppLog.i(TAG, "Loaded SSH private key: $privateKeyPath (${keyFile.length()} bytes)")
             }
             // JSch 握手/认证过程接到 App 日志（AppLog），开启「设置→日志→应用层日志」即可查看。
             // 只开 INFO 以上，避免 DEBUG 逐包刷屏撑爆日志 buffer
