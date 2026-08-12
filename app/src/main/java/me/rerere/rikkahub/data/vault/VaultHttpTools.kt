@@ -19,41 +19,32 @@ import java.util.concurrent.TimeUnit
  * 凭证输出掩码器（P0）。
  *
  * 目标：AI 工具输出中即使意外出现凭证明文，也不让其进入 LLM 上下文。
- * 两层防护：
- * 1. 主动 secret 值替换（本次调用解密的凭证值，内存态，用完即弃）
- * 2. 已知密钥格式正则兜底（sk- / ghp_ / AKIA / Bearer ...）
+ * 策略（按用户定稿 2026-08-13）：
+ * - **只对密钥库（Vault）内容掩码**——掩码字典 = 密钥库全部凭证的明文值（按规范名称索引）
+ * - **随加随掩**——每次掩码从密钥库动态解密最新值；新增/修改凭证自动纳入，无需改代码
+ * - 不做格式正则猜测（避免误伤、避免掩码库外内容）
  *
- * 注意：掩码是「最后一道防线」，不是凭证管理的替代品——凭证仍只在 App 进程内解密。
+ * 安全：掩码发生在 App 进程内、内存态，解密值不落盘、不进 AI 上下文。
  */
 object SecretMasker {
     private const val MASK = "***"
 
-    // 常见密钥格式（长度下限 + 字符集限制，降低误伤）
-    private val PATTERNS = listOf(
-        Regex("""sk-[A-Za-z0-9_\-]{16,}"""), // OpenAI / DeepSeek / SiliconFlow 等
-        Regex("""ghp_[A-Za-z0-9]{20,}"""), // GitHub PAT
-        Regex("""gho_[A-Za-z0-9]{20,}"""), // GitHub OAuth
-        Regex("""AKIA[A-Z0-9]{16}"""), // AWS access key id
-        Regex("""xox[baprs]-[A-Za-z0-9\-]{10,}"""), // Slack
-        Regex("""AIza[A-Za-z0-9_\-]{20,}"""), // Google API
-        Regex("""ya29\.[A-Za-z0-9_\-]{20,}"""), // Google OAuth token
-        Regex("""eyJ[A-Za-z0-9_\-]{20,}"""), // JWT
-        Regex("""Bearer\s+[A-Za-z0-9_\-\.]{16,}"""), // Bearer token
-        Regex("""token[:=]\s*[A-Za-z0-9_\-]{16,}"""), // token= 形式
-    )
+    // 过短的值不做替换（避免把普通短词误掩；密钥值通常远长于此）
+    private const val MIN_LEN = 6
 
-    /** 掩码文本：先替换主动 secret 值，再按已知格式正则兜底。 */
-    fun mask(text: String, activeSecrets: List<String> = emptyList()): String {
+    /** 掩码文本：把其中出现的任意 activeSecrets 值替换为 ***。 */
+    fun mask(text: String, activeSecrets: Collection<String>): String {
         var out = text
-        activeSecrets.filter { it.length >= 6 }.forEach { secret ->
+        activeSecrets.filter { it.length >= MIN_LEN }.forEach { secret ->
             out = out.replace(secret, MASK)
-        }
-        PATTERNS.forEach { p ->
-            out = p.replace(out, MASK)
         }
         return out
     }
 }
+
+/** 密钥库全部凭证的明文值（按名称索引；随加随掩——每次调用取最新）。内存态，用完即弃。 */
+internal suspend fun allVaultValues(repository: CredentialVaultRepository): List<String> =
+    repository.getAll().mapNotNull { repository.decryptValue(it) }
 
 /**
  * vault_http_exec — 带 Vault 凭证调用 HTTP(S) API（P1）。
@@ -176,7 +167,7 @@ private suspend fun runVaultHttpExec(
                 val rawBody = resp.body?.string() ?: ""
                 val truncated = rawBody.length > MAX_RESPONSE_BODY
                 val bodyOut = if (truncated) rawBody.take(MAX_RESPONSE_BODY) + "\n...[截断 ${rawBody.length - MAX_RESPONSE_BODY} chars]" else rawBody
-                val maskedBody = SecretMasker.mask(bodyOut, listOfNotNull(secret))
+                val maskedBody = SecretMasker.mask(bodyOut, allVaultValues(repository))
                 val contentType = resp.header("Content-Type") ?: ""
                 listOf(
                     UIMessagePart.Text(

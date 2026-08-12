@@ -248,8 +248,9 @@ private suspend fun runVaultSshExec(
         }
         val exit = channel.exitStatus
         session.disconnect()
-        val stdout = SecretMasker.mask(outBuf.toString("UTF-8").trim(), listOfNotNull(secret))
-        val stderr = SecretMasker.mask(errBuf.toString("UTF-8").trim(), listOfNotNull(secret))
+        val allSecrets = allVaultValues(repository)
+        val stdout = SecretMasker.mask(outBuf.toString("UTF-8").trim(), allSecrets)
+        val stderr = SecretMasker.mask(errBuf.toString("UTF-8").trim(), allSecrets)
         val fingerprintNote =
             if (isFirstConnect) "\n（首次连接，已记录该主机指纹，后续连接将校验）" else ""
         listOf(
