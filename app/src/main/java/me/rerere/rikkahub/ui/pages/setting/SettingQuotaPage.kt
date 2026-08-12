@@ -285,7 +285,7 @@ fun SettingQuotaPage() {
                                         val newIndex = providers.size
                                         editingIndex = newIndex
                                         listState.animateScrollToItem(1)
-                                        android.widget.Toast.makeText(context, stringResource(R.string.quota_added_feedback, platform.label), android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(context, context.getString(R.string.quota_added_feedback_with_name, platform.label), android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             },
