@@ -583,6 +583,7 @@ class ChatVM(
                             triggered++
                         }
                         writeAutoTaskConfig(context, AutoTaskConfig())
+                        _autoTaskActive.value = false
                     }
 
                     1 -> {
@@ -622,6 +623,7 @@ class ChatVM(
                             }
                         }
                         writeAutoTaskConfig(context, AutoTaskConfig())
+                        _autoTaskActive.value = false
                     }
                 }
             }
