@@ -745,6 +745,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingQuota : Screen
+    @Serializable
     data object SettingSshHosts : Screen
 
     @Serializable
