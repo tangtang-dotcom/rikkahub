@@ -252,6 +252,7 @@ val appModule =
                 skillManager = get(),
                 jsSkillRunner = get(),
                 skillSecretsStore = get(),
+                vaultRepository = get(),
                 browserPreferences = get(),
                 termuxPreferences = get(),
                 interactiveToolStreamer = get(),

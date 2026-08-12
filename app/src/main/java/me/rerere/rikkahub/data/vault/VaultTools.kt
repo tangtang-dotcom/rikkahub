@@ -1,0 +1,176 @@
+package me.rerere.rikkahub.data.vault
+
+import com.jcraft.jsch.ChannelExec
+import com.jcraft.jsch.JSch
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import me.rerere.ai.core.InputSchema
+import me.rerere.ai.core.Tool
+import me.rerere.ai.ui.UIMessagePart
+
+/**
+ * Vault 凭证工具（App 内 AI 凭证中枢）。
+ *
+ * 安全模型：凭证值只在 App 进程内存使用（JSch 字节加载 / 密码对象），
+ * 工具返回值不含明文——只返回变量名、公钥、命令输出。
+ */
+
+/** 列出凭证库条目（不含值）。 */
+fun vaultCredentialNamesTool(repository: CredentialVaultRepository): Tool = Tool(
+    name = "vault_credential_names",
+    description =
+        "List credentials stored in the vault (names only, never values). " +
+            "Use to discover which credential names are available before calling vault_ssh_exec.",
+    parameters = {
+        InputSchema.Obj(
+            properties =
+                buildJsonObject {
+                    put("group", buildJsonObject { put("type", "string"); put("description", "Filter by group: Git/AI/ECS/MCP/Notification/SSH/Other") })
+                },
+        )
+    },
+    execute = { params ->
+        val group = params.jsonObject["group"]?.jsonPrimitive?.contentOrNull
+        val entries =
+            repository.getAll()
+                .filter { group == null || it.grp == group }
+                .map { e -> "${e.name}  [${e.grp}] len=${e.valueLength}  ${e.description}" }
+        listOf(
+            UIMessagePart.Text(
+                if (entries.isEmpty()) "（凭证库为空，或该分组无条目）" else "凭证库条目（${entries.size}）：\n" + entries.joinToString("\n"),
+            ),
+        )
+    },
+)
+
+/** 生成 SSH 密钥对并保存到凭证库，返回公钥（可配置到服务器 authorized_keys）。 */
+fun vaultGenKeyTool(
+    context: android.content.Context,
+    repository: CredentialVaultRepository,
+): Tool = Tool(
+    name = "vault_gen_key",
+    description =
+        "Generate an SSH key pair, store the private key in the vault, and return the public key " +
+            "for the user to configure on a server (e.g. ~/.ssh/authorized_keys). " +
+            "Use before vault_ssh_exec when the server is new and has no key yet.",
+    parameters = {
+        InputSchema.Obj(
+            properties =
+                buildJsonObject {
+                    put("name", buildJsonObject { put("type", "string"); put("description", "Credential name (default WEB_SSH_KEY)") })
+                    put("group", buildJsonObject { put("type", "string"); put("description", "Vault group (default SSH)") })
+                },
+        )
+    },
+    execute = { params ->
+        val name = params.jsonObject["name"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: "WEB_SSH_KEY"
+        val group = params.jsonObject["group"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: "SSH"
+        val key = SshKeyGenerator.generate()
+        repository.save(
+            name = name,
+            value = key.privateKeyPem,
+            description = "AI 生成 SSH 私钥（${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())}）",
+            group = group,
+        )
+        repository.logAccess(name, "ai-tool", "gen_key")
+        listOf(
+            UIMessagePart.Text(
+                "✅ 密钥对已生成并保存到凭证库（$name）\n" +
+                    "私钥已在 App 内存中存入 Vault（未落盘明文）\n" +
+                    "请将以下公钥配置到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}",
+            ),
+        )
+    },
+)
+
+/**
+ * 使用凭证库中的 SSH 私钥或密码连接服务器执行命令。
+ * 凭证值只走内存（JSch 字节加载），不落盘、不进上下文。
+ */
+fun vaultSshExecTool(repository: CredentialVaultRepository): Tool = Tool(
+    name = "vault_ssh_exec",
+    description =
+        "Connect to a server via SSH using a credential stored in the vault " +
+            "(private key or password), run a single command, and return its output. " +
+            "auth: 'key' uses a vault-stored SSH private key; 'password' uses a vault-stored password. " +
+            "Approval required before connecting.",
+    parameters = {
+        InputSchema.Obj(
+            properties =
+                buildJsonObject {
+                    put("host", buildJsonObject { put("type", "string"); put("description", "Server host or IP") })
+                    put("port", buildJsonObject { put("type", "integer"); put("description", "SSH port (default 22)") })
+                    put("user", buildJsonObject { put("type", "string"); put("description", "SSH username") })
+                    put("auth", buildJsonObject { put("type", "string"); put("description", "'key' or 'password'") })
+                    put("credential_name", buildJsonObject { put("type", "string"); put("description", "Vault credential name holding the private key or password") })
+                    put("command", buildJsonObject { put("type", "string"); put("description", "Command to run on the server") })
+                    put("timeout_seconds", buildJsonObject { put("type", "integer"); put("description", "Timeout (default 30)") })
+                },
+            required = listOf("host", "user", "auth", "credential_name", "command"),
+        )
+    },
+    needsApproval = { true },
+    execute = { params ->
+        val o = params.jsonObject
+        val host = o["host"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ host 必填"))
+        val port = o["port"]?.jsonPrimitive?.intOrNull ?: 22
+        val user = o["user"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ user 必填"))
+        val auth = o["auth"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ auth 必填（key/password）"))
+        val credName = o["credential_name"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ credential_name 必填"))
+        val command = o["command"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ command 必填"))
+        val timeout = (o["timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 30).coerceIn(5, 300)
+
+        val entry = repository.getByName(credName)
+            ?: return@execute listOf(UIMessagePart.Text("❌ 凭证不存在: $credName（用 vault_credential_names 查看可用名称）"))
+        val secret = repository.decryptValue(entry)
+            ?: return@execute listOf(UIMessagePart.Text("❌ 凭证解密失败: $credName"))
+        repository.logAccess(credName, "ai-tool", "ssh_exec")
+
+        try {
+            val jsch = JSch()
+            val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
+            when (auth) {
+                "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
+                "password" -> session.setPassword(secret)
+                else -> return@execute listOf(UIMessagePart.Text("❌ auth 只支持 key/password"))
+            }
+            session.setConfig("StrictHostKeyChecking", "no")
+            session.setConfig("ServerAliveInterval", "30")
+            session.setConfig("ServerAliveCountMax", "3")
+            session.connect(timeout * 1000)
+
+            val channel = session.openChannel("exec") as ChannelExec
+            channel.command = command
+            val outBuf = java.io.ByteArrayOutputStream()
+            val errBuf = java.io.ByteArrayOutputStream()
+            channel.outputStream = outBuf
+            channel.errStream = errBuf
+            channel.connect()
+            val deadline = System.currentTimeMillis() + timeout * 1000L
+            while (!channel.isClosed && System.currentTimeMillis() < deadline) {
+                Thread.sleep(100)
+            }
+            if (!channel.isClosed) channel.disconnect()
+            val exit = channel.exitStatus
+            session.disconnect()
+            val stdout = outBuf.toString("UTF-8").trim()
+            val stderr = errBuf.toString("UTF-8").trim()
+            listOf(
+                UIMessagePart.Text(
+                    buildString {
+                        append("exit=$exit")
+                        if (stdout.isNotEmpty()) append("\n--- stdout ---\n$stdout")
+                        if (stderr.isNotEmpty()) append("\n--- stderr ---\n$stderr")
+                    },
+                ),
+            )
+        } catch (e: Exception) {
+            listOf(UIMessagePart.Text("❌ SSH 执行失败: ${e.message}"))
+        }
+    },
+)
