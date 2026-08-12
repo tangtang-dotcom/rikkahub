@@ -2229,6 +2229,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="quota_status_red">🔴 危险</string>
   <string name="quota_status_unknown">⚫ 未知</string>
   <string name="quota_parse_failed">解析失败: %1$s</string>
+  <string name="quota_provider_not_found">未找到额度提供商。请先在 设置 → 额度 中配置提供商。</string>
+  <string name="quota_webview_not_ready">WebView 尚未加载完成，请等待页面加载后再试</string>
   <string name="quota_saved_credential_display">🔐 凭证已保存 (%1$s)</string>
   <string name="quota_header_default">Header 名 (默认 Authorization)</string>
   <string name="quota_header_custom">Header 名 (如 X-API-Key)</string>

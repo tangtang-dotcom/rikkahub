@@ -65,14 +65,15 @@ fun QuotaConsolePage(providerId: String) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Provider not found") },
+                    title = { Text(stringResource(R.string.quota_page_title)) },
                     navigationIcon = { BackButton() },
                 )
             },
-        ) {
+            containerColor = CustomColors.topBarColors.containerColor,
+        ) { padding ->
             Text(
-                "Provider not found",
-                modifier = Modifier.padding(it),
+                stringResource(R.string.quota_provider_not_found),
+                modifier = Modifier.padding(padding).padding(16.dp),
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -244,7 +245,10 @@ fun QuotaConsolePage(providerId: String) {
                         )
                         Button(
                             onClick = {
-                                webViewState.webView?.let { webView ->
+                                val webView = webViewState.webView
+                                if (webView == null) {
+                                    lastError = context.getString(R.string.quota_webview_not_ready)
+                                } else {
                                     lastError = null
                                     parseQuota(webView, provider) { snap ->
                                         snapshot = snap

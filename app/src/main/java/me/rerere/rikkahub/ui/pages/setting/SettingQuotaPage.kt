@@ -41,7 +41,8 @@ import me.rerere.hugeicons.stroke.Key01
 import me.rerere.hugeicons.stroke.Lock
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.data.quota.QuotaAuthType
+import me.rerere.rikkahub.data.quota
+import me.rerere.rikkahub.data.log.AppLog.QuotaAuthType
 import me.rerere.rikkahub.data.quota.QuotaCredentialManager
 import me.rerere.rikkahub.data.quota.QuotaPlatform
 import me.rerere.rikkahub.data.quota.QuotaPreferences
@@ -130,7 +131,10 @@ fun SettingQuotaPage() {
                     providers.forEachIndexed { index, provider ->
                         // 主条目：点击展开编辑
                         item(
-                            onClick = { editingIndex = if (editingIndex == index) null else index },
+                            onClick = {
+                                me.rerere.rikkahub.data.log.AppLog.d("Quota", "provider 行点击 index=$index label=${provider.label}")
+                                editingIndex = if (editingIndex == index) null else index
+                            },
                             leadingContent = {
                                 Text(
                                     text = (index + 1).toString(),
@@ -218,6 +222,7 @@ fun SettingQuotaPage() {
                     // 添加按钮
                     item(
                         onClick = {
+                            me.rerere.rikkahub.data.log.AppLog.d("Quota", "添加按钮点击，当前 providers=${providers.size}")
                             scope.launch {
                                 quotaPreferences.setProviders(providers + QuotaProviderConfig())
                             }
@@ -242,6 +247,7 @@ fun SettingQuotaPage() {
                     QuotaPlatform.entries.forEach { platform ->
                         item(
                             onClick = {
+                                me.rerere.rikkahub.data.log.AppLog.d("Quota", "预设模板点击: ${platform.label}")
                                 scope.launch {
                                     val existing = providers.find { it.label == platform.label }
                                     if (existing != null) {
