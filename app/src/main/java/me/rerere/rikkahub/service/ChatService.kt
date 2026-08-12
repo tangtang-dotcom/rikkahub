@@ -1449,12 +1449,27 @@ class ChatService(
                 messagesToKeep = emptyList()
             }
 
+            // T11: 按 token 预算分块（复用 ContextBudgetPlanner.estimateMessageTokens），
+            // 大工具输出块不再因固定 256 消息/块超压缩模型窗口
             fun splitMessages(messages: List<UIMessage>): List<List<UIMessage>> {
                 if (messages.size <= maxMessagesPerChunk) return listOf(messages)
-                val mid = messages.size / 2
-                val left = splitMessages(messages.subList(0, mid))
-                val right = splitMessages(messages.subList(mid, messages.size))
-                return left + right
+                val budgetPlanner = me.rerere.rikkahub.data.ai.ContextBudgetPlanner()
+                val targetBlockTokens = 6000
+                val chunks = mutableListOf<List<UIMessage>>()
+                var current = mutableListOf<UIMessage>()
+                var currentTokens = 0L
+                for (msg in messages) {
+                    val msgTokens = budgetPlanner.estimateMessageTokens(msg)
+                    if (current.isNotEmpty() && currentTokens + msgTokens > targetBlockTokens) {
+                        chunks.add(current)
+                        current = mutableListOf()
+                        currentTokens = 0L
+                    }
+                    current.add(msg)
+                    currentTokens += msgTokens
+                }
+                if (current.isNotEmpty()) chunks.add(current)
+                return chunks
             }
 
             suspend fun compressMessages(messages: List<UIMessage>): String {
@@ -1501,7 +1516,7 @@ class ChatService(
                     compressedSummaries.forEach { summary ->
                         add(UIMessage.user(summary).toMessageNode())
                     }
-                    addAll(messagesToKeep.map { it.toMessageNode() })
+                    addAll(messagesToKeep.map { truncateKeptToolOutput(it, settings.toolOutputMaxChars).toMessageNode() })
                 }
             val newConversation =
                 conversation.copy(
@@ -1512,9 +1527,43 @@ class ChatService(
             saveConversation(conversationId, newConversation)
         }
 
+    /** T12: 保留区消息的工具输出超过 toolOutputMaxChars 时截断为预览（完整输出走 /tool_outputs/ 落盘机制）。 */
+    private fun truncateKeptToolOutput(message: UIMessage, maxChars: Int): UIMessage {
+        if (maxChars <= 0) return message
+        return message.copy(
+            parts =
+                message.parts.map { part ->
+                    if (part is UIMessagePart.Tool) {
+                        val textParts = part.output.filterIsInstance<UIMessagePart.Text>()
+                        val totalLen = textParts.sumOf { it.text.length }
+                        if (totalLen > maxChars) {
+                            var remaining = maxChars
+                            val truncated =
+                                part.output.mapNotNull { p ->
+                                    val t = (p as? UIMessagePart.Text)?.text
+                                    if (t == null) {
+                                        p
+                                    } else if (remaining > 0) {
+                                        val take = minOf(t.length, remaining)
+                                        remaining -= take
+                                        if (take == t.length) UIMessagePart.Text(t) else UIMessagePart.Text(t.take(take) + "\n…[truncated]")
+                                    } else {
+                                        null
+                                    }
+                                }
+                            part.copy(output = truncated)
+                        } else {
+                            part
+                        }
+                    } else {
+                        part
+                    }
+                },
+        )
+    }
+
     /** 提取消息中的工具执行历史（调用+结果），作为标记块附加到压缩摘要，避免压缩后 AI 重复调用已完成工具。 */
-    private fun toolHistoryBlock(messages: List<UIMessage>): String {
-        val records =
+    private fun toolHistoryBlock(messages: List<UIMessage>): String {        val records =
             buildList {
                 messages.forEach { msg ->
                     msg.parts.forEach { part ->
