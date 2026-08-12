@@ -2136,8 +2136,8 @@
   <string name="setting_web_bridge_gen_key_desc">Generate a new key pair, save to vault and auto-fill the path</string>
   <string name="setting_web_bridge_gen_key_btn">Generate new SSH key</string>
   <string name="setting_web_bridge_switch">Web bridge master switch</string>
-  <string name="setting_web_bridge_switch_desc">Enable the Web bridge (remote Reasonix etc. call phone APIs through the tunnel)</string>
-  <string name="setting_web_bridge_switch_desc_detail">On: sync global config and enable Reasonix. Off: disable all.</string>
+  <string name="setting_web_bridge_switch_desc">Enable Web bridge</string>
+  <string name="setting_web_bridge_switch_desc_detail">On: sync global config and enable Reasonix so remote callers reach phone APIs through the tunnel. Off: disable all.</string>
   <string name="vault_session_mode_ttl">30 分钟</string>
   <string name="vault_session_mode_manual">当场有效</string>
   <string name="vault_session_mode_ttl_desc">Token 30 分钟后自动过期，需重新指纹验证签发</string>
