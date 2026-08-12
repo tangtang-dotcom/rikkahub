@@ -141,8 +141,12 @@ fun vaultGenKeyTool(
 /**
  * 使用凭证库中的 SSH 私钥或密码连接服务器执行命令。
  * 凭证值只走内存（JSch 字节加载），不落盘、不进上下文。
+ * Host key：首次连接记录指纹（known_hosts），后续校验防中间人。
  */
-fun vaultSshExecTool(repository: CredentialVaultRepository): Tool = Tool(
+fun vaultSshExecTool(
+    context: android.content.Context,
+    repository: CredentialVaultRepository,
+): Tool = Tool(
     name = "vault_ssh_exec",
     description =
         "Connect to a server via SSH using a credential stored in the vault " +
@@ -165,11 +169,12 @@ fun vaultSshExecTool(repository: CredentialVaultRepository): Tool = Tool(
         )
     },
     needsApproval = { true },
-    execute = { params -> runVaultSshExec(repository, params.jsonObject) },
+    execute = { params -> runVaultSshExec(context, repository, params.jsonObject) },
 )
 
 /** vault_ssh_exec 执行体（独立函数避免 lambda label 问题）。 */
 private suspend fun runVaultSshExec(
+    context: android.content.Context,
     repository: CredentialVaultRepository,
     o: kotlinx.serialization.json.JsonObject,
 ): List<UIMessagePart> {
@@ -188,16 +193,27 @@ private suspend fun runVaultSshExec(
 
     return try {
         val jsch = JSch()
+        // Host key 校验：known_hosts 文件（App 私有目录），首次记录指纹、后续校验防中间人
+        val knownHostsFile = java.io.File(context.filesDir, "vault_known_hosts")
+        jsch.setKnownHosts(knownHostsFile.absolutePath)
+        val hostKeyRepo = jsch.getHostKeyRepository()
+        val knownKey = hostKeyRepo.getHostKey(host, null)
         val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
         when (auth) {
             "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
             "password" -> session.setPassword(secret)
             else -> return fail("auth 只支持 key/password")
         }
-        session.setConfig("StrictHostKeyChecking", "no")
+        session.setConfig("StrictHostKeyChecking", if (knownKey == null) "no" else "yes")
         session.setConfig("ServerAliveInterval", "30")
         session.setConfig("ServerAliveCountMax", "3")
         session.connect(timeout * 1000)
+
+        // 首次连接：记录 host key 指纹
+        val isFirstConnect = knownKey == null
+        if (isFirstConnect) {
+            session.hostKey?.let { hostKeyRepo.add(it, null) }
+        }
 
         val channel = session.openChannel("exec") as ChannelExec
         channel.setCommand(command)
@@ -225,12 +241,15 @@ private suspend fun runVaultSshExec(
         session.disconnect()
         val stdout = outBuf.toString("UTF-8").trim()
         val stderr = errBuf.toString("UTF-8").trim()
+        val fingerprintNote =
+            if (isFirstConnect) "\n（首次连接，已记录该主机指纹，后续连接将校验）" else ""
         listOf(
             UIMessagePart.Text(
                 buildString {
                     append("exit=$exit")
                     if (stdout.isNotEmpty()) append("\n--- stdout ---\n$stdout")
                     if (stderr.isNotEmpty()) append("\n--- stderr ---\n$stderr")
+                    if (fingerprintNote.isNotEmpty()) append(fingerprintNote)
                 },
             ),
         )
