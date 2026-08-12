@@ -5,7 +5,21 @@
 
 ---
 
-## 2026-08-11
+## 2026-08-12
+
+- **修复** Web 桥 SSH auth fail 终极根因 — SshKeyGenerator 密钥编码 bug（sshString 长度前缀误用于 DER → 私钥无效/公钥非标准），新增 bytes() 裸字节修复（`e8b559e7`）
+- **功能** 沙箱直连 App Vault — proot 共享 loopback，`127.0.0.1:8080` 直连 Vault API 零隧道依赖；vault-get 默认地址同步；Web 桥重新定位为「后端服务暴露」（凭证不再走隧道）
+- **功能** Vault 端点补齐 — `/vault/resolve` 批量解密 + `/vault/status` 条目列表 + `/vault/audit` 审计查询；vault-get 多 key/--list/--audit（`a4fff5bb`）
+- **功能** 打开安全凭证库指纹门禁 — biometricEnabled 时进入先验证，未通过显示锁屏占位不渲染敏感内容（`b10df83c`）
+- **功能** Vault SSH 工具三件套 — `vault_credential_names` / `vault_gen_key`（生成密钥对存库+公钥条目 NAME_PUB）/ `vault_ssh_exec`（JSch 字节加载私钥不落盘 + host key 首次记录/后续校验 + Dispatchers.IO 防 ANR）（`1a8f18f5` / `f00be5a9` / `642e21e5`）
+- **功能** 对话界面 Vault 授权按钮 — 齿轮改 key 图标，三块结构（授权主按钮自动签发写沙箱 / 授权时间短期-一直 / 跳转密钥库），可撤销（`2c117b42` / `59cac1c2`）
+- **功能** 自动任务改造 — 次数触发+空闲时间结合（1-60 分钟），随机空闲按区间随机（X 分钟 → [(X-1)*60+30, X*60] 秒），空闲时间共用（`3334b351`）
+- **功能** 压缩升级 — ContextBudgetPlanner 移植（usage 优先 + 中英区分）+ 工具历史保留标记块（`73c38786` / `6599a4a4`）
+- **功能** TG 代理（cherry-pick extv `d2cb485c`）— SOCKS5/HTTP 代理支持
+- **功能** 设置页 Web 能力入口移至安全凭证库下方；Web 服务默认 localhost-only（安全）；Web 桥文案 ECS→服务器通用化（`8d45d872` / `6421199d` / `06ccb33b` 等）
+- **修复** Web 桥连接前校验私钥文件（不存在/为空明确提示）（`5cfd2c46`）
+- **文档** 凭证命名规范与迁移（7 个改名 + 索引表）、装包验证清单、压缩改善设计 T10-T12
+
 
 - **功能** Vault 会话多会话 — 独立 token（id.expiry.HMAC）+ label + 自定义 TTL（30min/7d/30d/当场）+ 单会话撤销 + 会话列表 UI（`7c0fdec5` / `95b62736`）
 - **功能** Vault 会话作用域 — `decrypt` scope 校验，`/vault/decrypt` 要求 scope，为 Web 桥 JWT 预留（`1b9069c0`）
