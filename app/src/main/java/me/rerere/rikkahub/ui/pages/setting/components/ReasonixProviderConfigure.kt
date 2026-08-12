@@ -153,7 +153,7 @@ fun ReasonixProviderConfigure(
         )
     }
     Text(
-        text = "手机 Web 服务反向隧道到 ECS，供 Reasonix 调用手机能力。连接控制（启动/停止/状态）请在 设置 → Web 能力 → Web 桥 中统一管理；本开关决定此提供商是否走 Web 桥（需先启动全局 Web 桥）。",
+        text = "手机 Web 服务反向隧道到服务器，供 Reasonix 调用手机能力。连接控制（启动/停止/状态）请在 设置 → Web 能力 → Web 桥 中统一管理；本开关决定此提供商是否走 Web 桥（需先启动全局 Web 桥）。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

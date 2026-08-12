@@ -304,9 +304,9 @@ fun SettingWebBridgePage() {
                                                 description = "Web 桥 SSH 私钥（全局，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成；私钥路径：${file.absolutePath}）",
                                                 group = "SSH",
                                             )
-                                            keyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：${file.absolutePath}\n公钥请添加到 ECS ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                            keyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：${file.absolutePath}\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
                                         } else {
-                                            keyInfo = "✅ 已生成到 ${file.absolutePath}\n公钥请添加到 ECS ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                            keyInfo = "✅ 已生成到 ${file.absolutePath}\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
                                         }
                                     }.onFailure { e ->
                                         keyInfo = "❌ 生成失败: ${e.message}"
@@ -339,7 +339,7 @@ fun SettingWebBridgePage() {
                                     val pub = info.substringAfter("ssh-rsa").substringBefore("\n").let { "ssh-rsa$it" }
                                     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                     clipboard.setPrimaryClip(android.content.ClipData.newPlainText("web-bridge-public-key", pub))
-                                    keyInfo = "✅ 公钥已复制！请粘贴发给我/添加到 ECS ~/.ssh/authorized_keys\n$pub"
+                                    keyInfo = "✅ 公钥已复制！请粘贴到服务器 ~/.ssh/authorized_keys\n$pub"
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
