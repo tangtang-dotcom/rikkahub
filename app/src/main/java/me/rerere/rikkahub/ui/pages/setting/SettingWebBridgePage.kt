@@ -131,7 +131,7 @@ fun SettingWebBridgePage() {
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = innerPadding + PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // 总开关：开启时同步全局配置到 Reasonix provider 并启用
