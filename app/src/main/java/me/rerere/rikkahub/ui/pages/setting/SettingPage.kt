@@ -290,6 +290,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_ssh_hosts)) },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingShizuku) },
+                        leadingContent = { Icon(HugeIcons.Console, null) },
+                        supportingContent = { Text(stringResource(R.string.setting_page_shizuku_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_shizuku)) },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.SettingTermux) },
                         leadingContent = { Icon(HugeIcons.Console, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_termux_desc)) },

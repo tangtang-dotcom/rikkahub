@@ -177,6 +177,7 @@ sealed class LocalToolOption {
     @Serializable @SerialName("fingerprint")     data object Fingerprint    : LocalToolOption()
     @Serializable @SerialName("cron_jobs")       data object CronJobs       : LocalToolOption()
     @Serializable @SerialName("ssh")             data object Ssh            : LocalToolOption()
+    @Serializable @SerialName("shizuku")         data object Shizuku        : LocalToolOption()
     @Serializable @SerialName("telegram_bot")    data object TelegramBot    : LocalToolOption()
     @Serializable @SerialName("screen_automation") data object ScreenAutomation : LocalToolOption()
     @Serializable @SerialName("app_launcher")      data object AppLauncher       : LocalToolOption()
@@ -967,6 +968,9 @@ class LocalTools(
             tools.add(me.rerere.rikkahub.data.vault.vaultGenKeyTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultSshExecTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultHttpExecTool(context, vaultRepository))
+        }
+        if (options.contains(LocalToolOption.Shizuku)) {
+            tools.add(me.rerere.rikkahub.data.ai.tools.local.shizukuExecTool(context))
         }
         if (options.contains(LocalToolOption.SystemIntents)) {
             tools.add(me.rerere.rikkahub.data.ai.tools.local.createCalendarEventTool(context, invocationContext, interactiveToolStreamer))
