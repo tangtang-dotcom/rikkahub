@@ -99,14 +99,15 @@ import me.rerere.rikkahub.workflow.db.WorkflowRunEntity
         // table) plus a folder_id column on ConversationEntity (defaultValue ""). Both are pure
         // additions; upstream numbered it as their v24, folded into the fork's version space here.
         AutoMigration(from = 26, to = 27),
-        // v28+v29: 密钥库凭证表（VaultCredentialEntity -> vault_credentials）与
-        // 密钥使用审计表（VaultAuditLogEntity -> vault_audit_log）。v28 已随
-        // Release 2.45.5 发布过（Vault MVP），真实设备存在 v28 数据库；v29 新增
-        // vault_audit_log，28→29 由手写 Migration_28_29 处理（见 DataSourceModule
-        // addMigrations）。此处 27→29 一步迁移服务于仍停留在 v27 的用户，两条路径
+        // v28+v29+v30: 密钥库凭证表（VaultCredentialEntity -> vault_credentials）、
+        // 密钥使用审计表（VaultAuditLogEntity -> vault_audit_log）与压缩历史归档
+        // （CompressedArchiveEntity -> compressed_archives）。v28 已随 Release 2.45.5
+        // 发布过（Vault MVP），真实设备存在 v28 数据库；v29 新增 vault_audit_log
+        // （28→29 由手写 Migration_28_29 处理）；v30 新增 compressed_archives
+        // （29→30 由手写 Migration_29_30 处理）。此处 27→30 一步自动迁移服务于仍
+        // 停留在 v27 的用户（纯新增表，Room 对比 27/30 schema 推断即可），三条路径
         // 并存，Room 按设备当前版本自动选择。
-        // 纯新增表，auto-migration 即可。
-        AutoMigration(from = 27, to = 29),
+        AutoMigration(from = 27, to = 30),
     ]
 )
 @TypeConverters(TokenUsageConverter::class)
