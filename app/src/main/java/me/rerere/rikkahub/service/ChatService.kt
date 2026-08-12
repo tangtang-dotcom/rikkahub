@@ -1144,17 +1144,22 @@ class ChatService(
             // path) survive a process restart. Without this, the failure path only
             // updates memory and the persisted DB row keeps the stale Pending state
             // forever — replay would re-run the loop against unrecoverable shape.
-            runCatching {
-                val final = getConversationFlow(conversationId).value
-                saveConversation(conversationId, final)
-            }.onFailure { saveErr ->
-                AppLog.w(TAG, "handleMessageComplete: failure-path save failed", saveErr)
-            }
+            // 修复：取消传播会令 onFailure 里的 suspend（saveConversation/addError）立即
+            // 抛 JobCancellationException → 停止生成/自动任务取消时消息状态丢失。
+            // 用 NonCancellable 保证取消时仍完成落盘。
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                runCatching {
+                    val final = getConversationFlow(conversationId).value
+                    saveConversation(conversationId, final)
+                }.onFailure { saveErr ->
+                    AppLog.w(TAG, "handleMessageComplete: failure-path save failed", saveErr)
+                }
 
-            it.printStackTrace()
-            addError(it, conversationId, title = context.getString(R.string.error_title_generation))
-            Logging.log(TAG, "handleMessageComplete: $it")
-            Logging.log(TAG, it.stackTraceToString())
+                it.printStackTrace()
+                addError(it, conversationId, title = context.getString(R.string.error_title_generation))
+                Logging.log(TAG, "handleMessageComplete: $it")
+                Logging.log(TAG, it.stackTraceToString())
+            }
         }.onSuccess {
             val finalConversation = getConversationFlow(conversationId).value
             saveConversation(conversationId, finalConversation)
