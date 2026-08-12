@@ -296,10 +296,12 @@ class WorkspaceRepository(
 
     suspend fun delete(id: String): Boolean {
         val workspace = dao.getById(id) ?: return false
-        dao.deleteById(id)
-        withContext(Dispatchers.IO) {
+        // 先删文件再删 DB：文件删除失败则不删 DB（UI 可重试），避免孤儿目录残留
+        val fileDeleted = withContext(Dispatchers.IO) {
             manager.deleteWorkspace(workspace.root)
         }
+        if (!fileDeleted) return false
+        dao.deleteById(id)
         cleanupAssistantReferences(id)
         return true
     }
