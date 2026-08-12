@@ -43,6 +43,7 @@ fun AutoTaskDialog(
     onStop: (() -> Unit)? = null,
     hasActiveTask: Boolean = false,
 ) {
+    val defaultAutoTaskMsg = stringResource(R.string.auto_task_default_message)
     var currentMessage by remember { mutableStateOf(config.message) }
     var currentRandomMessages by remember { mutableStateOf(config.randomMessages.joinToString("\n")) }
     var currentMode by remember { mutableIntStateOf(config.mode) }
@@ -177,7 +178,6 @@ fun AutoTaskDialog(
                     val count =
                         currentCount.toIntOrNull()?.coerceIn(1, MAX_AUTO_TASK_TRIGGER_COUNT) ?: 1
                     val intervalMin = currentInterval.toIntOrNull()?.coerceIn(1, 60) ?: 5
-                    val defaultAutoTaskMsg = stringResource(R.string.auto_task_default_message)
                     onConfirm(
                         AutoTaskConfig(
                             message = currentMessage.ifBlank { defaultAutoTaskMsg },
