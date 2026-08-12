@@ -192,6 +192,7 @@ private suspend fun runVaultSshExec(
     repository.logAccess(credName, "ai-tool", "ssh_exec")
 
     return try {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val jsch = JSch()
         // Host key 校验：known_hosts 文件（App 私有目录），首次记录指纹、后续校验防中间人。
         // 用文件文本判断「是否首次」——不依赖 JSch getHostKey(null) 的兼容行为。
@@ -261,6 +262,7 @@ private suspend fun runVaultSshExec(
                 },
             ),
         )
+        }
     } catch (e: Exception) {
         listOf(UIMessagePart.Text("❌ SSH 执行失败: ${e.message}"))
     }
