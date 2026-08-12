@@ -240,6 +240,10 @@ private fun createShellTool(
                         "Command timeout in seconds. Defaults to 30, max $SHELL_TIMEOUT_MAX_SECONDS."
                     )
                 })
+                put("workspace", buildJsonObject {
+                    put("type", "string")
+                    put("description", "Optional target workspace id (UUID). When set, runs the command in that workspace's rootfs instead of the current one.")
+                })
             },
             required = listOf("command"),
         )
@@ -254,7 +258,8 @@ private fun createShellTool(
             ?.coerceIn(1L, SHELL_TIMEOUT_MAX_SECONDS)
             ?.times(1_000L)
             ?: WorkspaceManager.DEFAULT_COMMAND_TIMEOUT_MS
-        val result = workspaceRepository.executeCommand(workspaceId, command, cwd, timeoutMillis)
+        val targetWorkspace = params.string("workspace")
+        val result = workspaceRepository.executeCommand(workspaceId, command, cwd, timeoutMillis, targetId = targetWorkspace)
         listOf(
             UIMessagePart.Text(
                 buildJsonObject {
