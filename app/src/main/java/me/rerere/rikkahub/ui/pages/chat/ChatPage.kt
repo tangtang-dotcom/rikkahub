@@ -354,20 +354,25 @@ private fun ChatPageContent(
     }
     fun doVaultAuthorize(ttlMs: Long) {
         scope.launch {
+            me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "授权点击：ttlMs=$ttlMs")
             val ok = me.rerere.rikkahub.data.vault.VaultBiometric.authenticate(
                 context, biometricBuffer, context.getString(R.string.vault_authorize_title),
             )
             if (!ok) {
                 vaultAuthMsg = context.getString(R.string.vault_authorize_cancelled)
+                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "指纹取消/失败")
                 return@launch
             }
             runCatching {
                 val token = vaultSessionManager.issueSessionToken(ttlMs = ttlMs)
+                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "token 签发成功 len=${token.length}")
                 val ws = workspaceRepository.getAll().firstOrNull() ?: error("no workspace")
-                workspaceRepository.writeText(ws.id, "/workspace/credentials/vault-token", token, overwrite = true)
+                val written = workspaceRepository.writeText(ws.id, "/workspace/credentials/vault-token", token, overwrite = true)
+                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "写沙箱成功 ws.id=${ws.id} path=${written.path}")
                 vaultAuthorized = true
                 vaultAuthMsg = context.getString(R.string.vault_authorize_success)
             }.onFailure { e ->
+                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "授权失败: ${e.message}")
                 vaultAuthMsg = "授权失败: ${e.message}"
             }
         }
