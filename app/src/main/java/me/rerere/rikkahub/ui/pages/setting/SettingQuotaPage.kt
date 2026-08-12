@@ -67,6 +67,7 @@ fun SettingQuotaPage() {
 
     // 当前正在编辑的 provider index
     var editingIndex by remember { mutableStateOf<Int?>(null) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     // 凭证管理对话框
     var credentialDialogIndex by remember { mutableStateOf<Int?>(null) }
     var maskedValue by remember { mutableStateOf("") }
@@ -82,6 +83,7 @@ fun SettingQuotaPage() {
         containerColor = CustomColors.topBarColors.containerColor,
     ) { innerPadding ->
         LazyColumn(
+            state = listState,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -225,6 +227,10 @@ fun SettingQuotaPage() {
                             me.rerere.rikkahub.data.log.AppLog.d("Quota", "添加按钮点击，当前 providers=${providers.size}")
                             scope.launch {
                                 quotaPreferences.setProviders(providers + QuotaProviderConfig())
+                                val newIndex = providers.size
+                                editingIndex = newIndex
+                                listState.animateScrollToItem(1)
+                                android.widget.Toast.makeText(context, stringResource(R.string.quota_added_feedback), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         leadingContent = { Icon(HugeIcons.AddCircle, null, tint = MaterialTheme.colorScheme.primary) },
@@ -275,6 +281,10 @@ fun SettingQuotaPage() {
                                                     regexPattern = platform.regexPattern,
                                                 ),
                                         )
+                                        val newIndex = providers.size
+                                        editingIndex = newIndex
+                                        listState.animateScrollToItem(1)
+                                        android.widget.Toast.makeText(context, stringResource(R.string.quota_added_feedback, platform.label), android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             },

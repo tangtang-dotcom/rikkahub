@@ -2228,6 +2228,8 @@
   <string name="quota_parse_failed">Parse failed: %1$s</string>
   <string name="quota_provider_not_found">Provider not found. Please configure a quota provider in Settings → Quota first.</string>
   <string name="quota_webview_not_ready">WebView not loaded yet, please wait for the page to finish loading and try again</string>
+  <string name="quota_added_feedback_with_name">Quota provider added: %1$s</string>
+  <string name="quota_added_feedback">Quota provider added</string>
   <string name="quota_saved_credential_display">🔐 Credential saved (%1$s)</string>
   <string name="quota_header_default">Header name (default Authorization)</string>
   <string name="quota_header_custom">Header name (e.g. X-API-Key)</string>
