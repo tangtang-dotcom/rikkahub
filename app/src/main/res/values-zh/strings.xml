@@ -2107,8 +2107,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="vault_session_issued_ttl">会话 token 已签发（30 分钟有效）</string>
   <string name="vault_session_issued_manual">会话 token 已签发（当场有效，会话结束/手动撤销失效）</string>
   <string name="setting_web_bridge_switch">Web 桥总开关</string>
-  <string name="setting_web_bridge_switch_desc">为 Reasonix 启用 Web 桥</string>
-  <string name="setting_web_bridge_switch_desc_detail">开启：同步全局配置（主机/用户/端口）到 Reasonix provider 并启用。关闭：禁用。</string>
+  <string name="setting_web_bridge_switch_desc">开启 Web 桥（Reasonix 等远端经隧道调用手机 API）</string>
+  <string name="setting_web_bridge_switch_desc_detail">开启：同步全局配置并启用 Reasonix；关闭：全部禁用</string>
   <string name="setting_web_bridge_title">Web 桥</string>
   <string name="web_bridge_connection">连接状态</string>
   <string name="web_bridge_connect">启动 Web 桥</string>
