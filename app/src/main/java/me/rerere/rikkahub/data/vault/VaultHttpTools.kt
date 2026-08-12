@@ -21,7 +21,8 @@ import java.util.concurrent.TimeUnit
  * 目标：AI 工具输出中即使意外出现凭证明文，也不让其进入 LLM 上下文。
  * 策略（按用户定稿 2026-08-13）：
  * - **只对密钥库（Vault）内容掩码**——掩码字典 = 密钥库全部凭证的明文值（按规范名称索引）
- * - **随加随掩**——每次掩码从密钥库动态解密最新值；新增/修改凭证自动纳入，无需改代码
+ * - **随加随掩**——refresh() 时按凭证表版本比对，新增/修改凭证自动纳入，无需改代码
+ * - 缓存化——凭证未变更时复用内存字典，避免每次全量解密
  * - 不做格式正则猜测（避免误伤、避免掩码库外内容）
  *
  * 安全：掩码发生在 App 进程内、内存态，解密值不落盘、不进 AI 上下文。
@@ -29,8 +30,27 @@ import java.util.concurrent.TimeUnit
 object SecretMasker {
     private const val MASK = "***"
 
-    // 过短的值不做替换（避免把普通短词误掩；密钥值通常远长于此）
-    private const val MIN_LEN = 6
+    // 值短于此长度不做替换（密码类凭证短值也可能敏感——取较小阈值 4）
+    private const val MIN_LEN = 4
+
+    // 缓存：凭证表版本（max updatedAt）→ 值字典
+    @Volatile
+    private var cachedVersion: Long = -1
+
+    @Volatile
+    private var cachedValues: List<String> = emptyList()
+
+    /** 刷新掩码字典（suspend）。凭证未变更时走缓存。 */
+    suspend fun refresh(repository: CredentialVaultRepository) {
+        val entries = repository.getAll()
+        val version = entries.maxOfOrNull { it.updatedAt } ?: 0L
+        if (version == cachedVersion) return
+        cachedVersion = version
+        cachedValues = entries.mapNotNull { repository.decryptValue(it) }
+    }
+
+    /** 掩码文本（同步；调用方需先 refresh 保证字典最新）。 */
+    fun mask(text: String): String = mask(text, cachedValues)
 
     /** 掩码文本：把其中出现的任意 activeSecrets 值替换为 ***。 */
     fun mask(text: String, activeSecrets: Collection<String>): String {
@@ -130,7 +150,7 @@ private suspend fun runVaultHttpExec(
     val scheme = o["auth_scheme"]?.jsonPrimitive?.contentOrNull ?: "Bearer"
     val headerName = o["header_name"]?.jsonPrimitive?.contentOrNull ?: "Authorization"
     val body = o["body"]?.jsonPrimitive?.contentOrNull.orEmpty()
-    val timeout = (o["timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 30).coerceIn(5L, MAX_TIMEOUT_SECONDS)
+    val timeout = (o["timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 30).toLong().coerceIn(5L, MAX_TIMEOUT_SECONDS)
 
     val extraHeaders = runCatching {
         val raw = o["extra_headers"]?.jsonPrimitive?.contentOrNull
