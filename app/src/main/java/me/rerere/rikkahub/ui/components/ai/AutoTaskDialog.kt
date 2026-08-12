@@ -177,9 +177,10 @@ fun AutoTaskDialog(
                     val count =
                         currentCount.toIntOrNull()?.coerceIn(1, MAX_AUTO_TASK_TRIGGER_COUNT) ?: 1
                     val intervalMin = currentInterval.toIntOrNull()?.coerceIn(1, 60) ?: 5
+                    val defaultAutoTaskMsg = stringResource(R.string.auto_task_default_message)
                     onConfirm(
                         AutoTaskConfig(
-                            message = currentMessage.ifBlank { stringResource(R.string.auto_task_default_message) },
+                            message = currentMessage.ifBlank { defaultAutoTaskMsg },
                             randomMessages = currentRandomMessages.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList(),
                             mode = currentMode,
                             triggerCount = count,
