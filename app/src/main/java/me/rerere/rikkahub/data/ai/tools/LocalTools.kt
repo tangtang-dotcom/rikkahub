@@ -827,9 +827,9 @@ class LocalTools(
             tools.add(saveSshHostTool(sshHostRepository))
             tools.add(listSshHostsTool(sshHostRepository))
             tools.add(deleteSshHostTool(sshHostRepository))
-            tools.add(sshExecSavedTool(context, sshHostRepository))
-            tools.add(sshUploadTool(context, sshHostRepository))
-            tools.add(sshDownloadTool(context, sshHostRepository))
+            tools.add(sshExecSavedTool(context, sshHostRepository, vaultRepository))
+            tools.add(sshUploadTool(context, sshHostRepository, vaultRepository))
+            tools.add(sshDownloadTool(context, sshHostRepository, vaultRepository))
             tools.add(forgetSshHostKeyTool(context))
         }
         if (options.contains(LocalToolOption.TelegramBot)) {
