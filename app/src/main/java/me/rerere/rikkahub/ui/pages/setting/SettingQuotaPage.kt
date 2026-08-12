@@ -58,6 +58,7 @@ import org.koin.compose.koinInject
 fun SettingQuotaPage() {
     val navController = LocalNavController.current
     val quotaPreferences: QuotaPreferences = koinInject()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val credentialManager: QuotaCredentialManager = koinInject()
     val scope = rememberCoroutineScope()
 
@@ -230,7 +231,7 @@ fun SettingQuotaPage() {
                                 val newIndex = providers.size
                                 editingIndex = newIndex
                                 listState.animateScrollToItem(1)
-                                android.widget.Toast.makeText(context, stringResource(R.string.quota_added_feedback), android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.quota_added_feedback), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
                         leadingContent = { Icon(HugeIcons.AddCircle, null, tint = MaterialTheme.colorScheme.primary) },
