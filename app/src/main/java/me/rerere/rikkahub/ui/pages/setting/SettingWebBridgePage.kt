@@ -285,29 +285,36 @@ fun SettingWebBridgePage() {
                     ) {
                         androidx.compose.material3.OutlinedButton(
                             onClick = {
-                                val key = SshKeyGenerator.generate()
                                 scope.launch {
                                     runCatching {
-                                        val dir = java.io.File(context.filesDir, "ssh_keys").apply { mkdirs() }
-                                        val file = java.io.File(dir, "web_bridge_rsa")
-                                        if (file.exists()) file.delete()
-                                        file.writeText(key.privateKeyPem)
-                                        file.setReadable(true, true)
-                                        file.setWritable(true, true)
-                                        file.setExecutable(false)
-                                        webBridgePrivateKeyPath = file.absolutePath
-                                        settingsStore.update { s -> s.copy(webBridgePrivateKeyPath = file.absolutePath) }
-                                        if (saveToVault) {
-                                            vaultRepo.save(
-                                                name = "WEB_BRIDGE_SSH_KEY",
-                                                value = key.privateKeyPem,
-                                                description = "Web 桥 SSH 私钥（全局，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成；私钥路径：${file.absolutePath}）",
-                                                group = "SSH",
-                                            )
-                                            keyInfo = "✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：${file.absolutePath}\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
-                                        } else {
-                                            keyInfo = "✅ 已生成到 ${file.absolutePath}\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                        val generated = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            val key = SshKeyGenerator.generate()
+                                            val dir = java.io.File(context.filesDir, "ssh_keys").apply { mkdirs() }
+                                            val file = java.io.File(dir, "web_bridge_rsa")
+                                            if (file.exists()) file.delete()
+                                            file.writeText(key.privateKeyPem)
+                                            file.setReadable(true, true)
+                                            file.setWritable(true, true)
+                                            file.setExecutable(false)
+                                            if (saveToVault) {
+                                                vaultRepo.save(
+                                                    name = "WEB_BRIDGE_SSH_KEY",
+                                                    value = key.privateKeyPem,
+                                                    description = "Web 桥 SSH 私钥（全局，${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())} 生成；私钥路径：${file.absolutePath}）",
+                                                    group = "SSH",
+                                                )
+                                            }
+                                            Triple(key, file.absolutePath, saveToVault)
                                         }
+                                        val (key, path, toVault) = generated
+                                        webBridgePrivateKeyPath = path
+                                        settingsStore.update { s -> s.copy(webBridgePrivateKeyPath = path) }
+                                        keyInfo =
+                                            if (toVault) {
+                                                "✅ 已生成并保存到密钥库（分组：SSH）\n已写私钥路径：$path\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                            } else {
+                                                "✅ 已生成到 $path\n公钥请添加到服务器 ~/.ssh/authorized_keys：\n${key.publicKeyLine}"
+                                            }
                                     }.onFailure { e ->
                                         keyInfo = "❌ 生成失败: ${e.message}"
                                     }
