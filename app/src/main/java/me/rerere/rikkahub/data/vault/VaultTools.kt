@@ -68,22 +68,26 @@ fun vaultCredentialPrepareTool(repository: CredentialVaultRepository): Tool = To
     },
     execute = { params ->
         val o = params.jsonObject
-        val name = o["name"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: return@execute listOf(UIMessagePart.Text("❌ name 必填"))
-        val desc = o["description"]?.jsonPrimitive?.contentOrNull ?: ""
-        val group = o["group"]?.jsonPrimitive?.contentOrNull ?: "Other"
-        repository.save(
-            name = name,
-            value = "", // 占位：值留空，用户稍后填写
-            description = desc,
-            group = group,
-        )
-        repository.logAccess(name, "ai-tool", "prepare")
-        listOf(
-            UIMessagePart.Text(
-                "✅ 已创建凭证占位条目：$name [${group}]\n" +
-                    "值尚未填写。请用户到 安全凭证库 → $name 编辑，填入实际 key/token。",
-            ),
-        )
+        val name = o["name"]?.jsonPrimitive?.contentOrNull?.ifBlank { null }
+        if (name == null) {
+            listOf(UIMessagePart.Text("❌ name 必填"))
+        } else {
+            val desc = o["description"]?.jsonPrimitive?.contentOrNull ?: ""
+            val group = o["group"]?.jsonPrimitive?.contentOrNull ?: "Other"
+            repository.save(
+                name = name,
+                value = "", // 占位：值留空，用户稍后填写
+                description = desc,
+                group = group,
+            )
+            repository.logAccess(name, "ai-tool", "prepare")
+            listOf(
+                UIMessagePart.Text(
+                    "✅ 已创建凭证占位条目：$name [${group}]\n" +
+                        "值尚未填写。请用户到 安全凭证库 → $name 编辑，填入实际 key/token。",
+                ),
+            )
+        }
     },
 )
 
@@ -161,62 +165,76 @@ fun vaultSshExecTool(repository: CredentialVaultRepository): Tool = Tool(
         )
     },
     needsApproval = { true },
-    execute = { params ->
-        val o = params.jsonObject
-        val host = o["host"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ host 必填"))
-        val port = o["port"]?.jsonPrimitive?.intOrNull ?: 22
-        val user = o["user"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ user 必填"))
-        val auth = o["auth"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ auth 必填（key/password）"))
-        val credName = o["credential_name"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ credential_name 必填"))
-        val command = o["command"]?.jsonPrimitive?.contentOrNull ?: return@execute listOf(UIMessagePart.Text("❌ command 必填"))
-        val timeout = (o["timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 30).coerceIn(5, 300)
-
-        val entry = repository.getByName(credName)
-            ?: return@execute listOf(UIMessagePart.Text("❌ 凭证不存在: $credName（用 vault_credential_names 查看可用名称）"))
-        val secret = repository.decryptValue(entry)
-            ?: return@execute listOf(UIMessagePart.Text("❌ 凭证解密失败: $credName"))
-        repository.logAccess(credName, "ai-tool", "ssh_exec")
-
-        try {
-            val jsch = JSch()
-            val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
-            when (auth) {
-                "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
-                "password" -> session.setPassword(secret)
-                else -> return@execute listOf(UIMessagePart.Text("❌ auth 只支持 key/password"))
-            }
-            session.setConfig("StrictHostKeyChecking", "no")
-            session.setConfig("ServerAliveInterval", "30")
-            session.setConfig("ServerAliveCountMax", "3")
-            session.connect(timeout * 1000)
-
-            val channel = session.openChannel("exec") as ChannelExec
-            channel.command = command
-            val outBuf = java.io.ByteArrayOutputStream()
-            val errBuf = java.io.ByteArrayOutputStream()
-            channel.outputStream = outBuf
-            channel.errStream = errBuf
-            channel.connect()
-            val deadline = System.currentTimeMillis() + timeout * 1000L
-            while (!channel.isClosed && System.currentTimeMillis() < deadline) {
-                Thread.sleep(100)
-            }
-            if (!channel.isClosed) channel.disconnect()
-            val exit = channel.exitStatus
-            session.disconnect()
-            val stdout = outBuf.toString("UTF-8").trim()
-            val stderr = errBuf.toString("UTF-8").trim()
-            listOf(
-                UIMessagePart.Text(
-                    buildString {
-                        append("exit=$exit")
-                        if (stdout.isNotEmpty()) append("\n--- stdout ---\n$stdout")
-                        if (stderr.isNotEmpty()) append("\n--- stderr ---\n$stderr")
-                    },
-                ),
-            )
-        } catch (e: Exception) {
-            listOf(UIMessagePart.Text("❌ SSH 执行失败: ${e.message}"))
-        }
-    },
+    execute = { params -> runVaultSshExec(repository, params.jsonObject) },
 )
+
+/** vault_ssh_exec 执行体（独立函数避免 lambda label 问题）。 */
+private suspend fun runVaultSshExec(
+    repository: CredentialVaultRepository,
+    o: kotlinx.serialization.json.JsonObject,
+): List<UIMessagePart> {
+    val fail: (String) -> List<UIMessagePart> = { msg -> listOf(UIMessagePart.Text("❌ $msg")) }
+    val host = o["host"]?.jsonPrimitive?.contentOrNull ?: return fail("host 必填")
+    val port = o["port"]?.jsonPrimitive?.intOrNull ?: 22
+    val user = o["user"]?.jsonPrimitive?.contentOrNull ?: return fail("user 必填")
+    val auth = o["auth"]?.jsonPrimitive?.contentOrNull ?: return fail("auth 必填（key/password）")
+    val credName = o["credential_name"]?.jsonPrimitive?.contentOrNull ?: return fail("credential_name 必填")
+    val command = o["command"]?.jsonPrimitive?.contentOrNull ?: return fail("command 必填")
+    val timeout = (o["timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 30).coerceIn(5, 300)
+
+    val entry = repository.getByName(credName) ?: return fail("凭证不存在: $credName（用 vault_credential_names 查看可用名称）")
+    val secret = repository.decryptValue(entry) ?: return fail("凭证解密失败: $credName")
+    repository.logAccess(credName, "ai-tool", "ssh_exec")
+
+    return try {
+        val jsch = JSch()
+        val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
+        when (auth) {
+            "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
+            "password" -> session.setPassword(secret)
+            else -> return fail("auth 只支持 key/password")
+        }
+        session.setConfig("StrictHostKeyChecking", "no")
+        session.setConfig("ServerAliveInterval", "30")
+        session.setConfig("ServerAliveCountMax", "3")
+        session.connect(timeout * 1000)
+
+        val channel = session.openChannel("exec") as ChannelExec
+        channel.setCommand(command)
+        channel.connect()
+        val deadline = System.currentTimeMillis() + timeout * 1000L
+        val outBuf = java.io.ByteArrayOutputStream()
+        val errBuf = java.io.ByteArrayOutputStream()
+        // 读取 stdout/stderr（InputStream），直到命令结束或超时
+        val input = channel.inputStream
+        val errInput = channel.errStream
+        val buf = ByteArray(4096)
+        while (System.currentTimeMillis() < deadline) {
+            while (input.available() > 0) {
+                val n = input.read(buf)
+                if (n > 0) outBuf.write(buf, 0, n)
+            }
+            while (errInput.available() > 0) {
+                val n = errInput.read(buf)
+                if (n > 0) errBuf.write(buf, 0, n)
+            }
+            if (channel.isClosed && input.available() <= 0 && errInput.available() <= 0) break
+            Thread.sleep(100)
+        }
+        val exit = channel.exitStatus
+        session.disconnect()
+        val stdout = outBuf.toString("UTF-8").trim()
+        val stderr = errBuf.toString("UTF-8").trim()
+        listOf(
+            UIMessagePart.Text(
+                buildString {
+                    append("exit=$exit")
+                    if (stdout.isNotEmpty()) append("\n--- stdout ---\n$stdout")
+                    if (stderr.isNotEmpty()) append("\n--- stderr ---\n$stderr")
+                },
+            ),
+        )
+    } catch (e: Exception) {
+        listOf(UIMessagePart.Text("❌ SSH 执行失败: ${e.message}"))
+    }
+}
