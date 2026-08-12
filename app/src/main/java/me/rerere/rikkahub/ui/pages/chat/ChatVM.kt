@@ -540,6 +540,7 @@ class ChatVM(
      *  - 模式 1（定时触发）：会话空闲达设定秒数后自动发送一次，触发后清除（一次性触发）
      */
     fun scheduleAutoTask(config: AutoTaskConfig) {
+        me.rerere.rikkahub.data.log.AppLog.d("AutoTask", "调度: mode=${config.mode} count=${config.triggerCount} interval=${config.intervalSeconds}")
         cancelAutoTask()
         _autoTaskActive.value = true
 
@@ -576,6 +577,7 @@ class ChatVM(
                                 idleSeconds++
                             }
                             if (!isActive) break
+                            me.rerere.rikkahub.data.log.AppLog.d("AutoTask", "触发 #${triggered + 1}")
                             handleMessageSend(
                                 listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
                                 answer = true,

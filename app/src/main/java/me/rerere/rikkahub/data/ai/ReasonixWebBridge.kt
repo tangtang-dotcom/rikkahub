@@ -57,6 +57,7 @@ class ReasonixWebBridge(
         privateKeyPath: String = "",
         password: String = "",
     ): Boolean = withContext(Dispatchers.Default) {
+        AppLog.d(TAG, "start: host=$ecsHost remote=$remoteTunnelPort local=$localWebPort key=${if (privateKeyPath.isNotBlank()) "path" else "none"}")
         // 1. 启动 Web 服务（前台服务，通知常驻）
         runCatching {
             val intent =
@@ -84,6 +85,7 @@ class ReasonixWebBridge(
         )
         // 成功时清空上次失败的 message（避免「✅已连接 + 红字残留」矛盾显示）
         _state.value = _state.value.copy(tunnelConnected = ok, message = if (ok) "" else _state.value.message)
+        AppLog.d(TAG, "start 完成: tunnelConnected=$ok")
         ok
     }
 
