@@ -6,8 +6,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
@@ -371,7 +374,14 @@ private fun ChatPageContent(
                 vaultSessionManager.revokeAll()
                 val ws = workspaceRepository.getAll().firstOrNull()
                 if (ws != null) {
-                    runCatching { workspaceRepository.deleteFile(ws.id, "/workspace/credentials/vault-token") }
+                    runCatching {
+                        workspaceRepository.deleteFile(
+                            ws.id,
+                            me.rerere.workspace.WorkspaceStorageArea.LINUX,
+                            "/workspace/credentials/vault-token",
+                            false,
+                        )
+                    }
                 }
                 vaultAuthorized = false
                 vaultAuthMsg = context.getString(R.string.vault_authorize_revoked)

@@ -217,8 +217,9 @@ private suspend fun runVaultSshExec(
         if (isFirstConnect) {
             session.hostKey?.let { hk ->
                 val typeName = hk.type // "ssh-rsa" / "ssh-ed25519" / "ecdsa-sha2-nistp256"...
-                val keyB64 = android.util.Base64.encodeToString(hk.key, android.util.Base64.NO_WRAP)
-                knownHostsFile.appendText("$host $typeName $keyB64\n")
+                // mwiede/jsch 的 HostKey.key 是 String（base64 编码的密钥数据）
+                val keyData = hk.key
+                knownHostsFile.appendText("$host $typeName $keyData\n")
             }
         }
 
