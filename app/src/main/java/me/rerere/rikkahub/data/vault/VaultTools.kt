@@ -193,26 +193,33 @@ private suspend fun runVaultSshExec(
 
     return try {
         val jsch = JSch()
-        // Host key 校验：known_hosts 文件（App 私有目录），首次记录指纹、后续校验防中间人
+        // Host key 校验：known_hosts 文件（App 私有目录），首次记录指纹、后续校验防中间人。
+        // 用文件文本判断「是否首次」——不依赖 JSch getHostKey(null) 的兼容行为。
         val knownHostsFile = java.io.File(context.filesDir, "vault_known_hosts")
         jsch.setKnownHosts(knownHostsFile.absolutePath)
-        val hostKeyRepo = jsch.getHostKeyRepository()
-        val knownKey = hostKeyRepo.getHostKey(host, null)
+        val knownHostsText = if (knownHostsFile.exists()) knownHostsFile.readText() else ""
+        val isFirstConnect = knownHostsText.lines().none { line ->
+            line.isNotBlank() && !line.startsWith("#") &&
+                (line.startsWith(host) || line.contains(" $host ") || line.contains(" $host,"))
+        }
         val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
         when (auth) {
             "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
             "password" -> session.setPassword(secret)
             else -> return fail("auth 只支持 key/password")
         }
-        session.setConfig("StrictHostKeyChecking", if (knownKey == null) "no" else "yes")
+        session.setConfig("StrictHostKeyChecking", if (isFirstConnect) "no" else "yes")
         session.setConfig("ServerAliveInterval", "30")
         session.setConfig("ServerAliveCountMax", "3")
         session.connect(timeout * 1000)
 
-        // 首次连接：记录 host key 指纹
-        val isFirstConnect = knownKey == null
+        // 首次连接：把 host key 追加到 known_hosts 文件（OpenSSH 行格式）
         if (isFirstConnect) {
-            session.hostKey?.let { hostKeyRepo.add(it, null) }
+            session.hostKey?.let { hk ->
+                val typeName = hk.type // "ssh-rsa" / "ssh-ed25519" / "ecdsa-sha2-nistp256"...
+                val keyB64 = android.util.Base64.encodeToString(hk.key, android.util.Base64.NO_WRAP)
+                knownHostsFile.appendText("$host $typeName $keyB64\n")
+            }
         }
 
         val channel = session.openChannel("exec") as ChannelExec
