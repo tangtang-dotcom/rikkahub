@@ -2094,7 +2094,7 @@
   <string name="vault_authorize_dialog_title">🔑 Vault Authorization</string>
   <string name="vault_authorize_status_on">Status: Authorized (AI can read credentials)</string>
   <string name="vault_authorize_status_off">Status: Not authorized</string>
-  <string name="vault_authorize_revoke">Revoke authorization</string>
+  <string name="vault_authorize_open_vault">Open vault</string>
   <string name="vault_authorize_short">Short (30 min)</string>
   <string name="vault_authorize_forever">Forever</string>
   <string name="vault_biometric_locked_hint">Unlock with fingerprint/screen lock to view vault contents</string>

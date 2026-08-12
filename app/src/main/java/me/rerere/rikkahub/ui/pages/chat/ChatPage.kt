@@ -673,7 +673,15 @@ private fun ChatPageContent(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showVaultAuthDialog = false }) { Text(stringResource(R.string.settings_cancel)) }
+                    Row {
+                        TextButton(
+                            onClick = {
+                                showVaultAuthDialog = false
+                                navController.navigate(me.rerere.rikkahub.Screen.Vault)
+                            },
+                        ) { Text(stringResource(R.string.vault_authorize_open_vault)) }
+                        TextButton(onClick = { showVaultAuthDialog = false }) { Text(stringResource(R.string.settings_cancel)) }
+                    }
                 },
             )
         }

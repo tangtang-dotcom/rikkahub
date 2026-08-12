@@ -963,6 +963,7 @@ class LocalTools(
         }
         if (options.contains(LocalToolOption.VaultTools)) {
             tools.add(me.rerere.rikkahub.data.vault.vaultCredentialNamesTool(vaultRepository))
+            tools.add(me.rerere.rikkahub.data.vault.vaultCredentialPrepareTool(vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultGenKeyTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultSshExecTool(vaultRepository))
         }

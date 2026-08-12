@@ -48,6 +48,45 @@ fun vaultCredentialNamesTool(repository: CredentialVaultRepository): Tool = Tool
     },
 )
 
+/** AI 创建凭证条目占位（不含值），由用户在密钥库最后填写 key/token。 */
+fun vaultCredentialPrepareTool(repository: CredentialVaultRepository): Tool = Tool(
+    name = "vault_credential_prepare",
+    description =
+        "Create a credential entry placeholder in the vault (name / description / group, NO value). " +
+            "The user fills the actual secret later in the vault UI. Use to prepare a named slot " +
+            "before the user provides the key/token — the AI never handles the secret value.",
+    parameters = {
+        InputSchema.Obj(
+            properties =
+                buildJsonObject {
+                    put("name", buildJsonObject { put("type", "string"); put("description", "Credential name, e.g. NEW_SERVER_API_KEY") })
+                    put("description", buildJsonObject { put("type", "string"); put("description", "What this credential is for") })
+                    put("group", buildJsonObject { put("type", "string"); put("description", "Vault group: Git/AI/ECS/MCP/Notification/SSH/Other") })
+                },
+            required = listOf("name"),
+        )
+    },
+    execute = { params ->
+        val o = params.jsonObject
+        val name = o["name"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: return@execute listOf(UIMessagePart.Text("❌ name 必填"))
+        val desc = o["description"]?.jsonPrimitive?.contentOrNull ?: ""
+        val group = o["group"]?.jsonPrimitive?.contentOrNull ?: "Other"
+        repository.save(
+            name = name,
+            value = "", // 占位：值留空，用户稍后填写
+            description = desc,
+            group = group,
+        )
+        repository.logAccess(name, "ai-tool", "prepare")
+        listOf(
+            UIMessagePart.Text(
+                "✅ 已创建凭证占位条目：$name [${group}]\n" +
+                    "值尚未填写。请用户到 安全凭证库 → $name 编辑，填入实际 key/token。",
+            ),
+        )
+    },
+)
+
 /** 生成 SSH 密钥对并保存到凭证库，返回公钥（可配置到服务器 authorized_keys）。 */
 fun vaultGenKeyTool(
     context: android.content.Context,
@@ -75,6 +114,13 @@ fun vaultGenKeyTool(
             name = name,
             value = key.privateKeyPem,
             description = "AI 生成 SSH 私钥（${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())}）",
+            group = group,
+        )
+        // 公钥条目：可公开，便于密钥库内查看/复制（配置服务器 authorized_keys）
+        repository.save(
+            name = "${name}_PUB",
+            value = key.publicKeyLine,
+            description = "SSH 公钥（对应 $name，可公开，配置服务器 authorized_keys 用）",
             group = group,
         )
         repository.logAccess(name, "ai-tool", "gen_key")

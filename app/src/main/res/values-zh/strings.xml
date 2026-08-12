@@ -2088,7 +2088,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="vault_authorize_dialog_title">🔑 Vault 授权</string>
   <string name="vault_authorize_status_on">当前：已授权（AI 可读取凭证）</string>
   <string name="vault_authorize_status_off">当前：未授权</string>
-  <string name="vault_authorize_revoke">撤销授权</string>
+  <string name="vault_authorize_open_vault">打开密钥库</string>
   <string name="vault_authorize_short">短期（30 分钟）</string>
   <string name="vault_authorize_forever">一直授权</string>
   <string name="vault_biometric_locked_hint">指纹/锁屏验证通过后才能查看密钥库内容</string>
