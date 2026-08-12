@@ -207,7 +207,7 @@ private suspend fun runVaultSshExec(
         when (auth) {
             "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
             "password" -> session.setPassword(secret)
-            else -> return fail("auth 只支持 key/password")
+            else -> return@withContext fail("auth 只支持 key/password")
         }
         session.setConfig("StrictHostKeyChecking", if (isFirstConnect) "no" else "yes")
         session.setConfig("ServerAliveInterval", "30")
