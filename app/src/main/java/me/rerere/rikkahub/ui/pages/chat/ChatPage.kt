@@ -376,18 +376,26 @@ private fun ChatPageContent(
                 vaultSessionManager.revokeAll()
                 val ws = workspaceRepository.getAll().firstOrNull()
                 if (ws != null) {
-                    runCatching {
-                        workspaceRepository.deleteFile(
-                            ws.id,
-                            me.rerere.workspace.WorkspaceStorageArea.FILES,
-                            "/workspace/credentials/vault-token",
-                            false,
-                        )
-                    }
+                    val deleted =
+                        runCatching {
+                            workspaceRepository.deleteFile(
+                                ws.id,
+                                me.rerere.workspace.WorkspaceStorageArea.FILES,
+                                "/workspace/credentials/vault-token",
+                                false,
+                            )
+                        }
+                    me.rerere.rikkahub.data.log.AppLog.d(
+                        "VaultRevoke",
+                        "deleteFile FILES 结果=${deleted.getOrNull()} 异常=${deleted.exceptionOrNull()?.message} ws.id=${ws.id} root=${ws.root}",
+                    )
+                } else {
+                    me.rerere.rikkahub.data.log.AppLog.d("VaultRevoke", "ws 为 null——未执行 deleteFile")
                 }
                 vaultAuthorized = false
                 vaultAuthMsg = context.getString(R.string.vault_authorize_revoked)
             }.onFailure { e ->
+                me.rerere.rikkahub.data.log.AppLog.d("VaultRevoke", "撤销失败: ${e.message}")
                 vaultAuthMsg = "撤销失败: ${e.message}"
             }
         }
