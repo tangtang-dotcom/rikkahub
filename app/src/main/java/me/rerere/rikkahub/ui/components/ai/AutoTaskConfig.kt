@@ -19,7 +19,7 @@ const val MAX_AUTO_TASK_TRIGGER_COUNT = 100
  */
 @Stable
 data class AutoTaskConfig(
-    val message: String = "自动任务中。自主判断并执行当前需要做什么。",
+    val message: String = "",
     val randomMessages: List<String> = emptyList(),
     val mode: Int = 0, // 0: 定时×次数, 1: 随机空闲（1 分钟内随机）
     val triggerCount: Int = 1,
@@ -40,7 +40,8 @@ private const val PREF_AUTO_TASK_INTERVAL = "auto_task_interval"
 fun readAutoTaskConfig(context: Context): AutoTaskConfig {
     val prefs = context.getSharedPreferences("rikkahub.preferences", Context.MODE_PRIVATE)
     return AutoTaskConfig(
-        message = prefs.getString(PREF_AUTO_TASK_MESSAGE, "自动任务中。自主判断并执行当前需要做什么。") ?: "自动任务中。自主判断并执行当前需要做什么。",
+        message = prefs.getString(PREF_AUTO_TASK_MESSAGE, context.getString(me.rerere.rikkahub.R.string.auto_task_default_message))
+                ?: context.getString(me.rerere.rikkahub.R.string.auto_task_default_message),
         randomMessages =
             prefs
                 .getString(PREF_AUTO_TASK_RANDOM_MESSAGES, "")

@@ -179,7 +179,7 @@ fun AutoTaskDialog(
                     val intervalMin = currentInterval.toIntOrNull()?.coerceIn(1, 60) ?: 5
                     onConfirm(
                         AutoTaskConfig(
-                            message = currentMessage.ifBlank { "继续" },
+                            message = currentMessage.ifBlank { stringResource(R.string.auto_task_default_message) },
                             randomMessages = currentRandomMessages.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList(),
                             mode = currentMode,
                             triggerCount = count,

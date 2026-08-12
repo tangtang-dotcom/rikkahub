@@ -2000,6 +2000,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="auto_task_desc">设置自动任务，App 将在满足条件时自动发送消息触发对话，无需手动操作。</string>
   <string name="auto_task_reply_label">回复内容</string>
   <string name="auto_task_reply_placeholder">自动任务中。自主判断并执行当前需要做什么。</string>
+  <string name="auto_task_default_message">自动任务中。自主判断并执行当前需要做什么。</string>
   <string name="auto_task_random_label">随机补充（可选）</string>
   <string name="auto_task_random_hint">每行一条，触发时随机追加一条到固定内容后；留空则仅用固定内容</string>
   <string name="auto_task_mode_count">可触发次数</string>
