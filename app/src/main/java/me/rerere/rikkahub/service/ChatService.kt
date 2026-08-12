@@ -1458,7 +1458,9 @@ class ChatService(
             }
 
             suspend fun compressMessages(messages: List<UIMessage>): String {
-                val contentToCompress = messages.joinToString("\n\n") { it.summaryAsText(maxLength = 2000) }
+                val contentToCompress =
+                    messages.joinToString("\n\n") { it.summaryAsText(maxLength = 2000) } +
+                        toolHistoryBlock(messages)
                 val prompt =
                     settings.compressPrompt.applyPlaceholders(
                         "content" to contentToCompress,
@@ -1509,6 +1511,32 @@ class ChatService(
 
             saveConversation(conversationId, newConversation)
         }
+
+    /** 提取消息中的工具执行历史（调用+结果），作为标记块附加到压缩摘要，避免压缩后 AI 重复调用已完成工具。 */
+    private fun toolHistoryBlock(messages: List<UIMessage>): String {
+        val records =
+            buildList {
+                messages.forEach { msg ->
+                    msg.parts.forEach { part ->
+                        when (part) {
+                            is UIMessagePart.Tool -> {
+                                val outputPreview =
+                                    part.output
+                                        .joinToString(" ") { p -> (p as? UIMessagePart.Text)?.text?.take(500).orEmpty() }
+                                        .take(500)
+                                add("Tool ${part.toolName}: in=${part.input.take(200)} out=$outputPreview")
+                            }
+                            is UIMessagePart.ToolResult -> {
+                                add("ToolResult ${part.toolName}: ${part.content.toString().take(500)}")
+                            }
+                            else -> Unit
+                        }
+                    }
+                }
+            }
+        if (records.isEmpty()) return ""
+        return "\n\n[Tool execution history — retained context]\n" + records.joinToString("\n") + "\n[End tool execution history]"
+    }
 
     // ---- 通知 ----
 
