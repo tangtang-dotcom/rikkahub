@@ -966,6 +966,7 @@ class LocalTools(
             tools.add(me.rerere.rikkahub.data.vault.vaultCredentialPrepareTool(vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultGenKeyTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultSshExecTool(context, vaultRepository))
+            tools.add(me.rerere.rikkahub.data.vault.vaultHttpExecTool(context, vaultRepository))
         }
         if (options.contains(LocalToolOption.SystemIntents)) {
             tools.add(me.rerere.rikkahub.data.ai.tools.local.createCalendarEventTool(context, invocationContext, interactiveToolStreamer))
