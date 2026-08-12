@@ -1434,6 +1434,7 @@ class ChatService(
 
             val maxMessagesPerChunk = 256
             val allMessages = conversation.currentMessages
+            AppLog.d(TAG, "压缩开始: total=${allMessages.size} targetTokens=$targetTokens keepRecent=$keepRecentMessages model=${model.id}")
 
             // Split messages into those to compress and those to keep
             val messagesToCompress: List<UIMessage>
@@ -1503,12 +1504,15 @@ class ChatService(
                     ?: throw IllegalStateException("Failed to generate compressed summary")
             }
 
+            val chunks = splitMessages(messagesToCompress)
+            AppLog.d(TAG, "压缩分块: messagesToCompress=${messagesToCompress.size} 块数=${chunks.size}（token 预算 6000/块）")
             val compressedSummaries =
                 coroutineScope {
-                    splitMessages(messagesToCompress)
+                    chunks
                         .map { chunk -> async { compressMessages(chunk) } }
                         .awaitAll()
                 }
+            AppLog.d(TAG, "压缩完成: 摘要数=${compressedSummaries.size} 保留=${messagesToKeep.size}")
 
             // Create new conversation with compressed history as multiple user messages + kept messages
             val newMessageNodes =
@@ -1538,6 +1542,7 @@ class ChatService(
                         archiveJson = archiveJson,
                     )
                 )
+                AppLog.d(TAG, "压缩归档成功: json=${archiveJson.length} chars")
             }.onFailure { e ->
                 AppLog.w(TAG, "归档压缩历史失败: ${e.message}")
             }
@@ -1555,6 +1560,7 @@ class ChatService(
                         val textParts = part.output.filterIsInstance<UIMessagePart.Text>()
                         val totalLen = textParts.sumOf { it.text.length }
                         if (totalLen > maxChars) {
+                            me.rerere.rikkahub.data.log.AppLog.d(TAG, "T12 截断工具输出: tool=${part.toolName} ${totalLen}→$maxChars chars")
                             var remaining = maxChars
                             val truncated =
                                 part.output.mapNotNull { p ->
