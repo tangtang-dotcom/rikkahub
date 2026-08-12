@@ -1,4 +1,7 @@
 package me.rerere.rikkahub.ui.pages.setting
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -174,7 +177,9 @@ private fun SshHostEditDialog(
     var showTemplatePicker by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) { vaultEntries = vaultRepo.getAll() }
     val serverTemplates = vaultEntries.filter { it.grp == "server" }
-    val keyCandidates = vaultEntries.filter { it.grp != "server" }
+    // 私钥候选：只显示 SSH 组凭证（ECS_SSH_KEY_* / GITHUB_SSH_KEY / PC_SSH_KEY 等），
+    // API key（DEEPSEEK 等）不是 SSH 私钥，不该出现在选择器里
+    val keyCandidates = vaultEntries.filter { it.grp == "SSH" }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -228,9 +233,16 @@ private fun SshHostEditDialog(
                         Text(stringResource(R.string.setting_ssh_pick_vault_key))
                     }
                     if (showVaultPicker) {
-                        keyCandidates.forEach { cred ->
-                            TextButton(onClick = { vaultCredentialRef = cred.name; showVaultPicker = false }, modifier = Modifier.fillMaxWidth()) {
-                                Text(cred.name)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            keyCandidates.forEach { cred ->
+                                TextButton(onClick = { vaultCredentialRef = cred.name; showVaultPicker = false }, modifier = Modifier.fillMaxWidth()) {
+                                    Text(cred.name)
+                                }
                             }
                         }
                     }
