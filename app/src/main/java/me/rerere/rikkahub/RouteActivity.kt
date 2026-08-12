@@ -122,6 +122,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingQuotaPage
+import me.rerere.rikkahub.ui.pages.setting.SettingSshHostsPage
 import me.rerere.rikkahub.ui.pages.setting.VaultCredentialsPage
 import me.rerere.rikkahub.ui.pages.setting.VaultPage
 import me.rerere.rikkahub.ui.pages.setting.QuotaConsolePage
@@ -429,6 +430,9 @@ class RouteActivity : ComponentActivity() {
 
                             entry<Screen.SettingQuota> {
                                 SettingQuotaPage()
+                            }
+                            entry<Screen.SettingSshHosts> {
+                                SettingSshHostsPage()
                             }
 
                             entry<Screen.Vault> {
@@ -741,6 +745,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingQuota : Screen
+    data object SettingSshHosts : Screen
 
     @Serializable
     data object Vault : Screen
