@@ -337,6 +337,8 @@ private fun ChatPageContent(
     val vaultSessionManager: me.rerere.rikkahub.data.vault.VaultSessionManager = koinInject()
     val biometricBuffer: me.rerere.rikkahub.data.ai.tools.local.BiometricResultBuffer = koinInject()
     var showVaultAuthDialog by remember { mutableStateOf(false) }
+    // 授权时长选择（rememberSaveable：跨弹窗开合/页面重建记忆）
+    var vaultAuthForever by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var vaultAuthorized by remember { mutableStateOf(false) }
     var vaultAuthMsg by remember { mutableStateOf<String?>(null) }
 
@@ -660,7 +662,6 @@ private fun ChatPageContent(
 
         // Vault 授权弹窗：①授权（自动签发写沙箱）②授权时间 ③跳转凭证入口
         if (showVaultAuthDialog) {
-            var authForever by remember { mutableStateOf(false) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showVaultAuthDialog = false },
                 title = { Text(stringResource(R.string.vault_authorize_dialog_title)) },
@@ -672,40 +673,48 @@ private fun ChatPageContent(
                         // 授权状态
                         Text(
                             text =
-                                if (vaultAuthorized) stringResource(R.string.vault_authorize_status_on)
-                                else stringResource(R.string.vault_authorize_status_off),
+                                when {
+                                    vaultAuthorized && vaultAuthForever -> stringResource(R.string.vault_authorize_status_on_forever)
+                                    vaultAuthorized -> stringResource(R.string.vault_authorize_status_on)
+                                    else -> stringResource(R.string.vault_authorize_status_off)
+                                },
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         // ② 授权时间选择
                         androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                androidx.compose.material3.RadioButton(selected = !authForever, onClick = { authForever = false })
+                                androidx.compose.material3.RadioButton(selected = !vaultAuthForever, onClick = { vaultAuthForever = false })
                                 Text(stringResource(R.string.vault_authorize_short), style = MaterialTheme.typography.bodyMedium)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                androidx.compose.material3.RadioButton(selected = authForever, onClick = { authForever = true })
+                                androidx.compose.material3.RadioButton(selected = vaultAuthForever, onClick = { vaultAuthForever = true })
                                 Text(stringResource(R.string.vault_authorize_forever), style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
                 },
                 confirmButton = {
-                    if (vaultAuthorized) {
-                        TextButton(onClick = { doVaultRevoke(); showVaultAuthDialog = false }) {
-                            Text(stringResource(R.string.vault_authorize_revoke), color = MaterialTheme.colorScheme.error)
-                        }
-                    } else {
-                        // ① 主授权按钮：点按自动签发（用当前时间选项）并写沙箱
-                        TextButton(
-                            onClick = {
-                                doVaultAuthorize(if (authForever) Long.MAX_VALUE else 30L * 60 * 1000)
-                                showVaultAuthDialog = false
-                            },
-                        ) { Text(stringResource(R.string.vault_authorize_confirm)) }
+                    // ① 主授权按钮：未授权=授权；已授权=重新授权（按当前时长选择，直接覆盖旧 token）
+                    TextButton(
+                        onClick = {
+                            doVaultAuthorize(if (vaultAuthForever) Long.MAX_VALUE else 30L * 60 * 1000)
+                            showVaultAuthDialog = false
+                        },
+                    ) {
+                        Text(
+                            stringResource(
+                                if (vaultAuthorized) R.string.vault_authorize_renew else R.string.vault_authorize_confirm,
+                            ),
+                        )
                     }
                 },
                 dismissButton = {
                     Row {
+                        if (vaultAuthorized) {
+                            TextButton(onClick = { doVaultRevoke(); showVaultAuthDialog = false }) {
+                                Text(stringResource(R.string.vault_authorize_revoke), color = MaterialTheme.colorScheme.error)
+                            }
+                        }
                         // ③ 跳转凭证相关入口
                         TextButton(
                             onClick = {
