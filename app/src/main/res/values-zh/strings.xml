@@ -2239,9 +2239,9 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_web_bridge_gen_key_btn">生成新 SSH 密钥</string>
 
   <string name="vault_session_mode_ttl">30 分钟</string>
-  <string name="vault_session_mode_manual">当场有效</string>
+  <string name="vault_session_mode_manual">一直有效</string>
   <string name="vault_session_mode_ttl_desc">Token 30 分钟后自动过期，需重新指纹验证签发</string>
-  <string name="vault_session_mode_manual_desc">Token 本次会话期间一直有效（App 结束/手动撤销即失效）</string>
+  <string name="vault_session_mode_manual_desc">Token 一直有效（永不过期），仅手动撤销后失效</string>
   <!-- Quota / 额度查询 -->
   <string name="quota_page_title">额度查询</string>
   <string name="quota_master_switch">额度查询</string>

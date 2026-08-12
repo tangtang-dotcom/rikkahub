@@ -2236,9 +2236,9 @@
   <string name="setting_web_bridge_switch_desc">Enable Web bridge</string>
   <string name="setting_web_bridge_switch_desc_detail">On: sync global config and enable Reasonix so remote callers reach phone APIs through the tunnel. Off: disable all.</string>
   <string name="vault_session_mode_ttl">30 分钟</string>
-  <string name="vault_session_mode_manual">当场有效</string>
+  <string name="vault_session_mode_manual_desc">Token never expires; invalidated only by manual revoke</string>
   <string name="vault_session_mode_ttl_desc">Token 30 分钟后自动过期，需重新指纹验证签发</string>
-  <string name="vault_session_mode_manual_desc">Token 本次会话期间一直有效（App 结束/手动撤销即失效）</string>
+  <string name="vault_session_mode_manual">Forever valid</string>
   <string name="vault_session_list_title">会话列表</string>
   <string name="vault_session_list_desc">所有已签发的会话，可单独撤销或复制 token</string>
   <string name="vault_session_empty">暂无会话</string>
