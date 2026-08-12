@@ -39,7 +39,7 @@ object SshKeyGenerator {
     private fun encodePkcs1(key: RSAPrivateCrtKey): String {
         val der = encodeDer(
             listOf(
-                bytes(0),
+                bytes(java.math.BigInteger.ZERO),
                 bytes(key.modulus),
                 bytes(key.publicExponent),
                 bytes(key.privateExponent),
