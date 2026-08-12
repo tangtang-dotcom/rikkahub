@@ -377,7 +377,7 @@ private fun ChatPageContent(
                     runCatching {
                         workspaceRepository.deleteFile(
                             ws.id,
-                            me.rerere.workspace.WorkspaceStorageArea.LINUX,
+                            me.rerere.workspace.WorkspaceStorageArea.FILES,
                             "/workspace/credentials/vault-token",
                             false,
                         )
