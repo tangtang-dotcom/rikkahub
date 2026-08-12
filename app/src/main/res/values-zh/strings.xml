@@ -1548,6 +1548,14 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_page_scheduled_jobs_subtitle_ran">上次触发 %1$s</string>
   <string name="setting_page_scheduled_jobs_subtitle_when">时间：%1$s</string>
   <string name="setting_page_telegram">Telegram 机器人</string>
+  <string name="setting_page_telegram_proxy_enabled">代理</string>
+  <string name="setting_page_telegram_proxy_enabled_desc">机器人的网络请求经代理转发。编辑需先停止机器人。</string>
+  <string name="setting_page_telegram_proxy_type">代理类型</string>
+  <string name="setting_page_telegram_proxy_type_desc">SOCKS5 不支持认证，下方用户名/密码仅适用于 HTTP。</string>
+  <string name="setting_page_telegram_proxy_host">代理主机</string>
+  <string name="setting_page_telegram_proxy_port">代理端口</string>
+  <string name="setting_page_telegram_proxy_username">代理用户名</string>
+  <string name="setting_page_telegram_proxy_password">代理密码</string>
   <string name="setting_page_telegram_battery_already_ok">已从电池优化中加入白名单。</string>
   <string name="setting_page_telegram_battery_desc">屏幕关闭时，激进的 OEM 系统（小米、OPPO、一加、Vivo）会切断非白名单应用的网络。机器人只能在偶尔的维护窗口期投递消息。点击将 RikkaHub Agents 加入白名单。</string>
   <string name="setting_page_telegram_battery_needed">电池优化：未加入白名单 - 点击修复</string>
