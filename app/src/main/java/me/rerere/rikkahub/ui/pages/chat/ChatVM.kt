@@ -30,6 +30,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.costguards.TokenBudgetTracker
+import me.rerere.rikkahub.data.ai.ContextBudgetPlanner
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -255,7 +256,7 @@ class ChatVM(
             }
         }
 
-    /** 当前模式的累计检测值：模式A = 估算 token（文本字符数 1:1），模式B = 会话累计 totalTokens */
+    /** 当前模式的累计检测值：模式A = ContextBudgetPlanner 精确估算（usage 优先 + ASCII 3:1/中文 1:1 + 媒体/工具计入），模式B = 会话累计 totalTokens */
     private fun autoCompressCurrentValue(): Long =
         when (settings.value.autoCompressMode) {
             1 -> {
@@ -263,8 +264,8 @@ class ChatVM(
             }
 
             else -> {
-                conversation.value.currentMessages
-                    .sumOf { it.toText().length }
+                ContextBudgetPlanner
+                    .estimateContextTokens(conversation.value.currentMessages)
                     .toLong()
             }
         }
