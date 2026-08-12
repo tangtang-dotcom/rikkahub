@@ -2015,6 +2015,10 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_ssh_host_password">密码</string>
   <string name="setting_ssh_host_private_key">私钥 (PEM)</string>
   <string name="setting_ssh_host_passphrase">口令</string>
+  <string name="setting_ssh_from_template">从服务器样板填充</string>
+  <string name="setting_ssh_pick_vault_key">从密钥库选择私钥</string>
+  <string name="setting_ssh_template_used">样板：%1$s</string>
+  <string name="setting_ssh_vault_key_used">密钥库：%1$s</string>
   <string name="tts_label_1">S2.1-Pro (推荐)</string>
   <string name="tts_label_2">S2.1-Pro Free (免费)</string>
   <string name="tts_label_3">step-tts-mini (轻量, 便宜)</string>

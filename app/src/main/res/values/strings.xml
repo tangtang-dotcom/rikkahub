@@ -2013,6 +2013,10 @@
   <string name="setting_ssh_host_password">Password</string>
   <string name="setting_ssh_host_private_key">Private key (PEM)</string>
   <string name="setting_ssh_host_passphrase">Passphrase</string>
+  <string name="setting_ssh_from_template">Fill from server template</string>
+  <string name="setting_ssh_pick_vault_key">Pick private key from Vault</string>
+  <string name="setting_ssh_template_used">Template: %1$s</string>
+  <string name="setting_ssh_vault_key_used">Vault key: %1$s</string>
   <string name="tts_label_1">S2.1-Pro (recommended)</string>
   <string name="tts_label_2">S2.1-Pro Free (免费)</string>
   <string name="tts_label_3">step-tts-mini (lightweight, cheap)</string>

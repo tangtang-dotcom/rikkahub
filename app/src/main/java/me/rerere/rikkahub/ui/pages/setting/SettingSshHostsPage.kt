@@ -31,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.db.entity.SshHostEntity
 import me.rerere.rikkahub.data.repository.SshHostRepository
@@ -49,6 +52,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SettingSshHostsPage() {
     val sshHostRepository: SshHostRepository = koinInject()
+    val vaultRepo: me.rerere.rikkahub.data.vault.CredentialVaultRepository = koinInject()
     val scope = rememberCoroutineScope()
     val settings = LocalSettings.current
 
@@ -135,6 +139,7 @@ fun SettingSshHostsPage() {
     if (showEdit) {
         SshHostEditDialog(
             initial = editing,
+            vaultRepo = vaultRepo,
             onDismiss = { showEdit = false },
             onSave = { entity ->
                 scope.launch {
@@ -150,6 +155,7 @@ fun SettingSshHostsPage() {
 @Composable
 private fun SshHostEditDialog(
     initial: SshHostEntity?,
+    vaultRepo: me.rerere.rikkahub.data.vault.CredentialVaultRepository,
     onDismiss: () -> Unit,
     onSave: (SshHostEntity) -> Unit,
 ) {
@@ -160,6 +166,15 @@ private fun SshHostEditDialog(
     var password by remember { mutableStateOf(initial?.password ?: "") }
     var privateKey by remember { mutableStateOf(initial?.privateKey ?: "") }
     var passphrase by remember { mutableStateOf(initial?.passphrase ?: "") }
+    var vaultCredentialRef by remember { mutableStateOf(initial?.vaultCredentialRef) }
+    var templateRef by remember { mutableStateOf(initial?.templateRef) }
+    val scope = rememberCoroutineScope()
+    var vaultEntries by remember { mutableStateOf<List<me.rerere.rikkahub.data.db.entity.VaultCredentialEntity>>(emptyList()) }
+    var showVaultPicker by remember { mutableStateOf(false) }
+    var showTemplatePicker by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { vaultEntries = vaultRepo.getAll() }
+    val serverTemplates = vaultEntries.filter { it.group == "server" }
+    val keyCandidates = vaultEntries.filter { it.group != "server" }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -173,6 +188,56 @@ private fun SshHostEditDialog(
                 OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text(stringResource(R.string.setting_ssh_host_password)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = privateKey, onValueChange = { privateKey = it }, label = { Text(stringResource(R.string.setting_ssh_host_private_key)) }, minLines = 2, maxLines = 5, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = passphrase, onValueChange = { passphrase = it }, label = { Text(stringResource(R.string.setting_ssh_host_passphrase)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+
+                // 从服务器样板选择
+                if (serverTemplates.isNotEmpty()) {
+                    OutlinedButton(onClick = { showTemplatePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.setting_ssh_from_template))
+                    }
+                    if (showTemplatePicker) {
+                        serverTemplates.forEach { tpl ->
+                            TextButton(
+                                onClick = {
+                                    val json = vaultRepo.decryptValue(tpl)
+                                    if (json != null) {
+                                        runCatching {
+                                            val obj = kotlinx.serialization.json.Json.parseToJsonElement(json).jsonObject
+                                            host = obj["host"]?.jsonPrimitive?.contentOrNull ?: host
+                                            port = (obj["port"]?.jsonPrimitive?.contentOrNull ?: port)
+                                            user = obj["user"]?.jsonPrimitive?.contentOrNull ?: user
+                                            vaultCredentialRef = obj["keyRef"]?.jsonPrimitive?.contentOrNull ?: vaultCredentialRef
+                                            templateRef = tpl.name
+                                        }
+                                    }
+                                    showTemplatePicker = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(tpl.name)
+                            }
+                        }
+                    }
+                }
+                if (templateRef != null) {
+                    Text(stringResource(R.string.setting_ssh_template_used, templateRef!!), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
+
+                // 私钥：从 Vault 选择（引用，不明文粘贴）
+                if (keyCandidates.isNotEmpty()) {
+                    OutlinedButton(onClick = { showVaultPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.setting_ssh_pick_vault_key))
+                    }
+                    if (showVaultPicker) {
+                        keyCandidates.forEach { cred ->
+                            TextButton(onClick = { vaultCredentialRef = cred.name; showVaultPicker = false }, modifier = Modifier.fillMaxWidth()) {
+                                Text(cred.name)
+                            }
+                        }
+                    }
+                    if (vaultCredentialRef != null) {
+                        Text(stringResource(R.string.setting_ssh_vault_key_used, vaultCredentialRef!!), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
             }
         },
         confirmButton = {
@@ -190,6 +255,8 @@ private fun SshHostEditDialog(
                             password = password.ifBlank { null },
                             privateKey = privateKey.ifBlank { null },
                             passphrase = passphrase.ifBlank { null },
+                            vaultCredentialRef = vaultCredentialRef,
+                            templateRef = templateRef,
                             createdAtMs = initial?.createdAtMs ?: System.currentTimeMillis(),
                         ),
                     )
