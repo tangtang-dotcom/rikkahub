@@ -321,7 +321,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // SSH client (Mwiede fork — maintained, Android-friendly)
-    implementation("com.github.mwiede:jsch:0.2.21")
+    implementation("com.github.mwiede:jsch:2.28.6")
 
     // Cron utilities (expression parsing & validation)
     implementation("com.cronutils:cron-utils:9.2.1")
