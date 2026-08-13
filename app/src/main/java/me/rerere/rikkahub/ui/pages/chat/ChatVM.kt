@@ -627,6 +627,78 @@ class ChatVM(
                         writeAutoTaskConfig(context, AutoTaskConfig())
                         _autoTaskActive.value = false
                     }
+
+                    2 -> {
+                        // 随机空闲：空闲后 5-15 秒随机间隔自动发送，持续触发（直到停止）
+                        while (isActive) {
+                            val job = conversationJob.value
+                            if (job != null && job.isActive) {
+                                try {
+                                    withTimeoutOrNull(300_000L) {
+                                        conversationJob.first { it == null || !it.isActive }
+                                    }
+                                } catch (_: Exception) {
+                                }
+                            }
+
+                            val randomDelay = (5L..15L).random() * 1000L
+                            delay(randomDelay)
+                            if (!isActive) break
+                            handleMessageSend(
+                                listOf(UIMessagePart.Text(config.message)),
+                                answer = true,
+                            )
+                        }
+                        writeAutoTaskConfig(context, AutoTaskConfig())
+                    }
+
+                    3 -> {
+                        // 任务列表（借鉴 reasonix 任务模式）：按顺序执行列表中的任务，
+                        // 每次触发 = 下一个任务；列表跑完自动停止（不是无限自动）。
+                        val tasks = config.tasks.map { it.trim() }.filter { it.isNotEmpty() }
+                        if (tasks.isEmpty()) {
+                            _autoTaskActive.value = false
+                            return@launch
+                        }
+                        var currentIndex = config.taskIndex.coerceIn(0, tasks.lastIndex)
+                        while (currentIndex < tasks.size && isActive) {
+                            // 等待当前生成中的回复完成
+                            val job = conversationJob.value
+                            if (job != null && job.isActive) {
+                                try {
+                                    withTimeoutOrNull(300_000L) {
+                                        conversationJob.first { it == null || !it.isActive }
+                                    }
+                                } catch (_: Exception) {
+                                }
+                            }
+                            // 会话空闲计时：空闲达设定秒数后触发下一个任务
+                            var idleSeconds = 0
+                            while (idleSeconds < config.intervalSeconds && isActive) {
+                                delay(1_000L)
+                                val currentJob = conversationJob.value
+                                if (currentJob != null && currentJob.isActive) {
+                                    idleSeconds = 0
+                                    break
+                                }
+                                idleSeconds++
+                            }
+                            if (!isActive) break
+                            val taskMsg = tasks[currentIndex]
+                            me.rerere.rikkahub.data.log.AppLog.d(
+                                "AutoTask",
+                                "任务列表触发 #${currentIndex + 1}/${tasks.size}: ${taskMsg.take(40)}",
+                            )
+                            handleMessageSend(
+                                listOf(UIMessagePart.Text(taskMsg)),
+                                answer = true,
+                            )
+                            currentIndex++
+                            writeAutoTaskConfig(context, config.copy(taskIndex = currentIndex))
+                        }
+                        writeAutoTaskConfig(context, AutoTaskConfig())
+                        _autoTaskActive.value = false
+                    }
                 }
             }
     }

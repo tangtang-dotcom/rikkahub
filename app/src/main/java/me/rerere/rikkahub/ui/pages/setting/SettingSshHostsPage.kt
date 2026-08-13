@@ -43,6 +43,7 @@ import me.rerere.rikkahub.data.repository.SshHostRepository
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalSettings
+import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.koinInject
 
@@ -56,6 +57,7 @@ import org.koin.compose.koinInject
 fun SettingSshHostsPage() {
     val sshHostRepository: SshHostRepository = koinInject()
     val vaultRepo: me.rerere.rikkahub.data.vault.CredentialVaultRepository = koinInject()
+    val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
     val toaster = me.rerere.rikkahub.ui.context.LocalToaster.current
     val settings = LocalSettings.current
@@ -102,15 +104,24 @@ fun SettingSshHostsPage() {
                             headlineContent = { Text(host.name) },
                             supportingContent = { Text("${host.user}@${host.host}:${host.port}") },
                             trailingContent = {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            sshHostRepository.deleteByName(host.name)
-                                            reload()
-                                        }
-                                    },
-                                ) {
-                                    Text(stringResource(R.string.setting_ssh_host_delete), color = MaterialTheme.colorScheme.error)
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    TextButton(
+                                        onClick = {
+                                            navController.navigate(me.rerere.rikkahub.Screen.SshTerminal(host.name))
+                                        },
+                                    ) {
+                                        Text(stringResource(R.string.setting_ssh_host_connect), color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch {
+                                                sshHostRepository.deleteByName(host.name)
+                                                reload()
+                                            }
+                                        },
+                                    ) {
+                                        Text(stringResource(R.string.setting_ssh_host_delete), color = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             },
                         )

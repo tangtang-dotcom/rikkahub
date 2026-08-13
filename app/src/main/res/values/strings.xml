@@ -866,6 +866,10 @@
   <string name="setting_page_mcp_desc">Configure MCP Servers</string>
   <string name="setting_page_message_display_settings">Message Display</string>
   <string name="setting_page_model_and_services">Models &amp; Services</string>
+  <string name="setting_page_section_model">Model &amp; Content</string>
+  <string name="setting_page_section_connection">Connection &amp; Backend</string>
+  <string name="setting_page_section_security">Security &amp; Credentials</string>
+  <string name="setting_page_section_automation">Automation &amp; Diagnostics</string>
   <string name="setting_page_no_share_app">No sharing app found</string>
   <string name="setting_page_providers">Providers</string>
   <string name="setting_page_providers_desc">Configure AI providers</string>
@@ -2010,6 +2014,11 @@
   <string name="auto_task_reply_placeholder">Auto task mode. Think autonomously and execute what needs to be done.</string>
   <string name="auto_task_default_message">Auto task mode. Think autonomously and execute what needs to be done.</string>
   <string name="setting_page_ssh_hosts">SSH hosts</string>
+  <string name="setting_page_backend_service">Backend services</string>
+  <string name="setting_page_backend_service_desc">Reasonix / ECS / PC execution backends</string>
+  <string name="backend_service_title">Backend services</string>
+  <string name="backend_service_about_title">What is a backend?</string>
+  <string name="backend_service_about_desc">Backends are execution channels (not chat models): the AI thinks with a model and executes through a backend (Reasonix tasks / SSH hosts / self-hosted services). Default is local; switch to a remote backend for heavy work.</string>
   <string name="setting_page_ssh_hosts_desc">Manage SSH hosts; AI can connect by name</string>
   <string name="setting_shizuku_title">Shizuku</string>
   <string name="setting_page_shizuku">Shizuku</string>
@@ -2032,6 +2041,7 @@
   <string name="setting_shizuku_help_body">Install Shizuku from its GitHub releases page, then start its service: from the Shizuku app on a rooted device, or by pairing wireless debugging on Android 11+ (Developer options → Wireless debugging → Pair device with pairing code, then run the start command Shizuku shows you). Once the service is running, tap Permission above to grant RikkaHub access.</string>
   <string name="setting_ssh_hosts_title">SSH hosts</string>
   <string name="setting_ssh_host_delete">Delete</string>
+  <string name="setting_ssh_host_connect">Connect</string>
   <string name="setting_ssh_host_add">Add host</string>
   <string name="setting_ssh_host_hint">AI can reference saved hosts by name via ssh_exec_saved / vault_ssh_exec. Credentials are stored locally; Vault encryption is planned.</string>
   <string name="setting_ssh_host_edit">Edit host</string>
@@ -2108,6 +2118,10 @@
   <string name="auto_task_idle_label">Idle minutes</string>
   <string name="auto_task_idle_hint">Trigger after the conversation has been idle for the specified minutes (1-60, shared by count/random modes; random picks inside this window).</string>
   <string name="auto_task_mode_random">Random idle</string>
+  <string name="auto_task_mode_tasks">Task list</string>
+  <string name="auto_task_tasks_label">Tasks (one per line)</string>
+  <string name="auto_task_tasks_hint">Executed in order on each trigger; auto-stops when the list is done.</string>
+  <string name="auto_task_tasks_default">Use default list</string>
   <string name="auto_task_mode_random_hint">Triggers at a random idle time inside the configured window (1 min = 30-60s, 2 min = 60-120s…), continues until stopped.</string>
   <string name="auto_task_stop">Stop auto task</string>
   <string name="auto_task_tip">Note: count mode stops after reaching the set count; random-idle keeps triggering until manually stopped.</string>

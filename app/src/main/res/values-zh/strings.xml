@@ -841,6 +841,10 @@
   <string name="setting_page_mcp_desc">配置MCP服务器</string>
   <string name="setting_page_message_display_settings">消息显示</string>
   <string name="setting_page_model_and_services">模型与服务</string>
+  <string name="setting_page_section_model">模型与内容</string>
+  <string name="setting_page_section_connection">连接与后端</string>
+  <string name="setting_page_section_security">安全与凭证</string>
+  <string name="setting_page_section_automation">自动化与诊断</string>
   <string name="setting_page_no_share_app">找不到分享应用</string>
   <string name="setting_page_providers">提供商</string>
   <string name="setting_page_providers_desc">配置AI提供商</string>
@@ -2012,6 +2016,11 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="auto_task_reply_placeholder">自动任务中。自主判断并执行当前需要做什么。</string>
   <string name="auto_task_default_message">自动任务中。自主判断并执行当前需要做什么。</string>
   <string name="setting_page_ssh_hosts">SSH 主机</string>
+  <string name="setting_page_backend_service">后端服务</string>
+  <string name="setting_page_backend_service_desc">Reasonix / ECS / PC 执行后端</string>
+  <string name="backend_service_title">后端服务</string>
+  <string name="backend_service_about_title">什么是后端？</string>
+  <string name="backend_service_about_desc">后端是执行通道（不是聊天模型）：AI 用模型思考、通过后端执行（Reasonix 任务 / SSH 主机 / 自建服务）。默认本机执行；重活可切换到远程后端。</string>
   <string name="setting_page_ssh_hosts_desc">管理 SSH 主机；AI 可按名连接</string>
   <string name="setting_shizuku_title">Shizuku</string>
   <string name="setting_page_shizuku">Shizuku</string>
@@ -2034,6 +2043,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_shizuku_help_body">从 GitHub releases 安装 Shizuku，然后启动服务：已 root 设备从 Shizuku 应用启动；Android 11+ 用无线调试配对（开发者选项 → 无线调试 → 使用配对码配对，然后运行 Shizuku 显示的启动命令）。服务运行后，点击上方「权限」授予 RikkaHub 访问权限。</string>
   <string name="setting_ssh_hosts_title">SSH 主机</string>
   <string name="setting_ssh_host_delete">删除</string>
+  <string name="setting_ssh_host_connect">连接</string>
   <string name="setting_ssh_host_add">添加主机</string>
   <string name="setting_ssh_host_hint">AI 可按名称引用已保存主机（ssh_exec_saved / vault_ssh_exec）。凭证本地存储；Vault 加密为后续增强。</string>
   <string name="setting_ssh_host_edit">编辑主机</string>
@@ -2110,6 +2120,10 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="auto_task_idle_label">空闲分钟数</string>
   <string name="auto_task_idle_hint">会话空闲达到指定分钟后触发（1-60 分钟，次数/随机共用；随机模式在此区间内随机）</string>
   <string name="auto_task_mode_random">随机空闲</string>
+  <string name="auto_task_mode_tasks">任务列表</string>
+  <string name="auto_task_tasks_label">任务（每行一个）</string>
+  <string name="auto_task_tasks_hint">按顺序逐步执行；列表跑完自动停止。</string>
+  <string name="auto_task_tasks_default">使用默认列表</string>
   <string name="auto_task_mode_random_hint">会话空闲达设定时间区间内随机触发（1 分钟=30-60s，2 分钟=60-120s…），持续直到手动停止</string>
   <string name="auto_task_stop">停止自动任务</string>
   <string name="auto_task_tip">提示：次数模式触发满设置次数后自动停止；随机空闲持续触发，需手动停止。</string>
