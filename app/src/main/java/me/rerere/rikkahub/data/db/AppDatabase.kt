@@ -104,11 +104,13 @@ import me.rerere.rikkahub.workflow.db.WorkflowRunEntity
         // （CompressedArchiveEntity -> compressed_archives）。v28 已随 Release 2.45.5
         // 发布过（Vault MVP），真实设备存在 v28 数据库；v29 新增 vault_audit_log
         // （28→29 由手写 Migration_28_29 处理）；v30 新增 compressed_archives
-        // （29→30 由手写 Migration_29_30 处理）。此处 27→30 一步自动迁移服务于仍
-        // 停留在 v27 的用户（纯新增表/加列，Room 对比 27/31 schema 推断即可），三条路径
+        // （29→30 由手写 Migration_29_30 处理）。此处 27→32 一步自动迁移服务于仍
+        // 停留在 v27 的用户（纯新增表/加列，Room 对比 27/32 schema 推断即可），三条路径
         // 并存，Room 按设备当前版本自动选择。
-        AutoMigration(from = 27, to = 31),
-        // v32: 记忆分层——memoryentity 加 tier 列（手写 Migration_31_32——31.json 未导出，不能用 AutoMigration）
+        // 注意：27→31 改为 27→32——version=32 后 31 不再是最终版本，AutoMigration 终点
+        // 非最终版需要 31.json（从未导出），故一步到 32（tier 列纯新增可自动推断）。
+        AutoMigration(from = 27, to = 32),
+        // v32: 记忆分层——memoryentity 加 tier 列（手写 Migration_31_32 覆盖 v31→v32 路径）
     ]
 )
 @TypeConverters(TokenUsageConverter::class)
