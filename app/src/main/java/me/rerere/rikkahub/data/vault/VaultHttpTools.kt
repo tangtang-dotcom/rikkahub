@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit
  * 目标：AI 工具输出中即使意外出现凭证明文，也不让其进入 LLM 上下文。
  * 策略（按用户定稿 2026-08-13）：
  * - **只对密钥库（Vault）内容掩码**——掩码字典 = 密钥库全部凭证的明文值（按规范名称索引）
- * - **仅用于 vault 工具输出**（vault_ssh_exec / vault_http_exec），不做全局工具输出掩码
- *   ——避免密钥库值恰好是通用词时连累包名/目录名等非敏感文本
- * - 每次调用实时取全量值（随加随掩），不做格式正则猜测（避免误伤）
+ * - **随加随掩**——refresh() 时按凭证表版本比对，新增/修改凭证自动纳入，无需改代码
+ * - 缓存化——凭证未变更时复用内存字典，避免每次全量解密
+ * - 不做格式正则猜测（避免误伤、避免掩码库外内容）
  *
  * 安全：掩码发生在 App 进程内、内存态，解密值不落盘、不进 AI 上下文。
  */
@@ -34,6 +34,25 @@ object SecretMasker {
     // 值短于此长度不做替换（短值如 chat_id/用户名等非敏感——不掩以减少对工具输出的干扰；
     // 2026-08-14 从 4 调到 9——只掩 ≥9 的真敏感值）
     private const val MIN_LEN = 9
+
+    // 缓存：凭证表版本（max updatedAt）→ 值字典
+    @Volatile
+    private var cachedVersion: Long = -1
+
+    @Volatile
+    private var cachedValues: List<String> = emptyList()
+
+    /** 刷新掩码字典（suspend）。凭证未变更时走缓存。 */
+    suspend fun refresh(repository: CredentialVaultRepository) {
+        val entries = repository.getAll()
+        val version = entries.maxOfOrNull { it.updatedAt } ?: 0L
+        if (version == cachedVersion) return
+        cachedVersion = version
+        cachedValues = entries.mapNotNull { repository.decryptValue(it) }
+    }
+
+    /** 掩码文本（同步；调用方需先 refresh 保证字典最新）。 */
+    fun mask(text: String): String = mask(text, cachedValues)
 
     /** 掩码文本：把其中出现的任意 activeSecrets 值替换为 ***。 */
     fun mask(text: String, activeSecrets: Collection<String>): String {
