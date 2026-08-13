@@ -18,6 +18,7 @@
 - **修复** Screen.SettingShizuku 补 @Serializable — Navigation3 序列化闪退（`dd4c2d4d`）
 - **修复** 助手本地工具补 Shizuku/VaultTools 开关条目（UI 漏渲染）（`21b2037a`）
 - **构建** JSch 0.2.21→2.28.6 — 支持 ed25519 OPENSSH 私钥（`2f2db614`）
+- **功能** 记忆分层注入（发版后追加）— core 常驻 + conditional 按需 memory_search 检索 + Room v32（`e5807a40` 起，CI #457）
 - **文档** 环境手册更新 fork 链（本仓库 = ExTV fork）+ AI 工具面机制 + 远端 CLI 凭证不落盘纪律
 
 ---
