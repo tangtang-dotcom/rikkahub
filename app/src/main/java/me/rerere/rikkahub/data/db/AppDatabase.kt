@@ -108,8 +108,7 @@ import me.rerere.rikkahub.workflow.db.WorkflowRunEntity
         // 停留在 v27 的用户（纯新增表/加列，Room 对比 27/31 schema 推断即可），三条路径
         // 并存，Room 按设备当前版本自动选择。
         AutoMigration(from = 27, to = 31),
-        // v32: 记忆分层——memoryentity 加 tier 列（默认 'core'，纯新增）
-        AutoMigration(from = 31, to = 32),
+        // v32: 记忆分层——memoryentity 加 tier 列（手写 Migration_31_32——31.json 未导出，不能用 AutoMigration）
     ]
 )
 @TypeConverters(TokenUsageConverter::class)

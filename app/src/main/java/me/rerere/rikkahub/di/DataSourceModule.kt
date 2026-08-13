@@ -81,6 +81,7 @@ val dataSourceModule =
                     Migration_28_29,
                     Migration_29_30,
                     Migration_30_31,
+                    Migration_31_32,
                 ).addCallback(
                     object : RoomDatabase.Callback() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
