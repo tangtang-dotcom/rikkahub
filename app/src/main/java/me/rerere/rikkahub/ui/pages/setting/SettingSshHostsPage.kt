@@ -157,7 +157,7 @@ fun SettingSshHostsPage() {
                             "SshHostsPage",
                             "保存 SSH 主机失败: name=${entity.name} err=${e.message}",
                         )
-                        toaster.toast("保存失败: ${e.message ?: e.javaClass.simpleName}")
+                        toaster.show("保存失败: ${e.message ?: e.javaClass.simpleName}")
                     }
                 }
             },
