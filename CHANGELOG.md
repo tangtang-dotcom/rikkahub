@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-08-13（2.45.7.4）
+
+- **功能** 多工作区命令通用 — workspace_shell 加 workspace 参数（目标工作区 rootfs 执行）+ workspace_list 工具（id/name/状态）（`cbbd8d3c` / `6bedc1ec`）
+- **修复** 工作区删除防孤儿 — 先删文件后删 DB（失败不删 DB 可重试）（`4f411c54`）
+- **功能** vault_http_exec — 凭证代理 HTTP 调用（App 进程内解密注入请求头，AI 只见掩码后响应，审批+审计）（`096ffd17`）
+- **功能** 统一输出掩码 SecretMasker — 只掩密钥库值（按名称索引、随加随掩、缓存化、MIN_LEN=4），GenerationHandler 工具结果统一出口（先掩后截防落盘明文）（`e1da19e8` / `c2bb349b`）
+- **功能** shizuku_exec（ExTV 移植）— shell-UID 提权执行 + Shizuku 设置页（状态/授权/帮助）+ AIDL + keep 规则 + 审批门（`74879b82` / `eb3da2a3`）
+- **功能** SSH 主机凭证走 Vault 引用 — resolveHostAuth 连接层解析 vaultCredentialRef + save_ssh_host 支持 vault_credential（数据库不存明文）（`86d77438`）
+- **功能** CredentialImporter 多行值支持 — SSH 私钥 PEM 批量导入（`1f900aa0`）
+- **修复** SSH 私钥选择器只显示 SSH 组 + 列表可滚动（`e3cbe13f`）
+- **修复** Screen.SettingShizuku 补 @Serializable — Navigation3 序列化闪退（`dd4c2d4d`）
+- **修复** 助手本地工具补 Shizuku/VaultTools 开关条目（UI 漏渲染）（`21b2037a`）
+- **构建** JSch 0.2.21→2.28.6 — 支持 ed25519 OPENSSH 私钥（`2f2db614`）
+- **文档** 环境手册更新 fork 链（本仓库 = ExTV fork）+ AI 工具面机制 + 远端 CLI 凭证不落盘纪律
+
+---
+
 ## 2026-08-12
 
 - **修复** Web 桥 SSH auth fail 终极根因 — SshKeyGenerator 密钥编码 bug（sshString 长度前缀误用于 DER → 私钥无效/公钥非标准），新增 bytes() 裸字节修复（`e8b559e7`）
