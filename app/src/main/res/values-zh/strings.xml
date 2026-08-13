@@ -94,6 +94,12 @@
   <string name="assistant_page_local_tools_tts_desc">让AI使用您所选的TTS服务为您朗读文本</string>
   <string name="assistant_page_local_tools_tts_title">文字转语音</string>
   <string name="assistant_page_manage_memory_title">管理记忆</string>
+  <string name="assistant_page_memory_tier">层级</string>
+  <string name="assistant_page_memory_tier_core">核心（常驻注入）</string>
+  <string name="assistant_page_memory_tier_conditional">按需（检索注入）</string>
+  <string name="assistant_page_memory_tier_hint">核心记忆每轮常驻；按需记忆由 memory_search 按需检索加载。</string>
+  <string name="assistant_page_memory_tier_core_short">core</string>
+  <string name="assistant_page_memory_tier_conditional_short">conditional</string>
   <string name="assistant_page_max_tokens">最大Token数</string>
   <string name="assistant_page_max_tokens_desc">最大生成Token数量。留空表示无限制。</string>
   <string name="assistant_page_max_tokens_limit">限制：%d 个Token</string>
