@@ -13,6 +13,6 @@ data class MemoryEntity(
     @ColumnInfo("content")
     val content: String = "",
     /** 记忆分层（2026-08-13）：core = 常驻；conditional = 按需检索。默认 core 保持既有行为。 */
-    @ColumnInfo("tier")
+    @ColumnInfo("tier", defaultValue = "core")
     val tier: String = "core",
 )
