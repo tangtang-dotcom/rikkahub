@@ -70,7 +70,7 @@ import me.rerere.rikkahub.workflow.db.WorkflowRunEntity
         VaultAuditLogEntity::class,
         CompressedArchiveEntity::class,
     ],
-    version = 31,
+    version = 32,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -108,6 +108,8 @@ import me.rerere.rikkahub.workflow.db.WorkflowRunEntity
         // 停留在 v27 的用户（纯新增表/加列，Room 对比 27/31 schema 推断即可），三条路径
         // 并存，Room 按设备当前版本自动选择。
         AutoMigration(from = 27, to = 31),
+        // v32: 记忆分层——memoryentity 加 tier 列（默认 'core'，纯新增）
+        AutoMigration(from = 31, to = 32),
     ]
 )
 @TypeConverters(TokenUsageConverter::class)

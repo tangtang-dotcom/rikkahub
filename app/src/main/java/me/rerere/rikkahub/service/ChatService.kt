@@ -964,9 +964,10 @@ class ChatService(
                     workspaceCwd = conversation.workspaceCwd,
                     memories =
                         if (assistant.useGlobalMemory) {
-                            memoryRepository.getGlobalMemories()
+                            // 记忆分层（2026-08-13）：只注入 core 常驻；conditional 由 AI 用 memory_search 按需检索
+                            memoryRepository.getCoreMemoriesOfAssistant(me.rerere.rikkahub.data.repository.MemoryRepository.GLOBAL_MEMORY_ID)
                         } else {
-                            memoryRepository.getMemoriesOfAssistant(assistant.id.toString())
+                            memoryRepository.getCoreMemoriesOfAssistant(assistant.id.toString())
                         },
                     inputTransformers =
                         buildList {

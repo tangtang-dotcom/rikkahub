@@ -369,14 +369,17 @@ class GenerationHandler(
                     }
                     buildMemoryTools(
                         json = json,
-                        onCreation = { content ->
-                            memoryRepo.addMemory(memoryAssistantId, content)
+                        onCreation = { content, tier ->
+                            memoryRepo.addMemory(memoryAssistantId, content, tier)
                         },
-                        onUpdate = { id, content ->
-                            memoryRepo.updateContent(id, content)
+                        onUpdate = { id, content, tier ->
+                            memoryRepo.updateContent(id, content, tier)
                         },
                         onDelete = { id ->
                             memoryRepo.deleteMemory(id)
+                        },
+                        onSearch = { keyword ->
+                            memoryRepo.searchConditionalMemories(keyword)
                         }
                     ).let(this::addAll)
                 }
