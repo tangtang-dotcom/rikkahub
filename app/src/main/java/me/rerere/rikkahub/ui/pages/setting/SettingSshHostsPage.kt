@@ -57,6 +57,7 @@ fun SettingSshHostsPage() {
     val sshHostRepository: SshHostRepository = koinInject()
     val vaultRepo: me.rerere.rikkahub.data.vault.CredentialVaultRepository = koinInject()
     val scope = rememberCoroutineScope()
+    val toaster = me.rerere.rikkahub.ui.context.LocalToaster.current
     val settings = LocalSettings.current
 
     var hosts by remember { mutableStateOf<List<SshHostEntity>>(emptyList()) }
@@ -146,9 +147,18 @@ fun SettingSshHostsPage() {
             onDismiss = { showEdit = false },
             onSave = { entity ->
                 scope.launch {
-                    sshHostRepository.upsert(entity)
-                    reload()
-                    showEdit = false
+                    runCatching {
+                        sshHostRepository.upsert(entity)
+                    }.onSuccess {
+                        reload()
+                        showEdit = false
+                    }.onFailure { e ->
+                        me.rerere.rikkahub.data.log.AppLog.w(
+                            "SshHostsPage",
+                            "保存 SSH 主机失败: name=${entity.name} err=${e.message}",
+                        )
+                        toaster.toast("保存失败: ${e.message ?: e.javaClass.simpleName}")
+                    }
                 }
             },
         )
@@ -162,6 +172,7 @@ private fun SshHostEditDialog(
     onDismiss: () -> Unit,
     onSave: (SshHostEntity) -> Unit,
 ) {
+    val toaster = me.rerere.rikkahub.ui.context.LocalToaster.current
     var name by remember { mutableStateOf(initial?.name ?: "") }
     var host by remember { mutableStateOf(initial?.host ?: "") }
     var port by remember { mutableStateOf((initial?.port ?: 22).toString()) }
