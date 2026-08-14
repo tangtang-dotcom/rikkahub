@@ -67,6 +67,15 @@ val repositoryModule =
                             source = File(context.filesDir, FileFolders.UPLOAD).apply { mkdirs() },
                             target = "/upload",
                         ),
+                        // App 私有数据直通（2026-08-14）：沙箱内直接访问 App 数据库/配置（分析用）
+                        WorkspaceBindMount(
+                            source = File(context.filesDir, "databases"),
+                            target = "/workspace/app-databases",
+                        ),
+                        WorkspaceBindMount(
+                            source = File(context.filesDir, "shared_prefs"),
+                            target = "/workspace/app-shared-prefs",
+                        ),
                     ),
             )
         }
