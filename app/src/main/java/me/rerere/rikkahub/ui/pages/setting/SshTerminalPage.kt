@@ -66,7 +66,7 @@ fun SshTerminalPage(hostName: String) {
                 session.setConfig("ServerAliveInterval", "30")
                 session.setConfig("ServerAliveCountMax", "3")
                 auth.password?.let { session.setPassword(it) }
-                auth.privateKey?.let { jsch.addIdentity("ssh-term-${hostName}", it.toByteArray(Charsets.UTF_8), null, null) }
+                auth.privateKey?.let { jsch.addIdentity("ssh-term-${hostName}", it.ensureTrailingNewline().toByteArray(Charsets.UTF_8), null, null) }
                 session.connect(10000)
                 sessionRef.set(session)
                 connected = true

@@ -286,7 +286,9 @@ private suspend fun runVaultSshExec(
         }
         val session: com.jcraft.jsch.Session = jsch.getSession(user, host, port)
         when (auth) {
-            "key" -> jsch.addIdentity("vault-key", secret.encodeToByteArray(), null, null)
+            "key" ->
+                // OPENSSH 私钥严格要求末尾换行（缺换行会导致 Auth fail），导入缺行时自动补
+                jsch.addIdentity("vault-key", secret.ensureTrailingNewline().encodeToByteArray(), null, null)
             "password" -> session.setPassword(secret)
             else -> return@withContext fail("auth 只支持 key/password")
         }
@@ -349,3 +351,6 @@ private suspend fun runVaultSshExec(
         listOf(UIMessagePart.Text("❌ SSH 执行失败: ${e.message}"))
     }
 }
+
+/** OPENSSH 私钥末尾换行标准化：缺末尾换行时补上（否则 JSch 认证失败）。 */
+internal fun String.ensureTrailingNewline(): String = if (endsWith("\n")) this else "$this\n"
