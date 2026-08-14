@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
+import me.rerere.rikkahub.data.vault.ensureTrailingNewline
 import android.content.Context
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject

@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import me.rerere.rikkahub.data.vault.ensureTrailingNewline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
+import me.rerere.rikkahub.data.vault.ensureTrailingNewline
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -609,7 +610,7 @@ internal suspend fun execOneShot(
                     val retryable = !isAuthFailure(e.message) && !isHostKeyChange(e.message)
                     if (attempt < 2 && retryable) {
                         Log.w(TAG_SSH, "ssh handshake attempt $attempt failed, retrying: ${e.message}")
-                        kotlinx.coroutines.delay(800)
+                        Thread.sleep(800)
                         continue
                     }
                     throw e
