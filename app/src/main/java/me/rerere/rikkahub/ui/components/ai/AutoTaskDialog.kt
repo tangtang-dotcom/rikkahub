@@ -113,6 +113,7 @@ fun AutoTaskDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
 
                 // 随机补充池（可选，每行一条）
                 OutlinedTextField(
@@ -218,8 +219,6 @@ fun AutoTaskDialog(
                         }
                     }
                 }
-
-                )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
