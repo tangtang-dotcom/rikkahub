@@ -3,6 +3,8 @@ package me.rerere.rikkahub.data.vault
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
@@ -196,7 +198,7 @@ private suspend fun runVaultExportEnv(
     if (exported.isEmpty()) return fail("解密失败，未导出任何凭证")
 
     val wsRepository =
-        runCatching { org.koin.java.KoinJavaComponent.getKoin().get(me.rerere.rikkahub.data.repository.WorkspaceRepository::class.java) }
+        runCatching { org.koin.java.KoinJavaComponent.get(me.rerere.rikkahub.data.repository.WorkspaceRepository::class.java) }
             .getOrNull()
             ?: return fail("工作区不可用")
     val ws = wsRepository.getAll().firstOrNull() ?: return fail("无工作区")
