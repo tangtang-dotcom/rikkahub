@@ -114,6 +114,8 @@ class SettingsStore(
         // UI设置
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val THEME_ID = stringPreferencesKey("theme_id")
+        val EXECUTION_BACKEND = stringPreferencesKey("execution_backend")
+        val BACKEND_CONNECTIONS = stringPreferencesKey("backend_connections")
         val CUSTOM_THEMES = stringPreferencesKey("custom_themes")
         val DISPLAY_SETTING = stringPreferencesKey("display_setting")
         val DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
@@ -280,6 +282,10 @@ class SettingsStore(
                 } ?: emptyList(),
                 developerMode = preferences[DEVELOPER_MODE] == true,
                 displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
+                executionBackend = preferences[EXECUTION_BACKEND] ?: "local",
+                backendConnections = preferences[BACKEND_CONNECTIONS]?.let {
+                    runCatching { JsonInstant.decodeFromString<kotlin.collections.List<me.rerere.rikkahub.data.model.BackendConnection>>(it) }.getOrNull()
+                } ?: emptyList(),
                 searchServices = preferences[SEARCH_SERVICES]?.let {
                     JsonInstant.decodeFromString(it)
                 } ?: listOf(SearchServiceOptions.DEFAULT),
@@ -598,6 +604,8 @@ class SettingsStore(
             preferences[BACKUP_REMINDER_CONFIG] = JsonInstant.encodeToString(settings.backupReminderConfig)
             preferences[LAUNCH_COUNT] = settings.launchCount
             preferences[SPONSOR_ALERT_DISMISSED_AT] = settings.sponsorAlertDismissedAt
+            preferences[EXECUTION_BACKEND] = settings.executionBackend
+            preferences[BACKEND_CONNECTIONS] = JsonInstant.encodeToString(settings.backendConnections)
         }
     }
 

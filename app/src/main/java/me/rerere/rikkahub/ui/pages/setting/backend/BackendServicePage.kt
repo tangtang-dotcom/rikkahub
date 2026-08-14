@@ -77,6 +77,7 @@ fun BackendServicePage() {
                                     },
                             )
                         }
+                    me.rerere.rikkahub.data.log.AppLog.d("BackendPage", "保存后端: ${conn.name} type=${conn.type} endpoint=${conn.endpoint} 列表=${updated.backendConnections.size} 个")
                     settingsStore.update(updated)
                     showAddDialog = false
                     editing = null
