@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.ui.components.ai
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -80,7 +82,7 @@ fun AutoTaskDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 4.dp),
+                modifier = Modifier.padding(horizontal = 4.dp).verticalScroll(rememberScrollState()),
             ) {
                 Text(
                     text = stringResource(R.string.auto_task_desc),
@@ -97,6 +99,20 @@ fun AutoTaskDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+
+                // ③ 空闲时间设置（定时/随机共用）
+                OutlinedTextField(
+                    value = currentInterval,
+                    onValueChange = { value ->
+                        if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
+                            currentInterval = value
+                        }
+                    },
+                    label = { Text(stringResource(R.string.auto_task_idle_label)) },
+                    supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
 
                 // 随机补充池（可选，每行一条）
                 OutlinedTextField(
@@ -203,19 +219,6 @@ fun AutoTaskDialog(
                     }
                 }
 
-                // ③ 空闲时间设置（定时/随机共用）
-                OutlinedTextField(
-                    value = currentInterval,
-                    onValueChange = { value ->
-                        if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
-                            currentInterval = value
-                        }
-                    },
-                    label = { Text(stringResource(R.string.auto_task_idle_label)) },
-                    supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
