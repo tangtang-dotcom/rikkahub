@@ -272,7 +272,7 @@ internal fun openSshSession(
     network: Network? = null,
 ): Session {
     if (!auth.privateKey.isNullOrBlank()) {
-        val keyBytes = auth.privateKey.toByteArray(Charsets.UTF_8)
+        val keyBytes = auth.privateKey.ensureTrailingNewline().toByteArray(Charsets.UTF_8)
         val passBytes = auth.passphrase?.toByteArray(Charsets.UTF_8)
         jsch.addIdentity("rikkahub-ssh-key-${System.nanoTime()}", keyBytes, null, passBytes)
     }

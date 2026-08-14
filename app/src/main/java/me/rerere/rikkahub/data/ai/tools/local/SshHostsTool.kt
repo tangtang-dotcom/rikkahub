@@ -31,7 +31,8 @@ internal suspend fun resolveHostAuth(
         val entry = vaultRepository.getByName(h.vaultCredentialRef)
         val secret = entry?.let { vaultRepository.decryptValue(it) }
         if (secret != null) {
-            return SshAuth(password = null, privateKey = secret, passphrase = h.passphrase)
+            // OPENSSH 私钥末尾换行标准化（缺换行 Auth fail）——统一在此容错，覆盖所有走 resolveHostAuth 的连接
+            return SshAuth(password = null, privateKey = secret.ensureTrailingNewline(), passphrase = h.passphrase)
         }
         return null
     }
