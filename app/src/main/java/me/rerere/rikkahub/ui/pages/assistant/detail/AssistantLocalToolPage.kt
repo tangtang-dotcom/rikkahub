@@ -1103,6 +1103,20 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
+                    Text(stringResource(R.string.assistant_page_local_tools_vault_export_env_title))
+                },
+                supportingContent = {
+                    Text(stringResource(R.string.assistant_page_local_tools_vault_export_env_desc))
+                },
+                trailingContent = {
+                    PermissionedSwitch(
+                        checked = assistant.localTools.contains(LocalToolOption.VaultExportEnv),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.VaultExportEnv, it) },
+                    )
+                },
+            )
+            item(
+                headlineContent = {
                     Text(stringResource(R.string.assistant_page_local_tools_nfc_title))
                 },
                 supportingContent = {

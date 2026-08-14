@@ -193,6 +193,7 @@ sealed class LocalToolOption {
     @Serializable @SerialName("skill_import")        data object SkillImport        : LocalToolOption()
     @Serializable @SerialName("js_skills")           data object JsSkills           : LocalToolOption()
     @Serializable @SerialName("vault_tools")         data object VaultTools         : LocalToolOption()
+    @Serializable @SerialName("vault_export_env")    data object VaultExportEnv    : LocalToolOption()
     @Serializable @SerialName("system_intents")      data object SystemIntents      : LocalToolOption()
     @Serializable @SerialName("browser")             data object Browser            : LocalToolOption()
     @Serializable @SerialName("web_fetch")           data object WebFetch           : LocalToolOption()
@@ -968,6 +969,8 @@ class LocalTools(
             tools.add(me.rerere.rikkahub.data.vault.vaultGenKeyTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultSshExecTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultHttpExecTool(context, vaultRepository))
+        }
+        if (options.contains(LocalToolOption.VaultExportEnv)) {
             tools.add(me.rerere.rikkahub.data.vault.vaultExportEnvTool(context, vaultRepository))
         }
         if (options.contains(LocalToolOption.Shizuku)) {

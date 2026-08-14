@@ -1857,6 +1857,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="assistant_page_local_tools_shizuku_desc">通过 Shizuku 服务以 shell-UID（adb-shell 级）权限运行 shell 命令。需要已安装 Shizuku、服务运行中且已授予权限。每次调用需批准。</string>
   <string name="assistant_page_local_tools_vault_tools_title">凭证库工具</string>
   <string name="assistant_page_local_tools_vault_tools_desc">访问设备端凭证库：列出已存凭证、生成密钥、使用已存密钥代理 SSH/HTTP 请求。密钥不离开凭证库。</string>
+  <string name="assistant_page_local_tools_vault_export_env_title">工具桥导出</string>
+  <string name="assistant_page_local_tools_vault_export_env_desc">将凭证库解密值导出为沙箱环境变量文件（/workspace/tmp/vault-env.sh）供 CLI 使用。需先完成 Vault 授权（30 分钟或一直有效）。</string>
   <string name="assistant_page_local_tools_nfc_desc">读取和写入 NFC 标签上的 NDEF 记录。需要应用在前台才能检测标签。</string>
   <string name="assistant_page_local_tools_nfc_title">NFC</string>
   <string name="assistant_page_local_tools_nfc_unavailable">此设备没有 NFC 硬件，无法启用这些工具。</string>

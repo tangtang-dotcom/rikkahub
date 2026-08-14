@@ -1554,6 +1554,8 @@
   <string name="assistant_page_local_tools_shizuku_desc">Run shell commands with shell-UID (adb-shell level) privileges via the Shizuku server. Requires the Shizuku app, a running service, and granted permission. Approval required per call.</string>
   <string name="assistant_page_local_tools_vault_tools_title">Vault tools</string>
   <string name="assistant_page_local_tools_vault_tools_desc">Access the on-device credential vault: list stored credentials, generate keys, and proxy SSH/HTTP requests using saved secrets. Secrets stay in the vault.</string>
+  <string name="assistant_page_local_tools_vault_export_env_title">Vault export env</string>
+  <string name="assistant_page_local_tools_vault_export_env_desc">Export decrypted vault credentials into a sandbox env file (/workspace/tmp/vault-env.sh) for CLI scripts. Requires vault authorization (30min or forever).</string>
   <string name="assistant_page_local_tools_nfc_title">NFC</string>
   <string name="assistant_page_local_tools_nfc_desc">Read and write NDEF records on NFC tags. Requires the app to be in foreground for tag detection.</string>
   <string name="assistant_page_local_tools_nfc_unavailable">This device has no NFC hardware, so these tools cannot be enabled.</string>
