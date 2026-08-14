@@ -4,6 +4,8 @@ import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonArray
+import org.koin.java.KoinJavaComponent.getKoin
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -197,9 +199,8 @@ private suspend fun runVaultExportEnv(
     }
     if (exported.isEmpty()) return fail("解密失败，未导出任何凭证")
 
-    val wsRepository =
-        runCatching { org.koin.java.KoinJavaComponent.get(me.rerere.rikkahub.data.repository.WorkspaceRepository::class.java) }
-            .getOrNull()
+    val wsRepository: me.rerere.rikkahub.data.repository.WorkspaceRepository? =
+        runCatching { getKoin().get<me.rerere.rikkahub.data.repository.WorkspaceRepository>() }.getOrNull()
             ?: return fail("工作区不可用")
     val ws = wsRepository.getAll().firstOrNull() ?: return fail("无工作区")
     runCatching { wsRepository.writeText(ws.id, "tmp/vault-env.sh", lines.joinToString("\n"), overwrite = true) }.getOrNull()
