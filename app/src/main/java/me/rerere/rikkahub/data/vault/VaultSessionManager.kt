@@ -133,6 +133,12 @@ class VaultSessionManager(private val context: Context) {
         return true
     }
 
+    /** 是否有任意未过期授权会话（工具桥授权门禁用；ttlMs=MAX 视为永久有效）。 */
+    suspend fun hasActiveAuthorization(now: Long = System.currentTimeMillis()): Boolean =
+        readSessions().any { rec ->
+            if (rec.ttlMs == Long.MAX_VALUE) true else now < rec.createdAt + rec.ttlMs
+        }
+
     /** 会话列表（UI 展示，最新在前）。 */
     suspend fun listSessions(): List<VaultSessionInfo> =
         readSessions()

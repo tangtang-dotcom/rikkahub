@@ -138,6 +138,84 @@ fun vaultGenKeyTool(
     },
 )
 
+/** vault_export_env — 工具桥：把密钥库凭证解密值导出为沙箱环境变量文件（AI 不见明文）。 */
+fun vaultExportEnvTool(
+    context: android.content.Context,
+    repository: CredentialVaultRepository,
+): Tool = Tool(
+    name = "vault_export_env",
+    description =
+        "Export decrypted vault credentials into a sandbox env file (/workspace/tmp/vault-env.sh) " +
+            "so sandbox CLI scripts can source them. Requires an active vault authorization (30min or forever). " +
+            "The AI never sees plaintext values — only exported credential names are returned. " +
+            "Usage: vault_export_env(names=[...]) or no args to export all. After use, delete the file.",
+    parameters = {
+        InputSchema.Obj(
+            properties =
+                buildJsonObject {
+                    put(
+                        "names",
+                        buildJsonObject {
+                            put("type", "array")
+                            put("description", "Credential names to export (default: all)")
+                        },
+                    )
+                },
+            required = emptyList(),
+        )
+    },
+    needsApproval = { true },
+    execute = { params -> runVaultExportEnv(context, repository, params.jsonObject) },
+)
+
+private suspend fun runVaultExportEnv(
+    context: android.content.Context,
+    repository: CredentialVaultRepository,
+    o: kotlinx.serialization.json.JsonObject,
+): List<UIMessagePart> {
+    val fail: (String) -> List<UIMessagePart> = { msg -> listOf(UIMessagePart.Text("❌ $msg")) }
+    val sessionManager = VaultSessionManager(context)
+    if (!sessionManager.hasActiveAuthorization()) {
+        return fail("未授权：请先在会话输入框旁完成 Vault 授权（30 分钟或一直有效），再调用本工具")
+    }
+    val requested = o["names"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }
+    val entries = repository.getAll()
+    val selected = if (requested.isNullOrEmpty()) entries else entries.filter { it.name in requested }
+    if (selected.isEmpty()) return fail("没有可导出的凭证（vault_credential_names 查看可用名称）")
+
+    val lines = mutableListOf("#!/bin/bash", "# vault-env — vault_export_env 生成，用完请删除: rm /workspace/tmp/vault-env.sh")
+    val exported = mutableListOf<String>()
+    for (entry in selected) {
+        val value = runCatching { repository.decryptValue(entry) }.getOrNull()
+        if (value != null) {
+            lines += "export ${entry.name}=${shellSingleQuote(value)}"
+            exported += entry.name
+        }
+        repository.logAccess(entry.name, "ai-tool", "export_env")
+    }
+    if (exported.isEmpty()) return fail("解密失败，未导出任何凭证")
+
+    val wsRepository =
+        runCatching { org.koin.java.KoinJavaComponent.getKoin().get(me.rerere.rikkahub.data.repository.WorkspaceRepository::class.java) }
+            .getOrNull()
+            ?: return fail("工作区不可用")
+    val ws = wsRepository.getAll().firstOrNull() ?: return fail("无工作区")
+    runCatching { wsRepository.writeText(ws.id, "tmp/vault-env.sh", lines.joinToString("\n"), overwrite = true) }.getOrNull()
+        ?: return fail("写沙箱环境文件失败")
+
+    return listOf(
+        UIMessagePart.Text(
+            buildJsonObject {
+                put("exported", JsonArray(exported.map { JsonPrimitive(it) }))
+                put("path", "/workspace/tmp/vault-env.sh")
+                put("hint", "source /workspace/tmp/vault-env.sh 使用环境变量；用完删除 rm /workspace/tmp/vault-env.sh")
+            }.toString(),
+        ),
+    )
+}
+
+private fun shellSingleQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
+
 /**
  * 使用凭证库中的 SSH 私钥或密码连接服务器执行命令。
  * 凭证值只走内存（JSch 字节加载），不落盘、不进上下文。

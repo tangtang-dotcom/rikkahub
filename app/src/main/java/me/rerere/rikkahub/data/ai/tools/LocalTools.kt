@@ -968,6 +968,7 @@ class LocalTools(
             tools.add(me.rerere.rikkahub.data.vault.vaultGenKeyTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultSshExecTool(context, vaultRepository))
             tools.add(me.rerere.rikkahub.data.vault.vaultHttpExecTool(context, vaultRepository))
+            tools.add(me.rerere.rikkahub.data.vault.vaultExportEnvTool(context, vaultRepository))
         }
         if (options.contains(LocalToolOption.Shizuku)) {
             tools.add(me.rerere.rikkahub.data.ai.tools.local.shizukuExecTool(context))

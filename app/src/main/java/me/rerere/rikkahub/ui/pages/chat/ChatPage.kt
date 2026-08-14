@@ -347,10 +347,8 @@ private fun ChatPageContent(
             runCatching {
                 val ws = workspaceRepository.getAll().firstOrNull() ?: return@launch
                 // 读沙箱 token（LINUX 区/rootfs——授权用 importFile(LINUX) 写入，writeText 的 FILES 区沙箱不可见）
-                val token =
-                    runCatching { workspaceRepository.readText(ws.id, "credentials/vault-token") }.getOrDefault("")
-                // 真校验：格式/过期/签名/会话存在（比只查文件存在准确——文件残留/过期 token 不再误报已授权）
-                vaultAuthorized = token.isNotBlank() && vaultSessionManager.verifyToken(token)
+                // 工具桥模式（2026-08-14）：授权状态 = 存在未过期会话（不再依赖沙箱 vault-token 文件）
+                vaultAuthorized = vaultSessionManager.hasActiveAuthorization()
             }
         }
     }
@@ -366,11 +364,9 @@ private fun ChatPageContent(
                 return@launch
             }
             runCatching {
-                val token = vaultSessionManager.issueSessionToken(ttlMs = ttlMs)
-                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "token 签发成功 len=${token.length}")
-                val ws = workspaceRepository.getAll().firstOrNull() ?: error("no workspace")
-                val written = workspaceRepository.writeText(ws.id, "credentials/vault-token", token, overwrite = true)
-                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "写沙箱成功 ws.id=${ws.id} path=${written.path}")
+                // 工具桥模式：签发授权会话（30 分钟/一直有效），不再写沙箱 vault-token（Web 通道已退役）
+                vaultSessionManager.issueSessionToken(ttlMs = ttlMs)
+                me.rerere.rikkahub.data.log.AppLog.d("VaultAuth", "授权会话签发成功 ttlMs=$ttlMs")
                 vaultAuthorized = true
                 vaultAuthMsg = context.getString(R.string.vault_authorize_success)
             }.onFailure { e ->
