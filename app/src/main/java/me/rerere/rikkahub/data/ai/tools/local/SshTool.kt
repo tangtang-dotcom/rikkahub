@@ -597,7 +597,25 @@ internal suspend fun execOneShot(
         val jsch = newJSch(context)
         val handshakeStart = System.currentTimeMillis()
         val session = try {
-            openSshSession(jsch, host, port, user, auth, timeoutMs, network = outcome.winningNetwork)
+            // 连接重试（2026-08-14）：认证失败/主机密钥变化不重试（重试无意义），
+            // 超时/网络类错误自动重试 1 次（间隔 800ms），抗网络抖动
+            var attempt = 0
+            var connected: com.jcraft.jsch.Session? = null
+            while (connected == null && attempt < 2) {
+                attempt++
+                try {
+                    connected = openSshSession(jsch, host, port, user, auth, timeoutMs, network = outcome.winningNetwork)
+                } catch (e: Throwable) {
+                    val retryable = !isAuthFailure(e.message) && !isHostKeyChange(e.message)
+                    if (attempt < 2 && retryable) {
+                        Log.w(TAG_SSH, "ssh handshake attempt $attempt failed, retrying: ${e.message}")
+                        kotlinx.coroutines.delay(800)
+                        continue
+                    }
+                    throw e
+                }
+            }
+            checkNotNull(connected) { "ssh connect failed after retries" }
         } catch (e: Throwable) {
             Log.w(TAG_SSH, "ssh handshake failed in ${System.currentTimeMillis() - handshakeStart}ms", e)
             return@runInterruptible wrapConnectError(host, e)
@@ -624,13 +642,29 @@ internal suspend fun execOneShot(
  *     model doesn't burn round-trips brute-forcing the same wrong password.
  *   - generic connect_failed: anything else.
  */
+/** 判断是否为主机密钥变化错误（不重试，需用户确认后 forget host key）。 */
+internal fun isHostKeyChange(msg: String?): Boolean {
+    val m = msg.orEmpty()
+    return m.contains("HostKey", ignoreCase = true) ||
+        m.contains("host key", ignoreCase = true) ||
+        m.contains("identification has changed", ignoreCase = true) ||
+        m.contains("REMOTE HOST IDENTIFICATION", ignoreCase = true)
+}
+
+/** 判断是否为认证失败（不重试，避免锁死账户）。 */
+internal fun isAuthFailure(msg: String?): Boolean {
+    val m = msg.orEmpty()
+    return m.contains("Auth fail", ignoreCase = true) ||
+        m.contains("auth cancel", ignoreCase = true) ||
+        m.contains("USERAUTH fail", ignoreCase = true) ||
+        m.contains("Authentication failed", ignoreCase = true) ||
+        m.contains("Permission denied (publickey", ignoreCase = true) ||
+        m.contains("Permission denied (password", ignoreCase = true)
+}
+
 internal fun wrapConnectError(host: String, e: Throwable): JsonObject {
     val msg = e.message.orEmpty()
-    val isHostKeyChange = msg.contains("HostKey", ignoreCase = true) ||
-        msg.contains("host key", ignoreCase = true) ||
-        msg.contains("identification has changed", ignoreCase = true) ||
-        msg.contains("REMOTE HOST IDENTIFICATION", ignoreCase = true)
-    if (isHostKeyChange) {
+    if (isHostKeyChange(msg)) {
         return buildJsonObject {
             put("error", "host_key_changed")
             put("host", host)
@@ -641,13 +675,7 @@ internal fun wrapConnectError(host: String, e: Throwable): JsonObject {
             put("raw", msg)
         }
     }
-    val isAuthFailure = msg.contains("Auth fail", ignoreCase = true) ||
-        msg.contains("auth cancel", ignoreCase = true) ||
-        msg.contains("USERAUTH fail", ignoreCase = true) ||
-        msg.contains("Authentication failed", ignoreCase = true) ||
-        msg.contains("Permission denied (publickey", ignoreCase = true) ||
-        msg.contains("Permission denied (password", ignoreCase = true)
-    if (isAuthFailure) {
+    if (isAuthFailure(msg)) {
         return buildJsonObject {
             put("error", "auth_failed")
             put("host", host)
