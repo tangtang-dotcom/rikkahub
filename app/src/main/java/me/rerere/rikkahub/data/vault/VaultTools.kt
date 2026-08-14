@@ -199,7 +199,7 @@ private suspend fun runVaultExportEnv(
     }
     if (exported.isEmpty()) return fail("解密失败，未导出任何凭证")
 
-    val wsRepository: me.rerere.rikkahub.data.repository.WorkspaceRepository? =
+    val wsRepository =
         runCatching { getKoin().get<me.rerere.rikkahub.data.repository.WorkspaceRepository>() }.getOrNull()
             ?: return fail("工作区不可用")
     val ws = wsRepository.getAll().firstOrNull() ?: return fail("无工作区")
