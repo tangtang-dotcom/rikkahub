@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,7 +44,6 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.db.entity.SshHostEntity
 import me.rerere.rikkahub.data.repository.SshHostRepository
 import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.CustomColors
@@ -106,55 +108,62 @@ fun SettingSshHostsPage() {
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item("sshHosts") {
-                CardGroup(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    title = { Text(stringResource(R.string.setting_ssh_hosts_title)) },
-                ) {
-                    hosts.forEach { host ->
-                        item(
-                            onClick = {
-                                editing = host
-                                showEdit = true
-                            },
-                            headlineContent = { Text(host.name) },
-                            supportingContent = { Text("${host.user}@${host.host}:${host.port}") },
-                            trailingContent = {
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    TextButton(
-                                        onClick = {
-                                            navController.navigate(me.rerere.rikkahub.Screen.SshTerminal(host.name))
-                                        },
-                                    ) {
-                                        Text(stringResource(R.string.setting_ssh_host_connect), color = MaterialTheme.colorScheme.primary)
+            item("sshHostsTitle") {
+                Text(
+                    text = stringResource(R.string.setting_ssh_hosts_title),
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                )
+            }
+            items(hosts, key = { it.name }) { host ->
+                ListItem(
+                    headlineContent = { Text(host.name) },
+                    supportingContent = { Text("${host.user}@${host.host}:${host.port}") },
+                    trailingContent = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(
+                                onClick = {
+                                    navController.navigate(me.rerere.rikkahub.Screen.SshTerminal(host.name))
+                                },
+                            ) {
+                                Text(stringResource(R.string.setting_ssh_host_connect), color = MaterialTheme.colorScheme.primary)
+                            }
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        sshHostRepository.deleteByName(host.name)
+                                        reload()
                                     }
-                                    TextButton(
-                                        onClick = {
-                                            scope.launch {
-                                                sshHostRepository.deleteByName(host.name)
-                                                reload()
-                                            }
-                                        },
-                                    ) {
-                                        Text(stringResource(R.string.setting_ssh_host_delete), color = MaterialTheme.colorScheme.error)
-                                    }
-                                }
-                            },
+                                },
+                            ) {
+                                Text(stringResource(R.string.setting_ssh_host_delete), color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            editing = host
+                            showEdit = true
+                        },
+                )
+            }
+            item("sshAdd") {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            stringResource(R.string.setting_ssh_host_add),
+                            color = MaterialTheme.colorScheme.primary,
                         )
-                    }
-                    item(
-                        onClick = {
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
                             editing = null
                             showEdit = true
                         },
-                        headlineContent = {
-                            Text(
-                                stringResource(R.string.setting_ssh_host_add),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                    )
-                }
+                )
             }
             item("sshHint") {
                 Text(
