@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +62,8 @@ fun BackendServicePage() {
             onDismiss = { showAddDialog = false; editing = null },
             onSave = { conn ->
                 scope.launch {
-                    val current = settingsStore.settingsFlow.value
+                    // 等待真实 settings 加载完成（避免 DataStore 大文件加载慢时 value 仍是 dummy(init=true)，被 update 静默拒绝）
+                    val current = settingsStore.settingsFlow.first { !it.init }
                     val updated =
                         if (initial == null) {
                             current.copy(
@@ -82,7 +84,7 @@ fun BackendServicePage() {
             },
             onDelete = {
                 scope.launch {
-                    val current = settingsStore.settingsFlow.value
+                    val current = settingsStore.settingsFlow.first { !it.init }
                     settingsStore.update(
                         current.copy(
                             backendConnections = current.backendConnections.filterNot { c -> c.id == it.id },
