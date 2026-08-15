@@ -29,12 +29,6 @@
 -dontwarn com.google.re2j.**
 -dontobfuscate
 
-# ML Kit barcode (Quickie 扫码) — R8 shrink/optimize 会裁剪 ML Kit 内部字段
-# 导致 BarcodeScanning.getClient() 运行期 NPE（zzg.zza null），补 keep 规则
--keep class com.google.mlkit.vision.barcode.** { *; }
--keep class com.google.mlkit.vision.common.** { *; }
--keep class io.github.g00fy2.quickie.** { *; }
-
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
 -dontwarn java.lang.management.ManagementFactory
