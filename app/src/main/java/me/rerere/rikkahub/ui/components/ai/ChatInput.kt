@@ -250,31 +250,12 @@ fun ChatInput(
                         MediaFileInputRow(state = state)
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .padding(end = 8.dp),
-                        ) {
-                            TextInputRow(
-                                state = state,
-                                completionProviders = completionProviders,
-                                sessionTotals = sessionTotals,
-                                onSendMessage = { sendMessage() },
-                            )
-                        }
-                        SendButton(
-                            state = state,
-                            loading = loading,
-                            visible = !asrState.isRecording,
-                            onSend = { sendMessage() },
-                            onLongSend = { sendMessageWithoutAnswer() },
-                        )
-                    }
+                    TextInputRow(
+                        state = state,
+                        completionProviders = completionProviders,
+                        sessionTotals = sessionTotals,
+                        onSendMessage = { sendMessage() },
+                    )
 
                     Row(
                         modifier =
@@ -396,73 +377,66 @@ fun ChatInput(
                             )
                         }
 
-
+                        AnimatedVisibility(
+                            visible = !asrState.isRecording,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier =
+                                    Modifier
+                                        .size(30.dp)
+                                        .testTag("chat_send_button")
+                                        .clip(CircleShape)
+                                        .combinedClickable(
+                                            enabled = loading || !state.isEmpty(),
+                                            onClick = {
+                                                sendMessage()
+                                            },
+                                            onLongClick = {
+                                                sendMessageWithoutAnswer()
+                                            },
+                                        ),
+                            ) {
+                                val containerColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.errorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                        else -> MaterialTheme.colorScheme.primary
+                                    }
+                                val contentColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.onErrorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        else -> MaterialTheme.colorScheme.onPrimary
+                                    }
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    shape = CircleShape,
+                                    color = containerColor,
+                                    content = {},
+                                )
+                                if (loading) {
+                                    KeepScreenOn()
+                                    Icon(
+                                        imageVector = HugeIcons.Cancel01,
+                                        contentDescription = stringResource(R.string.stop),
+                                        tint = contentColor,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = HugeIcons.ArrowUp02,
+                                        contentDescription = stringResource(R.string.send),
+                                        tint = contentColor,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SendButton(
-    state: ChatInputState,
-    loading: Boolean,
-    visible: Boolean,
-    onSend: () -> Unit,
-    onLongSend: () -> Unit,
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn() + scaleIn(),
-        exit = fadeOut() + scaleOut(),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier =
-                Modifier
-                    .size(40.dp)
-                    .testTag("chat_send_button")
-                    .clip(CircleShape)
-                    .combinedClickable(
-                        enabled = loading || !state.isEmpty(),
-                        onClick = onSend,
-                        onLongClick = onLongSend,
-                    ),
-        ) {
-            val containerColor =
-                when {
-                    loading -> MaterialTheme.colorScheme.errorContainer
-                    state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
-                    else -> MaterialTheme.colorScheme.primary
-                }
-            val contentColor =
-                when {
-                    loading -> MaterialTheme.colorScheme.onErrorContainer
-                    state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                    else -> MaterialTheme.colorScheme.onPrimary
-                }
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                shape = CircleShape,
-                color = containerColor,
-                content = {},
-            )
-            if (loading) {
-                KeepScreenOn()
-                Icon(
-                    imageVector = HugeIcons.Cancel01,
-                    contentDescription = stringResource(R.string.stop),
-                    tint = contentColor,
-                    modifier = Modifier.size(22.dp),
-                )
-            } else {
-                Icon(
-                    imageVector = HugeIcons.ArrowUp02,
-                    contentDescription = stringResource(R.string.send),
-                    tint = contentColor,
-                    modifier = Modifier.size(22.dp),
-                )
             }
         }
     }
