@@ -29,6 +29,13 @@
 -dontwarn com.google.re2j.**
 -dontobfuscate
 
+# ML Kit 扫码 NPE 修复（替代 keep 整包方案）：
+# 根因 = R8 水平类合并把 BarcodeScanning 内部类(zzg/zzh)合并进其他类(Edit03Kt)，
+# 内部字段(zzg.zza)被裁剪 → getClient() 空指针。禁用类合并后类保持独立、字段保留。
+# 注意：不能 keep 整个 mlkit 包——keep 会传递保留启动初始化链(MlKitInitProvider
+# 经 androidx.startup 在 App 启动时执行)，实测导致启动即闪退(无弹窗)。
+-optimizations !class/merging/*
+
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
 -dontwarn java.lang.management.ManagementFactory
