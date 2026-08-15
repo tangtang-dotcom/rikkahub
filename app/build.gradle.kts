@@ -19,7 +19,7 @@ android {
         applicationId = "excp.rikkahub.agents"
         minSdk = 26
         targetSdk = 37
-        versionCode = 187
+        versionCode = 188
         versionName = "2.46"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
