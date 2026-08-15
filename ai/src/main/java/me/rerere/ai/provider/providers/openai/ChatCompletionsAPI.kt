@@ -288,6 +288,7 @@ class ChatCompletionsAPI(
                 providerSetting.includeHistoryReasoning,
                 openRouterCache = openRouterCache,
                 supportInputModalities = params.model.inputModalities,
+                toolNamePrefix = providerSetting.toolNamePrefix,
             ).let {
                 if (openRouterCache) insertOpenRouterCacheControl(it) else it
             }
@@ -644,6 +645,7 @@ class ChatCompletionsAPI(
         includeHistoryReasoning: Boolean = true,
         openRouterCache: Boolean = false,
         supportInputModalities: List<Modality> = listOf(Modality.TEXT, Modality.IMAGE),
+        toolNamePrefix: String = "",
     ) = buildJsonArray {
         val filteredMessages = messages.filter { it.isValidToUpload() }
 
@@ -653,6 +655,7 @@ class ChatCompletionsAPI(
                     message = message,
                     includeReasoning = includeHistoryReasoning,
                     supportInputModalities = supportInputModalities,
+                    toolNamePrefix = toolNamePrefix,
                 )
             } else {
                 addNonAssistantMessage(
@@ -668,6 +671,7 @@ class ChatCompletionsAPI(
         message: UIMessage,
         includeReasoning: Boolean,
         supportInputModalities: List<Modality>,
+        toolNamePrefix: String = "",
     ) {
         val groups = groupPartsByToolBoundary(message.parts)
         val contentBuffer = mutableListOf<UIMessagePart>()
@@ -694,6 +698,7 @@ class ChatCompletionsAPI(
                         tools = group.tools,
                         reasoningPart = reasoningPart,
                         supportInputModalities = supportInputModalities,
+                        toolNamePrefix = toolNamePrefix,
                     )?.let { assistantMessage ->
                         add(assistantMessage)
                     }
@@ -789,6 +794,7 @@ class ChatCompletionsAPI(
         tools: List<UIMessagePart.Tool>,
         reasoningPart: UIMessagePart.Reasoning?,
         supportInputModalities: List<Modality> = listOf(Modality.TEXT, Modality.IMAGE),
+        toolNamePrefix: String = "",
     ): JsonObject? {
         val hasUsableContent =
             contentParts.any { part ->
