@@ -946,6 +946,7 @@
   <string name="setting_provider_page_api_base_url">API Base Url</string>
   <string name="setting_provider_page_api_key">API Key</string>
   <string name="setting_provider_page_api_path">API Path</string>
+  <string name="setting_provider_page_tool_name_prefix">Tool Name Prefix (e.g. rh_ for OpenClaw)</string>
   <string name="setting_provider_page_avaliable_models">Avaliable Models</string>
   <string name="setting_provider_page_balance_api_path">Balance API Path</string>
   <string name="setting_provider_page_balance_info">"Get account balance "</string>

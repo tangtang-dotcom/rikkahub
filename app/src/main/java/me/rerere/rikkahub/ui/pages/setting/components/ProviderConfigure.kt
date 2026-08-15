@@ -492,6 +492,13 @@ private fun ProviderConfigureOpenAI(
         )
     }
 
+    OutlinedTextField(
+        value = provider.toolNamePrefix,
+        onValueChange = { onEdit(provider.copy(toolNamePrefix = it.trim())) },
+        label = { Text(stringResource(R.string.setting_provider_page_tool_name_prefix)) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,

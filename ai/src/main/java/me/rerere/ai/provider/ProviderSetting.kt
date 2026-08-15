@@ -76,6 +76,10 @@ sealed class ProviderSetting {
         var apiKey: String = "",
         var baseUrl: String = "https://api.openai.com/v1",
         var chatCompletionsPath: String = "/chat/completions",
+        // 工具名统一前缀：OpenClaw 等后端会拒绝与内置工具撞名的客户端 tools（
+        // `findClientToolNameConflicts` → 400 "invalid tool configuration"），配置如 `rh_`
+        // 可让发送给模型的工具名带上前缀、解析回传时剥掉，内部工具调度逻辑无感。
+        var toolNamePrefix: String = "",
         var useResponseApi: Boolean = false,
         // OpenRouter only: emit per-block cache_control breakpoints. Anthropic/Gemini/Qwen
         // need them explicitly; auto-caching providers have the field stripped upstream, so

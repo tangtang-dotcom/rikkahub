@@ -920,6 +920,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_provider_page_api_base_url">API Base Url</string>
   <string name="setting_provider_page_api_key">API Key</string>
   <string name="setting_provider_page_api_path">API 路径</string>
+  <string name="setting_provider_page_tool_name_prefix">工具名前缀（连 OpenClaw 填 rh_）</string>
   <string name="setting_provider_page_avaliable_models">可用模型</string>
   <string name="setting_provider_page_balance_api_path">余额 API 路径</string>
   <string name="setting_provider_page_balance_info">获取账户余额</string>

@@ -128,7 +128,7 @@ class ChatCompletionsAPI(
                         UIMessageChoice(
                             index = 0,
                             delta = null,
-                            message = parseMessage(message),
+                            message = parseMessage(message, providerSetting.toolNamePrefix),
                             finishReason = finishReason,
                         ),
                     ),
@@ -209,7 +209,7 @@ class ChatCompletionsAPI(
                                             add(
                                                 UIMessageChoice(
                                                     index = 0,
-                                                    delta = parseMessage(message),
+                                                    delta = parseMessage(message, providerSetting.toolNamePrefix),
                                                     message = null,
                                                     finishReason = finishReason,
                                                 ),
@@ -496,6 +496,7 @@ class ChatCompletionsAPI(
             }
 
             if (params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()) {
+                val toolPrefix = providerSetting.toolNamePrefix
                 putJsonArray("tools") {
                     params.tools.forEach { tool ->
                         add(
@@ -504,7 +505,7 @@ class ChatCompletionsAPI(
                                 put(
                                     "function",
                                     buildJsonObject {
-                                        put("name", tool.name)
+                                        put("name", toolPrefix + tool.name)
                                         put("description", tool.description)
                                         put(
                                             "parameters",
@@ -704,7 +705,7 @@ class ChatCompletionsAPI(
                         add(
                             buildJsonObject {
                                 put("role", "tool")
-                                put("name", tool.toolName)
+                                put("name", toolNamePrefix + tool.toolName)
                                 put("tool_call_id", tool.toolCallId)
                                 put("content", tool.toToolResultContent(supportInputModalities))
                             },
@@ -776,6 +777,7 @@ class ChatCompletionsAPI(
                 tools = emptyList(),
                 reasoningPart = reasoningPart,
                 supportInputModalities = supportInputModalities,
+                toolNamePrefix = toolNamePrefix,
             )?.let { assistantMessage ->
                 add(assistantMessage)
             }
@@ -882,7 +884,7 @@ class ChatCompletionsAPI(
                                     put(
                                         "function",
                                         buildJsonObject {
-                                            put("name", tool.toolName)
+                                            put("name", toolNamePrefix + tool.toolName)
                                             // 使用 inputAsJson() 归一化，避免流式中断导致的残缺 JSON 被发送
                                             put("arguments", tool.inputAsJson().toString())
                                         },
@@ -1051,7 +1053,10 @@ class ChatCompletionsAPI(
         }
     }
 
-    private fun parseMessage(jsonObject: JsonObject): UIMessage {
+    private fun parseMessage(
+        jsonObject: JsonObject,
+        toolNamePrefix: String = "",
+    ): UIMessage {
         val role =
             MessageRole.valueOf(
                 jsonObject["role"]?.jsonPrimitive?.contentOrNull?.uppercase() ?: "ASSISTANT",
@@ -1121,6 +1126,7 @@ class ChatCompletionsAPI(
                                 ?.get("name")
                                 ?.jsonPrimitive
                                 ?.contentOrNull
+                                ?.removePrefix(toolNamePrefix)
                         val arguments =
                             toolCalls.jsonObject["function"]
                                 ?.jsonObject

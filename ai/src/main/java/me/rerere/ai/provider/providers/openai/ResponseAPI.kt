@@ -103,7 +103,7 @@ class ResponseAPI(
         val bodyStr = response.body.string()
         Log.i(TAG, "generateText: $bodyStr")
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-        val output = parseResponseOutput(bodyJson)
+        val output = parseResponseOutput(bodyJson, providerSetting.toolNamePrefix)
 
         return output
     }
@@ -149,7 +149,7 @@ class ResponseAPI(
                         }
                         Log.d(TAG, "onEvent: $id/$type $data")
                         val json = json.parseToJsonElement(data).jsonObject
-                        val chunk = parseResponseDelta(json)
+                        val chunk = parseResponseDelta(json, providerSetting.toolNamePrefix)
                         if (chunk != null) {
                             trySend(chunk).onFailure { e ->
                                 Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
@@ -237,7 +237,7 @@ class ResponseAPI(
             }
 
             // messages
-            put("input", buildMessages(messages))
+            put("input", buildMessages(messages, providerSetting.toolNamePrefix))
 
             // reasoning
             if (params.model.abilities.contains(ModelAbility.REASONING)) {
@@ -273,11 +273,12 @@ class ResponseAPI(
             if (useFunctionTools || params.model.tools.isNotEmpty()) {
                 putJsonArray("tools") {
                     if (useFunctionTools) {
+                        val toolPrefix = providerSetting.toolNamePrefix
                         params.tools.forEach { tool ->
                             add(
                                 buildJsonObject {
                                     put("type", "function")
-                                    put("name", tool.name)
+                                    put("name", toolPrefix + tool.name)
                                     put("description", tool.description)
                                     put(
                                         "parameters",
@@ -319,20 +320,26 @@ class ResponseAPI(
         }.mergeCustomBody(params.customBody)
     }
 
-    fun buildMessages(messages: List<UIMessage>) =
+    fun buildMessages(
+        messages: List<UIMessage>,
+        toolNamePrefix: String = "",
+    ) =
         buildJsonArray {
             messages
                 .filter { it.isValidToUpload() && it.role != MessageRole.SYSTEM }
                 .forEach { message ->
                     if (message.role == MessageRole.ASSISTANT) {
-                        addAssistantItems(message)
+                        addAssistantItems(message, toolNamePrefix)
                     } else {
                         addUserItems(message)
                     }
                 }
         }
 
-    private fun JsonArrayBuilder.addAssistantItems(message: UIMessage) {
+    private fun JsonArrayBuilder.addAssistantItems(
+        message: UIMessage,
+        toolNamePrefix: String = "",
+    ) {
         val groups = groupPartsByToolBoundary(message.parts)
         val contentBuffer = mutableListOf<UIMessagePart>()
 
@@ -403,7 +410,7 @@ class ResponseAPI(
                             buildJsonObject {
                                 put("type", "function_call")
                                 put("call_id", tool.toolCallId)
-                                put("name", tool.toolName)
+                                put("name", toolNamePrefix + tool.toolName)
                                 // 使用 inputAsJson() 归一化，避免流式中断导致的残缺 JSON 被发送
                                 put("arguments", tool.inputAsJson().toString())
                             },
@@ -543,7 +550,10 @@ class ResponseAPI(
         )
     }
 
-    fun parseResponseDelta(jsonObject: JsonObject): MessageChunk? {
+    fun parseResponseDelta(
+        jsonObject: JsonObject,
+        toolNamePrefix: String = "",
+    ): MessageChunk? {
         val chunkType = jsonObject["type"]?.jsonPrimitive?.content ?: error("chunk type not found")
 
         when (chunkType) {
@@ -615,7 +625,7 @@ class ResponseAPI(
                                                 listOf(
                                                     UIMessagePart.Tool(
                                                         toolCallId = id,
-                                                        toolName = item["name"]?.jsonPrimitive?.content ?: "",
+                                                        toolName = (item["name"]?.jsonPrimitive?.content ?: "").removePrefix(toolNamePrefix),
                                                         input =
                                                             item["arguments"]?.jsonPrimitive?.content
                                                                 ?: "",
@@ -784,7 +794,10 @@ class ResponseAPI(
         return null
     }
 
-    fun parseResponseOutput(jsonObject: JsonObject): MessageChunk {
+    fun parseResponseOutput(
+        jsonObject: JsonObject,
+        toolNamePrefix: String = "",
+    ): MessageChunk {
         println(jsonObject)
         val outputs = jsonObject["output"]?.jsonArray ?: error("output not found")
         val parts = arrayListOf<UIMessagePart>()
@@ -820,7 +833,7 @@ class ResponseAPI(
                     parts.add(
                         UIMessagePart.Tool(
                             toolCallId = callId,
-                            toolName = name,
+                            toolName = name.removePrefix(toolNamePrefix),
                             input = arguments,
                             output = emptyList(),
                         ),
