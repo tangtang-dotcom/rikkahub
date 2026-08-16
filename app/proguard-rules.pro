@@ -28,15 +28,6 @@
 
 -dontwarn com.google.re2j.**
 -dontobfuscate
-# ML Kit bundled 扫码 NPE（issue #2，2026-08-16 v5）：
-# R8 类合并把 BarcodeScanning.getClient 及内部类 zzg/zzh 合并进 Edit03Kt，zzg 静态缓存
-# 初始化丢失 → zzg.zza null → NPE。v4 用 allowshrinking 允许收缩仍破坏（实测）。
-# v5 = 无 allow 选项完整保留 getClient 源类 + 报错内部类（不覆盖 common.internal 的
-# MlKitInitProvider，避免启动闪退）。
--keep class com.google.mlkit.vision.barcode.BarcodeScanning { *; }
--keep class com.google.mlkit.vision.barcode.internal.zzg { *; }
--keep class com.google.mlkit.vision.barcode.internal.zzh { *; }
--keep class com.google.mlkit.vision.barcode.internal.zzi { *; }
 
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
@@ -111,9 +102,3 @@
     public <init>(...);
 }
 
-# v7（最终，子智能体反编译实证）：zzg 是 Firebase Components DI 组件，由 BarcodeRegistrar 注册。
-# BarcodeRegistrar 仅被 AndroidManifest meta-data 字符串+反射引用，R8 看不到会 shrink 删除；
-# 18.3.1 AAR 无 consumer proguard 规则 → 组件未注册 → MlKitContext.get(zzg.class) null → NPE。
-# keep 注册链源头（getComponents() 会字节码引用自动保留 zzi/zzd/zzg 等依赖）。
--keep class com.google.mlkit.vision.barcode.internal.BarcodeRegistrar { *; }
--keep class com.google.mlkit.vision.barcode.internal.zzd { *; }
