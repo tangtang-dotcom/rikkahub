@@ -111,8 +111,9 @@
     public <init>(...);
 }
 
-# v6 补丁：R8 "class constant operations"（Jake Wharton）会移除 <clinit> 静态初始化——
-# zzh 的静态字段（持有 zzg）在 <clinit> 初始化，被移除后 getClient 里 zzg null → NPE。
-# 显式保留 <clinit> 确保初始化执行。
--keepclassmembers class com.google.mlkit.vision.barcode.internal.zzh { static <clinit>(); }
--keepclassmembers class com.google.mlkit.vision.barcode.internal.zzg { static <clinit>(); }
+# v7（最终，子智能体反编译实证）：zzg 是 Firebase Components DI 组件，由 BarcodeRegistrar 注册。
+# BarcodeRegistrar 仅被 AndroidManifest meta-data 字符串+反射引用，R8 看不到会 shrink 删除；
+# 18.3.1 AAR 无 consumer proguard 规则 → 组件未注册 → MlKitContext.get(zzg.class) null → NPE。
+# keep 注册链源头（getComponents() 会字节码引用自动保留 zzi/zzd/zzg 等依赖）。
+-keep class com.google.mlkit.vision.barcode.internal.BarcodeRegistrar { *; }
+-keep class com.google.mlkit.vision.barcode.internal.zzd { *; }
