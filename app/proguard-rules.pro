@@ -28,13 +28,15 @@
 
 -dontwarn com.google.re2j.**
 -dontobfuscate
-# ML Kit bundled 扫码 NPE（2026-08-16，子智能体研究结论）：R8 类合并破坏
-# play-services-mlkit-barcode-scanning 18.3.1 internal 类（zzg.zza 缓存字段被裁 → getClient NPE）。
-# keep 住该类不参与合并；allowobfuscation 允许改名、allowshrinking 允许死代码删除，
-# 避免连带保留 MlKitInitProvider（其在 common.internal，本规则不覆盖）——v2 整包 keep 闪退根因。
--keep,allowobfuscation,allowshrinking class com.google.mlkit.vision.barcode.internal.** { *; }
-# 可选加固（bundled 侧）
--keep,allowobfuscation,allowshrinking class com.google.mlkit.vision.barcode.bundled.internal.** { *; }
+# ML Kit bundled 扫码 NPE（issue #2，2026-08-16 v5）：
+# R8 类合并把 BarcodeScanning.getClient 及内部类 zzg/zzh 合并进 Edit03Kt，zzg 静态缓存
+# 初始化丢失 → zzg.zza null → NPE。v4 用 allowshrinking 允许收缩仍破坏（实测）。
+# v5 = 无 allow 选项完整保留 getClient 源类 + 报错内部类（不覆盖 common.internal 的
+# MlKitInitProvider，避免启动闪退）。
+-keep class com.google.mlkit.vision.barcode.BarcodeScanning { *; }
+-keep class com.google.mlkit.vision.barcode.internal.zzg { *; }
+-keep class com.google.mlkit.vision.barcode.internal.zzh { *; }
+-keep class com.google.mlkit.vision.barcode.internal.zzi { *; }
 
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
