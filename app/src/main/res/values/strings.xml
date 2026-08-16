@@ -445,7 +445,8 @@
   <string name="model_list_no_providers">No available AI providers, please add in settings</string>
   <string name="model_list_search_placeholder">Enter model name to search</string>
   <string name="model_list_select_model">Select Model</string>
-  <string name="more_options">More options</string>
+  <string name="chat_input_toggle_toolbar">Toggle toolbar</string>
+    <string name="more_options">More options</string>
   <string name="no_text_content_to_copy">No text content available to copy</string>
   <string name="notification_channel_chat_completed">Chat Completed</string>
   <string name="notification_channel_chat_live_update">Chat Generation Progress</string>

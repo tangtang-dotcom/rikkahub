@@ -421,7 +421,24 @@ private fun MessagePartsBlock(
                             // non-user messages: user messages don't carry this metadata.
                             val renderedAsWebviewCard =
                                 role != MessageRole.USER && SkillWebviewCardOrNull(part)
+                            val renderedText =
+                                part.text.replaceRegexes(
+                                    assistant = assistant,
+                                    scope =
+                                        if (role == MessageRole.USER) {
+                                            AssistantAffectScope.USER
+                                        } else {
+                                            AssistantAffectScope.ASSISTANT
+                                        },
+                                    visual = true,
+                                )
                             val textContent = @Composable {
+                                CollapsibleLongText(
+                                    text = renderedText,
+                                    // 流式生成期间不折叠，避免生成过程中反复展开/收起
+                                    autoCollapse = !loading && settings.displaySetting.codeBlockAutoCollapse,
+                                    modifier = Modifier.animateContentSize(),
+                                ) {
                                 if (role == MessageRole.USER) {
                                     Surface(
                                         modifier = Modifier.animateContentSize(),
@@ -434,12 +451,7 @@ private fun MessagePartsBlock(
                                     ) {
                                         Column(modifier = Modifier.padding(8.dp)) {
                                             MarkdownBlock(
-                                                content =
-                                                    part.text.replaceRegexes(
-                                                        assistant = assistant,
-                                                        scope = AssistantAffectScope.USER,
-                                                        visual = true,
-                                                    ),
+                                                content = renderedText,
                                                 onClickCitation = handleClickCitation,
                                             )
                                         }
@@ -456,24 +468,14 @@ private fun MessagePartsBlock(
                                         ) {
                                             Column(modifier = Modifier.padding(8.dp)) {
                                                 MarkdownBlock(
-                                                    content =
-                                                        part.text.replaceRegexes(
-                                                            assistant = assistant,
-                                                            scope = AssistantAffectScope.ASSISTANT,
-                                                            visual = true,
-                                                        ),
+                                                    content = renderedText,
                                                     onClickCitation = handleClickCitation,
                                                 )
                                             }
                                         }
                                     } else {
                                         MarkdownBlock(
-                                            content =
-                                                part.text.replaceRegexes(
-                                                    assistant = assistant,
-                                                    scope = AssistantAffectScope.ASSISTANT,
-                                                    visual = true,
-                                                ),
+                                            content = renderedText,
                                             onClickCitation = handleClickCitation,
                                             modifier =
                                                 Modifier
@@ -481,6 +483,7 @@ private fun MessagePartsBlock(
                                         )
                                     }
                                 }
+                            }
                             }
 
                             // 流式生成期间不启用 SelectionContainer：Markdown 在不断重渲染，

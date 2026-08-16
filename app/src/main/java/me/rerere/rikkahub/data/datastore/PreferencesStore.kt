@@ -859,7 +859,9 @@ data class DisplaySetting(
     val enableNotificationOnMessageGeneration: Boolean = false,
     val enableLiveUpdateNotification: Boolean = false,
     val codeBlockAutoWrap: Boolean = false,
-    val codeBlockAutoCollapse: Boolean = false,
+    val codeBlockAutoCollapse: Boolean = true,
+    /** 输入框功能按钮行（Zap/LockKey/ASR 等）默认折叠；用户展开过则记住，下次启动保持 */
+    val featureBarCollapsed: Boolean = true,
     val showLineNumbers: Boolean = false,
     val ttsOnlyReadQuoted: Boolean = false,
     val ttsOnlyReadOutsideBrackets: Boolean = false,
