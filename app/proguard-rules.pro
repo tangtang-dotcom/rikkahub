@@ -28,13 +28,16 @@
 
 -dontwarn com.google.re2j.**
 -dontobfuscate
-
-# ML Kit 扫码 NPE 修复（替代 keep 整包方案）：
-# 根因 = R8 水平类合并把 BarcodeScanning 内部类(zzg/zzh)合并进其他类(Edit03Kt)，
-# 内部字段(zzg.zza)被裁剪 → getClient() 空指针。禁用类合并后类保持独立、字段保留。
-# 注意：不能 keep 整个 mlkit 包——keep 会传递保留启动初始化链(MlKitInitProvider
-# 经 androidx.startup 在 App 启动时执行)，实测导致启动即闪退(无弹窗)。
--optimizations !class/merging/*
+# ML Kit 扫码 NPE 修复（issue #2，2026-08-16 v2 精确 keep）：
+# 根因 = R8 水平类合并把 BarcodeScanning 内部类(zzg)合并进其他类(Edit03Kt)，
+# 内部字段(zzg.zza)被裁剪 → getClient() 空指针。
+# v1(-optimizations !class/merging/*) 在 R8 full mode 下未生效（实测仍报 zzg.zza）。
+# v2 精确 keep barcode 相关包（避免 keep 整个 mlkit 包导致的启动闪退：
+# MlKitInitProvider 经 androidx.startup 启动初始化）。
+-keep class com.google.mlkit.vision.barcode.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_barcode.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_barcode_bundled.** { *; }
+-keep class io.github.g00fy2.quickie.** { *; }
 
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
