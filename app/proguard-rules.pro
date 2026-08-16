@@ -28,13 +28,13 @@
 
 -dontwarn com.google.re2j.**
 -dontobfuscate
-# ML Kit 扫码 NPE 修复（issue #2，2026-08-16 v3）：
-# 根因 = R8 水平类合并把 BarcodeScanning 内部类(zzg)合并进其他类(Edit03Kt)，
-# 内部字段(zzg.zza)被裁剪 → getClient() 空指针。
-# v1(-optimizations) R8 full mode 下被忽略（实测仍报错）；
-# v2(精确 keep barcode) 连带保留 MlKitInitProvider 启动链 → 启动闪退（实测）。
-# v3 = 关闭 R8 full mode(gradle.properties) + -optimizations 禁用类合并（非 full mode 生效）。
--optimizations !class/merging/*
+# ML Kit bundled 扫码 NPE（2026-08-16，子智能体研究结论）：R8 类合并破坏
+# play-services-mlkit-barcode-scanning 18.3.1 internal 类（zzg.zza 缓存字段被裁 → getClient NPE）。
+# keep 住该类不参与合并；allowobfuscation 允许改名、allowshrinking 允许死代码删除，
+# 避免连带保留 MlKitInitProvider（其在 common.internal，本规则不覆盖）——v2 整包 keep 闪退根因。
+-keep,allowobfuscation,allowshrinking class com.google.mlkit.vision.barcode.internal.** { *; }
+# 可选加固（bundled 侧）
+-keep,allowobfuscation,allowshrinking class com.google.mlkit.vision.barcode.bundled.internal.** { *; }
 
 # Ktor 在 Android 上引用了仅 JVM 可用的 java.lang.management 类（IntellijIdeaDebugDetector）
 # Android 不包含这些类，需要告知 R8 忽略
