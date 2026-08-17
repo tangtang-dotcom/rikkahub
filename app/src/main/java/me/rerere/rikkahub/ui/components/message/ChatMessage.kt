@@ -433,12 +433,6 @@ private fun MessagePartsBlock(
                                     visual = true,
                                 )
                             val textContent = @Composable {
-                                CollapsibleLongText(
-                                    text = renderedText,
-                                    // 流式生成期间不折叠，避免生成过程中反复展开/收起
-                                    autoCollapse = !loading && settings.displaySetting.codeBlockAutoCollapse,
-                                    modifier = Modifier.animateContentSize(),
-                                ) {
                                 if (role == MessageRole.USER) {
                                     Surface(
                                         modifier = Modifier.animateContentSize(),
@@ -483,7 +477,6 @@ private fun MessagePartsBlock(
                                         )
                                     }
                                 }
-                            }
                             }
 
                             // 流式生成期间不启用 SelectionContainer：Markdown 在不断重渲染，
