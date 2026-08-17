@@ -2015,7 +2015,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="vault_save">保存</string>
   <string name="vault_show">显示</string>
   <string name="vault_hide">隐藏</string>
-  <string name="auto_task_desc">设置自动任务，App 将在满足条件时自动发送消息触发对话，无需手动操作。</string>
+  <string name="auto_task_desc">设置自动任务，满足条件时 App 自动发送消息保持对话推进，无需手动操作。</string>
   <string name="auto_task_reply_label">回复内容</string>
   <string name="auto_task_reply_placeholder">自动任务中。自主判断并执行当前需要做什么。</string>
   <string name="auto_task_default_message">自动任务中。自主判断并执行当前需要做什么。</string>
@@ -2117,22 +2117,37 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="workspace_err_import">导入文件失败</string>
   <string name="workspace_err_export">导出文件失败</string>
   <string name="workspace_err_rootfs_install">Rootfs 安装失败</string>
-  <string name="auto_task_random_label">随机补充（可选）</string>
-  <string name="auto_task_random_hint">每行一条，触发时随机追加一条到固定内容后；留空则仅用固定内容</string>
-  <string name="auto_task_mode_count">可触发次数</string>
+  <string name="auto_task_mode_label">触发模式（可多选，至少一个）</string>
+  <string name="auto_task_mode_idle">空闲触发</string>
+  <string name="auto_task_idle_label">空闲分钟数（1-720）</string>
+  <string name="auto_task_idle_hint">会话空闲达到 N 分钟后到点触发（60-43200 秒）。</string>
+  <string name="auto_task_mode_daily">每日定时</string>
+  <string name="auto_task_daily_times_label">定时时间点（HH:mm，24 小时制）</string>
+  <string name="auto_task_daily_empty">暂无时间点 — 点击添加时间</string>
+  <string name="auto_task_daily_add">＋ 添加时间</string>
+  <string name="auto_task_daily_remove">移除</string>
+  <string name="auto_task_mode_tasklist">任务列表</string>
+  <string name="auto_task_exec_label">执行内容（可多选，至少一个）</string>
+  <string name="auto_task_exec_fixed">固定消息</string>
+  <string name="auto_task_exec_tasklist">任务列表</string>
   <string name="auto_task_count_label">触发次数</string>
-  <string name="auto_task_count_hint">可设置次数上限为 100 次，到达设置次数或次数上限后自动停止触发</string>
-  <string name="auto_task_idle_label">空闲分钟数</string>
-  <string name="auto_task_idle_hint">会话空闲达到指定分钟后触发（1-60 分钟，次数/随机共用；随机模式在此区间内随机）</string>
-  <string name="auto_task_mode_random">随机空闲</string>
-  <string name="auto_task_mode_tasks">任务列表</string>
+  <string name="auto_task_count_hint">0 = 无限；默认 100；上限 100。触发满次数或任务列表跑完自动停止。</string>
+  <string name="auto_task_taskfile_label">已保存列表（点击复用）</string>
+  <string name="auto_task_taskfile_use">复用</string>
+  <string name="auto_task_taskfile_name_label">新列表名称</string>
+  <string name="auto_task_taskfile_save">保存列表</string>
   <string name="auto_task_tasks_label">任务（每行一个）</string>
-  <string name="auto_task_tasks_hint">按顺序逐步执行；列表跑完自动停止。</string>
+  <string name="auto_task_tasks_hint">每次触发按顺序执行下一个；列表跑完自动停止。</string>
   <string name="auto_task_tasks_default">使用默认列表</string>
   <string name="auto_task_tasks_ai_preset">应用 AI 预设</string>
-  <string name="auto_task_mode_random_hint">会话空闲达设定时间区间内随机触发（1 分钟=30-60s，2 分钟=60-120s…），持续直到手动停止</string>
+  <string name="auto_task_time_picker_title">选择触发时间（24 小时制）</string>
+  <string name="auto_task_active_skip_hint">跳过提示：会话正在生成回复，或 60 秒内你有操作时，跳过本次触发。</string>
   <string name="auto_task_stop">停止自动任务</string>
-  <string name="auto_task_tip">提示：次数模式触发满设置次数后自动停止；随机空闲持续触发，需手动停止。</string>
+  <string name="auto_task_tip">任务列表跑完或触发满次数（0 = 无限）即自动停止；空闲触发/每日定时可组合使用。</string>
+  <string name="auto_task_err_no_trigger">请至少选择一种触发模式。</string>
+  <string name="auto_task_err_no_exec">请至少选择一种执行内容（固定消息 / 任务列表）。</string>
+  <string name="auto_task_err_no_daily_times">已开启每日定时 — 请至少添加一个时间点（HH:mm）。</string>
+  <string name="auto_task_err_no_tasks">已开启任务列表 — 请至少填写一个任务。</string>
   <string name="stats_total_input">累计输入</string>
   <string name="stats_copy_total">复制累计统计</string>
   <string name="stats_copy">复制统计</string>

@@ -1350,12 +1350,8 @@
   <string name="auto_task_desc">設定自動回覆訊息，App 將在滿足條件時自動發送，無需手動操作。</string>
   <string name="auto_task_reply_label">回覆內容</string>
   <string name="auto_task_reply_placeholder">繼續</string>
-  <string name="auto_task_mode_count">可觸發次數</string>
   <string name="auto_task_count_label">觸發次數</string>
-  <string name="auto_task_count_hint">可設定次數上限為 100 次，到達設定次數或次數上限後自動停止觸發</string>
-  <string name="auto_task_idle_label">空閒秒數</string>
-  <string name="auto_task_idle_hint">會話空閒達到指定秒數後自動發送</string>
-  <string name="auto_task_tip">提示：次數模式觸發滿設定次數後自動停止；定時模式觸發後自動任務即清除。</string>
+  <string name="auto_task_idle_label">空閒分鐘數（1-720）</string>
   <string name="stats_total_input">累計輸入</string>
   <string name="stats_copy_total">複製累計統計</string>
   <string name="stats_copy">複製統計</string>

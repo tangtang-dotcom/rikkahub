@@ -387,7 +387,7 @@ fun ChatInput(
                             ) {
                                 Icon(
                                     imageVector = HugeIcons.Zap,
-                                    contentDescription = stringResource(R.string.auto_task_mode_count),
+                                    contentDescription = stringResource(R.string.auto_task_title),
                                 )
                             }
 

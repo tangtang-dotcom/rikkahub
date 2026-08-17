@@ -11,7 +11,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,13 +48,15 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
-import me.rerere.rikkahub.ui.components.ai.MAX_AUTO_TASK_TRIGGER_COUNT
+import me.rerere.rikkahub.ui.components.ai.MAX_AUTO_TASK_IDLE_SECONDS
+import me.rerere.rikkahub.ui.components.ai.MIN_AUTO_TASK_IDLE_SECONDS
 import me.rerere.rikkahub.ui.components.ai.resolveAutoTaskMessage
 import me.rerere.rikkahub.ui.components.ai.writeAutoTaskConfig
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
+import java.util.Calendar
 import java.util.Locale
 import kotlin.uuid.Uuid
 
@@ -85,6 +89,14 @@ class ChatVM(
     private var autoTaskJob: Job? = null
     private val _autoTaskActive = kotlinx.coroutines.flow.MutableStateFlow(false)
     val autoTaskActive: kotlinx.coroutines.flow.StateFlow<Boolean> = _autoTaskActive.asStateFlow()
+
+    /** 用户最近活跃时间（用户发送消息时更新），自动任务活跃监测用 */
+    private var userActivityAtMs = 0L
+
+    private companion object {
+        /** 活跃监测窗口：此时间段内有用户操作（或正在生成回复）视为活跃，跳过自动触发 */
+        const val USER_ACTIVE_SKIP_MS = 60_000L
+    }
 
     // 异步任务 (从ChatService获取，响应式)
     val conversationJob: StateFlow<Job?> =
@@ -217,8 +229,14 @@ class ChatVM(
     fun handleMessageSend(
         content: List<UIMessagePart>,
         answer: Boolean = true,
+        fromAutoTask: Boolean = false,
     ) {
         if (content.isEmptyInputMessage()) return
+
+        // 用户主动发送消息 → 更新活跃时间（自动任务触发不算用户活跃）
+        if (!fromAutoTask) {
+            userActivityAtMs = System.currentTimeMillis()
+        }
 
         // 自动压缩检查：开关开启时，达到触发点（当前模式阈值）即弹窗询问
         if (answer) {
@@ -535,172 +553,145 @@ class ChatVM(
     }
 
     /**
-     * 调度自动任务：根据配置的触发模式启动定时器或空闲监听。
-     *  - 模式 0（可触发次数）：会话空闲时自动发送，达到设置次数或次数上限后自动停止
-     *  - 模式 1（定时触发）：会话空闲达设定秒数后自动发送一次，触发后清除（一次性触发）
+     * 调度自动任务：触发模式可多选组合。
+     *  - 空闲触发（[AutoTaskConfig.modeIdle]）：会话空闲 [AutoTaskConfig.intervalSeconds] 秒后到点触发
+     *  - 每日定时（[AutoTaskConfig.modeDaily]）：在 [AutoTaskConfig.dailyTimes] 每个 HH:mm 时间点触发
+     *  - 任务列表（[AutoTaskConfig.useTaskList]）：每次触发按序推进任务列表，列表跑完自动停止
+     * 执行内容：固定消息（[AutoTaskConfig.useFixedMessage]）与任务列表可同时勾选，每次触发发送组合内容。
+     * 次数：0 = 无限，默认 100，上限 100；任务列表跑完或到达次数即自动停止。
+     * 活跃监测：会话正在生成回复，或用户 60 秒内有操作时，跳过本次触发。
      */
     fun scheduleAutoTask(config: AutoTaskConfig) {
-        me.rerere.rikkahub.data.log.AppLog.d("AutoTask", "调度: mode=${config.mode} count=${config.triggerCount} interval=${config.intervalSeconds}")
+        me.rerere.rikkahub.data.log.AppLog.d(
+            "AutoTask",
+            "调度: idle=${config.modeIdle} daily=${config.modeDaily} taskList=${config.useTaskList} fixed=${config.useFixedMessage} " +
+                "count=${config.triggerCount} interval=${config.intervalSeconds} times=${config.dailyTimes} tasks=${config.tasks.size}",
+        )
         cancelAutoTask()
+
+        val hasTriggerMode = config.modeIdle || config.modeDaily || config.useTaskList
+        val hasExecContent = config.useFixedMessage || config.useTaskList
+        val valid = hasTriggerMode && hasExecContent && (!config.useTaskList || config.tasks.isNotEmpty())
+        if (!valid) {
+            _autoTaskActive.value = false
+            return
+        }
+
         _autoTaskActive.value = true
-
-        if (config.mode == 0 && config.triggerCount <= 0) return
-        if (config.mode == 1 && config.intervalSeconds <= 0) return
-
         autoTaskJob =
             viewModelScope.launch {
-                when (config.mode) {
-                    0 -> {
-                        // 次数触发：每次会话空闲达设定秒数后自动发送，到达设置次数或上限（100）后自动停止
-                        val limit = config.triggerCount.coerceIn(1, MAX_AUTO_TASK_TRIGGER_COUNT)
-                        var triggered = 0
-                        while (triggered < limit && isActive) {
-                            // 等待当前生成中的回复完成
-                            val job = conversationJob.value
-                            if (job != null && job.isActive) {
-                                try {
-                                    withTimeoutOrNull(300_000L) {
-                                        conversationJob.first { it == null || !it.isActive }
-                                    }
-                                } catch (_: Exception) {
-                                }
-                            }
-                            // 会话空闲计时：空闲达设定秒数后触发
-                            var idleSeconds = 0
-                            while (idleSeconds < config.intervalSeconds && isActive) {
-                                delay(1_000L)
-                                val currentJob = conversationJob.value
-                                if (currentJob != null && currentJob.isActive) {
-                                    idleSeconds = 0
-                                    break
-                                }
-                                idleSeconds++
-                            }
-                            if (!isActive) break
-                            me.rerere.rikkahub.data.log.AppLog.d("AutoTask", "触发 #${triggered + 1}")
-                            handleMessageSend(
-                                listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
-                                answer = true,
-                            )
-                            triggered++
+                val triggerChannel = Channel<Unit>(Channel.UNLIMITED)
+                val idleJob = if (config.modeIdle) launch { idleTriggerProducer(config, triggerChannel) } else null
+                val dailyJob = if (config.modeDaily) launch { dailyTriggerProducer(config, triggerChannel) } else null
+                try {
+                    var triggered = 0
+                    var taskIdx = config.taskIndex.coerceIn(0, (config.tasks.size - 1).coerceAtLeast(0))
+                    var done = config.useTaskList && config.tasks.isNotEmpty() && taskIdx >= config.tasks.size
+                    while (isActive && !done) {
+                        triggerChannel.receive()
+                        if (!isActive) break
+
+                        // 活跃监测：会话正在生成回复，或用户 60 秒内有操作 → 跳过本次触发
+                        val job = conversationJob.value
+                        if (job != null && job.isActive) continue
+                        if (System.currentTimeMillis() - userActivityAtMs < USER_ACTIVE_SKIP_MS) continue
+
+                        triggered++
+                        val msg = resolveAutoTaskMessage(config, taskIdx)
+                        if (config.useTaskList && config.tasks.isNotEmpty()) {
+                            taskIdx++
                         }
-                        writeAutoTaskConfig(context, AutoTaskConfig())
-                        _autoTaskActive.value = false
+                        me.rerere.rikkahub.data.log.AppLog.d("AutoTask", "触发 #$triggered: ${msg.take(48)}")
+                        handleMessageSend(
+                            listOf(UIMessagePart.Text(msg)),
+                            answer = true,
+                            fromAutoTask = true,
+                        )
+                        writeAutoTaskConfig(context, config.copy(taskIndex = taskIdx))
+
+                        // 停止条件：任务列表跑完，或达到设定次数（0 = 无限）
+                        if (config.useTaskList && config.tasks.isNotEmpty() && taskIdx >= config.tasks.size) done = true
+                        if (config.triggerCount > 0 && triggered >= config.triggerCount) done = true
                     }
-
-                    1 -> {
-                        // 随机空闲：会话空闲达「随机延迟」后触发（持续直到手动停止）。
-                        // 延迟区间：设置 X 分钟 → 触发在 [(X-1)*60+30, X*60] 秒随机
-                        // （1 分钟 = 30-60s 随机；2 分钟 = 60-120s 随机；以此类推）
-                        while (isActive) {
-                            val job = conversationJob.value
-                            if (job != null && job.isActive) {
-                                try {
-                                    withTimeoutOrNull(300_000L) {
-                                        conversationJob.first { it == null || !it.isActive }
-                                    }
-                                } catch (_: Exception) {
-                                }
-                            }
-
-                            val minDelayMs = maxOf(30_000L, (config.intervalSeconds - 60L).coerceAtLeast(0L) * 1000L)
-                            val maxDelayMs = (config.intervalSeconds * 1000L).coerceAtLeast(minDelayMs)
-                            val targetMs = (minDelayMs..maxDelayMs).random()
-                            var idleMs = 0L
-                            while (idleMs < targetMs && isActive) {
-                                delay(1_000L)
-                                val currentJob = conversationJob.value
-                                if (currentJob != null && currentJob.isActive) {
-                                    idleMs = 0
-                                    break
-                                }
-                                idleMs += 1_000L
-                            }
-
-                            if (idleMs >= targetMs && isActive) {
-                                handleMessageSend(
-                                    listOf(UIMessagePart.Text(resolveAutoTaskMessage(config))),
-                                    answer = true,
-                                )
-                            }
-                        }
-                        writeAutoTaskConfig(context, AutoTaskConfig())
-                        _autoTaskActive.value = false
-                    }
-
-                    2 -> {
-                        // 随机空闲：空闲后 5-15 秒随机间隔自动发送，持续触发（直到停止）
-                        while (isActive) {
-                            val job = conversationJob.value
-                            if (job != null && job.isActive) {
-                                try {
-                                    withTimeoutOrNull(300_000L) {
-                                        conversationJob.first { it == null || !it.isActive }
-                                    }
-                                } catch (_: Exception) {
-                                }
-                            }
-
-                            val randomDelay = (5L..15L).random() * 1000L
-                            delay(randomDelay)
-                            if (!isActive) break
-                            handleMessageSend(
-                                listOf(UIMessagePart.Text(config.message)),
-                                answer = true,
-                            )
-                        }
-                        writeAutoTaskConfig(context, AutoTaskConfig())
-                    }
-
-                    3 -> {
-                        // 任务列表（借鉴 reasonix 任务模式）：按顺序执行列表中的任务，
-                        // 每次触发 = 下一个任务；列表跑完自动停止（不是无限自动）。
-                        val tasks = config.tasks.map { it.trim() }.filter { it.isNotEmpty() }
-                        if (tasks.isEmpty()) {
-                            _autoTaskActive.value = false
-                            return@launch
-                        }
-                        var currentIndex = config.taskIndex.coerceIn(0, tasks.lastIndex)
-                        while (currentIndex < tasks.size && isActive) {
-                            // 等待当前生成中的回复完成
-                            val job = conversationJob.value
-                            if (job != null && job.isActive) {
-                                try {
-                                    withTimeoutOrNull(300_000L) {
-                                        conversationJob.first { it == null || !it.isActive }
-                                    }
-                                } catch (_: Exception) {
-                                }
-                            }
-                            // 会话空闲计时：空闲达设定秒数后触发下一个任务
-                            var idleSeconds = 0
-                            while (idleSeconds < config.intervalSeconds && isActive) {
-                                delay(1_000L)
-                                val currentJob = conversationJob.value
-                                if (currentJob != null && currentJob.isActive) {
-                                    idleSeconds = 0
-                                    break
-                                }
-                                idleSeconds++
-                            }
-                            if (!isActive) break
-                            val taskMsg = tasks[currentIndex]
-                            me.rerere.rikkahub.data.log.AppLog.d(
-                                "AutoTask",
-                                "任务列表触发 #${currentIndex + 1}/${tasks.size}: ${taskMsg.take(40)}",
-                            )
-                            handleMessageSend(
-                                listOf(UIMessagePart.Text(taskMsg)),
-                                answer = true,
-                            )
-                            currentIndex++
-                            writeAutoTaskConfig(context, config.copy(taskIndex = currentIndex))
-                        }
-                        writeAutoTaskConfig(context, AutoTaskConfig())
-                        _autoTaskActive.value = false
-                    }
+                } finally {
+                    idleJob?.cancel()
+                    dailyJob?.cancel()
+                    writeAutoTaskConfig(context, AutoTaskConfig())
+                    _autoTaskActive.value = false
                 }
             }
+    }
+
+    /** 空闲触发生产者：会话连续空闲 intervalSeconds 秒后发送一次触发事件（随后继续监听下一轮空闲） */
+    private suspend fun CoroutineScope.idleTriggerProducer(
+        config: AutoTaskConfig,
+        triggerChannel: Channel<Unit>,
+    ) {
+        val interval = config.intervalSeconds.coerceIn(MIN_AUTO_TASK_IDLE_SECONDS, MAX_AUTO_TASK_IDLE_SECONDS)
+        while (isActive) {
+            // 等待当前生成中的回复完成
+            val job = conversationJob.value
+            if (job != null && job.isActive) {
+                try {
+                    withTimeoutOrNull(300_000L) {
+                        conversationJob.first { it == null || !it.isActive }
+                    }
+                } catch (_: Exception) {
+                }
+            }
+            // 会话空闲计时：空闲达设定秒数后触发
+            var idleSeconds = 0
+            while (idleSeconds < interval && isActive) {
+                delay(1_000L)
+                val currentJob = conversationJob.value
+                if (currentJob != null && currentJob.isActive) {
+                    idleSeconds = 0
+                    continue
+                }
+                idleSeconds++
+            }
+            if (!isActive) break
+            triggerChannel.send(Unit)
+        }
+    }
+
+    /** 每日定时生产者：在每个 HH:mm 时间点发送一次触发事件（跨天循环） */
+    private suspend fun CoroutineScope.dailyTriggerProducer(
+        config: AutoTaskConfig,
+        triggerChannel: Channel<Unit>,
+    ) {
+        val times = config.dailyTimes.mapNotNull { parseDailyTimeMinutes(it) }.distinct().sorted()
+        if (times.isEmpty()) return
+        while (isActive) {
+            val delayMs = nextDailyTriggerDelayMs(times, System.currentTimeMillis())
+            if (delayMs > 0) delay(delayMs)
+            if (isActive) triggerChannel.send(Unit)
+        }
+    }
+
+    /** 解析 HH:mm → 当天第几分钟；格式非法返回 null */
+    private fun parseDailyTimeMinutes(hhmm: String): Int? {
+        val parts = hhmm.split(":")
+        if (parts.size != 2) return null
+        val h = parts[0].toIntOrNull() ?: return null
+        val m = parts[1].toIntOrNull() ?: return null
+        if (h !in 0..23 || m !in 0..59) return null
+        return h * 60 + m
+    }
+
+    /** 距下一个 HH:mm 触发点的延迟毫秒数：今天未到 → 今天；已过 → 明天 */
+    private fun nextDailyTriggerDelayMs(
+        timesMinutes: List<Int>,
+        nowMs: Long,
+    ): Long {
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = nowMs
+        val nowMinutesOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val nowMsOfDay = nowMinutesOfDay * 60_000L + cal.get(Calendar.SECOND) * 1000L + cal.get(Calendar.MILLISECOND)
+        val dayMs = 24 * 60 * 60 * 1000L
+        val todayTriggerMs = timesMinutes.map { it * 60_000L }.firstOrNull { it > nowMsOfDay }
+        val nextMs = todayTriggerMs ?: (timesMinutes.first() * 60_000L + dayMs)
+        return nextMs - nowMsOfDay
     }
 
     /**
