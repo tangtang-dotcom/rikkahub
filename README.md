@@ -17,6 +17,13 @@
 
 **🤝 相关项目：[Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Reasonix 的 Android 原生客户端 · AI 编码助手（开发中）
 
+**🤖 协作体系（三个 AI）**：
+- **RikkaHub Agents**（本 App）— 手机端 Agent 工具：80+ 工具、工作区沙箱、SSH/vault 直通、三方协作调度
+- **Reasonix Agents** — 编码 Agent（DeepSeek-Reasonix 协议）：拉代码/改/跑测试/提交，重活执行方
+- **皮皮虾**（🦐）— 基于 OpenClaw 的个人助理实例：微信值守、定时简报、巡检告警、协作回传
+
+三方通过交流目录协作（交接单/回传/超时提醒机制），成长记录统一维护在私有仓库 `ai-notes`。
+
 > 🔧 **使用前提**：Reasonix Agents 为纯客户端，**需在本地或服务器自部署 Reasonix 服务端**（DeepSeek-Reasonix 协议）——通过配置服务器地址/端口/认证连接使用，不支持云端托管，请自备服务资源。
 
 
