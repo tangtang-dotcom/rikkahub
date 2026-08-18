@@ -66,6 +66,7 @@ class ReasonixProvider(
                 type = ModelType.CHAT,
                 abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
                 contextLength = 1_000_000,
+                group = info.provider.ifBlank { info.ref.substringBefore("/", missingDelimiterValue = "") },
             )
         }
     }
@@ -143,15 +144,22 @@ class ReasonixProvider(
         params: TextGenerationParams,
     ): Flow<MessageChunk> = flow {
         val api = api(providerSetting)
-        // 会话：当前无历史时新建会话（服务端管会话；本 Provider 单会话场景）
+        // 会话管理：优先恢复服务端当前会话（避免 RikkaHub 新对话在 Reasonix 创建重复会话），
+        // 无当前会话时才新建。这样两端共享同一会话，历史/压缩/checkpoint 全部继承。
         val lastUserInput = messages.lastOrNull { it.role == MessageRole.USER }?.parts
             ?.filterIsInstance<UIMessagePart.Text>()
             ?.joinToString("") { it.text }
             ?: return@flow
 
-        // 必须先 POST /new（新建会话）+ POST /submit（提交增量输入），
-        // 服务端才会开始生成并向 /events 推送；否则两端干等（App 无限转圈）。
-        api.newSession()
+        // 尝试恢复服务端当前会话；失败或无当前会话则新建
+        val currentSession = runCatching { api.getSessions() }
+            .getOrNull()
+            ?.firstOrNull { it.current }
+        if (currentSession != null && currentSession.path.isNotBlank()) {
+            api.resumeSession(currentSession.path)
+        } else {
+            api.newSession()
+        }
         api.submit(lastUserInput)
 
         // 通过 SSE 建立连接后提交增量输入
