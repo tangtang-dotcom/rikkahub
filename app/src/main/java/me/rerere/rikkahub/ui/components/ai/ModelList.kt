@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.animateItem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
@@ -40,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -328,6 +330,9 @@ private fun ColumnScope.ModelList(
 
     var searchKeywords by remember { mutableStateOf("") }
 
+    // 模型分组折叠状态（每个 group 一个折叠开关；提升到 ModelList 作用域，供分组头/内容共享）
+    val collapsedGroups = remember { mutableStateMapOf<String, Boolean>() }
+
     val typeFilteredModelsByProvider =
         remember(providers, modelType) {
             providers.associate { provider ->
@@ -602,9 +607,9 @@ private fun ColumnScope.ModelList(
                     if (group.isNotEmpty() && models.isNotEmpty()) {
                         // 分组头（可折叠）
                         item(key = "group:${providerSetting.id}:$group") {
-                            var collapsed by remember { mutableStateOf(false) }
+                            val collapsed = collapsedGroups[group] == true
                             Surface(
-                                onClick = { collapsed = !collapsed },
+                                onClick = { collapsedGroups[group] = !collapsed },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp, vertical = 2.dp),
@@ -640,7 +645,7 @@ private fun ColumnScope.ModelList(
                         }
 
                         // 分组内容（可折叠）
-                        if (!collapsed) {
+                        if (collapsedGroups[group] != true) {
                             items(
                                 items = models,
                                 key = { it.id },

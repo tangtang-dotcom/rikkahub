@@ -449,6 +449,7 @@ class GenerationHandler(
                         conversationModeInjectionIds = conversationModeInjectionIds,
                         conversationLorebookIds = conversationLorebookIds,
                         workspaceCwd = workspaceCwd,
+                        conversationId = conversationId,
                     )
                 } catch (t: Throwable) {
                     // CancellationException is honoured verbatim — stopGeneration has its
@@ -971,6 +972,7 @@ class GenerationHandler(
         conversationModeInjectionIds: Set<Uuid> = emptySet(),
         conversationLorebookIds: Set<Uuid> = emptySet(),
         workspaceCwd: String? = null,
+        conversationId: String? = null,
     ) {
         // Reset any leftover processing status (e.g. OCR from a previous turn still
         // inside its 60s window) so a new message without images doesn't show
