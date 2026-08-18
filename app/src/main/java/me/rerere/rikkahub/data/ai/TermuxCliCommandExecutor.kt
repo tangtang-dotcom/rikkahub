@@ -46,6 +46,7 @@ class TermuxCliCommandExecutor(
                 if (result.stdout.isNotBlank()) result.stdout.trim() else result.stderr.trim()
             is CaptureResult.Timeout -> "CLI 命令执行超时"
             is CaptureResult.Denied -> "CLI 命令执行被拒绝（Termux 未授权）"
+            is CaptureResult.OtherError -> "CLI 命令执行失败：${result.message}"
         }
     }
 
