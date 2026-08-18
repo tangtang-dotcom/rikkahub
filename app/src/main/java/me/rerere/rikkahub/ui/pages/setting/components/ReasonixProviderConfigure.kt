@@ -86,60 +86,63 @@ fun ReasonixProviderConfigure(
         isError = provider.baseUrl.isNotBlank() && provider.baseUrl.toHttpUrlOrNull() == null,
     )
 
-    // 连接方式选择
-    Text(
-        text = stringResource(R.string.reasonix_connection_mode),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-    )
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        listOf("serve" to stringResource(R.string.reasonix_mode_serve), "ssh" to stringResource(R.string.reasonix_mode_ssh)).forEach { (mode, label) ->
-            androidx.compose.material3.FilterChip(
-                selected = provider.connectionMode == mode,
-                onClick = { onEdit(provider.copy(connectionMode = mode)) },
-                label = { Text(label) },
-            )
-        }
-    }
-    Text(
-        text =
-            if (provider.connectionMode == "serve") {
-                stringResource(R.string.reasonix_mode_serve_desc)
-            } else {
-                stringResource(R.string.reasonix_mode_ssh_desc)
-            },
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-
-    OutlinedTextField(
-        value = provider.username,
-        onValueChange = { onEdit(provider.copy(username = it.trim())) },
-        label = { Text(stringResource(R.string.reasonix_username_basic)) },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-    )
-
-    var passwordVisible by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = provider.password,
-        onValueChange = { onEdit(provider.copy(password = it)) },
-        label = { Text(stringResource(R.string.reasonix_password_basic)) },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                Icon(
-                    if (passwordVisible) HugeIcons.ViewOff else HugeIcons.View,
-                    contentDescription = null,
+    // reasonix 专用：连接方式 + Basic Auth（其他后端类型不显示）
+    if (provider.backendType == "reasonix") {
+        // 连接方式选择
+        Text(
+            text = stringResource(R.string.reasonix_connection_mode),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf("serve" to stringResource(R.string.reasonix_mode_serve), "ssh" to stringResource(R.string.reasonix_mode_ssh)).forEach { (mode, label) ->
+                androidx.compose.material3.FilterChip(
+                    selected = provider.connectionMode == mode,
+                    onClick = { onEdit(provider.copy(connectionMode = mode)) },
+                    label = { Text(label) },
                 )
             }
-        },
-    )
+        }
+        Text(
+            text =
+                if (provider.connectionMode == "serve") {
+                    stringResource(R.string.reasonix_mode_serve_desc)
+                } else {
+                    stringResource(R.string.reasonix_mode_ssh_desc)
+                },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedTextField(
+            value = provider.username,
+            onValueChange = { onEdit(provider.copy(username = it.trim())) },
+            label = { Text(stringResource(R.string.reasonix_username_basic)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        var passwordVisible by remember { mutableStateOf(false) }
+        OutlinedTextField(
+            value = provider.password,
+            onValueChange = { onEdit(provider.copy(password = it)) },
+            label = { Text(stringResource(R.string.reasonix_password_basic)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        if (passwordVisible) HugeIcons.ViewOff else HugeIcons.View,
+                        contentDescription = null,
+                    )
+                }
+            },
+        )
+    }
 
     var tokenVisible by remember { mutableStateOf(false) }
     OutlinedTextField(
@@ -160,32 +163,35 @@ fun ReasonixProviderConfigure(
     )
 
     // ── Web 桥（反向隧道）──
-    HorizontalDivider()
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // reasonix 专用：Web 桥（其他后端类型不显示）
+    if (provider.backendType == "reasonix") {
+        HorizontalDivider()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.reasonix_web_bridge_section),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Switch(
+                checked = provider.webBridgeEnabled,
+                onCheckedChange = { onEdit(provider.copy(webBridgeEnabled = it)) },
+            )
+        }
         Text(
-            text = stringResource(R.string.reasonix_web_bridge_section),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            text = stringResource(R.string.reasonix_web_bridge_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Switch(
-            checked = provider.webBridgeEnabled,
-            onCheckedChange = { onEdit(provider.copy(webBridgeEnabled = it)) },
-        )
-    }
-    Text(
-        text = stringResource(R.string.reasonix_web_bridge_desc),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 
-    // 分隔：Web 桥区块与下方「是否启用」（整个提供商开关）之间加间距，避免视觉拥挤
-    Spacer(Modifier.height(8.dp))
-    HorizontalDivider()
-    Spacer(Modifier.height(8.dp))
+        // 分隔：Web 桥区块与下方「是否启用」（整个提供商开关）之间加间距，避免视觉拥挤
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(8.dp))
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -199,9 +205,12 @@ fun ReasonixProviderConfigure(
         )
     }
 
-    Text(
-        text = stringResource(R.string.reasonix_session_server_managed),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    // reasonix 专用：服务端会话说明
+    if (provider.backendType == "reasonix") {
+        Text(
+            text = stringResource(R.string.reasonix_session_server_managed),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
