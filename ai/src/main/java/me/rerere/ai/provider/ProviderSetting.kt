@@ -490,6 +490,8 @@ sealed class ProviderSetting {
         @Transient override val shortDescription: @Composable (() -> Unit) = {},
         // ── 后端类型：reasonix（专有 SSE）| custom（自定义 HTTP）| cli（命令行）──
         var backendType: String = "reasonix",
+        // ── CLI 后端（backendType=cli）：命令行模板，{prompt} 为提示词占位符 ──
+        var cliCommand: String = "",
         var baseUrl: String = "",
         var username: String = "",
         var password: String = "",

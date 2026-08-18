@@ -43,16 +43,20 @@ import kotlin.uuid.Uuid.Companion.parse
 class ReasonixProvider(
     private val clientFactory: (ProviderSetting.Reasonix) -> ReasonixApi,
     private val httpClient: OkHttpClient = OkHttpClient(),
+    private val cliExecutor: CliCommandExecutor? = null,
 ) : Provider<ProviderSetting.Reasonix> {
 
-    constructor() : this({ setting ->
-        ReasonixApi(
-            baseUrl = setting.baseUrl,
-            username = setting.username,
-            password = setting.password,
-            token = setting.token,
-        )
-    })
+    constructor(cliExecutor: CliCommandExecutor? = null) : this(
+        clientFactory = { setting ->
+            ReasonixApi(
+                baseUrl = setting.baseUrl,
+                username = setting.username,
+                password = setting.password,
+                token = setting.token,
+            )
+        },
+        cliExecutor = cliExecutor,
+    )
 
     // custom 类型复用 OpenAI 兼容协议（baseUrl + token 作为 apiKey）
     private val chatCompletionsAPI = ChatCompletionsAPI(client = httpClient, keyRoulette = KeyRoulette.default())
@@ -162,7 +166,15 @@ class ReasonixProvider(
                 return@flow
             }
             "cli" -> {
-                error("后端类型 cli 暂未实现")
+                val executor = cliExecutor ?: error("CLI 执行器未注入")
+                val prompt = messages.lastOrNull { it.role == MessageRole.USER }?.parts
+                    ?.filterIsInstance<UIMessagePart.Text>()
+                    ?.joinToString("") { it.text }
+                    ?: ""
+                val command = providerSetting.cliCommand.replace("{prompt}", prompt)
+                val output = executor.execute(command, prompt)
+                emit(chunk(providerSetting, params, UIMessage.user(output), null, "stop"))
+                return@flow
             }
         }
         val api = api(providerSetting)

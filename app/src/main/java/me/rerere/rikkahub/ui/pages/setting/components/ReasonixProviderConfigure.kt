@@ -76,14 +76,28 @@ fun ReasonixProviderConfigure(
         }
     }
 
-    OutlinedTextField(
-        value = provider.baseUrl,
-        onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(R.string.reasonix_base_url_example)) },
-        isError = provider.baseUrl.isNotBlank() && provider.baseUrl.toHttpUrlOrNull() == null,
-    )
+    // baseUrl：reasonix/custom 显示；cli 类型改用命令
+    if (provider.backendType != "cli") {
+        OutlinedTextField(
+            value = provider.baseUrl,
+            onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
+            label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.reasonix_base_url_example)) },
+            isError = provider.baseUrl.isNotBlank() && provider.baseUrl.toHttpUrlOrNull() == null,
+        )
+    }
+
+    // cli 类型：CLI 命令模板（{prompt} 为提示词占位符）
+    if (provider.backendType == "cli") {
+        OutlinedTextField(
+            value = provider.cliCommand,
+            onValueChange = { onEdit(provider.copy(cliCommand = it.trim())) },
+            label = { Text(stringResource(R.string.backend_cli_command)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.backend_cli_command_hint)) },
+        )
+    }
 
     // reasonix 专用：连接方式 + Basic Auth（其他后端类型不显示）
     if (provider.backendType == "reasonix") {

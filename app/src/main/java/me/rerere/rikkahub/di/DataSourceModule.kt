@@ -20,6 +20,7 @@ import me.rerere.rikkahub.data.agentrun.AgentRunRepository
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
+import me.rerere.rikkahub.data.ai.TermuxCliCommandExecutor
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
@@ -348,7 +349,11 @@ val dataSourceModule =
             val settingsStore: me.rerere.rikkahub.data.datastore.SettingsStore = get()
             val codexRepository: CodexAccountRepository = get()
             val json: Json = get()
-            ProviderManager(client = get(), context = get()).also { pm ->
+            ProviderManager(
+                client = get(),
+                context = get(),
+                cliExecutor = TermuxCliCommandExecutor(get()),
+            ).also { pm ->
                 pm.registerProvider(
                     "local_litert",
                     me.rerere.locallm.litert.LiteRtProvider(
