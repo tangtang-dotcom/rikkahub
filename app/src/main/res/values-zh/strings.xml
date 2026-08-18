@@ -2383,6 +2383,13 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="reasonix_token_serve">Token（serve token 模式，可选）</string>
   <string name="reasonix_start_web_bridge">启动 Web 桥</string>
   <string name="reasonix_stop_web_bridge">停止</string>
+  <string name="backend_service">后端服务</string>
+  <string name="backend_type">后端类型</string>
+  <string name="backend_type_custom">自定义</string>
+  <string name="backend_cli_command">CLI 命令</string>
+  <string name="backend_cli_command_hint">例：reasonix run {prompt}（{prompt} 为提示词占位符）</string>
+  <string name="backend_cli_ssh_host">SSH 主机名（可选）</string>
+  <string name="backend_cli_ssh_host_hint">留空 = 手机本地 Termux 执行</string>
   <string name="debug_reset_chat_model">重置Chat模型</string>
   <string name="debug_crash">崩溃</string>
   <string name="debug_refresh">刷新</string>

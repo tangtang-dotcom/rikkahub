@@ -172,7 +172,7 @@ class ReasonixProvider(
                     ?.joinToString("") { it.text }
                     ?: ""
                 val command = providerSetting.cliCommand.replace("{prompt}", prompt)
-                val output = executor.execute(command, prompt)
+                val output = executor.execute(command, prompt, providerSetting.cliSshHost.ifBlank { null })
                 emit(chunk(providerSetting, params, UIMessage.user(output), null, "stop"))
                 return@flow
             }

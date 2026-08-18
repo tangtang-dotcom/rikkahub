@@ -97,6 +97,13 @@ fun ReasonixProviderConfigure(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(stringResource(R.string.backend_cli_command_hint)) },
         )
+        OutlinedTextField(
+            value = provider.cliSshHost,
+            onValueChange = { onEdit(provider.copy(cliSshHost = it.trim())) },
+            label = { Text(stringResource(R.string.backend_cli_ssh_host)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.backend_cli_ssh_host_hint)) },
+        )
     }
 
     // reasonix 专用：连接方式 + Basic Auth（其他后端类型不显示）

@@ -2385,6 +2385,8 @@
   <string name="backend_type_custom">自定义</string>
   <string name="backend_cli_command">CLI 命令</string>
   <string name="backend_cli_command_hint">例：reasonix run {prompt}（{prompt} 为提示词占位符）</string>
+  <string name="backend_cli_ssh_host">SSH 主机名（可选）</string>
+  <string name="backend_cli_ssh_host_hint">留空 = 手机本地 Termux 执行</string>
   <string name="debug_reset_chat_model">重置Chat模型</string>
   <string name="debug_crash">崩溃</string>
   <string name="debug_refresh">刷新</string>

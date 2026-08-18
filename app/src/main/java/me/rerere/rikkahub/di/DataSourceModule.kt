@@ -352,7 +352,11 @@ val dataSourceModule =
             ProviderManager(
                 client = get(),
                 context = get(),
-                cliExecutor = TermuxCliCommandExecutor(get()),
+                cliExecutor = TermuxCliCommandExecutor(
+                    context = get(),
+                    sshHostRepository = get(),
+                    vaultRepository = get(),
+                ),
             ).also { pm ->
                 pm.registerProvider(
                     "local_litert",

@@ -11,6 +11,10 @@ package me.rerere.ai.provider.providers.reasonix
  * 拿到标准输出作为回复。与 reasonix 的 SSE / custom 的 HTTP 是三种并列的接入协议。
  */
 interface CliCommandExecutor {
-    /** 执行 CLI 命令，返回标准输出文本。 */
-    suspend fun execute(command: String, prompt: String): String
+    /**
+     * 执行 CLI 命令，返回输出文本。
+     *
+     * @param sshHostId 目标 SSH 主机名（SshHostRepository 的 name）；null/空白 = 手机本地 Termux 执行。
+     */
+    suspend fun execute(command: String, prompt: String, sshHostId: String? = null): String
 }

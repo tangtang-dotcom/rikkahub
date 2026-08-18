@@ -492,6 +492,8 @@ sealed class ProviderSetting {
         var backendType: String = "reasonix",
         // ── CLI 后端（backendType=cli）：命令行模板，{prompt} 为提示词占位符 ──
         var cliCommand: String = "",
+        // ── CLI 后端：SSH 主机名（SshHostRepository 的 name）；空 = 本地 Termux 执行 ──
+        var cliSshHost: String = "",
         var baseUrl: String = "",
         var username: String = "",
         var password: String = "",
