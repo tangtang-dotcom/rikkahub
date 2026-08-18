@@ -59,6 +59,8 @@ data class TextGenerationParams(
     val reasoningLevel: ReasoningLevel = ReasoningLevel.OFF,
     val customHeaders: List<CustomHeader> = emptyList(),
     val customBody: List<CustomBody> = emptyList(),
+    // 会话上下文标识：reasonix 等「服务端管会话」的后端用于 conversationId↔session 映射（会话隔离）
+    val conversationId: String? = null,
 )
 
 @Serializable

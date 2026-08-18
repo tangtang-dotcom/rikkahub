@@ -309,6 +309,7 @@ class GenerationHandler(
         conversationModeInjectionIds: Set<Uuid> = emptySet(),
         conversationLorebookIds: Set<Uuid> = emptySet(),
         workspaceCwd: String? = null,
+        conversationId: String? = null,
     ): Flow<GenerationChunk> = flow {
         val provider = model.findProvider(settings.providers) ?: error("Provider not found")
         val providerImpl = providerManager.getProviderByType(provider)
@@ -1038,7 +1039,8 @@ class GenerationHandler(
             customBody = buildList {
                 addAll(assistant.customBodies)
                 addAll(model.customBodies)
-            }
+            },
+            conversationId = conversationId,
         )
         if (stream) {
             aiLoggingManager.addLog(

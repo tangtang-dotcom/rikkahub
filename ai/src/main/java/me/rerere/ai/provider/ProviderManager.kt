@@ -6,6 +6,7 @@ import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
 import me.rerere.ai.provider.providers.reasonix.ReasonixProvider
+import me.rerere.ai.provider.providers.reasonix.ReasonixSessionStore
 import okhttp3.OkHttpClient
 
 /**
@@ -14,6 +15,7 @@ import okhttp3.OkHttpClient
 class ProviderManager(
     client: OkHttpClient,
     context: Context,
+    reasonixSessionStore: ReasonixSessionStore? = null,
 ) {
     // 存储已注册的Provider实例
     private val providers = mutableMapOf<String, Provider<*>>()
@@ -24,7 +26,7 @@ class ProviderManager(
         registerProvider("google", GoogleProvider(client, context))
         registerProvider("claude", ClaudeProvider(client, context))
         registerProvider("aicore", AICoreProvider(context))
-        registerProvider("reasonix", ReasonixProvider())
+        registerProvider("reasonix", ReasonixProvider(reasonixSessionStore))
     }
 
     /**

@@ -39,16 +39,20 @@ import kotlin.uuid.Uuid.Companion.parse
  */
 class ReasonixProvider(
     private val clientFactory: (ProviderSetting.Reasonix) -> ReasonixApi,
+    private val sessionStore: ReasonixSessionStore? = null,
 ) : Provider<ProviderSetting.Reasonix> {
 
-    constructor() : this({ setting ->
-        ReasonixApi(
-            baseUrl = setting.baseUrl,
-            username = setting.username,
-            password = setting.password,
-            token = setting.token,
-        )
-    })
+    constructor(sessionStore: ReasonixSessionStore? = null) : this(
+        clientFactory = { setting ->
+            ReasonixApi(
+                baseUrl = setting.baseUrl,
+                username = setting.username,
+                password = setting.password,
+                token = setting.token,
+            )
+        },
+        sessionStore = sessionStore,
+    )
 
     private fun api(setting: ProviderSetting.Reasonix): ReasonixApi = clientFactory(setting)
 
@@ -144,21 +148,28 @@ class ReasonixProvider(
         params: TextGenerationParams,
     ): Flow<MessageChunk> = flow {
         val api = api(providerSetting)
-        // 会话管理：优先恢复服务端当前会话（避免 RikkaHub 新对话在 Reasonix 创建重复会话），
-        // 无当前会话时才新建。这样两端共享同一会话，历史/压缩/checkpoint 全部继承。
+        // 会话隔离：按 conversationId 查映射 → 复用「自己的」会话，否则新建。
+        // 绝不复用 reasonix serve 的「当前」会话（避免串扰：RikkaHub 新对话串进 reasonix serve 正在用的会话）。
         val lastUserInput = messages.lastOrNull { it.role == MessageRole.USER }?.parts
             ?.filterIsInstance<UIMessagePart.Text>()
             ?.joinToString("") { it.text }
             ?: return@flow
 
-        // 尝试恢复服务端当前会话；失败或无当前会话则新建
-        val currentSession = runCatching { api.getSessions() }
-            .getOrNull()
-            ?.firstOrNull { it.current }
-        if (currentSession != null && currentSession.path.isNotBlank()) {
-            api.resumeSession(currentSession.path)
+        val conversationId = params.conversationId
+        val savedPath = conversationId?.let { sessionStore?.loadPath(it) }
+        if (!savedPath.isNullOrBlank()) {
+            // 复用本对话已建立的后端会话（跨 turn 历史/压缩/checkpoint 继承）
+            api.resumeSession(savedPath)
         } else {
+            // 首次（或无映射）：新建会话，并记录新会话 path 供后续 turn 复用
             api.newSession()
+            val newPath = runCatching { api.getSessions() }
+                .getOrNull()
+                ?.firstOrNull { it.current }
+                ?.path
+            if (conversationId != null && !newPath.isNullOrBlank()) {
+                sessionStore?.savePath(conversationId, newPath)
+            }
         }
         api.submit(lastUserInput)
 

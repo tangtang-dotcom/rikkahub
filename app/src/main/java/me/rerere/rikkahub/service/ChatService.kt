@@ -962,6 +962,7 @@ class ChatService(
                     conversationModeInjectionIds = conversation.modeInjectionIds,
                     conversationLorebookIds = conversation.lorebookIds,
                     workspaceCwd = conversation.workspaceCwd,
+                    conversationId = conversationId.toString(),
                     memories =
                         if (assistant.useGlobalMemory) {
                             // 记忆分层（2026-08-13）：只注入 core 常驻；conditional 由 AI 用 memory_search 按需检索

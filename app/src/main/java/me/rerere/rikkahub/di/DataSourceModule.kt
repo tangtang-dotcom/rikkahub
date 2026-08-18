@@ -20,6 +20,7 @@ import me.rerere.rikkahub.data.agentrun.AgentRunRepository
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
+import me.rerere.rikkahub.data.ai.RoomReasonixSessionStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
@@ -43,6 +44,7 @@ import me.rerere.rikkahub.data.db.migrations.Migration_28_29
 import me.rerere.rikkahub.data.db.migrations.Migration_29_30
 import me.rerere.rikkahub.data.db.migrations.Migration_30_31
 import me.rerere.rikkahub.data.db.migrations.Migration_31_32
+import me.rerere.rikkahub.data.db.migrations.Migration_32_33
 import me.rerere.rikkahub.data.db.migrations.Migration_6_7
 import me.rerere.rikkahub.data.grok.GrokAccountRepository
 import me.rerere.rikkahub.data.grok.GrokCredentialStore
@@ -83,6 +85,7 @@ val dataSourceModule =
                     Migration_29_30,
                     Migration_30_31,
                     Migration_31_32,
+                    Migration_32_33,
                 ).addCallback(
                     object : RoomDatabase.Callback() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
@@ -348,7 +351,11 @@ val dataSourceModule =
             val settingsStore: me.rerere.rikkahub.data.datastore.SettingsStore = get()
             val codexRepository: CodexAccountRepository = get()
             val json: Json = get()
-            ProviderManager(client = get(), context = get()).also { pm ->
+            ProviderManager(
+                client = get(),
+                context = get(),
+                reasonixSessionStore = RoomReasonixSessionStore(get()),
+            ).also { pm ->
                 pm.registerProvider(
                     "local_litert",
                     me.rerere.locallm.litert.LiteRtProvider(
