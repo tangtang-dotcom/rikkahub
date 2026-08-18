@@ -65,7 +65,6 @@ fun ReasonixProviderConfigure(
     ) {
         listOf(
             "reasonix" to "Reasonix",
-            "openclaw" to "OpenClaw",
             "custom" to stringResource(R.string.backend_type_custom),
             "cli" to "CLI",
         ).forEach { (type, label) ->

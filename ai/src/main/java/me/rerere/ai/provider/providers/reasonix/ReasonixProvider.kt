@@ -10,6 +10,7 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.provider.ImageGenerationParams
 import me.rerere.ai.provider.Provider
+import me.rerere.ai.provider.providers.openai.ChatCompletionsAPI
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.ImageGenerationItem
@@ -19,6 +20,8 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.UIMessagePart.Tool
+import me.rerere.ai.util.KeyRoulette
+import okhttp3.OkHttpClient
 import java.util.UUID
 import kotlin.uuid.Uuid
 import kotlin.uuid.Uuid.Companion.parse
@@ -39,6 +42,7 @@ import kotlin.uuid.Uuid.Companion.parse
  */
 class ReasonixProvider(
     private val clientFactory: (ProviderSetting.Reasonix) -> ReasonixApi,
+    private val httpClient: OkHttpClient = OkHttpClient(),
 ) : Provider<ProviderSetting.Reasonix> {
 
     constructor() : this({ setting ->
@@ -49,6 +53,9 @@ class ReasonixProvider(
             token = setting.token,
         )
     })
+
+    // custom 类型复用 OpenAI 兼容协议（baseUrl + token 作为 apiKey）
+    private val chatCompletionsAPI = ChatCompletionsAPI(client = httpClient, keyRoulette = KeyRoulette.default())
 
     private fun api(setting: ProviderSetting.Reasonix): ReasonixApi = clientFactory(setting)
 
@@ -142,6 +149,22 @@ class ReasonixProvider(
         messages: List<UIMessage>,
         params: TextGenerationParams,
     ): Flow<MessageChunk> = flow {
+        // 协议分发（方案 B）：reasonix 走专有 SSE；custom 走 OpenAI 兼容；cli 后续实现
+        when (providerSetting.backendType) {
+            "custom" -> {
+                // 自定义 HTTP 后端：复用 OpenAI 兼容协议（baseUrl + token 作为 apiKey）
+                val openaiSetting =
+                    ProviderSetting.OpenAI(
+                        baseUrl = providerSetting.baseUrl,
+                        apiKey = providerSetting.token,
+                    )
+                chatCompletionsAPI.streamText(openaiSetting, messages, params).collect { emit(it) }
+                return@flow
+            }
+            "cli" -> {
+                error("后端类型 cli 暂未实现")
+            }
+        }
         val api = api(providerSetting)
         // 会话：当前无历史时新建会话（服务端管会话；本 Provider 单会话场景）
         val lastUserInput = messages.lastOrNull { it.role == MessageRole.USER }?.parts
