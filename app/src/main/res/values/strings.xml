@@ -2380,6 +2380,9 @@
   <string name="reasonix_token_serve">Token（serve token 模式，可选）</string>
   <string name="reasonix_start_web_bridge">启动 Web 桥</string>
   <string name="reasonix_stop_web_bridge">停止</string>
+  <string name="backend_service">后端服务</string>
+  <string name="backend_type">后端类型</string>
+  <string name="backend_type_custom">自定义</string>
   <string name="debug_reset_chat_model">重置Chat模型</string>
   <string name="debug_crash">崩溃</string>
   <string name="debug_refresh">刷新</string>

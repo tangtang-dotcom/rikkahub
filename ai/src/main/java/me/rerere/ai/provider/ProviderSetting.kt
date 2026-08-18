@@ -482,12 +482,14 @@ sealed class ProviderSetting {
     data class Reasonix(
         override var id: Uuid = Uuid.random(),
         override var enabled: Boolean = false,
-        override var name: String = "Reasonix",
+        override var name: String = "后端服务",
         override var models: List<Model> = emptyList(),
         override val balanceOption: BalanceOption = BalanceOption(),
         @Transient override val builtIn: Boolean = false,
         @Transient override val description: @Composable (() -> Unit) = {},
         @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        // ── 后端类型：reasonix（专有 SSE）| openclaw（OpenAI 兼容）| custom（自定义 HTTP）| cli（命令行）──
+        var backendType: String = "reasonix",
         var baseUrl: String = "",
         var username: String = "",
         var password: String = "",

@@ -110,7 +110,11 @@ fun ProviderConfigure(
                                 index = index,
                                 count = ProviderSetting.Types.size,
                             ),
-                        label = { Text(type.simpleName ?: "") },
+                        label = {
+                            Text(
+                                if (type == ProviderSetting.Reasonix::class) stringResource(R.string.backend_service) else type.simpleName ?: ""
+                            )
+                        },
                         selected = provider::class == type,
                         onClick = { onEdit(provider.convertTo(type)) },
                     )

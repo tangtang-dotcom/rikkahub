@@ -53,6 +53,30 @@ fun ReasonixProviderConfigure(
         modifier = Modifier.fillMaxWidth(),
     )
 
+    // 后端类型选择（reasonix / openclaw / custom / cli）
+    Text(
+        text = stringResource(R.string.backend_type),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        listOf(
+            "reasonix" to "Reasonix",
+            "openclaw" to "OpenClaw",
+            "custom" to stringResource(R.string.backend_type_custom),
+            "cli" to "CLI",
+        ).forEach { (type, label) ->
+            FilterChip(
+                selected = provider.backendType == type,
+                onClick = { onEdit(provider.copy(backendType = type)) },
+                label = { Text(label) },
+            )
+        }
+    }
+
     OutlinedTextField(
         value = provider.baseUrl,
         onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
