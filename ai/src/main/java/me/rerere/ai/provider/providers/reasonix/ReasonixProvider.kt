@@ -39,20 +39,16 @@ import kotlin.uuid.Uuid.Companion.parse
  */
 class ReasonixProvider(
     private val clientFactory: (ProviderSetting.Reasonix) -> ReasonixApi,
-    private val sessionStore: ReasonixSessionStore? = null,
 ) : Provider<ProviderSetting.Reasonix> {
 
-    constructor(sessionStore: ReasonixSessionStore? = null) : this(
-        clientFactory = { setting ->
-            ReasonixApi(
-                baseUrl = setting.baseUrl,
-                username = setting.username,
-                password = setting.password,
-                token = setting.token,
-            )
-        },
-        sessionStore = sessionStore,
-    )
+    constructor() : this({ setting ->
+        ReasonixApi(
+            baseUrl = setting.baseUrl,
+            username = setting.username,
+            password = setting.password,
+            token = setting.token,
+        )
+    })
 
     private fun api(setting: ProviderSetting.Reasonix): ReasonixApi = clientFactory(setting)
 
@@ -70,7 +66,6 @@ class ReasonixProvider(
                 type = ModelType.CHAT,
                 abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
                 contextLength = 1_000_000,
-                group = info.provider.ifBlank { info.ref.substringBefore("/", missingDelimiterValue = "") },
             )
         }
     }
@@ -148,29 +143,15 @@ class ReasonixProvider(
         params: TextGenerationParams,
     ): Flow<MessageChunk> = flow {
         val api = api(providerSetting)
-        // 会话隔离：按 conversationId 查映射 → 复用「自己的」会话，否则新建。
-        // 绝不复用 reasonix serve 的「当前」会话（避免串扰：RikkaHub 新对话串进 reasonix serve 正在用的会话）。
+        // 会话：当前无历史时新建会话（服务端管会话；本 Provider 单会话场景）
         val lastUserInput = messages.lastOrNull { it.role == MessageRole.USER }?.parts
             ?.filterIsInstance<UIMessagePart.Text>()
             ?.joinToString("") { it.text }
             ?: return@flow
 
-        val conversationId = params.conversationId
-        val savedPath = conversationId?.let { sessionStore?.loadPath(it) }
-        if (!savedPath.isNullOrBlank()) {
-            // 复用本对话已建立的后端会话（跨 turn 历史/压缩/checkpoint 继承）
-            api.resumeSession(savedPath)
-        } else {
-            // 首次（或无映射）：新建会话，并记录新会话 path 供后续 turn 复用
-            api.newSession()
-            val newPath = runCatching { api.getSessions() }
-                .getOrNull()
-                ?.firstOrNull { it.current }
-                ?.path
-            if (conversationId != null && !newPath.isNullOrBlank()) {
-                sessionStore?.savePath(conversationId, newPath)
-            }
-        }
+        // 必须先 POST /new（新建会话）+ POST /submit（提交增量输入），
+        // 服务端才会开始生成并向 /events 推送；否则两端干等（App 无限转圈）。
+        api.newSession()
         api.submit(lastUserInput)
 
         // 通过 SSE 建立连接后提交增量输入

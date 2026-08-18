@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.animateItem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
@@ -41,7 +40,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -80,7 +78,6 @@ import me.rerere.hugeicons.stroke.Text
 import me.rerere.hugeicons.stroke.Tools
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -329,9 +326,6 @@ private fun ColumnScope.ModelList(
         }
 
     var searchKeywords by remember { mutableStateOf("") }
-
-    // 模型分组折叠状态（每个 group 一个折叠开关；提升到 ModelList 作用域，供分组头/内容共享）
-    val collapsedGroups = remember { mutableStateMapOf<String, Boolean>() }
 
     val typeFilteredModelsByProvider =
         remember(providers, modelType) {
@@ -596,108 +590,55 @@ private fun ColumnScope.ModelList(
                 }
             }
 
-            // 按 group 字段分组：有分组的折叠显示，无分组的直接显示
-            val providerModels = searchFilteredModelsByProvider[providerSetting.id].orEmpty()
-            val groupedModels = providerModels.groupBy { it.group.ifBlank { "" } }
-            val hasGroups = groupedModels.keys.any { it.isNotEmpty() }
-
-            if (hasGroups) {
-                // 有分组：按分组折叠显示
-                groupedModels.forEach { (group, models) ->
-                    if (group.isNotEmpty() && models.isNotEmpty()) {
-                        // 分组头（可折叠）
-                        item(key = "group:${providerSetting.id}:$group") {
-                            val collapsed = collapsedGroups[group] == true
-                            Surface(
-                                onClick = { collapsedGroups[group] = !collapsed },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = if (collapsed) HugeIcons.ArrowRight01 else HugeIcons.ArrowRight01,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .let { if (collapsed) it else it },
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Spacer(modifier = Modifier.size(8.dp))
-                                    Text(
-                                        text = group,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Text(
-                                        text = "${models.size}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    )
+            items(
+                items = searchFilteredModelsByProvider[providerSetting.id].orEmpty(),
+                key = { it.id },
+            ) { model ->
+                val favorite = settings.value.favoriteModels.contains(model.id)
+                ModelItem(
+                    model = model,
+                    onSelect = onSelect,
+                    modifier = Modifier.animateItem(),
+                    providerSetting = providerSetting,
+                    select = currentModel == model.id,
+                    onDismiss = {
+                        onDismiss()
+                    },
+                    tail = {
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    settingsStore.update { settings ->
+                                        if (favorite) {
+                                            settings.copy(
+                                                favoriteModels = settings.favoriteModels.filter { it != model.id },
+                                            )
+                                        } else {
+                                            settings.copy(
+                                                favoriteModels = settings.favoriteModels + model.id,
+                                            )
+                                        }
+                                    }
                                 }
-                            }
-                        }
-
-                        // 分组内容（可折叠）
-                        if (collapsedGroups[group] != true) {
-                            items(
-                                items = models,
-                                key = { it.id },
-                            ) { model ->
-                                ModelItemWithFavorite(
-                                    model = model,
-                                    providerSetting = providerSetting,
-                                    currentModel = currentModel,
-                                    onSelect = onSelect,
-                                    settings = settings.value,
-                                    settingsStore = settingsStore,
-                                    coroutineScope = coroutineScope,
+                            },
+                        ) {
+                            if (favorite) {
+                                Icon(
+                                    HeartIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = HugeIcons.Favourite,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
                                 )
                             }
                         }
-                    }
-                }
-
-                // 无分组的模型直接显示
-                val ungroupedModels = groupedModels[""] ?: emptyList()
-                if (ungroupedModels.isNotEmpty()) {
-                    items(
-                        items = ungroupedModels,
-                        key = { it.id },
-                    ) { model ->
-                        ModelItemWithFavorite(
-                            model = model,
-                            providerSetting = providerSetting,
-                            currentModel = currentModel,
-                            onSelect = onSelect,
-                            settings = settings.value,
-                            settingsStore = settingsStore,
-                            coroutineScope = coroutineScope,
-                        )
-                    }
-                }
-            } else {
-                // 无分组：直接显示所有模型
-                items(
-                    items = providerModels,
-                    key = { it.id },
-                ) { model ->
-                    ModelItemWithFavorite(
-                        model = model,
-                        providerSetting = providerSetting,
-                        currentModel = currentModel,
-                        onSelect = onSelect,
-                        settings = settings.value,
-                        settingsStore = settingsStore,
-                        coroutineScope = coroutineScope,
-                    )
-                }
+                    },
+                )
             }
         }
     }
@@ -752,61 +693,6 @@ private fun ColumnScope.ModelList(
             }
         }
     }
-}
-
-@Composable
-private fun ModelItemWithFavorite(
-    model: Model,
-    providerSetting: ProviderSetting,
-    currentModel: Uuid?,
-    onSelect: (Model) -> Unit,
-    settings: Settings,
-    settingsStore: SettingsStore,
-    coroutineScope: kotlinx.coroutines.CoroutineScope,
-) {
-    val favorite = settings.favoriteModels.contains(model.id)
-    ModelItem(
-        model = model,
-        onSelect = onSelect,
-        modifier = Modifier.animateItem(),
-        providerSetting = providerSetting,
-        select = currentModel == model.id,
-        onDismiss = {},
-        tail = {
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        settingsStore.update { settings ->
-                            if (favorite) {
-                                settings.copy(
-                                    favoriteModels = settings.favoriteModels.filter { it != model.id },
-                                )
-                            } else {
-                                settings.copy(
-                                    favoriteModels = settings.favoriteModels + model.id,
-                                )
-                            }
-                        }
-                    }
-                },
-            ) {
-                if (favorite) {
-                    Icon(
-                        HeartIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Icon(
-                        imageVector = HugeIcons.Favourite,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        },
-    )
 }
 
 @Composable

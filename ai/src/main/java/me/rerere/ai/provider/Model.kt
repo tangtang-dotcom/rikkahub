@@ -22,8 +22,6 @@ data class Model(
     val supportedParameters: List<String> = emptyList(),
     val pricePromptPerToken: Double? = null,
     val priceCompletionPerToken: Double? = null,
-    // 子分组标签（如 Reasonix 的 open-go1/open-go2/open-go3），用于 UI 分组折叠显示
-    val group: String = "",
 )
 
 @Serializable

@@ -32,7 +32,4 @@ data class ConversationEntity(
     val workspaceCwd: String = "",
     @ColumnInfo("folder_id", defaultValue = "")
     val folderId: String = "",
-    // 后端会话路径（reasonix 等「服务端管会话」后端的 conversationId↔session 映射，用于会话隔离）
-    @ColumnInfo("backend_session_path", defaultValue = "")
-    val backendSessionPath: String = "",
 )
