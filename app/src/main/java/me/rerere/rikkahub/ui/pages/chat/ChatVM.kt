@@ -30,6 +30,7 @@ import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
+import me.rerere.rikkahub.ui.components.ai.AgentStepUi
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.ai.ContextBudgetPlanner
@@ -89,6 +90,15 @@ class ChatVM(
     private var autoTaskJob: Job? = null
     private val _autoTaskActive = kotlinx.coroutines.flow.MutableStateFlow(false)
     val autoTaskActive: kotlinx.coroutines.flow.StateFlow<Boolean> = _autoTaskActive.asStateFlow()
+
+    private val _currentToolSteps = kotlinx.coroutines.flow.MutableStateFlow<List<AgentStepUi>>(emptyList())
+    /** 本次运行 in-flight 的工具步骤，喂给输入框上方的 AgentStepsPanel。 */
+    val currentToolSteps: kotlinx.coroutines.flow.StateFlow<List<AgentStepUi>> = _currentToolSteps.asStateFlow()
+
+    /** 生成侧每产出/更新一个工具步骤即调用；空列表会让面板自动收起。 */
+    fun updateToolSteps(steps: List<AgentStepUi>) {
+        _currentToolSteps.value = steps
+    }
 
     /** 用户最近活跃时间（用户发送消息时更新），自动任务活跃监测用 */
     private var userActivityAtMs = 0L

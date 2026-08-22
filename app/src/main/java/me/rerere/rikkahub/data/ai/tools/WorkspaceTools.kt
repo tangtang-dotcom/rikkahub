@@ -51,6 +51,9 @@ suspend fun createWorkspaceTools(
         createWriteFileTool(workspaceId, ::needsApproval, workspaceRepository),
         createEditFileTool(workspaceId, ::needsApproval, workspaceRepository),
         createShellTool(workspaceId, ::needsApproval, workspaceRepository, shellCwd),
+    ) + me.rerere.agenttools.createAgentTools(
+        AppAgentWorkspaceIO(workspaceId, workspaceRepository),
+        approvalOverrides,
     )
 }
 
