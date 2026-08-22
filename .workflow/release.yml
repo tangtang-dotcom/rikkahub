@@ -1,0 +1,98 @@
+# Gitee Go 流水线 —— 发版（构建 + 打码云 Release 并传 APK）
+# 由 GitHub 版 .github/workflows/release.yml 移植，已去除通知步骤。
+# 校准点：Gitee Go 手动触发输入语法/密钥名(GITEE_TOKEN 等)请按码云仓库实际核对。
+name: 发布 Release（Gitee）
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag（必填，如 2.45.8）'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: 准备 JDK / Android SDK 环境
+        run: |
+          export ANDROID_HOME=${ANDROID_HOME:-/opt/android-sdk}
+          java -version 2>&1 | head -1
+          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+      - name: bump 版本号（versionName → release_tag，versionCode 递增）
+        run: |
+          TAG="${INPUT_RELEASE_TAG}"
+          OLD_CODE=$(awk '/versionCode = /{print $3; exit}' app/build.gradle.kts)
+          NEW_CODE=$((OLD_CODE + 1))
+          sed -i "s/versionName = \"[^\"]*\"/versionName = \"$TAG\"/" app/build.gradle.kts
+          sed -i "s/versionCode = $OLD_CODE/versionCode = $NEW_CODE/" app/build.gradle.kts
+          echo "bump: versionName → $TAG, versionCode $OLD_CODE → $NEW_CODE"
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+      - name: 签名构建 assembleRelease（发版）
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          KEYSTORE="$HOME/rikkahub.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+          echo "storeFile=$KEYSTORE" >> local.properties
+          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=$KEY_ALIAS" >> local.properties
+          echo "keyPassword=$KEY_PASSWORD" >> local.properties
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --stacktrace --no-daemon --parallel --build-cache --configuration-cache
+
+      - name: 重命名 APK
+        run: |
+          VER="${INPUT_RELEASE_TAG}"
+          cd app/build/outputs/apk/release
+          for apk in *.apk; do
+            case "$apk" in
+              *arm64*) arch="arm64-v8a" ;;
+              *universal*) arch="universal" ;;
+              *) arch="$(basename "$apk" .apk)" ;;
+            esac
+            mv "$apk" "RikkaHub-Agents-${VER}-${arch}-release.apk"
+          done
+          ls -la
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+
+      - name: 创建/更新 Gitee Release 并上传 APK
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          TAG="${INPUT_RELEASE_TAG}"
+          API="https://gitee.com/api/v5/repos"
+          OWNER="choosesheng"; REPO="rikkahub-agents"
+          # 查找已有 release id；不存在则创建
+          RID=$(curl -s "$API/$OWNER/$REPO/releases/tags/$TAG?access_token=$GITEE_TOKEN" | grep -oE '"id":[0-9]+' | head -1 | cut -d: -f2)
+          if [ -z "$RID" ] || [ "$RID" = "" ]; then
+            NOTES=$(git log --oneline --no-merges -40 HEAD | head -40 | sed 's/&/\&/g; s/"/\"/g')
+            RID=$(curl -s "$API/$OWNER/$REPO/releases" \
+              -d "access_token=$GITEE_TOKEN&tag_name=$TAG&name=RikkaHub%20Agents%20$TAG&body=$NOTES" \
+              | grep -oE '"id":[0-9]+' | head -1 | cut -d: -f2)
+            echo "已创建 release id=$RID"
+          else
+            echo "Release $TAG 已存在，刷新资产"
+          fi
+          if [ -n "$RID" ]; then
+            cd app/build/outputs/apk/release
+            for apk in *.apk; do
+              curl -s "$API/$OWNER/$REPO/releases/$RID/attach_files" \
+                -F "access_token=$GITEE_TOKEN" -F "file=@$apk" | head -c 120
+              echo "  ↑ 上传 $apk"
+            done
+          fi

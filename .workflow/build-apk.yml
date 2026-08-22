@@ -1,0 +1,63 @@
+# Gitee Go 流水线 —— 编译 APK（不出包发版，仅出测试包）
+# 由 GitHub 版 .github/workflows/build-apk.yml 移植，已去除通知步骤。
+# 校准点：Gitee Go 触发方式(secrets.*)、密钥名请按码云仓库实际配置核对。
+name: 编译 APK · 不出包（测试）
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.workflow/*.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: 准备 JDK / Android SDK 环境
+        run: |
+          export ANDROID_HOME=${ANDROID_HOME:-/opt/android-sdk}
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          java -version 2>&1 | head -1
+          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+      - name: 签名构建 assembleRelease（不出包）
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          KEYSTORE="$HOME/rikkahub.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+          echo "storeFile=$KEYSTORE" >> local.properties
+          echo "storePassword=$KEYSTORE_PASSWORD" >> local.properties
+          echo "keyAlias=$KEY_ALIAS" >> local.properties
+          echo "keyPassword=$KEY_PASSWORD" >> local.properties
+          chmod +x gradlew
+          ./gradlew assembleRelease --parallel --build-cache --configuration-cache
+      - name: 编译单元测试（仅验证可编译）
+        run: ./gradlew compileDebugUnitTestKotlin --parallel --build-cache --configuration-cache || true
+
+      - name: 重命名 APK 并列出产物
+        run: |
+          cd app/build/outputs/apk/release
+          VER=$(awk -F'"' '/versionName/{print $2; exit}' app/build.gradle.kts || echo 0.0)
+          for apk in *.apk; do
+            case "$apk" in
+              *arm64*) arch="arm64-v8a" ;;
+              *universal*) arch="universal" ;;
+              *) arch="$(basename "$apk" .apk)" ;;
+            esac
+            mv "$apk" "RikkaHub-Agents-${VER}-${arch}-release.apk"
+          done
+          ls -la
+          echo "版本号: ${VER}"
