@@ -81,7 +81,7 @@ import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.AutoTaskDialog
 import me.rerere.rikkahub.ui.components.ai.ChatInput
-import me.rerere.rikkahub.ui.components.ai.AgentStepsPanel
+
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
 import me.rerere.rikkahub.ui.components.ai.readAutoTaskConfig
@@ -461,8 +461,6 @@ private fun ChatPageContent(
                 )
             },
             bottomBar = {
-                val agentSteps = vm.currentToolSteps.collectAsStateWithLifecycle().value
-                AgentStepsPanel(steps = agentSteps)
                 ChatInput(
                     state = inputState,
                     loading = loadingJob != null,
