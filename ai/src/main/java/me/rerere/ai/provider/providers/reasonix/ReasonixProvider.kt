@@ -123,10 +123,12 @@ class ReasonixProvider(
                                 status = chunk.status,
                             )
                     } else {
+                        // ServerToolEnd 事件不含 toolName（工具名由 ServerToolStart 提供），
+                        // 此兜底分支仅在 start 缺席时触发，展示名留空
                         tools +=
                             UIMessagePart.ServerTool(
                                 toolCallId = chunk.id,
-                                toolName = chunk.toolName,
+                                toolName = "",
                                 input = chunk.input,
                                 output = chunk.output,
                                 status = chunk.status,
