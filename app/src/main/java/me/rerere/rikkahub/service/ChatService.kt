@@ -64,6 +64,7 @@ import me.rerere.rikkahub.data.ai.tools.LocalTools
 import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
+import me.rerere.rikkahub.data.preferences.isWorkspaceToolName
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
 import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
@@ -722,7 +723,7 @@ class ChatService(
                         }
 
                         ApprovalScope.Always -> {
-                            toolApprovalPreferences.grantAlways(toolName)
+                            grantAlwaysScope(conversationId, toolName)
                         }
 
                         ApprovalScope.Once -> {
@@ -946,7 +947,8 @@ class ChatService(
                                     .shouldAutoApprove(conversationId) ||
                                 me.rerere.rikkahub.data.ai.tools.ToolApprovalAllowList
                                     .isAllowedForChat(conversationId, toolName) ||
-                                toolApprovalPreferences.current().contains(toolName)
+                                (!isWorkspaceToolName(toolName) &&
+                                toolApprovalPreferences.current().contains(toolName))
                         }
                     },
                     messages =
@@ -1177,6 +1179,35 @@ class ChatService(
             launchWithConversationReference(conversationId) {
                 generateSuggestion(conversationId, finalConversation)
             }
+        }
+    }
+
+    /** Always 范围授权：workspace 工具（workspace_ 前缀）不得进入全局 always-allow 集，
+     *  改走 per-workspace 覆盖；无 workspace 可解析时回退为会话级授权，绝不落全局集。 */
+    private suspend fun grantAlwaysScope(conversationId: Uuid, toolName: String) {
+        if (isWorkspaceToolName(toolName)) {
+            val conversation = conversationRepo.getConversationById(conversationId)
+            val assistant =
+                conversation?.let {
+                    settingsStore.settingsFlow.first().getAssistantById(it.assistantId)
+                }
+            val workspaceId = assistant?.workspaceId?.toString()
+            val granted =
+                workspaceId != null &&
+                    workspaceRepository.setToolApproval(workspaceId, toolName, needsApproval = false)
+            if (!granted) {
+                // 工作区行缺失（删除/授权竞争）或无法解析——回退会话级授权，避免 Always 点击静默失效
+                if (workspaceId != null) {
+                    Log.w(
+                        TAG,
+                        "setToolApproval found no workspace row for '$workspaceId', falling back to chat-scoped grant for '$toolName'",
+                    )
+                }
+                me.rerere.rikkahub.data.ai.tools
+                    .ToolApprovalAllowList.grantForChat(conversationId, toolName)
+            }
+        } else {
+            toolApprovalPreferences.grantAlways(toolName)
         }
     }
 
