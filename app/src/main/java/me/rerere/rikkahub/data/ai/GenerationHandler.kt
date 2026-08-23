@@ -6,14 +6,17 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import me.rerere.rikkahub.BuildConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.withTimeoutOrNull
 import me.rerere.rikkahub.service.AgentOverlay
 import me.rerere.rikkahub.service.RikkaAccessibilityService
@@ -22,38 +25,36 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
-import me.rerere.ai.core.merge
 import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
+import me.rerere.ai.provider.providers.openai.ResponseStreamErrorException
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.ToolApprovalState
-import me.rerere.ai.ui.handleMessageChunk
+import me.rerere.ai.ui.StreamChunk
+import me.rerere.ai.ui.StreamChunkHandler
+import me.rerere.ai.ui.handleTextGenerationResult
 import me.rerere.ai.ui.limitContext
+import me.rerere.ai.util.HttpException
+import me.rerere.ai.util.redactSecrets
 import me.rerere.rikkahub.data.repository.ConversationRepository
-import me.rerere.rikkahub.data.vault.CredentialVaultRepository
-import me.rerere.rikkahub.data.vault.SecretMasker
-import org.koin.java.KoinJavaComponent.getKoin
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.MessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
 import me.rerere.rikkahub.data.files.FileFolders
 import java.io.File
+import java.io.IOException
 import me.rerere.rikkahub.data.ai.transformers.onGenerationFinish
 import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
@@ -65,40 +66,203 @@ import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.data.vault.CredentialVaultRepository
+import me.rerere.rikkahub.data.vault.SecretMasker
 import me.rerere.rikkahub.utils.applyPlaceholders
+import org.koin.java.KoinJavaComponent.getKoin
 import java.util.Locale
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "GenerationHandler"
-private const val MAX_TOOL_OUTPUT_CHARS = 16 * 1000
-private const val TOOL_OUTPUT_PREVIEW_CHARS = 4 * 1000
-private const val MAX_TOOL_OUTPUT_FILES = 50   // tool_outputs 保留最近 N 个，防止无限累积
+private const val MAX_TOOL_OUTPUT_CHARS = 32 * 1024
+private const val TOOL_OUTPUT_PREVIEW_CHARS = 4 * 1024
+private const val GENERATION_STREAM_RETRY_INITIAL_DELAY_MS = 750L
+private const val GENERATION_STREAM_RETRY_MAX_DELAY_MS = 4_000L
+
+private val USER_CANCELLATION_MARKERS = listOf(
+    "canceled by user",
+    "cancelled by user",
+    "user_canceled",
+    "user_cancelled",
+)
+
+// A deterministic 4xx will not succeed on retry, so retrying it just burns quota and delay for
+// an outcome that was never going to change. These four are the exceptions: they signal a
+// transient condition (timeout, conflict, precondition, rate limit) rather than a request that
+// is permanently invalid.
+private val RETRYABLE_4XX_STATUS_CODES = setOf(408, 409, 425, 429)
+
+private fun isCancellationFailure(failure: Throwable): Boolean =
+    generateSequence(failure) { it.cause }
+        .take(8)
+        .any { cause ->
+            cause is CancellationException ||
+                USER_CANCELLATION_MARKERS.any { marker ->
+                    cause.message?.contains(marker, ignoreCase = true) == true
+                }
+        }
 
 /**
- * Keys whose string values are sensitive enough that the raw value MUST NOT land in
- * logcat. Tool args land in `Log.i` for debugging; without redaction, `save_ssh_host`'s
- * `private_key` / `password` and `telegram_set_token`'s `token` would print verbatim
- * — readable on debug builds, by other apps holding READ_LOGS on OEM-bugged ROMs, and
- * by `bugreport`/`dumpsys`. The match is case-insensitive against the key name and
- * applies regardless of nesting depth.
+ * A clean stream close only signals a transport failure worth retrying when NOTHING was ever
+ * received. If at least one chunk arrived but none of them yielded parseable parts (e.g. every
+ * part shape was unrecognized), that is a permanent condition - retrying the whole generation
+ * cannot help, so the caller should log it and let the generation end normally instead of
+ * synthesizing a retryable failure.
  */
-private val SECRET_KEY_PATTERN: Regex =
-    Regex("(?:^|_)(password|passphrase|secret|token|apikey|api[_-]?key|privatekey|private[_-]?key|key)$",
-        RegexOption.IGNORE_CASE)
+internal fun shouldReportEmptyGenerationStream(receivedAnyChunk: Boolean): Boolean =
+    !receivedAnyChunk
 
-/**
- * Walk [element] and replace any string primitive whose KEY matches [SECRET_KEY_PATTERN]
- * with the string `"***"`. Numbers, booleans, nulls, and non-secret strings pass through
- * unchanged. Used only for the per-step "executing tool with args" log line.
- */
-private fun redactSecrets(element: JsonElement, key: String? = null): JsonElement {
-    val isSecret = key != null && SECRET_KEY_PATTERN.containsMatchIn(key)
-    return when (element) {
-        is JsonPrimitive ->
-            if (isSecret && element.isString) JsonPrimitive("***") else element
-        is JsonObject -> JsonObject(element.mapValues { (k, v) -> redactSecrets(v, k) })
-        is JsonArray -> buildJsonArray { element.forEach { add(redactSecrets(it, key)) } }
+internal fun shouldRetryGenerationStreamFailure(
+    failure: Throwable,
+    retryAttempt: Long,
+    maxRetries: Int,
+    receivedMeaningfulOutput: Boolean,
+): Boolean {
+    if (receivedMeaningfulOutput || retryAttempt >= maxRetries.coerceAtLeast(0).toLong()) {
+        return false
+    }
+    if (failure is ResponseStreamErrorException || isContextLimitFailure(failure)) {
+        return false
+    }
+    if (isNonRetryableClientError(failure)) {
+        return false
+    }
+    if (isQuotaExhaustedFailure(failure)) {
+        return false
+    }
+    // Retry provider, parsing, and local processing failures alike. Cancellation is kept
+    // out of the retry loop so stop-generation and parent-scope cancellation propagate.
+    return !isCancellationFailure(failure)
+}
+
+// A 4xx other than the RETRYABLE_4XX_STATUS_CODES exceptions is deterministic: the same
+// request will fail the same way on every retry. 5xx and failures with no known status code
+// (most providers don't attach one) keep the existing retry behaviour.
+private fun isNonRetryableClientError(failure: Throwable): Boolean {
+    val statusCode = generateSequence(failure) { it.cause }
+        .take(8)
+        .filterIsInstance<HttpException>()
+        .firstOrNull()
+        ?.statusCode
+        ?: return false
+    return statusCode in 400..499 && statusCode !in RETRYABLE_4XX_STATUS_CODES
+}
+
+// 429 is normally in RETRYABLE_4XX_STATUS_CODES because it usually signals ordinary rate
+// limiting, which is worth retrying. But a 429 that also carries a RESOURCE_EXHAUSTED marker
+// means the account is quota-blocked server-side (CCA returns this instantly): the same
+// request will fail the same way on every retry, so retrying just burns time and requests.
+private val QUOTA_EXHAUSTED_MARKERS = listOf(
+    "resource exhausted",
+    "resource has been exhausted",
+)
+
+private fun isQuotaExhaustedFailure(failure: Throwable): Boolean {
+    val statusCode = generateSequence(failure) { it.cause }
+        .take(8)
+        .filterIsInstance<HttpException>()
+        .firstOrNull()
+        ?.statusCode
+    if (statusCode != 429) {
+        return false
+    }
+    return generateSequence(failure) { it.cause }
+        .take(8)
+        .any { cause ->
+            val text = (cause.message.orEmpty() + " " + cause.toString())
+                .lowercase()
+                .replace('_', ' ')
+            QUOTA_EXHAUSTED_MARKERS.any { marker -> marker in text }
+        }
+}
+
+private fun isContextLimitFailure(failure: Throwable): Boolean =
+    generateSequence(failure) { it.cause }
+        .take(8)
+        .any { cause ->
+            val text = (cause.message.orEmpty() + " " + cause.toString())
+                .lowercase()
+                .replace('_', ' ')
+            "context length exceeded" in text ||
+                "maximum context length" in text ||
+                "maximum context window" in text
+        }
+
+private fun generationStreamRetryDelayMs(retryAttempt: Long): Long =
+    ((retryAttempt + 1) * GENERATION_STREAM_RETRY_INITIAL_DELAY_MS)
+        .coerceAtMost(GENERATION_STREAM_RETRY_MAX_DELAY_MS)
+
+private fun retryFailureReason(failure: Throwable): String =
+    generateSequence(failure) { it.cause }
+        .mapNotNull { it.message?.trim()?.takeIf(String::isNotBlank) }
+        .firstOrNull()
+        ?.replace(Regex("\\s+"), " ")
+        ?.take(240)
+        ?: failure.javaClass.simpleName
+
+private fun retryStatusText(
+    context: Context,
+    retryNumber: Long,
+    maxRetries: Int,
+    failure: Throwable,
+): String = context.getString(
+    me.rerere.rikkahub.R.string.chat_page_retrying,
+    retryNumber,
+    maxRetries,
+    retryFailureReason(failure),
+)
+
+private fun clearRetryStatus(processingStatus: MutableStateFlow<String?>) {
+    processingStatus.value = null
+}
+
+// Marks the retry loop's "meaningful output already arrived" flag. Only chunks that carry
+// actual model output (text/reasoning/tool/image content, or annotations) count - the bare
+// Start/End markers and Usage/Finish bookkeeping chunks don't, mirroring the old
+// choice.delta/message.parts.isNotEmpty() check against the pre-refactor chunk shape.
+private fun isMeaningfulStreamChunk(chunk: StreamChunk): Boolean = when (chunk) {
+    is StreamChunk.TextDelta,
+    is StreamChunk.ReasoningDelta,
+    is StreamChunk.ToolCallDelta,
+    is StreamChunk.ImageDelta,
+    is StreamChunk.ImageSnapshot,
+    is StreamChunk.ServerToolStart,
+    is StreamChunk.ServerToolInputDelta,
+    is StreamChunk.ServerToolEnd,
+    is StreamChunk.Annotations -> true
+    else -> false
+}
+
+private suspend fun <T> retryGenerationTransportRequest(
+    maxRetries: Int,
+    onRetry: (retryNumber: Long, failure: Throwable) -> Unit = { _, _ -> },
+    request: suspend () -> T,
+): T {
+    var retryAttempt = 0L
+    while (true) {
+        try {
+            return request()
+        } catch (failure: Throwable) {
+            if (!shouldRetryGenerationStreamFailure(
+                    failure = failure,
+                    retryAttempt = retryAttempt,
+                    maxRetries = maxRetries,
+                    receivedMeaningfulOutput = false,
+                )) {
+                throw failure
+            }
+            val delayMs = generationStreamRetryDelayMs(retryAttempt)
+            Log.w(
+                TAG,
+                "generateText: retrying after failure " +
+                    "(${retryAttempt + 1}/$maxRetries) in ${delayMs}ms",
+                failure,
+            )
+            onRetry(retryAttempt + 1, failure)
+            delay(delayMs)
+            retryAttempt++
+        }
     }
 }
 
@@ -292,8 +456,18 @@ class GenerationHandler(
         assistant: Assistant,
         memories: List<AssistantMemory>? = null,
         tools: List<Tool> = emptyList(),
-        maxSteps: Int = 32,
+        // Read live from the runtime holder, not captured once: the default expression is
+        // evaluated per call, so a settings change takes effect on the next turn.
+        maxSteps: Int = ToolRuntimeLimits.maxToolSteps,
         processingStatus: MutableStateFlow<String?> = MutableStateFlow(null),
+        // Called after a tool result has been emitted and persisted, before the next model
+        // request is built. The callback may return a compacted request history; the returned
+        // list is request-only and does not replace the conversation's original messages.
+        onAfterToolExecution: suspend (List<UIMessage>) -> List<UIMessage>? = { null },
+        // Called immediately before every model request, including the request after a tool
+        // result. ChatService uses this to reassert the foreground service before a background
+        // continuation opens a new socket.
+        onBeforeModelRequest: suspend () -> Unit = {},
         // Returns true when the user has pre-approved [toolName] for this turn (e.g.
         // "Allow for this chat" or "Always Allow" granted earlier). When true, the loop
         // below skips the Pending flip and lets the tool execute. ChatService injects the
@@ -369,17 +543,14 @@ class GenerationHandler(
                     }
                     buildMemoryTools(
                         json = json,
-                        onCreation = { content, tier ->
-                            memoryRepo.addMemory(memoryAssistantId, content, tier)
+                        onCreation = { content ->
+                            memoryRepo.addMemory(memoryAssistantId, content)
                         },
-                        onUpdate = { id, content, tier ->
-                            memoryRepo.updateContent(id, content, tier)
+                        onUpdate = { id, content ->
+                            memoryRepo.updateContent(id, content)
                         },
                         onDelete = { id ->
                             memoryRepo.deleteMemory(id)
-                        },
-                        onSearch = { keyword ->
-                            memoryRepo.searchConditionalMemories(keyword)
                         }
                     ).let(this::addAll)
                 }
@@ -411,6 +582,7 @@ class GenerationHandler(
             // Skip generation if we have approved/denied tool calls to handle
             if (pendingTools.isEmpty()) {
                 try {
+                    onBeforeModelRequest()
                     generateInternal(
                         assistant = assistant,
                         settings = settings,
@@ -762,7 +934,9 @@ class GenerationHandler(
                             val toolDef = toolsInternal.find { toolDef -> toolDef.name == tool.toolName }
                                 ?: error("Tool ${tool.toolName} not found")
                             val args = parsedArgs.getOrThrow()
-                            Log.i(TAG, "generateText: executing tool ${toolDef.name} with args: ${redactSecrets(args)}")
+                            if (BuildConfig.DEBUG) {
+                                Log.i(TAG, "generateText: executing tool ${toolDef.name} with args: ${redactSecrets(args)}")
+                            }
                             // Mark the tool as "execution started" BEFORE actually running.
                             // ChatService persists this when it sees the chunk so a process
                             // kill between mark-and-output leaves a clear breadcrumb on disk:
@@ -813,19 +987,11 @@ class GenerationHandler(
                             // and replaced with a preview + read/grep instructions so the
                             // model can pull the full payload on demand instead of burning
                             // the context window.
-                            // Upstream tool-output masking (P0 统一出口)：所有工具输出进 LLM
-                            // 上下文前先过密钥库掩码，防止 shell/web 等任意工具输出夹带凭证明文。
-                            // 在 maybeTruncateToolOutput 之前执行——截断会把值切半，掩码须先于截断，
-                            // 且大输出 spill 落盘前已无明文。
                             val hasShellAccess = toolsInternal.any { it.name == "workspace_shell" }
+                            // 本地独有：工具结果写回前做凭证脱敏（SecretMasker 掩码），避免密钥进上下文
                             val maskedResult = maskToolOutput(result)
                             executedTools += markedTool.copy(
-                                output = maybeTruncateToolOutput(
-                                    tool.toolCallId,
-                                    maskedResult,
-                                    hasShellAccess,
-                                    settings.toolOutputMaxChars
-                                )
+                                output = maybeTruncateToolOutput(tool.toolCallId, maskedResult, hasShellAccess)
                             )
                         }.onFailure {
                             // Stack trace stays in logcat for debugging; the JSON envelope
@@ -891,6 +1057,11 @@ class GenerationHandler(
                     )
                 )
             )
+
+            onAfterToolExecution(messages)?.let { compactedMessages ->
+                Log.i(TAG, "generateText: replacing request history after tool execution")
+                messages = compactedMessages
+            }
         }
 
     }
@@ -907,8 +1078,8 @@ class GenerationHandler(
         .flowOn(Dispatchers.IO)
 
     /**
-     * If the agent navigated away from RikkaHub Agents during this turn (launch_app / open_url) and
-     * the user is still on that destination, bring RikkaHub Agents back to the foreground so the
+     * If the agent navigated away from RikkaHub during this turn (launch_app / open_url) and
+     * the user is still on that destination, bring RikkaHub back to the foreground so the
      * user is not stranded inside Chrome / Termux / etc. If the user manually switched apps
      * mid-turn, we skip the auto-return and surface a Toast explaining the safety behavior.
      */
@@ -917,7 +1088,7 @@ class GenerationHandler(
         // Only auto-return when the agent actually drove the destination app via screen
         // automation (tap, click_node, set_text, swipe, scroll, global_action). A pure
         // "open Chrome and stay there" request is just launch_app + a text reply — yanking
-        // the user back to RikkaHub Agents in that case defeats the purpose of the request.
+        // the user back to RikkaHub in that case defeats the purpose of the request.
         if (!AgentTurnTracker.didAutomate()) return
         val destination = AgentTurnTracker.lastDestination()
         val currentForeground = RikkaAccessibilityService.instance
@@ -932,7 +1103,7 @@ class GenerationHandler(
             Handler(Looper.getMainLooper()).post {
                 Toast.makeText(
                     context.applicationContext,
-                    "RikkaHub Agents: skipped auto-return because you switched apps. (Safety feature)",
+                    "RikkaHub: skipped auto-return because you switched apps. (Safety feature)",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -971,10 +1142,6 @@ class GenerationHandler(
         conversationLorebookIds: Set<Uuid> = emptySet(),
         workspaceCwd: String? = null,
     ) {
-        // Reset any leftover processing status (e.g. OCR from a previous turn still
-        // inside its 60s window) so a new message without images doesn't show
-        // "recognizing image" from an earlier turn.
-        processingStatus.value = null
         val internalMessages = buildList {
             // Conversation-level system prompt override (upstream): when the assistant
             // allows it and the conversation supplies one, it replaces the assistant prompt.
@@ -991,17 +1158,15 @@ class GenerationHandler(
                 buildRecentChatsPrompt(assistant, conversationRepo)
             } else ""
             val toolPrompts = tools.map { tool -> tool.systemPrompt(model, messages) }
-            // 执行后端（P4 连接中枢 MVP）：注入当前后端信息，AI 知道用哪个通道执行
-            val backendNote = "当前执行后端：${settings.executionBackend}（local=本机；reasonix=Reasonix 任务/带 MCP；ecs=ECS 远程）。需要执行任务时按后端选择对应通道（reasonix run / ssh_exec_saved / 本机工具）。"
-            val effectiveAddendum = if (systemAddendum.isNullOrBlank()) backendNote else "$systemAddendum\n$backendNote"
-            // 对照版（test/extv-style）：ExTV 写法——SystemPromptBuilder stable/volatile 分段，
-            // volatile（memory/recentChats/addendum）在 SYSTEM 内。保留单行 addAll 修复。
+            // Split into stable (assistant + tools) and volatile (memory + recent chats +
+            // addendum) so prompt caching survives memory injection: the stable part is the
+            // cached prefix, the volatile part sits after it. See SystemPromptBuilder.
             val (stableSystem, volatileSystem) = systemPromptBuilder.buildSections(
                 assistantPrompt = effectiveSystemPrompt,
                 memoryPrompt = memoryPrompt,
                 recentChatsPrompt = recentChatsPrompt,
                 toolPrompts = toolPrompts,
-                systemAddendum = effectiveAddendum,
+                systemAddendum = systemAddendum,
             )
             val systemParts = buildList {
                 if (stableSystem.isNotBlank()) add(UIMessagePart.Text(stableSystem))
@@ -1010,6 +1175,9 @@ class GenerationHandler(
             if (systemParts.isNotEmpty()) {
                 add(UIMessage(role = MessageRole.SYSTEM, parts = systemParts))
             }
+            // Keeps the fork's multi-part system assembly and tool-image ageing, on top of
+            // upstream's renamed field and its stepped truncation (which now preserves
+            // prompt caching instead of trimming one message at a time).
             addAll(messages.limitContext(assistant.contextMessageLimit).ageOldToolImages())
         }.transforms(
             transformers = transformers,
@@ -1029,6 +1197,7 @@ class GenerationHandler(
             temperature = assistant.temperature,
             topP = assistant.topP,
             maxTokens = assistant.maxTokens,
+            maxStreamRetries = settings.responseStreamMaxRetries,
             tools = tools,
             reasoningLevel = assistant.reasoningLevel,
             customHeaders = buildList {
@@ -1049,21 +1218,65 @@ class GenerationHandler(
                     stream = true
                 )
             )
+            var receivedMeaningfulOutput = false
+            var receivedAnyChunk = false
+            val streamChunkHandler = StreamChunkHandler(model)
             providerImpl.streamText(
                 providerSetting = provider,
                 messages = internalMessages,
                 params = params
-            ).collect {
-                messages = messages.handleMessageChunk(chunk = it, model = model)
-                it.usage?.let { usage ->
-                    messages = messages.mapIndexed { index, message ->
-                        if (index == messages.lastIndex) {
-                            message.copy(usage = message.usage.merge(usage))
-                        } else {
-                            message
-                        }
-                    }
+            ).onCompletion { cause ->
+                // Some SSE implementations report an abruptly closed socket through onClosed
+                // without an exception. Treat a clean close with no chunks at all as a transport
+                // failure so the retry policy can recover a background continuation. A clean
+                // close after chunks arrived but none produced parseable parts is a permanent
+                // condition (unrecognized part shapes), not a transport hiccup, so it must not
+                // burn retries - log it and let the generation end normally with an empty reply.
+                if (cause == null && shouldReportEmptyGenerationStream(receivedAnyChunk)) {
+                    throw IOException("Model stream closed without meaningful output")
                 }
+                if (cause == null && receivedAnyChunk && !receivedMeaningfulOutput) {
+                    Log.w(
+                        TAG,
+                        "streamText: stream closed after chunks arrived but none contained " +
+                            "parseable parts; ending without retry",
+                    )
+                }
+            }.retryWhen { cause, retryAttempt ->
+                val shouldRetry = shouldRetryGenerationStreamFailure(
+                    failure = cause,
+                    retryAttempt = retryAttempt,
+                    maxRetries = params.maxStreamRetries,
+                    receivedMeaningfulOutput = receivedMeaningfulOutput,
+                )
+                if (shouldRetry) {
+                    // A new attempt is about to start collecting from scratch: reset the
+                    // per-attempt "did anything arrive" flag so onCompletion's transport-failure
+                    // check reflects this attempt, not a chunk seen in an earlier one.
+                    receivedAnyChunk = false
+                    val delayMs = generationStreamRetryDelayMs(retryAttempt)
+                    processingStatus.value = retryStatusText(
+                        context = context,
+                        retryNumber = retryAttempt + 1,
+                        maxRetries = params.maxStreamRetries,
+                        failure = cause,
+                    )
+                    Log.w(
+                        TAG,
+                        "streamText: retrying after failure " +
+                            "(${retryAttempt + 1}/${params.maxStreamRetries}) in ${delayMs}ms",
+                        cause,
+                    )
+                    delay(delayMs)
+                }
+                shouldRetry
+            }.collect {
+                receivedAnyChunk = true
+                if (isMeaningfulStreamChunk(it)) {
+                    receivedMeaningfulOutput = true
+                    clearRetryStatus(processingStatus)
+                }
+                messages = streamChunkHandler.handle(messages, it)
                 onUpdateMessages(messages)
             }
         } else {
@@ -1075,42 +1288,25 @@ class GenerationHandler(
                     stream = false
                 )
             )
-            val chunk = providerImpl.generateText(
-                providerSetting = provider,
-                messages = internalMessages,
-                params = params,
-            )
-            messages = messages.handleMessageChunk(chunk = chunk, model = model)
-            chunk.usage?.let { usage ->
-                messages = messages.mapIndexed { index, message ->
-                    if (index == messages.lastIndex) {
-                        message.copy(
-                            usage = message.usage.merge(usage)
-                        )
-                    } else {
-                        message
-                    }
-                }
+            val result = retryGenerationTransportRequest(
+                maxRetries = params.maxStreamRetries,
+                onRetry = { retryNumber, failure ->
+                    processingStatus.value = retryStatusText(
+                        context = context,
+                        retryNumber = retryNumber,
+                        maxRetries = params.maxStreamRetries,
+                        failure = failure,
+                    )
+                },
+            ) {
+                providerImpl.generateText(
+                    providerSetting = provider,
+                    messages = internalMessages,
+                    params = params,
+                )
             }
+            messages = messages.handleTextGenerationResult(result = result, model = model)
             onUpdateMessages(messages)
-        }
-    }
-
-    /** 工具输出统一掩码（P0 统一出口）：所有工具结果进 LLM 上下文前，Text 部分过密钥库掩码。 */
-    private suspend fun maskToolOutput(parts: List<UIMessagePart>): List<UIMessagePart> {
-        val vaultRepo = runCatching { getKoin().get<CredentialVaultRepository>() }.getOrNull()
-            ?: return parts
-        try {
-            SecretMasker.refresh(vaultRepo)
-        } catch (_: Exception) {
-            // 掩码失败不阻断工具结果（安全兜底降级为原样输出）
-        }
-        return parts.map { part ->
-            if (part is UIMessagePart.Text) {
-                UIMessagePart.Text(SecretMasker.mask(part.text))
-            } else {
-                part
-            }
         }
     }
 
@@ -1118,15 +1314,14 @@ class GenerationHandler(
         toolCallId: String,
         output: List<UIMessagePart>,
         hasShellAccess: Boolean,
-        maxChars: Int = MAX_TOOL_OUTPUT_CHARS,
     ): List<UIMessagePart> {
         val textParts = output.filterIsInstance<UIMessagePart.Text>()
         val nonTextParts = output.filter { it !is UIMessagePart.Text }
         val totalChars = textParts.sumOf { it.text.length }
 
-        if (totalChars <= maxChars || !hasShellAccess) return output
+        if (totalChars <= MAX_TOOL_OUTPUT_CHARS || !hasShellAccess) return output
 
-        Log.i(TAG, "maybeTruncateToolOutput: truncating tool $toolCallId output ($totalChars chars, max $maxChars)")
+        Log.i(TAG, "maybeTruncateToolOutput: truncating tool $toolCallId output ($totalChars chars)")
 
         val fullText = textParts.joinToString("\n") { it.text }
         val preview = fullText.take(TOOL_OUTPUT_PREVIEW_CHARS)
@@ -1134,15 +1329,6 @@ class GenerationHandler(
         val fileName = "${toolCallId}.txt"
         val outputDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
         File(outputDir, fileName).writeText(fullText)
-
-        // 清理：保留最近 MAX_TOOL_OUTPUT_FILES 个截断输出，防止 /tool_outputs/ 无限累积
-        outputDir.listFiles()?.let { files ->
-            if (files.size > MAX_TOOL_OUTPUT_FILES) {
-                files.sortedBy { it.lastModified() }
-                    .take(files.size - MAX_TOOL_OUTPUT_FILES)
-                    .forEach { it.delete() }
-            }
-        }
 
         return listOf(
             UIMessagePart.Text(
@@ -1180,6 +1366,7 @@ class GenerationHandler(
 
             var messages = listOf(UIMessage.user(prompt))
             var translatedText = ""
+            val streamChunkHandler = StreamChunkHandler(model)
 
             providerHandler.streamText(
                 providerSetting = provider,
@@ -1187,9 +1374,10 @@ class GenerationHandler(
                 params = TextGenerationParams(
                     model = model,
                     reasoningLevel = ReasoningLevel.fromBudgetTokens(settings.translateThinkingBudget),
+                    maxStreamRetries = settings.responseStreamMaxRetries,
                 ),
             ).collect { chunk ->
-                messages = messages.handleMessageChunk(chunk)
+                messages = streamChunkHandler.handle(messages, chunk)
                 translatedText = messages.lastOrNull()?.toText() ?: ""
 
                 if (translatedText.isNotBlank()) {
@@ -1200,7 +1388,7 @@ class GenerationHandler(
         } else {
             // Use Qwen MT model with special translation options
             val messages = listOf(UIMessage.user(sourceText))
-            val chunk = providerHandler.generateText(
+            val result = providerHandler.generateText(
                 providerSetting = provider,
                 messages = messages,
                 params = TextGenerationParams(
@@ -1221,7 +1409,7 @@ class GenerationHandler(
                     )
                 ),
             )
-            val translatedText = chunk.choices.firstOrNull()?.message?.toText() ?: ""
+            val translatedText = result.message.toText()
 
             if (translatedText.isNotBlank()) {
                 onStreamUpdate?.invoke(translatedText)
@@ -1229,4 +1417,22 @@ class GenerationHandler(
             }
         }
     }.flowOn(Dispatchers.IO)
+
+    /** 本地独有：对工具输出 parts 做凭证脱敏（SecretMasker），失败降级为原样输出。 */
+    private suspend fun maskToolOutput(parts: List<UIMessagePart>): List<UIMessagePart> {
+        val vaultRepo = runCatching { getKoin().get<CredentialVaultRepository>() }.getOrNull()
+            ?: return parts
+        try {
+            SecretMasker.refresh(vaultRepo)
+        } catch (_: Exception) {
+            // 掩码失败不阻断工具结果（安全兜底降级为原样输出）
+        }
+        return parts.map { part ->
+            if (part is UIMessagePart.Text) {
+                UIMessagePart.Text(SecretMasker.mask(part.text))
+            } else {
+                part
+            }
+        }
+    }
 }
