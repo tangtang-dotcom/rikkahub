@@ -152,16 +152,18 @@ fun ProviderConfigure(
             }
 
             is ProviderSetting.Reasonix -> {
-            is ProviderSetting.GeminiOAuth -> {
-                Unit
-            }
-            is ProviderSetting.LlamaCppLocal -> {
-                Unit
-            }
                 ReasonixProviderConfigure(
                     provider = provider,
                     onEdit = onEdit,
                 )
+            }
+
+            is ProviderSetting.GeminiOAuth -> {
+                Unit
+            }
+
+            is ProviderSetting.LlamaCppLocal -> {
+                Unit
             }
         }
     }
@@ -358,8 +360,8 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
         is ProviderSetting.Codex -> ""
         is ProviderSetting.Grok -> ""
         is ProviderSetting.Reasonix -> ProviderSetting.Reasonix().baseUrl
-        is ProviderSetting.GeminiOAuth -> ProviderSetting.Reasonix().baseUrl
-        is ProviderSetting.LlamaCppLocal -> ProviderSetting.Reasonix().baseUrl
+        is ProviderSetting.GeminiOAuth -> ""
+        is ProviderSetting.LlamaCppLocal -> ""
     }
 }
 
@@ -385,8 +387,12 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
 
         // Basic Auth / Bearer, reset to default
         is ProviderSetting.Reasonix -> this.copy(baseUrl = defaultBaseUrl)
-        is ProviderSetting.GeminiOAuth -> this.copy(baseUrl = defaultBaseUrl)
-        is ProviderSetting.LlamaCppLocal -> this.copy(baseUrl = defaultBaseUrl)
+
+        // no base URL to reset
+        is ProviderSetting.GeminiOAuth -> this
+
+        // no base URL to reset
+        is ProviderSetting.LlamaCppLocal -> this
     }
 }
 
@@ -412,8 +418,12 @@ internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
 
             // Basic Auth / Bearer, has base URL
             is ProviderSetting.Reasonix -> this.baseUrl
-            is ProviderSetting.GeminiOAuth -> this.baseUrl
-            is ProviderSetting.LlamaCppLocal -> this.baseUrl
+
+            // no base URL concept
+            is ProviderSetting.GeminiOAuth -> return true
+
+            // no base URL concept
+            is ProviderSetting.LlamaCppLocal -> return true
         }
     return baseUrl == defaultBaseUrlForReset()
 }

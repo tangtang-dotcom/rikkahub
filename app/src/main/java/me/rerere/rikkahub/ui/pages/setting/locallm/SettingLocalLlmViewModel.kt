@@ -140,6 +140,7 @@ class SettingLocalLlmViewModel(
     private fun providerIdForRuntime(): kotlin.uuid.Uuid =
         when (runtime) {
             LocalRuntime.LiteRT -> LITERT_PROVIDER_ID
+            LocalRuntime.LlamaCpp -> LLAMACPP_PROVIDER_ID
         }
 
     init {
@@ -284,6 +285,8 @@ class SettingLocalLlmViewModel(
         val accel =
             when (runtime) {
                 LocalRuntime.LiteRT -> AcceleratorProbe.probeLiteRt(context, forceCpu = forceCpuNow)
+                // 未接线的本地运行时：不探测，占位空结果
+                LocalRuntime.LlamaCpp -> ""
             }
         prefs.setAccelerator(runtime, accel)
         _accelerator.value = accel
@@ -538,5 +541,7 @@ class SettingLocalLlmViewModel(
         when (rt) {
             // Gallery allowlist sizeInBytes = 1_597_931_520 (~1.49 GB) + 200 MB safety pad.
             LocalRuntime.LiteRT -> 1_800_000_000L
+            // 未接线的本地运行时：无预估
+            LocalRuntime.LlamaCpp -> 0L
         }
 }
