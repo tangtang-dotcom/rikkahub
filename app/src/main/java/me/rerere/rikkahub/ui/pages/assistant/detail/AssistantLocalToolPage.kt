@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -64,7 +65,12 @@ fun AssistantLocalToolPage(id: String) {
             },
         )
     val assistant by vm.assistant.collectAsStateWithLifecycle()
+    val settings by vm.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val sourceAssistants =
+        remember(settings.assistants, id) {
+            settings.assistants.filter { it.id.toString() != id }
+        }
 
     Scaffold(
         topBar = {
@@ -92,6 +98,10 @@ fun AssistantLocalToolPage(id: String) {
             // could land with only C persisted because each tap snapshotted the same
             // pre-A Assistant from `assistant.value`).
             onUpdateAssistant = { transform -> vm.updateAssistant(transform) },
+            sourceAssistants = sourceAssistants,
+            onImportToolConfig = { sourceId, includeMcp, includeSkills, includeWebSearch ->
+                vm.importToolConfigFrom(sourceId, includeMcp, includeSkills, includeWebSearch)
+            },
         )
     }
 }
@@ -102,6 +112,8 @@ private fun AssistantLocalToolContent(
     assistant: Assistant,
     onUpdate: (Assistant) -> Unit,
     onUpdateAssistant: ((Assistant) -> Assistant) -> Unit,
+    sourceAssistants: List<Assistant>,
+    onImportToolConfig: (sourceId: String, includeMcp: Boolean, includeSkills: Boolean, includeWebSearch: Boolean) -> Unit,
 ) {
     fun toggleLocalTool(
         option: LocalToolOption,
@@ -149,6 +161,13 @@ private fun AssistantLocalToolContent(
     var cronToastShownThisVisit by remember { mutableStateOf(false) }
     var workflowsDialogShownThisVisit by remember { mutableStateOf(false) }
     var keyboardDialogShownThisVisit by remember { mutableStateOf(false) }
+
+    // Import tool config from another assistant (one-shot copy, no live sync).
+    var showImportSourcePicker by remember { mutableStateOf(false) }
+    var importCandidate by remember { mutableStateOf<Assistant?>(null) }
+    var importIncludeMcp by remember { mutableStateOf(true) }
+    var importIncludeSkills by remember { mutableStateOf(true) }
+    var importIncludeWebSearch by remember { mutableStateOf(true) }
 
     val cronHintText = stringResource(R.string.assistant_page_local_tools_cron_jobs_toast_hint)
     val termuxCommand = stringResource(R.string.assistant_page_local_tools_termux_postgrant_command)
@@ -232,6 +251,117 @@ private fun AssistantLocalToolContent(
         )
     }
 
+    if (showImportSourcePicker) {
+        AlertDialog(
+            onDismissRequest = { showImportSourcePicker = false },
+            title = { Text(stringResource(R.string.assistant_page_local_tools_import_select_source)) },
+            text = {
+                if (sourceAssistants.isEmpty()) {
+                    Text(stringResource(R.string.assistant_page_local_tools_import_no_source))
+                } else {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        sourceAssistants.forEach { source ->
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            importCandidate = source
+                                            showImportSourcePicker = false
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text =
+                                        source.name.ifBlank {
+                                            stringResource(R.string.assistant_page_local_tools_import_unnamed)
+                                        },
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showImportSourcePicker = false }) {
+                    Text(stringResource(R.string.assistant_page_local_tools_dialog_dismiss))
+                }
+            },
+        )
+    }
+
+    importCandidate?.let { candidate ->
+        val importDoneText = stringResource(R.string.assistant_page_local_tools_import_done)
+        AlertDialog(
+            onDismissRequest = { importCandidate = null },
+            title = {
+                Text(
+                    stringResource(
+                        R.string.assistant_page_local_tools_import_confirm_title,
+                        candidate.name.ifBlank { stringResource(R.string.assistant_page_local_tools_import_unnamed) },
+                    ),
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.assistant_page_local_tools_import_scope))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = true, onCheckedChange = null, enabled = false)
+                        Text(stringResource(R.string.assistant_page_local_tools_import_local_tools))
+                    }
+                    Row(
+                        modifier = Modifier.clickable { importIncludeMcp = !importIncludeMcp },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = importIncludeMcp, onCheckedChange = { importIncludeMcp = it })
+                        Text(stringResource(R.string.assistant_page_local_tools_import_mcp))
+                    }
+                    Row(
+                        modifier = Modifier.clickable { importIncludeSkills = !importIncludeSkills },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = importIncludeSkills, onCheckedChange = { importIncludeSkills = it })
+                        Text(stringResource(R.string.assistant_page_local_tools_import_skills))
+                    }
+                    Row(
+                        modifier = Modifier.clickable { importIncludeWebSearch = !importIncludeWebSearch },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = importIncludeWebSearch, onCheckedChange = { importIncludeWebSearch = it })
+                        Text(stringResource(R.string.assistant_page_local_tools_import_web_search))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onImportToolConfig(
+                            candidate.id.toString(),
+                            importIncludeMcp,
+                            importIncludeSkills,
+                            importIncludeWebSearch,
+                        )
+                        importCandidate = null
+                        toaster.show(importDoneText)
+                    },
+                ) {
+                    Text(stringResource(R.string.assistant_page_local_tools_import_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { importCandidate = null }) {
+                    Text(stringResource(R.string.assistant_page_local_tools_dialog_dismiss))
+                }
+            },
+        )
+    }
+
     Column(
         modifier =
             modifier
@@ -241,6 +371,19 @@ private fun AssistantLocalToolContent(
                 .imePadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Import tool config from another assistant (one-shot copy)
+        CardGroup {
+            item(
+                onClick = { showImportSourcePicker = true },
+                headlineContent = {
+                    Text(stringResource(R.string.assistant_page_local_tools_import_title))
+                },
+                supportingContent = {
+                    Text(stringResource(R.string.assistant_page_local_tools_import_desc))
+                },
+            )
+        }
+
         // Built-in tools section
         Text(
             text = stringResource(R.string.assistant_page_local_tools_section_existing),

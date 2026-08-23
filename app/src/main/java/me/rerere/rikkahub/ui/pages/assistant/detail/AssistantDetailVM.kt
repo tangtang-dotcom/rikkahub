@@ -234,6 +234,43 @@ class AssistantDetailVM(
         }
     }
 
+    /**
+     * One-shot import of another assistant's tool configuration into this assistant.
+     * Source is read inside the settings mutex so the copy is consistent. After the
+     * import the two assistants are fully independent (no live sync).
+     */
+    fun importToolConfigFrom(
+        sourceId: String,
+        includeMcp: Boolean,
+        includeSkills: Boolean,
+        includeWebSearch: Boolean,
+    ) {
+        viewModelScope.launch {
+            val sourceUuid = runCatching { Uuid.parse(sourceId) }.getOrNull() ?: return@launch
+            settingsStore.update { current ->
+                val source =
+                    current.assistants.firstOrNull { it.id == sourceUuid }
+                        ?: return@update current
+                val target =
+                    current.assistants.firstOrNull { it.id == assistantId }
+                        ?: return@update current
+                val next =
+                    target.copy(
+                        localTools = source.localTools,
+                        mcpServers = if (includeMcp) source.mcpServers else target.mcpServers,
+                        enabledSkills = if (includeSkills) source.enabledSkills else target.enabledSkills,
+                        enableWebSearch = if (includeWebSearch) source.enableWebSearch else target.enableWebSearch,
+                    )
+                current.copy(
+                    assistants =
+                        current.assistants.map {
+                            if (it.id == assistantId) next else it
+                        },
+                )
+            }
+        }
+    }
+
     fun addMemory(memory: AssistantMemory) {
         viewModelScope.launch {
             val memoryAssistantId =
