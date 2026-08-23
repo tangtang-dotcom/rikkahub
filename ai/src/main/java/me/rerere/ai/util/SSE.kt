@@ -116,18 +116,17 @@ class SSEEventSource(
     }
 
     companion object {
-        fun factory(callFactory: Call.Factory) =
-            EventSource.Factory { request, listener ->
-                val actualRequest =
-                    if (request.header("Accept") == null) {
-                        request.newBuilder().addHeader("Accept", "text/event-stream").build()
-                    } else {
-                        request
-                    }
-
-                SSEEventSource(actualRequest, listener).apply {
-                    connect(callFactory)
+        fun factory(callFactory: Call.Factory) = EventSource.Factory { request, listener ->
+            val actualRequest =
+                if (request.header("Accept") == null) {
+                    request.newBuilder().addHeader("Accept", "text/event-stream").build()
+                } else {
+                    request
                 }
+
+            SSEEventSource(actualRequest, listener).apply {
+                connect(callFactory)
             }
+        }
     }
 }

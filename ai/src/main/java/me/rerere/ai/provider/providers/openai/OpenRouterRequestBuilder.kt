@@ -3,6 +3,7 @@ package me.rerere.ai.provider.providers.openai
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
@@ -29,10 +30,7 @@ import me.rerere.ai.provider.OpenRouterRouting
  * [hasToolsOrSchema] forces `require_parameters` so capability-mismatched providers can't
  * be picked and silently drop tools / response_format.
  */
-fun buildProviderObject(
-    routing: OpenRouterRouting,
-    hasToolsOrSchema: Boolean,
-): JsonObject? {
+fun buildProviderObject(routing: OpenRouterRouting, hasToolsOrSchema: Boolean): JsonObject? {
     val forceRequire = routing.requireParameters || hasToolsOrSchema
     if (routing.isDefault() && !forceRequire) return null
     return buildJsonObject {
@@ -59,10 +57,22 @@ fun buildProviderObject(
     }
 }
 
-data class ParsedImageDataUri(
-    val mime: String,
-    val base64: String,
-)
+/**
+ * Build the top-level `models` fallback array: OpenRouter tries these ids in order when
+ * the primary model is down, rate-limited, or refuses on moderation. Null when no usable
+ * fallback is configured. The primary id is excluded so it is never retried as its own
+ * fallback. https://openrouter.ai/docs/guides/routing/model-fallbacks
+ */
+fun buildFallbackModelsArray(primaryModelId: String, routing: OpenRouterRouting): JsonArray? {
+    val fallbacks = routing.fallbackModels
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && it != primaryModelId }
+        .distinct()
+    if (fallbacks.isEmpty()) return null
+    return buildJsonArray { fallbacks.forEach { add(it) } }
+}
+
+data class ParsedImageDataUri(val mime: String, val base64: String)
 
 private val DATA_URI_REGEX =
     Regex("^data:(image/[a-zA-Z0-9.+-]+);base64,(.+)$", RegexOption.DOT_MATCHES_ALL)
@@ -89,32 +99,26 @@ fun openRouterModelFromJson(modelObj: JsonObject): Model? {
     val name = modelObj["name"]?.jsonPrimitive?.contentOrNull ?: id
 
     val arch = modelObj["architecture"] as? JsonObject
-
-    fun strList(
-        obj: JsonObject?,
-        key: String,
-    ): List<String> = (obj?.get(key) as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+    fun strList(obj: JsonObject?, key: String): List<String> =
+        (obj?.get(key) as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
 
     val inMods = strList(arch, "input_modalities")
     val outMods = strList(arch, "output_modalities")
     val supported = strList(modelObj, "supported_parameters")
     val pricing = modelObj["pricing"] as? JsonObject
 
-    val inputModalities =
-        buildList {
-            add(Modality.TEXT)
-            if ("image" in inMods) add(Modality.IMAGE)
-        }.distinct()
-    val outputModalities =
-        buildList {
-            add(Modality.TEXT)
-            if ("image" in outMods) add(Modality.IMAGE)
-        }.distinct()
-    val abilities =
-        buildList {
-            if ("tools" in supported || "tool_choice" in supported) add(ModelAbility.TOOL)
-            if ("reasoning" in supported || "include_reasoning" in supported) add(ModelAbility.REASONING)
-        }
+    val inputModalities = buildList {
+        add(Modality.TEXT)
+        if ("image" in inMods) add(Modality.IMAGE)
+    }.distinct()
+    val outputModalities = buildList {
+        add(Modality.TEXT)
+        if ("image" in outMods) add(Modality.IMAGE)
+    }.distinct()
+    val abilities = buildList {
+        if ("tools" in supported || "tool_choice" in supported) add(ModelAbility.TOOL)
+        if ("reasoning" in supported || "include_reasoning" in supported) add(ModelAbility.REASONING)
+    }
 
     // Models that can output images are typed IMAGE so they appear in the image-generation
     // model picker (which filters strictly by ModelType.IMAGE); others stay CHAT.
@@ -130,17 +134,7 @@ fun openRouterModelFromJson(modelObj: JsonObject): Model? {
         contextLength = modelObj["context_length"]?.jsonPrimitive?.intOrNull,
         supportedParameters = supported,
         // OpenRouter pricing values are strings of USD-per-token.
-        pricePromptPerToken =
-            pricing
-                ?.get("prompt")
-                ?.jsonPrimitive
-                ?.contentOrNull
-                ?.toDoubleOrNull(),
-        priceCompletionPerToken =
-            pricing
-                ?.get("completion")
-                ?.jsonPrimitive
-                ?.contentOrNull
-                ?.toDoubleOrNull(),
+        pricePromptPerToken = pricing?.get("prompt")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
+        priceCompletionPerToken = pricing?.get("completion")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
     )
 }

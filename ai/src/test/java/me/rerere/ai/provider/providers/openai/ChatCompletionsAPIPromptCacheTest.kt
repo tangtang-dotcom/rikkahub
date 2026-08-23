@@ -16,7 +16,6 @@ import me.rerere.ai.util.KeyRoulette
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -32,40 +31,33 @@ class ChatCompletionsAPIPromptCacheTest {
         messages: List<UIMessage>,
         params: TextGenerationParams,
         providerSetting: ProviderSetting.OpenAI,
-        stream: Boolean = false,
+        stream: Boolean = false
     ): JsonObject {
-        val method =
-            ChatCompletionsAPI::class.java.getDeclaredMethod(
-                "buildChatCompletionRequest",
-                List::class.java,
-                TextGenerationParams::class.java,
-                ProviderSetting.OpenAI::class.java,
-                Boolean::class.javaPrimitiveType!!,
-            )
+        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
+            "buildChatCompletionRequest",
+            List::class.java,
+            TextGenerationParams::class.java,
+            ProviderSetting.OpenAI::class.java,
+            Boolean::class.javaPrimitiveType!!
+        )
         method.isAccessible = true
         return method.invoke(api, messages, params, providerSetting, stream) as JsonObject
     }
 
-    private fun openRouter(promptCaching: Boolean = true) =
-        ProviderSetting.OpenAI(
-            baseUrl = "https://openrouter.ai/api/v1",
-            promptCaching = promptCaching,
-        )
+    private fun openRouter(promptCaching: Boolean = true) = ProviderSetting.OpenAI(
+        baseUrl = "https://openrouter.ai/api/v1",
+        promptCaching = promptCaching
+    )
 
-    private fun multiTurn() =
-        listOf(
-            UIMessage.system("system prompt"),
-            UIMessage.user("first question"),
-            UIMessage.assistant("first answer"),
-            UIMessage.user("second question"),
-        )
+    private fun multiTurn() = listOf(
+        UIMessage.system("system prompt"),
+        UIMessage.user("first question"),
+        UIMessage.assistant("first answer"),
+        UIMessage.user("second question")
+    )
 
     private fun JsonObject.lastBlockCacheControl(): JsonObject? =
-        (this["content"] as? JsonArray)
-            ?.lastOrNull()
-            ?.jsonObject
-            ?.get("cache_control")
-            ?.jsonObject
+        (this["content"] as? JsonArray)?.lastOrNull()?.jsonObject?.get("cache_control")?.jsonObject
 
     private fun JsonArray.userMessages(): List<JsonObject> =
         filter { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "user" }
@@ -73,12 +65,11 @@ class ChatCompletionsAPIPromptCacheTest {
 
     @Test
     fun `openrouter anthropic model marks system and second-to-last user turn`() {
-        val request =
-            buildRequest(
-                messages = multiTurn(),
-                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
-                providerSetting = openRouter(),
-            )
+        val request = buildRequest(
+            messages = multiTurn(),
+            params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
+            providerSetting = openRouter()
+        )
         val msgs = request["messages"]!!.jsonArray
 
         // system prefix gets a breakpoint (string content promoted to array form)
@@ -95,33 +86,28 @@ class ChatCompletionsAPIPromptCacheTest {
     @Test
     fun `openrouter gemini and qwen models are also marked`() {
         listOf("google/gemini-2.5-pro", "qwen/qwen3-max").forEach { modelId ->
-            val request =
-                buildRequest(
-                    messages = multiTurn(),
-                    params = TextGenerationParams(model = Model(modelId = modelId)),
-                    providerSetting = openRouter(),
-                )
-            val system =
-                request["messages"]!!
-                    .jsonArray
-                    .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }
-                    .jsonObject
+            val request = buildRequest(
+                messages = multiTurn(),
+                params = TextGenerationParams(model = Model(modelId = modelId)),
+                providerSetting = openRouter()
+            )
+            val system = request["messages"]!!.jsonArray
+                .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
             assertEquals(
                 "cache_control missing for $modelId",
                 "ephemeral",
-                system.lastBlockCacheControl()!!["type"]!!.jsonPrimitive.content,
+                system.lastBlockCacheControl()!!["type"]!!.jsonPrimitive.content
             )
         }
     }
 
     @Test
     fun `promptCaching=false adds no cache_control`() {
-        val request =
-            buildRequest(
-                messages = multiTurn(),
-                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
-                providerSetting = openRouter(promptCaching = false),
-            )
+        val request = buildRequest(
+            messages = multiTurn(),
+            params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
+            providerSetting = openRouter(promptCaching = false)
+        )
         assertNoCacheControl(request)
     }
 
@@ -129,44 +115,65 @@ class ChatCompletionsAPIPromptCacheTest {
     fun `every model on openrouter is marked (openrouter strips it for auto-cachers)`() {
         // The gate is host + promptCaching only, no model allow-list: OpenRouter drops the
         // field for providers that cache automatically, so marking openai/ is harmless.
-        val request =
-            buildRequest(
-                messages = multiTurn(),
-                params = TextGenerationParams(model = Model(modelId = "openai/gpt-4o")),
-                providerSetting = openRouter(),
-            )
-        val system =
-            request["messages"]!!
-                .jsonArray
-                .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }
-                .jsonObject
+        val request = buildRequest(
+            messages = multiTurn(),
+            params = TextGenerationParams(model = Model(modelId = "openai/gpt-4o")),
+            providerSetting = openRouter()
+        )
+        val system = request["messages"]!!.jsonArray
+            .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
         assertEquals("ephemeral", system.lastBlockCacheControl()!!["type"]!!.jsonPrimitive.content)
     }
 
     @Test
     fun `anthropic model on non-openrouter host is untouched`() {
-        val request =
-            buildRequest(
-                messages = multiTurn(),
-                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
-                providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1", promptCaching = true),
-            )
+        val request = buildRequest(
+            messages = multiTurn(),
+            params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
+            providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.openai.com/v1", promptCaching = true)
+        )
         assertNoCacheControl(request)
     }
 
     @Test
     fun `single user turn marks system only`() {
-        val request =
-            buildRequest(
-                messages = listOf(UIMessage.system("system prompt"), UIMessage.user("only question")),
-                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
-                providerSetting = openRouter(),
-            )
+        val request = buildRequest(
+            messages = listOf(UIMessage.system("system prompt"), UIMessage.user("only question")),
+            params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
+            providerSetting = openRouter()
+        )
         val msgs = request["messages"]!!.jsonArray
         val system = msgs.first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
         assertEquals("ephemeral", system.lastBlockCacheControl()!!["type"]!!.jsonPrimitive.content)
         // with a single user turn there is no cacheable prefix to mark
         assertNull(msgs.userMessages().single().lastBlockCacheControl())
+    }
+
+    @Test
+    fun `system block-split text equals the newline-joined non-caching form`() {
+        // Regression test: caching-on used to concatenate the stable+volatile system
+        // blocks with no separator ("stablevolatile"), while caching-off joined them
+        // with "\n" ("stable\nvolatile"), so the model saw a different prompt per mode.
+        val stableVolatile = UIMessage(
+            role = MessageRole.SYSTEM,
+            parts = listOf(UIMessagePart.Text("stable"), UIMessagePart.Text("volatile"))
+        )
+        val messages = listOf(stableVolatile, UIMessage.user("first question"))
+        val params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4"))
+
+        val cachedSystem = buildRequest(messages, params, openRouter())["messages"]!!.jsonArray
+            .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
+        val uncachedSystem =
+            buildRequest(messages, params, openRouter(promptCaching = false))["messages"]!!.jsonArray
+                .first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
+
+        val cachedText = (cachedSystem["content"] as JsonArray).joinToString("") {
+            it.jsonObject["text"]!!.jsonPrimitive.content
+        }
+        val uncachedText = uncachedSystem["content"]!!.jsonPrimitive.content
+
+        assertEquals("stable\nvolatile", uncachedText)
+        assertEquals(uncachedText, cachedText)
     }
 
     private fun assertNoCacheControl(request: JsonObject) {
@@ -175,67 +182,5 @@ class ChatCompletionsAPIPromptCacheTest {
                 assertNull(block.jsonObject["cache_control"])
             }
         }
-    }
-
-    @Test
-    fun `non-openrouter multi-part system joins into single string preserving stable prefix`() {
-        // 回归：非 OpenRouter（DeepSeek/OpenAI 兼容）通道下，SYSTEM 多 part（stable+volatile）
-        // 应合并为单字符串，且顺序为 stable 在前 volatile 在后——前缀缓存不被 volatile 破坏。
-        val request =
-            buildRequest(
-                messages =
-                    listOf(
-                        UIMessage(
-                            role = MessageRole.SYSTEM,
-                            parts =
-                                listOf(
-                                    UIMessagePart.Text("stable assistant prompt"),
-                                    UIMessagePart.Text("volatile memory content"),
-                                ),
-                        ),
-                        UIMessage.user("question"),
-                    ),
-                params = TextGenerationParams(model = Model(modelId = "deepseek-v4-flash")),
-                providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.deepseek.com/v1", promptCaching = true),
-            )
-        val msgs = request["messages"]!!.jsonArray
-        val system = msgs.first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
-        // 非 OpenRouter 不注入 cache_control
-        assertNoCacheControl(request)
-        // content 应为单字符串（合并），且 stable 段在 volatile 前
-        val content = system["content"]!!.jsonPrimitive.content
-        assertTrue(content.startsWith("stable assistant prompt"))
-        assertTrue(content.indexOf("stable assistant prompt") < content.indexOf("volatile memory content"))
-        assertTrue(content.contains("\n"))
-    }
-
-    @Test
-    fun `openrouter multi-part system keeps content blocks with cache control on first block`() {
-        // 回归：OpenRouter 通道下，SYSTEM 多 part 保留为 content 数组（stable 在前），
-        // cache_control 落在首个 block——volatile 变化不影响 stable 前缀。
-        val request =
-            buildRequest(
-                messages =
-                    listOf(
-                        UIMessage(
-                            role = MessageRole.SYSTEM,
-                            parts =
-                                listOf(
-                                    UIMessagePart.Text("stable assistant prompt"),
-                                    UIMessagePart.Text("volatile memory content"),
-                                ),
-                        ),
-                        UIMessage.user("question"),
-                    ),
-                params = TextGenerationParams(model = Model(modelId = "anthropic/claude-sonnet-4")),
-                providerSetting = openRouter(),
-            )
-        val msgs = request["messages"]!!.jsonArray
-        val system = msgs.first { it.jsonObject["role"]?.jsonPrimitive?.contentOrNull == "system" }.jsonObject
-        val blocks = system["content"]!!.jsonArray
-        // 两个 content block（stable + volatile）
-        assertEquals(2, blocks.size)
-        // cache_control 在第一个 block（stable）上
-        assertEquals("ephemeral", blocks.first().jsonObject["cache_control"]!!.jsonObject["type"]!!.jsonPrimitive.content)
     }
 }

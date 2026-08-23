@@ -12,8 +12,8 @@ class HttpException(
     val statusCode: Int? = null,
 ) : RuntimeException(message)
 
-fun JsonElement.parseErrorDetail(): HttpException =
-    when (this) {
+fun JsonElement.parseErrorDetail(): HttpException {
+    return when (this) {
         is JsonObject -> {
             // 尝试获取常见的错误字段
             val errorFields = listOf("error", "detail", "message", "description")
@@ -44,3 +44,4 @@ fun JsonElement.parseErrorDetail(): HttpException =
             HttpException(this.jsonPrimitive.content)
         }
     }
+}

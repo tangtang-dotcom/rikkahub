@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class ReasoningLevel(
     val budgetTokens: Int,
-    val effort: String,
+    val effort: String
 ) {
     @SerialName("off")
     OFF(0, "none"),
@@ -33,8 +33,12 @@ enum class ReasoningLevel(
         get() = this != OFF
 
     companion object {
-        fun fromBudgetTokens(budgetTokens: Int?): ReasoningLevel =
-            entries.minByOrNull { kotlin.math.abs(it.budgetTokens - (budgetTokens ?: AUTO.budgetTokens)) }
-                ?: AUTO
+        fun fromBudgetTokens(budgetTokens: Int?): ReasoningLevel {
+            return entries.minByOrNull {
+                kotlin.math.abs(
+                    it.budgetTokens - (budgetTokens ?: AUTO.budgetTokens)
+                )
+            } ?: AUTO
+        }
     }
 }

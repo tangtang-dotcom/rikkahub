@@ -2,6 +2,7 @@ package me.rerere.ai.ui
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
@@ -40,6 +41,47 @@ data class OpenAIReasoningMetadata(
 ) : PartMetadata
 
 /**
+ * 服务端工具原始块所属的 wire protocol，与实际提供商品牌无关。
+ */
+@Serializable
+enum class ServerToolProtocol {
+    @SerialName("openai_responses")
+    OPENAI_RESPONSES,
+
+    @SerialName("anthropic_messages")
+    ANTHROPIC_MESSAGES,
+}
+
+/**
+ * Provider 服务端工具的原始协议块。
+ *
+ * 通用字段保存在 [UIMessagePart.ServerTool] 自身；这里额外保留 Provider 原始调用/结果，供多轮请求
+ * 原样回传。OpenAI Responses API 通常只使用 [call]，Claude 则分别使用 [call] 和 [result]。
+ */
+@Serializable
+data class ServerToolMetadata(
+    @SerialName("server_tool_protocol")
+    val protocol: ServerToolProtocol? = null,
+    @SerialName("server_tool_call")
+    val call: JsonObject? = null,
+    @SerialName("server_tool_call_index")
+    val callIndex: Int? = null,
+    @SerialName("server_tool_result")
+    val result: JsonObject? = null,
+    @SerialName("server_tool_result_index")
+    val resultIndex: Int? = null,
+) : PartMetadata
+
+/**
+ * OpenRouter Chat Completions 的结构化 reasoning_details，工具调用续轮时需要原样回传。
+ */
+@Serializable
+data class OpenRouterReasoningMetadata(
+    @SerialName("openrouter_reasoning_details")
+    val reasoningDetails: JsonArray? = null,
+) : PartMetadata
+
+/**
  * Google Gemini 部件(functionCall/inlineData)的 thoughtSignature, 回传时需要携带
  */
 @Serializable
@@ -62,14 +104,14 @@ data class DiffMetadata(
  * 由于 json 配置了 ignoreUnknownKeys, 不同 provider 的 metadata 互不干扰
  * (例如切换 provider 后, OpenAI 写入的 reasoning 元数据不会影响 Claude 的解析)
  */
-inline fun <reified T : PartMetadata> UIMessagePart.metadataAs(): T? =
-    metadata?.let {
-        runCatching { json.decodeFromJsonElement<T>(it) }.getOrNull()
-    }
+inline fun <reified T : PartMetadata> UIMessagePart.metadataAs(): T? = metadata?.let {
+    runCatching { json.decodeFromJsonElement<T>(it) }.getOrNull()
+}
 
 /**
  * 将类型化的 [PartMetadata] 编码为 metadata [JsonObject]
  *
  * 由于 json 配置了 explicitNulls = false, 值为 null 的字段不会写入
  */
-inline fun <reified T : PartMetadata> T.toMetadata(): JsonObject = json.encodeToJsonElement(this).jsonObject
+inline fun <reified T : PartMetadata> T.toMetadata(): JsonObject =
+    json.encodeToJsonElement(this).jsonObject

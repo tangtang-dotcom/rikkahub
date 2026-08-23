@@ -11,8 +11,7 @@ class ModelDefinition(
     private val matcher: TokenMatcher,
     val inputModalities: Set<Modality>,
     val outputModalities: Set<Modality>,
-    val abilities: Set<ModelAbility>,
-    val contextLength: Int? = null
+    val abilities: Set<ModelAbility>
 ) : ModelSelector {
     override fun match(modelId: String): Boolean {
         val tokens = tokenize(modelId)
@@ -24,14 +23,12 @@ class ModelDefinition(
         return matcher.score(modelId, tokens)
     }
 
-    internal fun matchScore(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? = matcher.score(modelId, tokens)
+    internal fun matchScore(modelId: String, tokens: List<String>): Int? =
+        matcher.score(modelId, tokens)
 }
 
 class ModelGroup internal constructor(
-    private val members: List<ModelSelector>,
+    private val members: List<ModelSelector>
 ) : ModelSelector {
     override fun match(modelId: String): Boolean = members.any { it.match(modelId) }
 }
@@ -39,7 +36,8 @@ class ModelGroup internal constructor(
 fun defineModel(block: ModelDefinitionBuilder.() -> Unit): ModelDefinition =
     ModelDefinitionBuilder().apply(block).build()
 
-fun defineGroup(block: ModelGroupBuilder.() -> Unit): ModelGroup = ModelGroupBuilder().apply(block).build()
+fun defineGroup(block: ModelGroupBuilder.() -> Unit): ModelGroup =
+    ModelGroupBuilder().apply(block).build()
 
 fun tokenRegex(pattern: String): TokenSpec = TokenRegex(pattern.toRegex(RegexOption.IGNORE_CASE))
 
@@ -48,7 +46,6 @@ class ModelDefinitionBuilder {
     private val inputModalities = mutableSetOf(Modality.TEXT)
     private val outputModalities = mutableSetOf(Modality.TEXT)
     private val abilities = mutableSetOf<ModelAbility>()
-    private var contextLength: Int? = null
 
     fun tokens(vararg specs: String) {
         matchers += TokenSequenceMatcher(specs.map(::parseTokenSpec))
@@ -84,23 +81,17 @@ class ModelDefinitionBuilder {
         this.abilities.addAll(abilities)
     }
 
-    fun contextLength(tokens: Int) {
-        contextLength = tokens
-    }
-
     fun build(): ModelDefinition {
-        val matcher =
-            when {
-                matchers.isEmpty() -> MatchNone
-                matchers.size == 1 -> matchers.first()
-                else -> AndMatcher(matchers.toList())
-            }
+        val matcher = when {
+            matchers.isEmpty() -> MatchNone
+            matchers.size == 1 -> matchers.first()
+            else -> AndMatcher(matchers.toList())
+        }
         return ModelDefinition(
             matcher = matcher,
             inputModalities = inputModalities.toSet(),
             outputModalities = outputModalities.toSet(),
-            abilities = abilities.toSet(),
-            contextLength = contextLength,
+            abilities = abilities.toSet()
         )
     }
 }
@@ -119,39 +110,26 @@ sealed interface TokenSpec {
     fun matches(token: String): Boolean
 }
 
-private data class TokenAlternatives(
-    val options: Set<String>,
-) : TokenSpec {
+private data class TokenAlternatives(val options: Set<String>) : TokenSpec {
     override fun matches(token: String): Boolean = options.contains(token)
 }
 
-private data class TokenRegex(
-    val regex: Regex,
-) : TokenSpec {
+private data class TokenRegex(val regex: Regex) : TokenSpec {
     override fun matches(token: String): Boolean = regex.matches(token)
 }
 
 interface TokenMatcher {
-    fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int?
+    fun score(modelId: String, tokens: List<String>): Int?
 }
 
 private object MatchNone : TokenMatcher {
-    override fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? = null
+    override fun score(modelId: String, tokens: List<String>): Int? = null
 }
 
 private class AndMatcher(
-    private val matchers: List<TokenMatcher>,
+    private val matchers: List<TokenMatcher>
 ) : TokenMatcher {
-    override fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? {
+    override fun score(modelId: String, tokens: List<String>): Int? {
         var total = 0
         for (matcher in matchers) {
             val score = matcher.score(modelId, tokens) ?: return null
@@ -162,26 +140,21 @@ private class AndMatcher(
 }
 
 private class ExactIdMatcher(
-    private val id: String,
+    private val id: String
 ) : TokenMatcher {
-    override fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? =
-        if (modelId.equals(id, ignoreCase = true)) {
+    override fun score(modelId: String, tokens: List<String>): Int? {
+        return if (modelId.equals(id, ignoreCase = true)) {
             EXACT_ID_BONUS + tokens.size
         } else {
             null
         }
+    }
 }
 
 private class TokenSequenceMatcher(
-    private val specs: List<TokenSpec>,
+    private val specs: List<TokenSpec>
 ) : TokenMatcher {
-    override fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? {
+    override fun score(modelId: String, tokens: List<String>): Int? {
         if (specs.isEmpty()) return null
         var specIndex = 0
         for (token in tokens) {
@@ -195,23 +168,20 @@ private class TokenSequenceMatcher(
 }
 
 private class NotTokenSequenceMatcher(
-    private val specs: List<TokenSpec>,
+    private val specs: List<TokenSpec>
 ) : TokenMatcher {
     private val matcher = TokenSequenceMatcher(specs)
 
-    override fun score(
-        modelId: String,
-        tokens: List<String>,
-    ): Int? = if (matcher.score(modelId, tokens) == null) 0 else null
+    override fun score(modelId: String, tokens: List<String>): Int? {
+        return if (matcher.score(modelId, tokens) == null) 0 else null
+    }
 }
 
 private fun parseTokenSpec(spec: String): TokenSpec {
-    val options =
-        spec
-            .split('|')
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
-            .toSet()
+    val options = spec.split('|')
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+        .toSet()
     return TokenAlternatives(options)
 }
 

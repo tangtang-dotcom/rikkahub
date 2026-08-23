@@ -3,6 +3,10 @@ package me.rerere.ai.provider.providers.reasonix
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.toList
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.provider.Model
@@ -13,32 +17,31 @@ import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.providers.openai.ChatCompletionsAPI
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
+import me.rerere.ai.provider.TextGenerationResult
 import me.rerere.ai.ui.ImageGenerationItem
-import me.rerere.ai.ui.MessageChunk
-import me.rerere.ai.ui.ToolApprovalState
+import me.rerere.ai.ui.StreamChunk
+import me.rerere.ai.ui.ServerToolStatus
 import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.ui.UIMessagePart.Tool
 import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.json
 import okhttp3.OkHttpClient
 import java.util.UUID
 import kotlin.uuid.Uuid
-import kotlin.uuid.Uuid.Companion.parse
 
 /**
  * Reasonix Provider — RikkaHub 直连 Reasonix serve（阶段5融合）。
  *
  * 架构：RikkaHub 作为 Reasonix 的「远程 UI」——会话由服务端管理（历史/压缩/checkpoint
  * 全部继承），每次对话开始 POST /new，streamText 只发增量（最后一条用户消息）→ POST /submit，
- * 然后监听 GET /events SSE 事件流并映射为 MessageChunk。
+ * 然后监听 GET /events SSE 事件流并映射为 [StreamChunk]。
  *
- * SSE 事件映射：
- * - text        → UIMessagePart.Text
- * - reasoning   → UIMessagePart.Reasoning
- * - tool_dispatch/tool_result → UIMessagePart.Tool
- * - usage       → TokenUsage
- * - turn_done   → finishReason=stop，结束流
+ * SSE 事件映射（跟随上游 ai 模块重构后的事件模型）：
+ * - text        → TextStart/TextDelta/TextEnd
+ * - reasoning   → ReasoningStart/ReasoningDelta/ReasoningEnd
+ * - tool_dispatch/tool_result → ServerToolStart/ServerToolEnd（服务端执行工具）
+ * - usage       → Usage
+ * - turn_done   → Finish（该 turn 响应结束；多 turn 自动任务继续流，下一 turn 重新开始事件）
  */
 class ReasonixProvider(
     private val clientFactory: (ProviderSetting.Reasonix) -> ReasonixApi,
@@ -85,58 +88,73 @@ class ReasonixProvider(
         providerSetting: ProviderSetting.Reasonix,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): MessageChunk {
-        val parts = mutableListOf<UIMessagePart>()
-        var usage: TokenUsage? = null
-        var lastToolName = ""
-        var lastToolId = ""
+    ): TextGenerationResult {
+        // 收集首个 turn 的完整事件序列（Finish 终止收集）
+        val chunks =
+            streamText(providerSetting, messages, params)
+                .takeWhile { it !is StreamChunk.Finish }
+                .toList()
 
-        streamText(providerSetting, messages, params).collect { chunk ->
-            chunk.choices.firstOrNull()?.let { choice ->
-                choice.delta?.parts?.forEach { part ->
-                    when (part) {
-                        is UIMessagePart.Text -> parts.add(part)
-                        is UIMessagePart.Reasoning -> parts.add(part)
-                        is Tool -> {
-                            // 合并同名工具调用：先骨架后结果
-                            if (part.isExecuted) {
-                                parts.add(part)
-                            } else {
-                                lastToolName = part.toolName
-                                lastToolId = part.toolCallId
-                            }
-                        }
-                        else -> {}
+        val textSb = StringBuilder()
+        val reasoningSb = StringBuilder()
+        val tools = mutableListOf<UIMessagePart.ServerTool>()
+        var usage: TokenUsage? = null
+
+        for (chunk in chunks) {
+            when (chunk) {
+                is StreamChunk.TextDelta -> textSb.append(chunk.text)
+                is StreamChunk.ReasoningDelta -> reasoningSb.append(chunk.text)
+                is StreamChunk.ServerToolStart ->
+                    tools +=
+                        UIMessagePart.ServerTool(
+                            toolCallId = chunk.id,
+                            toolName = chunk.toolName,
+                            input = chunk.input,
+                            output = null,
+                            status = ServerToolStatus.IN_PROGRESS,
+                        )
+
+                is StreamChunk.ServerToolEnd -> {
+                    val index = tools.indexOfLast { it.toolCallId == chunk.id }
+                    if (index >= 0) {
+                        tools[index] =
+                            tools[index].copy(
+                                output = chunk.output,
+                                status = chunk.status,
+                            )
+                    } else {
+                        tools +=
+                            UIMessagePart.ServerTool(
+                                toolCallId = chunk.id,
+                                toolName = chunk.toolName,
+                                input = chunk.input,
+                                output = chunk.output,
+                                status = chunk.status,
+                            )
                     }
                 }
+
+                is StreamChunk.Usage -> usage = chunk.usage
+                else -> {}
             }
-            usage = chunk.usage ?: usage
         }
 
-        // 有工具调用但无最终文本时，追加一个工具占位展示
-        if (parts.none { it is Tool } && lastToolName.isNotBlank()) {
-            parts.add(
-                Tool(
-                    toolCallId = lastToolId,
-                    toolName = lastToolName,
-                    input = "",
-                    approvalState = ToolApprovalState.Auto,
-                )
-            )
-        }
+        val parts =
+            buildList {
+                if (reasoningSb.isNotEmpty()) {
+                    add(UIMessagePart.Reasoning(reasoning = reasoningSb.toString()))
+                }
+                if (textSb.isNotEmpty()) {
+                    add(UIMessagePart.Text(text = textSb.toString()))
+                }
+                addAll(tools)
+            }
 
-        return MessageChunk(
+        return TextGenerationResult(
             id = UUID.randomUUID().toString(),
             model = params.model.modelId,
-            choices =
-                listOf(
-                    UIMessageChoice(
-                        index = 0,
-                        delta = null,
-                        message = UIMessage(role = MessageRole.ASSISTANT, parts = parts),
-                        finishReason = "stop",
-                    ),
-                ),
+            message = UIMessage(role = MessageRole.ASSISTANT, parts = parts, usage = usage),
+            finishReason = "stop",
             usage = usage,
         )
     }
@@ -152,7 +170,7 @@ class ReasonixProvider(
         providerSetting: ProviderSetting.Reasonix,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): Flow<MessageChunk> = flow {
+    ): Flow<StreamChunk> = flow {
         // 协议分发（方案 B）：reasonix 走专有 SSE；custom 走 OpenAI 兼容；cli 后续实现
         when (providerSetting.backendType) {
             "custom" -> {
@@ -165,42 +183,49 @@ class ReasonixProvider(
                 chatCompletionsAPI.streamText(openaiSetting, messages, params).collect { emit(it) }
                 return@flow
             }
+
             "cli" -> {
                 val executor = cliExecutor ?: error("CLI 执行器未注入")
-                val prompt = messages.lastOrNull { it.role == MessageRole.USER }?.parts
-                    ?.filterIsInstance<UIMessagePart.Text>()
-                    ?.joinToString("") { it.text }
-                    ?: ""
+                val prompt =
+                    messages.lastOrNull { it.role == MessageRole.USER }?.parts
+                        ?.filterIsInstance<UIMessagePart.Text>()
+                        ?.joinToString("") { it.text }
+                        ?: ""
                 val command = providerSetting.cliCommand.replace("{prompt}", prompt)
                 val output = executor.execute(command, prompt, providerSetting.cliSshHost.ifBlank { null })
-                emit(chunk(providerSetting, params, UIMessage.user(output), null, "stop"))
+                emit(StreamChunk.TextStart(id = "text"))
+                emit(StreamChunk.TextDelta(id = "text", text = output))
+                emit(StreamChunk.TextEnd(id = "text"))
+                emit(StreamChunk.Finish(finishReason = "stop"))
                 return@flow
             }
         }
+
         val api = api(providerSetting)
         // 会话：当前无历史时新建会话（服务端管会话；本 Provider 单会话场景）
-        val lastUserInput = messages.lastOrNull { it.role == MessageRole.USER }?.parts
-            ?.filterIsInstance<UIMessagePart.Text>()
-            ?.joinToString("") { it.text }
-            ?: return@flow
+        val lastUserInput =
+            messages.lastOrNull { it.role == MessageRole.USER }?.parts
+                ?.filterIsInstance<UIMessagePart.Text>()
+                ?.joinToString("") { it.text }
+                ?: return@flow
 
         // 必须先 POST /new（新建会话）+ POST /submit（提交增量输入），
-        // 服务端才会开始生成并向 /events 推送；否则两端干等（App 无限转圈）。
+        // 服务端才会开始生成并向 /events 推送；否则两端 App 无限转圈。
         api.newSession()
         api.submit(lastUserInput)
 
         // 通过 SSE 建立连接后提交增量输入
-        val sse = ReasonixSseClient(
-            baseUrl = providerSetting.baseUrl,
-            username = providerSetting.username,
-            password = providerSetting.password,
-            token = providerSetting.token,
-        )
+        val sse =
+            ReasonixSseClient(
+                baseUrl = providerSetting.baseUrl,
+                username = providerSetting.username,
+                password = providerSetting.password,
+                token = providerSetting.token,
+            )
         val events = sse.connect()
-        var toolAccumulator: MutableList<UIMessagePart.Tool>? = null
         var usage: TokenUsage? = null
-        var textAccumulator = StringBuilder()
-        var reasoningAccumulator = StringBuilder()
+        var textStarted = false
+        var reasoningStarted = false
 
         // reasonix serve 的 /events 是长连接（keep-alive），不会自然关流。
         // 多 turn 自动任务（工具调用循环）会在同一热流里连续发：
@@ -209,7 +234,7 @@ class ReasonixProvider(
         // 无任何内容事件 → 任务真正完成 → 结束 flow（UI 收尾，不再「working」）。
         // 实现：热流支持多次 first()（不重建连接），withTimeoutOrNull 提供超时。
         var turnDone = false
-        var lastContentAt = System.currentTimeMillis()
+
         while (true) {
             val event =
                 kotlinx.coroutines.withTimeoutOrNull(
@@ -225,96 +250,61 @@ class ReasonixProvider(
                         "message", "turn_started",
                     )
             if (isContent) {
-                lastContentAt = System.currentTimeMillis()
+                turnDone = false
             }
+
             when (event.kind) {
                 "text" -> {
                     val t = event.text ?: continue
-                    textAccumulator.append(t)
-                    emit(
-                        chunk(
-                            providerSetting,
-                            params,
-                            delta = UIMessage(
-                                role = MessageRole.ASSISTANT,
-                                parts = listOf(UIMessagePart.Text(text = t)),
-                            ),
-                            usage = usage,
-                        )
-                    )
+                    if (!textStarted) {
+                        emit(StreamChunk.TextStart(id = TEXT_ID))
+                        textStarted = true
+                    }
+                    emit(StreamChunk.TextDelta(id = TEXT_ID, text = t))
                 }
+
                 "reasoning" -> {
                     val r = event.reasoning ?: continue
-                    reasoningAccumulator.append(r)
-                    emit(
-                        chunk(
-                            providerSetting,
-                            params,
-                            delta = UIMessage(
-                                role = MessageRole.ASSISTANT,
-                                parts = listOf(UIMessagePart.Reasoning(reasoning = r)),
-                            ),
-                            usage = usage,
-                        )
-                    )
+                    if (!reasoningStarted) {
+                        emit(StreamChunk.ReasoningStart(id = REASONING_ID))
+                        reasoningStarted = true
+                    }
+                    emit(StreamChunk.ReasoningDelta(id = REASONING_ID, text = r))
                 }
+
                 "tool_dispatch" -> {
                     val tool = event.tool
                     if (tool != null) {
-                        toolAccumulator = toolAccumulator ?: mutableListOf()
-                        toolAccumulator!!.add(
-                            Tool(
-                                toolCallId = tool.id,
-                                toolName = tool.name,
-                                input = tool.args ?: tool.arguments ?: "",
-                                approvalState = ToolApprovalState.Auto,
-                            )
-                        )
                         emit(
-                            chunk(
-                                providerSetting,
-                                params,
-                                delta = UIMessage(
-                                    role = MessageRole.ASSISTANT,
-                                    parts = listOf(
-                                        Tool(
-                                            toolCallId = tool.id,
-                                            toolName = tool.name,
-                                            input = tool.args ?: tool.arguments ?: "",
-                                            approvalState = ToolApprovalState.Auto,
-                                        )
-                                    ),
-                                ),
-                                usage = usage,
+                            StreamChunk.ServerToolStart(
+                                id = tool.id,
+                                toolName = tool.name,
+                                input = parseJsonOrNull(tool.args ?: tool.arguments),
                             )
                         )
                     }
                 }
+
                 "tool_result" -> {
                     val tool = event.tool
                     if (tool != null) {
                         val output = tool.output ?: tool.err ?: ""
                         emit(
-                            chunk(
-                                providerSetting,
-                                params,
-                                delta = UIMessage(
-                                    role = MessageRole.ASSISTANT,
-                                    parts = listOf(
-                                        Tool(
-                                            toolCallId = tool.id,
-                                            toolName = tool.name,
-                                            input = tool.args ?: tool.arguments ?: "",
-                                            output = listOf(UIMessagePart.Text(text = output)),
-                                            approvalState = ToolApprovalState.Auto,
-                                        )
-                                    ),
-                                ),
-                                usage = usage,
+                            StreamChunk.ServerToolEnd(
+                                id = tool.id,
+                                input = parseJsonOrNull(tool.args ?: tool.arguments),
+                                output = parseJsonOrText(output),
+                                status =
+                                    if (tool.err.isNullOrBlank()) {
+                                        ServerToolStatus.COMPLETED
+                                    } else {
+                                        ServerToolStatus.FAILED
+                                    },
                             )
                         )
                     }
                 }
+
                 "usage" -> {
                     val u = event.usage
                     if (u != null) {
@@ -326,39 +316,43 @@ class ReasonixProvider(
                                 totalTokens = u.totalTokens.toInt(),
                                 cost = u.costUsd,
                             )
+                        emit(StreamChunk.Usage(usage))
                     }
                 }
+
                 "turn_done" -> {
                     turnDone = true
-                    emit(
-                        chunk(
-                            providerSetting,
-                            params,
-                            delta = UIMessage(role = MessageRole.ASSISTANT, parts = emptyList()),
-                            usage = usage,
-                            finishReason = "stop",
-                        )
-                    )
+                    if (textStarted) {
+                        emit(StreamChunk.TextEnd(id = TEXT_ID))
+                        textStarted = false
+                    }
+                    if (reasoningStarted) {
+                        emit(StreamChunk.ReasoningEnd(id = REASONING_ID))
+                        reasoningStarted = false
+                    }
+                    emit(StreamChunk.Finish(finishReason = "stop"))
                     // 不结束：多 turn 自动任务可能马上开始下一轮。
                     // 下一轮 first() 带 TURN_DONE_IDLE_TIMEOUT_MS 超时：
                     // 有新内容则继续，无则 withTimeoutOrNull 返回 null → break 收尾。
                 }
+
                 else -> {
                     // notice/phase/approval_request/ask_request 等非内容事件：忽略
                 }
             }
         }
+
+        // events 流结束（超时 break 或连接关闭）未补收尾，视作最后一个 turn 完成
+        if (textStarted) {
+            emit(StreamChunk.TextEnd(id = TEXT_ID))
+            textStarted = false
+        }
+        if (reasoningStarted) {
+            emit(StreamChunk.ReasoningEnd(id = REASONING_ID))
+            reasoningStarted = false
+        }
         if (!turnDone) {
-            // events 流结束未收到 turn_done，补一个结束帧
-            emit(
-                chunk(
-                    providerSetting,
-                    params,
-                    delta = UIMessage(role = MessageRole.ASSISTANT, parts = emptyList()),
-                    usage = usage,
-                    finishReason = "stop",
-                )
-            )
+            emit(StreamChunk.Finish(finishReason = "stop"))
         }
     }
 
@@ -370,27 +364,17 @@ class ReasonixProvider(
             abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
         )
 
-    private fun chunk(
-        providerSetting: ProviderSetting.Reasonix,
-        params: TextGenerationParams,
-        delta: UIMessage,
-        usage: TokenUsage?,
-        finishReason: String? = null,
-    ): MessageChunk =
-        MessageChunk(
-            id = UUID.randomUUID().toString(),
-            model = params.model.modelId,
-            choices =
-                listOf(
-                    UIMessageChoice(
-                        index = 0,
-                        delta = delta,
-                        message = null,
-                        finishReason = finishReason,
-                    ),
-                ),
-            usage = usage,
-        )
+    /** 把工具参数（JSON 字符串）解析为结构化 JsonElement；解析失败返回 null。 */
+    private fun parseJsonOrNull(s: String?): JsonElement? =
+        s?.takeIf { it.isNotBlank() }?.let {
+            runCatching { json.parseToJsonElement(it) }.getOrNull()
+        }
+
+    /** 工具输出优先解析为 JSON；自由文本回退为 JsonPrimitive。 */
+    private fun parseJsonOrText(s: String): JsonElement =
+        runCatching { json.parseToJsonElement(s) }.getOrElse { JsonPrimitive(s) }
 }
 
 private const val TURN_DONE_IDLE_TIMEOUT_MS = 15_000L
+private const val TEXT_ID = "text"
+private const val REASONING_ID = "reasoning"

@@ -10,8 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OpenRouterModelParseTest {
-    private val imageToolModel =
-        """
+    private val imageToolModel = """
         {
           "id": "google/gemini-2.5-flash-image",
           "name": "Gemini 2.5 Flash Image",
@@ -23,7 +22,7 @@ class OpenRouterModelParseTest {
           "supported_parameters": ["tools", "tool_choice", "reasoning"],
           "pricing": { "prompt": "0.0000003", "completion": "0.0000025" }
         }
-        """.trimIndent()
+    """.trimIndent()
 
     @Test
     fun parses_image_tool_reasoning_and_pricing() {
@@ -42,12 +41,11 @@ class OpenRouterModelParseTest {
 
     @Test
     fun text_only_model_has_no_image_or_tool() {
-        val json =
-            """
+        val json = """
             {"id":"x/text-only","name":"Text Only",
              "architecture":{"input_modalities":["text"],"output_modalities":["text"]},
              "supported_parameters":["max_tokens","temperature"]}
-            """.trimIndent()
+        """.trimIndent()
         val m = openRouterModelFromJson(Json.parseToJsonElement(json).jsonObject)!!
         assertEquals(ModelType.CHAT, m.type)
         assertTrue(Modality.IMAGE !in m.outputModalities)

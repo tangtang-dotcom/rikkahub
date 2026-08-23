@@ -5,9 +5,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
+import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.ui.ImageAspectRatio
 import me.rerere.ai.ui.ImageGenerationItem
-import me.rerere.ai.ui.MessageChunk
+import me.rerere.ai.ui.StreamChunk
 import me.rerere.ai.ui.UIMessage
 
 // 提供商实现
@@ -15,19 +16,21 @@ import me.rerere.ai.ui.UIMessage
 interface Provider<T : ProviderSetting> {
     suspend fun listModels(providerSetting: T): List<Model>
 
-    suspend fun getBalance(providerSetting: T): String = "TODO"
+    suspend fun getBalance(providerSetting: T): String {
+        return "TODO"
+    }
 
     suspend fun generateText(
         providerSetting: T,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): MessageChunk
+    ): TextGenerationResult
 
     suspend fun streamText(
         providerSetting: T,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): Flow<MessageChunk>
+    ): Flow<StreamChunk>
 
     suspend fun generateEmbedding(
         providerSetting: T,
@@ -50,11 +53,25 @@ interface Provider<T : ProviderSetting> {
 }
 
 @Serializable
+data class TextGenerationResult(
+    val id: String,
+    val model: String,
+    val message: UIMessage,
+    val finishReason: String? = null,
+    val usage: TokenUsage? = null,
+)
+
+@Serializable
 data class TextGenerationParams(
     val model: Model,
     val temperature: Float? = null,
     val topP: Float? = null,
     val maxTokens: Int? = null,
+    /**
+     * Number of additional attempts permitted when a streaming response fails before any
+     * meaningful output is received. Providers that cannot safely replay a stream ignore it.
+     */
+    val maxStreamRetries: Int = 0,
     val tools: List<Tool> = emptyList(),
     val reasoningLevel: ReasoningLevel = ReasoningLevel.OFF,
     val customHeaders: List<CustomHeader> = emptyList(),
@@ -102,11 +119,11 @@ data class EmbeddingGenerationResult(
 @Serializable
 data class CustomHeader(
     val name: String,
-    val value: String,
+    val value: String
 )
 
 @Serializable
 data class CustomBody(
     val key: String,
-    val value: JsonElement,
+    val value: JsonElement
 )

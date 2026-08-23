@@ -17,10 +17,7 @@ object InstantSerializer : KSerializer<Instant> {
         return Instant.parse(isoString)
     }
 
-    override fun serialize(
-        encoder: Encoder,
-        value: Instant,
-    ) {
+    override fun serialize(encoder: Encoder, value: Instant) {
         val isoString = value.toString()
         encoder.encodeString(isoString)
     }

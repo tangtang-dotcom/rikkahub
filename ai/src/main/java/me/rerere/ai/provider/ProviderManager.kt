@@ -2,9 +2,9 @@ package me.rerere.ai.provider
 
 import android.content.Context
 import me.rerere.ai.provider.providers.AICoreProvider
-import me.rerere.ai.provider.providers.ClaudeProvider
-import me.rerere.ai.provider.providers.GoogleProvider
-import me.rerere.ai.provider.providers.OpenAIProvider
+import me.rerere.ai.provider.providers.claude.ClaudeProvider
+import me.rerere.ai.provider.providers.google.GoogleProvider
+import me.rerere.ai.provider.providers.openai.OpenAIProvider
 import me.rerere.ai.provider.providers.reasonix.CliCommandExecutor
 import me.rerere.ai.provider.providers.reasonix.ReasonixProvider
 import okhttp3.OkHttpClient
@@ -35,10 +35,7 @@ class ProviderManager(
      * @param name Provider名称
      * @param provider Provider实例
      */
-    fun registerProvider(
-        name: String,
-        provider: Provider<*>,
-    ) {
+    fun registerProvider(name: String, provider: Provider<*>) {
         providers[name] = provider
     }
 
@@ -48,8 +45,9 @@ class ProviderManager(
      * @param name Provider名称
      * @return Provider实例，如果不存在则返回null
      */
-    fun getProvider(name: String): Provider<*> =
-        providers[name] ?: throw IllegalArgumentException("Provider not found: $name")
+    fun getProvider(name: String): Provider<*> {
+        return providers[name] ?: throw IllegalArgumentException("Provider not found: $name")
+    }
 
     /**
      * 根据ProviderSetting获取对应的Provider实例
@@ -65,8 +63,10 @@ class ProviderManager(
             is ProviderSetting.Claude -> getProvider("claude")
             is ProviderSetting.AICore -> getProvider("aicore")
             is ProviderSetting.LiteRtLocal -> getProvider("local_litert")
+            is ProviderSetting.LlamaCppLocal -> getProvider("local_llamacpp")
             is ProviderSetting.Codex -> getProvider("codex")
             is ProviderSetting.Grok -> getProvider("grok")
+            is ProviderSetting.GeminiOAuth -> getProvider("gemini_oauth")
             is ProviderSetting.Reasonix -> getProvider("reasonix")
         } as Provider<T>
     }

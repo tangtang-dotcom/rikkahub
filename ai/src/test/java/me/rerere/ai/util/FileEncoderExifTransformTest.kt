@@ -1,9 +1,31 @@
 package me.rerere.ai.util
 
+import me.rerere.ai.ui.UIMessagePart
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class FileEncoderExifTransformTest {
+
+    @Test
+    fun `encodeBase64 with withPrefix false on a data URL should return the bare payload`() {
+        val part = UIMessagePart.Image(url = "data:image/png;base64,QUJD")
+
+        val result = part.encodeBase64(withPrefix = false).getOrThrow()
+
+        assertEquals("QUJD", result.base64)
+        assertEquals("image/png", result.mimeType)
+    }
+
+    @Test
+    fun `encodeBase64 with withPrefix true on a data URL should return the full data URI`() {
+        val part = UIMessagePart.Image(url = "data:image/png;base64,QUJD")
+
+        val result = part.encodeBase64(withPrefix = true).getOrThrow()
+
+        assertEquals("data:image/png;base64,QUJD", result.base64)
+        assertEquals("image/png", result.mimeType)
+    }
+
     @Test
     fun `all supported exif orientations should map to expected transform`() {
         assertEquals(ExifTransformType.NONE, mapExifOrientationToTransform(ORIENTATION_NORMAL))
@@ -25,39 +47,36 @@ class FileEncoderExifTransformTest {
 
     @Test
     fun `long screenshots should keep original resolution when under pixel budget`() {
-        val sampleSize =
-            calculateImageInSampleSize(
-                width = 1272,
-                height = 2800,
-                maxDimension = 10_000,
-                maxPixels = 16_000_000L,
-            )
+        val sampleSize = calculateImageInSampleSize(
+            width = 1272,
+            height = 2800,
+            maxDimension = 10_000,
+            maxPixels = 16_000_000L
+        )
 
         assertEquals(1, sampleSize)
     }
 
     @Test
     fun `very large images should still be downsampled by pixel budget`() {
-        val sampleSize =
-            calculateImageInSampleSize(
-                width = 5000,
-                height = 5000,
-                maxDimension = 10_000,
-                maxPixels = 16_000_000L,
-            )
+        val sampleSize = calculateImageInSampleSize(
+            width = 5000,
+            height = 5000,
+            maxDimension = 10_000,
+            maxPixels = 16_000_000L
+        )
 
         assertEquals(2, sampleSize)
     }
 
     @Test
     fun `extremely long images should still be downsampled by max dimension`() {
-        val sampleSize =
-            calculateImageInSampleSize(
-                width = 1200,
-                height = 20_000,
-                maxDimension = 10_000,
-                maxPixels = 16_000_000L,
-            )
+        val sampleSize = calculateImageInSampleSize(
+            width = 1200,
+            height = 20_000,
+            maxDimension = 10_000,
+            maxPixels = 16_000_000L
+        )
 
         assertEquals(2, sampleSize)
     }
