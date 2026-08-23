@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**🤖 由 AI 维护迭代的手机端 Agent 工具** —— 通过提示词约束、记忆指针索引、工作区文件详情形成经济及较好的跨会话体验。还有更多 Agent 体验模式待探索。（自动压缩上下文应该能用了，连接 reasonix 协作已完成，本地 OCR 还在修……）
+**🤖 设备端 Agent 工具** —— 80+ 设备工具按需启用，一句话实现手机自动化。
 
 [![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=最新版本&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
@@ -15,27 +15,12 @@
 [![下载最新版](https://img.shields.io/badge/⬇️-下载最新版-2ea44f?style=for-the-badge&logo=android)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Reasonix Agents 开发中](https://img.shields.io/badge/🧪-Reasonix%20Agents%20开发中-8b5cf6?style=for-the-badge)](https://github.com/xiwangone/reasonix-agents)
 
-**🤝 相关项目：[Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Reasonix 的 Android 原生客户端 · AI 编码助手（开发中）
-
-**🤖 协作体系（三个 AI）**：
-- **RikkaHub Agents**（本 App）— 手机端 Agent 工具：80+ 工具、工作区沙箱、SSH/vault 直通、三方协作调度
-- **Reasonix Agents** — 编码 Agent（DeepSeek-Reasonix 协议）：拉代码/改/跑测试/提交，重活执行方
-- **皮皮虾**（🦐）— 基于 OpenClaw 的个人助理实例：微信值守、定时简报、巡检告警、协作回传
-
-三方通过交流目录协作（交接单/回传/超时提醒机制），成长记录统一维护在私有仓库 `ai-notes`。
-
 > 🔧 **使用前提**：Reasonix Agents 为纯客户端，**需在本地或服务器自部署 Reasonix 服务端**（DeepSeek-Reasonix 协议）——通过配置服务器地址/端口/认证连接使用，不支持云端托管，请自备服务资源。
 
 
 [**English**](README_EN.md) | **简体中文**
 
 > <span style="color:red">**❗️❗️❗️ 注：RikkaHub Agents 包含 80+ 工具，请按需启用，避免常驻过多增加消耗！！！**</span>
-
-> ⚠️ **⚠️⚠️ 重要警告（2026-08-10）** ⚠️⚠️
->
-> **2.45.5 用户请直接升级 2.45.7，不要安装 2.45.6！**
->
-> `2.45.6` 存在数据库迁移缺陷（升级后闪退），已修复并发布 **2.45.7**。若你当前是 2.45.5（或更早），**请直接安装 2.45.7**（[下载最新版](https://github.com/xiwangone/rikkahub-agents/releases/latest)）；若已误装 2.45.6，请**立即升级 2.45.7** 即可恢复（数据不丢失）。
 
 </div>
 

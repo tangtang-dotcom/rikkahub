@@ -4,7 +4,7 @@
 
 # RikkaHub Agents
 
-**🤖 On-device Agent tool, iteratively maintained by AI** — economical & better cross-session experience via prompt constraints, memory-pointer indexing and workspace file details. More agent modes to explore. (Auto-compact context working, Reasonix collaboration complete, local OCR still in progress...)
+**🤖 On-device Agent tool** — 80+ device tools enabled on demand. Automate your phone in one sentence.
 
 [![Release](https://img.shields.io/github/v/release/xiwangone/rikkahub-agents?color=2ea44f&label=Latest%20Release&logo=github)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Stars](https://img.shields.io/github/stars/xiwangone/rikkahub-agents?color=cb3837&label=Stars&logo=github)](https://github.com/xiwangone/rikkahub-agents)
@@ -15,19 +15,11 @@
 [![Download Latest](https://img.shields.io/badge/⬇️-Download%20Latest-2ea44f?style=for-the-badge&logo=android)](https://github.com/xiwangone/rikkahub-agents/releases/latest)
 [![Reasonix Agents (in development)](https://img.shields.io/badge/🧪-Reasonix%20Agents%20in%20development-8b5cf6?style=for-the-badge)](https://github.com/xiwangone/reasonix-agents)
 
-**🤝 Related project: [Reasonix Agents](https://github.com/xiwangone/reasonix-agents)** — Native Android client for Reasonix · AI coding assistant (in development)
-
 > 🔧 **Prerequisite**: Reasonix Agents is a pure client — **self-deploy the Reasonix server** (DeepSeek-Reasonix protocol) locally or on a server; configure address/port/auth to connect. No cloud hosting — bring your own server resources.
 
 [**简体中文**](README.md) | **English**
 
 > <span style="color:red">**❗️❗️❗️ Note: RikkaHub Agents includes 80+ tools — enable on demand, avoid excessive resident resource usage!**</span>
-
-> ⚠️ **⚠️⚠️ IMPORTANT WARNING (2026-08-10)** ⚠️⚠️
->
-> **Users on 2.45.5: upgrade directly to 2.45.7 — do NOT install 2.45.6!**
->
-> `2.45.6` has a database-migration defect (crashes on upgrade); fixed and released as **2.45.7**. If you are on 2.45.5 (or earlier), **install 2.45.7 directly** ([Download latest](https://github.com/xiwangone/rikkahub-agents/releases/latest)). If you already installed 2.45.6, **upgrade to 2.45.7 immediately** to recover (data is preserved).
 
 </div>
 
