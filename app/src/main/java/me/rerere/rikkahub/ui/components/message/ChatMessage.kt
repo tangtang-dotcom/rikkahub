@@ -68,6 +68,7 @@ import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageAnnotation
+import me.rerere.ai.ui.ServerToolStatus
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyUIMessage
 import me.rerere.hugeicons.HugeIcons
@@ -633,6 +634,81 @@ private fun MessagePartsBlock(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.widthIn(max = 200.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        is UIMessagePart.ServerTool -> {
+                            val statusText =
+                                when (part.status) {
+                                    ServerToolStatus.IN_PROGRESS ->
+                                        stringResource(R.string.chat_server_tool_in_progress)
+                                    ServerToolStatus.COMPLETED ->
+                                        stringResource(R.string.chat_server_tool_completed)
+                                    ServerToolStatus.FAILED ->
+                                        stringResource(R.string.chat_server_tool_failed)
+                                }
+                            val inputText =
+                                part.input?.let {
+                                    (it as? kotlinx.serialization.json.JsonPrimitive)?.content
+                                        ?: it.toString()
+                                }
+                            val outputText =
+                                part.output?.let {
+                                    (it as? kotlinx.serialization.json.JsonPrimitive)?.content
+                                        ?: it.toString()
+                                }
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color =
+                                    if (part.status == ServerToolStatus.FAILED) {
+                                        MaterialTheme.colorScheme.errorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = HugeIcons.File02,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Text(
+                                            text =
+                                                part.toolName.ifBlank {
+                                                    stringResource(R.string.chat_server_tool_title)
+                                                },
+                                            style = MaterialTheme.typography.labelLarge,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Text(
+                                            text = statusText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                        )
+                                    }
+                                    if (!inputText.isNullOrBlank()) {
+                                        Text(
+                                            text = stringResource(R.string.chat_server_tool_input, inputText.take(200)),
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                    if (!outputText.isNullOrBlank() && part.isFinished) {
+                                        Text(
+                                            text = stringResource(R.string.chat_server_tool_output, outputText.take(300)),
+                                            style = MaterialTheme.typography.labelSmall,
                                         )
                                     }
                                 }

@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="chat_server_tool_title">Tool</string>
+  <string name="chat_server_tool_in_progress">Running…</string>
+  <string name="chat_server_tool_completed">Completed</string>
+  <string name="chat_server_tool_failed">Failed</string>
+  <string name="chat_server_tool_input">Input: %1$s</string>
+  <string name="chat_server_tool_output">Output: %1$s</string>
   <string name="about_page_github">Github</string>
   <string name="about_page_license">License</string>
   <string name="about_page_system">System</string>
