@@ -67,6 +67,7 @@ private val ALLOWED_FILE_EXTENSIONS =
         "vue",
         "svelte",
         "xml",
+        "agc",
         "py",
         "rb",
         "lua",

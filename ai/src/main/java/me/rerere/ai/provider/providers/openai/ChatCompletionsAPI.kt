@@ -199,7 +199,8 @@ class ChatCompletionsAPI(
                                 val choiceList =
                                     buildList {
                                         if (choices.isNotEmpty()) {
-                                            val choice = choices[0].jsonObject
+                                            val choice = choices.firstOrNull()?.jsonObjectOrNull
+                                                ?: return@buildList
                                             val message =
                                                 choice["delta"]?.jsonObject ?: choice["message"]?.jsonObject
                                                     ?: throw Exception("delta/message is null")
@@ -435,6 +436,14 @@ class ChatCompletionsAPI(
                         )
                     }
 
+                    "api.xiaomimimo.com", "token-plan-cn.xiaomimimo.com" -> {
+                        // 小米 MiMo
+                        // https://mimo.mi.com/docs/zh-CN/api/chat/openai-api
+                        put("thinking", buildJsonObject {
+                            put("type", if (!level.isEnabled) "disabled" else "enabled")
+                        })
+                    }
+
                     "api.moonshot.cn" -> {
                         put(
                             "thinking",
@@ -466,7 +475,7 @@ class ChatCompletionsAPI(
                             if (level != ReasoningLevel.AUTO) {
                                 val effort =
                                     when (level) {
-                                        ReasoningLevel.XHIGH -> "max"
+                                        ReasoningLevel.XHIGH, ReasoningLevel.MAX -> "max"
                                         ReasoningLevel.OFF -> "none"
                                         else -> "high"
                                     }
@@ -1117,24 +1126,25 @@ class ChatCompletionsAPI(
                             ),
                         )
                     }
-                    toolCalls.forEach { toolCalls ->
-                        val type = toolCalls.jsonObject["type"]?.jsonPrimitive?.contentOrNull
+                    toolCalls.forEach { toolCallElement ->
+                        val toolCall = toolCallElement.jsonObjectOrNull ?: return@forEach
+                        val type = toolCall["type"]?.jsonPrimitive?.contentOrNull
                         if (!type.isNullOrEmpty() && type != "function") {
                             // Skip unsupported tool-call types rather than throwing, which would
                             // crash the stream. Today only "function" is handled.
                             Log.w(TAG, "skipping unsupported tool call type: $type")
                             return@forEach
                         }
-                        val toolCallId = toolCalls.jsonObject["id"]?.jsonPrimitive?.contentOrNull
+                        val toolCallId = toolCall["id"]?.jsonPrimitive?.contentOrNull
                         val toolName =
-                            toolCalls.jsonObject["function"]
+                            toolCall["function"]
                                 ?.jsonObject
                                 ?.get("name")
                                 ?.jsonPrimitive
                                 ?.contentOrNull
                                 ?.removePrefix(toolNamePrefix)
                         val arguments =
-                            toolCalls.jsonObject["function"]
+                            toolCall["function"]
                                 ?.jsonObject
                                 ?.get("arguments")
                                 ?.jsonPrimitive

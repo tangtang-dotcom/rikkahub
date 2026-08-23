@@ -320,6 +320,13 @@ object ModelRegistry {
             toolReasoningAbility()
         }
 
+    private val DEEPSEEK_V4_FLASH_VISION_EXP =
+        defineModel {
+            tokens("deepseek", "v", "4", "flash", "vision", "exp")
+            visionInput()
+            toolReasoningAbility()
+        }
+
     private val DEEPSEEK_V4_PRO =
         defineModel {
             tokens("deepseek", "v", "4", "pro")
@@ -644,6 +651,7 @@ object ModelRegistry {
             DEEPSEEK_R1_MODEL,
             DEEPSEEK_REASONER,
             DEEPSEEK_V4_FLASH,
+            DEEPSEEK_V4_FLASH_VISION_EXP,
             DEEPSEEK_V4_PRO,
             DEEPSEEK_V3_1,
             DEEPSEEK_V3_2,
@@ -709,6 +717,11 @@ object ModelRegistry {
                 if (ModelAbility.TOOL in abilities) add(ModelAbility.TOOL)
                 if (ModelAbility.REASONING in abilities) add(ModelAbility.REASONING)
             }
+        }
+
+    val MODEL_CONTEXT_LENGTH =
+        ModelData { modelId ->
+            resolveModels(modelId).firstNotNullOfOrNull { it.contextLength }
         }
 
     private fun resolveModels(modelId: String): List<ModelDefinition> {
