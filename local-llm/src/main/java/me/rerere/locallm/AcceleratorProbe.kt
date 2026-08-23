@@ -16,6 +16,7 @@ import android.os.Build
  * on first model load and again only when the user taps "Re-detect".
  */
 object AcceleratorProbe {
+
     data class LiteRtCapabilities(
         val isQualcomm: Boolean,
         val qnnLibrarySupported: Boolean,
@@ -23,13 +24,12 @@ object AcceleratorProbe {
         val nnapiSupported: Boolean,
     )
 
-    fun pickLiteRt(caps: LiteRtCapabilities): String =
-        when {
-            caps.isQualcomm && caps.qnnLibrarySupported -> "QNN"
-            caps.gpuDelegateSupported -> "GPU"
-            caps.nnapiSupported -> "NNAPI"
-            else -> "CPU"
-        }
+    fun pickLiteRt(caps: LiteRtCapabilities): String = when {
+        caps.isQualcomm && caps.qnnLibrarySupported -> "QNN"
+        caps.gpuDelegateSupported -> "GPU"
+        caps.nnapiSupported -> "NNAPI"
+        else -> "CPU"
+    }
 
     /**
      * Whether LiteRT should DEFAULT to forcing CPU (GPU opt-in) on a device, before the
@@ -49,10 +49,7 @@ object AcceleratorProbe {
      * @param socManufacturer `Build.SOC_MANUFACTURER` (API 31+), or null on older devices.
      * @param socModel `Build.SOC_MODEL` (API 31+), or null on older devices.
      */
-    fun defaultForceCpu(
-        socManufacturer: String?,
-        socModel: String?,
-    ): Boolean {
+    fun defaultForceCpu(socManufacturer: String?, socModel: String?): Boolean {
         // Google Tensor SoCs report SOC_MANUFACTURER = "Google"; SOC_MODEL is checked as a
         // belt-and-braces signal ("Tensor G1".."Tensor G5"). Any positive match keeps the
         // conservative CPU default. Everything else - including pre-API-31 devices where
@@ -70,34 +67,27 @@ object AcceleratorProbe {
      *   the "Try GPU acceleration" toggle off, OR when the auto-recovery sweep saw a
      *   prior native crash inside liblitertlm and flipped the flag for us.
      */
-    fun probeLiteRt(
-        context: Context,
-        forceCpu: Boolean = false,
-    ): String {
+    fun probeLiteRt(context: Context, forceCpu: Boolean = false): String {
         if (forceCpu) return "CPU"
-        val isQualcomm =
-            Build.HARDWARE.contains("qcom", ignoreCase = true) ||
-                Build.MANUFACTURER.equals("Qualcomm", ignoreCase = true)
-        val qnnLibrarySupported =
-            isQualcomm &&
-                runCatching {
-                    // The QNN delegate is bundled in the LiteRT-LM AAR (litertlm-android). Attempting to
-                    // load it eagerly fails fast on non-Qualcomm devices or where the right ABI is absent.
-                    // A failed load leaves the class loader in a partially-initialised state for that
-                    // library name, but Android's JNI loader is idempotent for subsequent real loads of the
-                    // same name by the actual runtime — the side effect is acceptable.
-                    System.loadLibrary("qnn_delegate_jni")
-                    true
-                }.getOrDefault(false)
+        val isQualcomm = Build.HARDWARE.contains("qcom", ignoreCase = true) ||
+            Build.MANUFACTURER.equals("Qualcomm", ignoreCase = true)
+        val qnnLibrarySupported = isQualcomm && runCatching {
+            // The QNN delegate is bundled in the LiteRT-LM AAR (litertlm-android). Attempting to
+            // load it eagerly fails fast on non-Qualcomm devices or where the right ABI is absent.
+            // A failed load leaves the class loader in a partially-initialised state for that
+            // library name, but Android's JNI loader is idempotent for subsequent real loads of the
+            // same name by the actual runtime — the side effect is acceptable.
+            System.loadLibrary("qnn_delegate_jni")
+            true
+        }.getOrDefault(false)
         // FEATURE_OPENGLES_EXTENSION_PACK is a reasonable proxy for GPU-delegate capability but
         // is only advisory — the LiteRT-LM runtime may still fail to initialise the GPU backend
         // at model-load time even if this returns true. The AcceleratorProbe is therefore
         // intentionally optimistic: prefer GPU when the feature flag suggests it's present, and
         // let the runtime's own error path trigger a re-probe if load fails.
-        val gpuDelegateSupported =
-            context.packageManager.hasSystemFeature(
-                PackageManager.FEATURE_OPENGLES_EXTENSION_PACK,
-            )
+        val gpuDelegateSupported = context.packageManager.hasSystemFeature(
+            PackageManager.FEATURE_OPENGLES_EXTENSION_PACK,
+        )
         val nnapiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
         return pickLiteRt(
             LiteRtCapabilities(
@@ -105,7 +95,7 @@ object AcceleratorProbe {
                 qnnLibrarySupported = qnnLibrarySupported,
                 gpuDelegateSupported = gpuDelegateSupported,
                 nnapiSupported = nnapiSupported,
-            ),
+            )
         )
     }
 }

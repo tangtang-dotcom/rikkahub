@@ -1,5 +1,9 @@
 package me.rerere.locallm.litert
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,6 +24,7 @@ import org.junit.Test
  * the text-only retry and waste an init attempt. Both cost user-visible failures.
  */
 class LiteRtRuntimeTest {
+
     // ---- planTurns -----------------------------------------------------------------
 
     private val u1 = turnSignature(ROLE_USER, "hello")
@@ -30,12 +35,11 @@ class LiteRtRuntimeTest {
 
     @Test
     fun `planTurns returns Cold when processed is empty (first turn ever)`() {
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = emptyList(),
-                historySignatures = listOf(u1),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = emptyList(),
+            historySignatures = listOf(u1),
+            hasMedia = false,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -43,12 +47,11 @@ class LiteRtRuntimeTest {
     fun `planTurns returns Cold when caller has media inputs`() {
         // Media kills the warm path because there's no way to attach per-call images onto
         // a prior turn in the KV cache.
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1),
-                historySignatures = listOf(u1, a1, u2),
-                hasMedia = true,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1),
+            historySignatures = listOf(u1, a1, u2),
+            hasMedia = true,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -56,12 +59,11 @@ class LiteRtRuntimeTest {
     fun `planTurns returns Warm for a clean single-turn append on top of prior history`() {
         // The prior turn finished, the runtime recorded [u1, assistant_reply]; the caller
         // now wants to send [u1, assistant_reply, u2] — exactly one new turn appended.
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1),
-                historySignatures = listOf(u1, a1, u2),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1),
+            historySignatures = listOf(u1, a1, u2),
+            hasMedia = false,
+        )
         assertTrue("expected Warm got $plan", plan is TurnPlan.Warm)
         assertEquals(2, (plan as TurnPlan.Warm).sendFromIndex)
     }
@@ -69,12 +71,11 @@ class LiteRtRuntimeTest {
     @Test
     fun `planTurns returns Cold when more than one turn was appended`() {
         // Two new turns at once (e.g. resumed conversation, batched input) — can't reuse.
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1),
-                historySignatures = listOf(u1, a1, u2, a2, u3),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1),
+            historySignatures = listOf(u1, a1, u2, a2, u3),
+            hasMedia = false,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -82,12 +83,11 @@ class LiteRtRuntimeTest {
     fun `planTurns returns Cold when an earlier turn was rewritten`() {
         // User edited turn u1 to u1'. The prefix no longer matches.
         val u1Edited = turnSignature(ROLE_USER, "hello there (edited)")
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1),
-                historySignatures = listOf(u1Edited, a1, u2),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1),
+            historySignatures = listOf(u1Edited, a1, u2),
+            hasMedia = false,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -95,12 +95,11 @@ class LiteRtRuntimeTest {
     fun `planTurns returns Cold when caller history is shorter than processed (regenerate)`() {
         // User hit "regenerate" — history rolled back. Same prefix but fewer turns than
         // the runtime has consumed. Force cold so the new turn is generated from scratch.
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1, u2, a2),
-                historySignatures = listOf(u1, a1, u2),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1, u2, a2),
+            historySignatures = listOf(u1, a1, u2),
+            hasMedia = false,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -108,12 +107,11 @@ class LiteRtRuntimeTest {
     fun `planTurns returns Cold when caller history exactly equals processed (no new turn)`() {
         // Defensive: a caller that sends the same history without appending should not
         // trigger a "warm" path with sendFromIndex == processed.size, which would IndexError.
-        val plan =
-            LiteRtRuntime.planTurns(
-                processed = listOf(u1, a1),
-                historySignatures = listOf(u1, a1),
-                hasMedia = false,
-            )
+        val plan = LiteRtRuntime.planTurns(
+            processed = listOf(u1, a1),
+            historySignatures = listOf(u1, a1),
+            hasMedia = false,
+        )
         assertEquals(TurnPlan.Cold, plan)
     }
 
@@ -140,9 +138,8 @@ class LiteRtRuntimeTest {
     @Test
     fun `isVisionExecutorError matches the canonical SDK file path string`() {
         // The full native error text the SDK throws on the broken-vision device.
-        val msg =
-            "Failed to create engine: INTERNAL: ERROR: " +
-                "[third_party/odml/litert_lm/runtime/executor/vision_litert_compiled_model_executor.cc:273]"
+        val msg = "Failed to create engine: INTERNAL: ERROR: " +
+            "[third_party/odml/litert_lm/runtime/executor/vision_litert_compiled_model_executor.cc:273]"
         assertTrue(LiteRtRuntime.isVisionExecutorError(msg))
     }
 
@@ -176,15 +173,14 @@ class LiteRtRuntimeTest {
     @Test
     fun `isVisionExecutorError returns false for unrelated load failures`() {
         // Common false-positive candidates.
-        val unrelated =
-            listOf(
-                "Invalid magic number while reading model file",
-                "No KV cache inputs found",
-                "FAILED_PRECONDITION: tokenizer section missing",
-                "Input token ids are too long. Exceeding the maximum: 5000 >= 4096",
-                "Status Code: 3. Message: tokenizer mismatch",
-                "OutOfMemoryError",
-            )
+        val unrelated = listOf(
+            "Invalid magic number while reading model file",
+            "No KV cache inputs found",
+            "FAILED_PRECONDITION: tokenizer section missing",
+            "Input token ids are too long. Exceeding the maximum: 5000 >= 4096",
+            "Status Code: 3. Message: tokenizer mismatch",
+            "OutOfMemoryError",
+        )
         for (msg in unrelated) {
             assertFalse(
                 "isVisionExecutorError should not match: $msg",
@@ -196,5 +192,54 @@ class LiteRtRuntimeTest {
     @Test
     fun `isVisionExecutorError handles empty input`() {
         assertFalse(LiteRtRuntime.isVisionExecutorError(""))
+    }
+
+    // ---- argumentsToJson -------------------------------------------------------------
+    //
+    // The SDK hands tool-call arguments back as plain Kotlin values. This is what turns
+    // them into the `input` string on UIMessagePart.Tool, so the host parses a local
+    // model's arguments through exactly the same path as a cloud provider's.
+
+    @Test
+    fun `argumentsToJson preserves primitive types rather than stringifying them`() {
+        val json = Json.parseToJsonElement(
+            LiteRtRuntime.argumentsToJson(
+                mapOf("s" to "hi", "n" to 42, "d" to 1.5, "b" to true)
+            )
+        ).jsonObject
+        assertEquals("hi", json["s"]!!.jsonPrimitive.content)
+        assertEquals("42", json["n"]!!.jsonPrimitive.content)
+        assertFalse("numbers must not be quoted", json["n"]!!.jsonPrimitive.isString)
+        assertEquals("1.5", json["d"]!!.jsonPrimitive.content)
+        assertEquals(true, json["b"]!!.jsonPrimitive.content.toBoolean())
+    }
+
+    @Test
+    fun `argumentsToJson walks nested objects and arrays`() {
+        val json = Json.parseToJsonElement(
+            LiteRtRuntime.argumentsToJson(
+                mapOf(
+                    "outer" to mapOf("inner" to listOf(1, "two", null)),
+                )
+            )
+        ).jsonObject
+        val inner = json["outer"]!!.jsonObject["inner"]!!.jsonArray
+        assertEquals(3, inner.size)
+        assertEquals("1", inner[0].jsonPrimitive.content)
+        assertEquals("two", inner[1].jsonPrimitive.content)
+        assertTrue(inner[2] is kotlinx.serialization.json.JsonNull)
+    }
+
+    @Test
+    fun `argumentsToJson emits an empty object for a tool called with no arguments`() {
+        assertEquals("{}", LiteRtRuntime.argumentsToJson(emptyMap()))
+    }
+
+    @Test
+    fun `argumentsToJson keeps an unrecognised leaf as a string instead of dropping the key`() {
+        val json = Json.parseToJsonElement(
+            LiteRtRuntime.argumentsToJson(mapOf("weird" to StringBuilder("xyz")))
+        ).jsonObject
+        assertEquals("xyz", json["weird"]!!.jsonPrimitive.content)
     }
 }
