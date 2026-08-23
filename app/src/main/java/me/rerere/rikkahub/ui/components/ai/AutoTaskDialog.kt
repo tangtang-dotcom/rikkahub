@@ -2,6 +2,8 @@ package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -134,19 +136,29 @@ fun AutoTaskDialog(
                     )
                 }
                 if (currentModeIdle || currentTaskListEnabled) {
-                    OutlinedTextField(
-                        value = currentIdleMinutes,
-                        onValueChange = { value ->
-                            if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
-                                currentIdleMinutes = value
-                            }
-                        },
-                        label = { Text(stringResource(R.string.auto_task_idle_label)) },
-                        supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = currentIdleMinutes,
+                            onValueChange = { value ->
+                                if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
+                                    currentIdleMinutes = value
+                                }
+                            },
+                            label = { Text(stringResource(R.string.auto_task_idle_label)) },
+                            supportingText = { Text(stringResource(R.string.auto_task_idle_hint)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                        Spacer(Modifier.size(8.dp))
+                        Text(
+                            text = stringResource(R.string.auto_task_idle_unit),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
 
                 // ② 每日定时（多时间点 HH:mm）

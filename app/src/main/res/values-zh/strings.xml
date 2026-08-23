@@ -2135,8 +2135,9 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="workspace_err_rootfs_install">Rootfs 安装失败</string>
   <string name="auto_task_mode_label">触发模式（可多选，至少一个）</string>
   <string name="auto_task_mode_idle">空闲触发</string>
-  <string name="auto_task_idle_label">空闲分钟数（1-720）</string>
-  <string name="auto_task_idle_hint">会话空闲达到 N 分钟后到点触发（60-43200 秒）。</string>
+  <string name="auto_task_idle_label">空闲触发时长</string>
+  <string name="auto_task_idle_hint">单位为分钟：会话空闲达到设置时长后触发（1-720 分钟；例如 2 分钟 = 120 秒）。</string>
+  <string name="auto_task_idle_unit">分钟</string>
   <string name="auto_task_mode_daily">每日定时</string>
   <string name="auto_task_daily_times_label">定时时间点（HH:mm，24 小时制）</string>
   <string name="auto_task_daily_empty">暂无时间点 — 点击添加时间</string>

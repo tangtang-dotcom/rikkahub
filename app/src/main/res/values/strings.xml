@@ -2133,8 +2133,9 @@
   <string name="workspace_err_rootfs_install">Rootfs install failed</string>
   <string name="auto_task_mode_label">Trigger modes (select at least one)</string>
   <string name="auto_task_mode_idle">Idle trigger</string>
-  <string name="auto_task_idle_label">Idle minutes (1-720)</string>
-  <string name="auto_task_idle_hint">Trigger when the conversation stays idle for N minutes (60-43200s).</string>
+  <string name="auto_task_idle_label">Idle trigger duration</string>
+  <string name="auto_task_idle_hint">Unit is minutes: triggers after the conversation stays idle for the set duration (1-720 minutes; e.g. 2 minutes = 120 seconds).</string>
+  <string name="auto_task_idle_unit">min</string>
   <string name="auto_task_mode_daily">Daily schedule</string>
   <string name="auto_task_daily_times_label">Trigger times (HH:mm, 24h)</string>
   <string name="auto_task_daily_empty">No times yet — tap Add time</string>
