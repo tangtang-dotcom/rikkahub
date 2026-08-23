@@ -1198,7 +1198,7 @@ class ChatService(
             if (!granted) {
                 // 工作区行缺失（删除/授权竞争）或无法解析——回退会话级授权，避免 Always 点击静默失效
                 if (workspaceId != null) {
-                    Log.w(
+                    AppLog.w(
                         TAG,
                         "setToolApproval found no workspace row for '$workspaceId', falling back to chat-scoped grant for '$toolName'",
                     )
@@ -1362,10 +1362,7 @@ class ChatService(
                     conversationId,
                     it.copy(
                         title =
-                            result.choices[0]
-                                .message
-                                ?.toText()
-                                ?.trim() ?: "",
+                            result.message.toText().trim(),
                     ),
                 )
             }
@@ -1420,10 +1417,7 @@ class ChatService(
                     params = backgroundTextGenerationParams(model),
                 )
             val suggestions =
-                result.choices[0]
-                    .message
-                    ?.toText()
-                    ?.split("\n")
+                result.message.toText().split("\n")
                     ?.map { it.trim() }
                     ?.filter { it.isNotBlank() } ?: emptyList()
 
@@ -1540,9 +1534,7 @@ class ChatService(
                         params = backgroundTextGenerationParams(model),
                     )
 
-                return result.choices[0]
-                    .message
-                    ?.toText()
+                return result.message.toText()
                     ?.trim()
                     ?: throw IllegalStateException("Failed to generate compressed summary")
             }

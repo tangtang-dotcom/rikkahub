@@ -152,6 +152,12 @@ fun ProviderConfigure(
             }
 
             is ProviderSetting.Reasonix -> {
+            is ProviderSetting.GeminiOAuth -> {
+                Unit
+            }
+            is ProviderSetting.LlamaCppLocal -> {
+                Unit
+            }
                 ReasonixProviderConfigure(
                     provider = provider,
                     onEdit = onEdit,
@@ -185,6 +191,8 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
 
             // Basic Auth / Bearer, no API key
             is ProviderSetting.Reasonix -> ""
+            is ProviderSetting.GeminiOAuth -> ""
+            is ProviderSetting.LlamaCppLocal -> ""
         }
     val sourceBaseUrl =
         when (this) {
@@ -207,6 +215,8 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
 
             // Basic Auth / Bearer, no base URL
             is ProviderSetting.Reasonix -> ""
+            is ProviderSetting.GeminiOAuth -> ""
+            is ProviderSetting.LlamaCppLocal -> ""
         }
     val targetDefaultBaseUrl =
         when (type) {
@@ -335,6 +345,8 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
 
             // Basic Auth / Bearer, base URL is required
             is ProviderSetting.Reasonix -> return ""
+            is ProviderSetting.GeminiOAuth -> return ""
+            is ProviderSetting.LlamaCppLocal -> return ""
         }
     }
     return when (this) {
@@ -346,6 +358,8 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
         is ProviderSetting.Codex -> ""
         is ProviderSetting.Grok -> ""
         is ProviderSetting.Reasonix -> ProviderSetting.Reasonix().baseUrl
+        is ProviderSetting.GeminiOAuth -> ProviderSetting.Reasonix().baseUrl
+        is ProviderSetting.LlamaCppLocal -> ProviderSetting.Reasonix().baseUrl
     }
 }
 
@@ -371,6 +385,8 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
 
         // Basic Auth / Bearer, reset to default
         is ProviderSetting.Reasonix -> this.copy(baseUrl = defaultBaseUrl)
+        is ProviderSetting.GeminiOAuth -> this.copy(baseUrl = defaultBaseUrl)
+        is ProviderSetting.LlamaCppLocal -> this.copy(baseUrl = defaultBaseUrl)
     }
 }
 
@@ -396,6 +412,8 @@ internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
 
             // Basic Auth / Bearer, has base URL
             is ProviderSetting.Reasonix -> this.baseUrl
+            is ProviderSetting.GeminiOAuth -> this.baseUrl
+            is ProviderSetting.LlamaCppLocal -> this.baseUrl
         }
     return baseUrl == defaultBaseUrlForReset()
 }
@@ -496,12 +514,6 @@ private fun ProviderConfigureOpenAI(
         )
     }
 
-    OutlinedTextField(
-        value = provider.toolNamePrefix,
-        onValueChange = { onEdit(provider.copy(toolNamePrefix = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_tool_name_prefix)) },
-        modifier = Modifier.fillMaxWidth(),
-    )
 
     Row(
         modifier = Modifier.fillMaxWidth(),

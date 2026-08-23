@@ -938,6 +938,11 @@ class DoctorChecks(
 
                             // Basic Auth / Bearer token, no API key
                             is me.rerere.ai.provider.ProviderSetting.Reasonix -> p.enabled
+
+                            is me.rerere.ai.provider.ProviderSetting.GeminiOAuth -> p.enabled
+
+                            // on-device, no API key
+                            is me.rerere.ai.provider.ProviderSetting.LlamaCppLocal -> p.enabled && p.models.isNotEmpty()
                         }
                     }
                 add(

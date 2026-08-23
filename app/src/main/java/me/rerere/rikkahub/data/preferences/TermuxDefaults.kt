@@ -8,6 +8,9 @@ package me.rerere.rikkahub.data.preferences
  */
 object TermuxDefaults {
 
+    /** Default max tool-call steps per turn (was hardcoded 32; 0 disables cap). */
+    const val DEFAULT_MAX_TOOL_STEPS = 100
+
     // --- Command capture timeout -----------------------------------------------------------
     /** Default ms to wait for a Termux background command to complete. */
     const val DEFAULT_COMMAND_TIMEOUT_MS = 60_000L   // 60 s
