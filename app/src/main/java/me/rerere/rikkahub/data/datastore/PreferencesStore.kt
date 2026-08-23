@@ -127,6 +127,7 @@ class SettingsStore(
         val TITLE_MODEL = stringPreferencesKey("title_model")
         val TRANSLATE_MODEL = stringPreferencesKey("translate_model")
         val ENABLE_SUGGESTION = booleanPreferencesKey("enable_suggestion")
+        val RESPONSE_STREAM_MAX_RETRIES = intPreferencesKey("response_stream_max_retries")
         val SUGGESTION_MODEL = stringPreferencesKey("suggestion_model")
         val IMAGE_GENERATION_MODEL = stringPreferencesKey("image_generation_model")
         val TITLE_PROMPT = stringPreferencesKey("title_prompt")
@@ -236,6 +237,7 @@ class SettingsStore(
                 translateModeId = preferences[TRANSLATE_MODEL]?.let { Uuid.parse(it) }
                     ?: DEFAULT_AUTO_MODEL_ID,
                 enableSuggestion = preferences[ENABLE_SUGGESTION] != false,
+                responseStreamMaxRetries = preferences[RESPONSE_STREAM_MAX_RETRIES] ?: 5,
                 suggestionModelId = preferences[SUGGESTION_MODEL]?.let { Uuid.parse(it) },
                 imageGenerationModelId = preferences[IMAGE_GENERATION_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
                 titlePrompt = preferences[TITLE_PROMPT] ?: DEFAULT_TITLE_PROMPT,
@@ -466,6 +468,14 @@ class SettingsStore(
                         is ProviderSetting.Reasonix -> provider.copy(
                             models = provider.models.distinctBy { model -> model.id }
                         )
+
+                        is ProviderSetting.GeminiOAuth -> provider.copy(
+                            models = provider.models.distinctBy { model -> model.id }
+                        )
+
+                        is ProviderSetting.LlamaCppLocal -> provider.copy(
+                            models = provider.models.distinctBy { model -> model.id }
+                        )
                     }
                 },
                 assistants = settings.assistants.distinctBy { it.id }.map { assistant ->
@@ -530,6 +540,7 @@ class SettingsStore(
             } ?: preferences.remove(TITLE_MODEL)
             preferences[TRANSLATE_MODEL] = settings.translateModeId.toString()
             preferences[ENABLE_SUGGESTION] = settings.enableSuggestion
+            preferences[RESPONSE_STREAM_MAX_RETRIES] = settings.responseStreamMaxRetries.coerceIn(0, 10)
             settings.suggestionModelId?.let {
                 preferences[SUGGESTION_MODEL] = it.toString()
             } ?: preferences.remove(SUGGESTION_MODEL)
@@ -731,6 +742,8 @@ data class Settings(
     val translatePrompt: String = DEFAULT_TRANSLATION_PROMPT,
     val translateThinkingBudget: Int = 0,
     val enableSuggestion: Boolean = true,
+    /** 流式响应失败重试次数上限（0-10，默认 5） */
+    val responseStreamMaxRetries: Int = 5,
     val suggestionModelId: Uuid? = null,
     val suggestionPrompt: String = DEFAULT_SUGGESTION_PROMPT,
     val ocrModelId: Uuid = Uuid.random(),

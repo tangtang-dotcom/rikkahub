@@ -129,6 +129,9 @@ object ContextBudgetPlanner {
         is UIMessagePart.Tool -> estimateTextTokens(part.toolName) +
             estimateTextTokens(part.input) + part.output.sumOf(::estimatePartTokens)
         is UIMessagePart.ToolCall -> estimateTextTokens(part.toolName) + estimateTextTokens(part.arguments)
+        is UIMessagePart.ServerTool -> estimateTextTokens(part.toolName) +
+            (part.input?.toString()?.let(::estimateTextTokens) ?: 0) +
+            (part.output?.toString()?.let(::estimateTextTokens) ?: 0)
         is UIMessagePart.ToolResult -> estimateTextTokens(part.toolName) +
             estimateTextTokens(part.arguments.toString()) + estimateTextTokens(part.content.toString())
         is UIMessagePart.Document -> MEDIA_PART_TOKENS + estimateTextTokens(part.fileName)

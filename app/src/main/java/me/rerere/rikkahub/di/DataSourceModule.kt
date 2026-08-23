@@ -372,19 +372,19 @@ val dataSourceModule =
                 pm.registerProvider(
                     "codex",
                     CodexProvider(
-                        context = get(),
                         client = get(named("codex")),
                         repository = codexRepository,
                         json = json,
+                        scope = get<AppScope>(),
                     ),
                 )
                 pm.registerProvider(
                     "grok",
                     GrokProvider(
-                        context = get(),
                         client = get(named("grok")),
                         repository = get<GrokAccountRepository>(),
                         json = json,
+                        scope = get<AppScope>(),
                     ),
                 )
             }
