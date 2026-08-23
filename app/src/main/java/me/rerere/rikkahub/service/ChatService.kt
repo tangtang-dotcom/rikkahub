@@ -1098,6 +1098,10 @@ class ChatService(
                     // Show notification if app is not in foreground
                     if (!isForeground.value && settings.displaySetting.enableNotificationOnMessageGeneration) {
                         sendGenerationDoneNotification(conversationId, senderName)
+                    } else if (isForeground.value) {
+                        // 用户正在前台查看该会话，无通知意义；清掉残留的旧通知
+                        cancelLiveUpdateNotification(conversationId)
+                        cancelDoneNotification(conversationId)
                     }
                 }.collect { chunk ->
                     when (chunk) {
@@ -1139,6 +1143,8 @@ class ChatService(
         }.onFailure {
             // 取消 Live Update 通知
             cancelLiveUpdateNotification(conversationId)
+            // 失败也不留完成通知
+            cancelDoneNotification(conversationId)
 
             // Persist the in-memory snapshot so the Auto/Pending → Denied transitions
             // GenerationHandler did inside its try/catch (the "generation_failed" recovery
@@ -1625,11 +1631,13 @@ class ChatService(
     ) {
         // 先取消 Live Update 通知
         cancelLiveUpdateNotification(conversationId)
+        // 清理可能残留的旧完成通知（同会话），避免通知栏堆积旧内容
+        cancelDoneNotification(conversationId)
 
         val conversation = getConversationFlow(conversationId).value
         context.sendNotification(
             channelId = CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID,
-            notificationId = 1,
+            notificationId = getDoneNotificationId(conversationId),
         ) {
             title = senderName
             content = conversation.currentMessages
@@ -1729,6 +1737,12 @@ class ChatService(
 
     private fun cancelLiveUpdateNotification(conversationId: Uuid) {
         context.cancelNotification(getLiveUpdateNotificationId(conversationId))
+    }
+
+    private fun getDoneNotificationId(conversationId: Uuid): Int = conversationId.hashCode() + 20000
+
+    private fun cancelDoneNotification(conversationId: Uuid) {
+        context.cancelNotification(getDoneNotificationId(conversationId))
     }
 
     private fun getPendingIntent(
