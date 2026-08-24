@@ -276,6 +276,37 @@ val dataSourceModule =
 
                     chain.proceed(requestBuilder.build())
                 }
+                .addNetworkInterceptor { chain ->
+                    val request = chain.request()
+                    val contentTypeHeader = request.header("Content-Type")
+                    if (
+                        contentTypeHeader != null &&
+                        contentTypeHeader.contains(";") &&
+                        contentTypeHeader.substringBefore(";").trim().equals("application/json", ignoreCase = true)
+                    ) {
+                        chain.proceed(
+                            request
+                                .newBuilder()
+                                .header("Content-Type", contentTypeHeader.substringBefore(";").trim())
+                                .build(),
+                        )
+                    } else {
+                        chain.proceed(request)
+                    }
+                }
+                .addNetworkInterceptor(RequestLoggingInterceptor())
+                .addInterceptor(AIRequestInterceptor())
+                .apply {
+                    // HEADERS-level logging prints Authorization: Bearer <api-key> to logcat.
+                    // Debug-only so release builds never leak provider keys to logcat.
+                    if (BuildConfig.DEBUG) {
+                        addInterceptor(
+                            HttpLoggingInterceptor().apply {
+                                level = HttpLoggingInterceptor.Level.HEADERS
+                            },
+                        )
+                    }
+                }
                 .build()
                 .also { SearchService.init(it, get()) }
             client
