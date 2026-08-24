@@ -245,8 +245,7 @@ val dataSourceModule =
                         initialNetworkSetting.proxyPassword,
                     )
                 )
-            lateinit var client: OkHttpClient
-            client =
+            val client: OkHttpClient =
                 OkHttpClient
                     .Builder()
                     .proxySelector(SettingsProxySelector(settingsStore))

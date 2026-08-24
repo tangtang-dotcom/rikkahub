@@ -854,7 +854,6 @@ enum class ChatFontFamily {
 }
 
 @Serializable
-@Serializable
 data class NetworkSetting(
     val userAgent: String = "",
     val proxyUrl: String = "",
@@ -862,6 +861,7 @@ data class NetworkSetting(
     val proxyPassword: String = "",
 )
 
+@Serializable
 data class DisplaySetting(
     val userAvatar: Avatar = Avatar.Dummy,
     val userNickname: String = "",
