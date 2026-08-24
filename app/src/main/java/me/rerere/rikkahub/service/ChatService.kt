@@ -560,7 +560,9 @@ class ChatService(
                         addAll(createSearchTools(settings))
                     }
                     addAll(localTools.getTools(assistant.localTools))
-                    addAll(createAndroidRootTerminalTools(rootTerminalController))
+                    if (settings.rootTerminalEnabled) {
+                        addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
+                    }
                     if (assistant.enableRecentChatsReference) {
                         addAll(createConversationTools(conversationRepo, assistant.id))
                     }

@@ -17,8 +17,11 @@ import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 
-/** A deliberately approval-gated tool for commands outside the PRoot workspace sandbox. */
-fun createAndroidRootTerminalTools(controller: AndroidRootTerminalController): List<Tool> = listOf(
+/** A root-capable tool for commands outside the PRoot workspace sandbox. */
+fun createAndroidRootTerminalTools(
+    controller: AndroidRootTerminalController,
+    requireApproval: Boolean,
+): List<Tool> = listOf(
     Tool(
         name = "android_root_terminal",
         description = """
@@ -26,7 +29,7 @@ fun createAndroidRootTerminalTools(controller: AndroidRootTerminalController): L
             Use action=run for normal commands. Use action=start for a long-running command, then action=read with job_id,
             and action=close to cancel or discard it. Use action=status to verify that su returns uid 0.
             Android absolute paths such as /data/adb, /data/data, /system and /storage/emulated/0 are supported.
-            Every call requires explicit user approval.
+            Approval behavior is controlled by the Root terminal setting.
         """.trimIndent().replace("\n", " "),
         parameters = {
             InputSchema.Obj(
@@ -55,7 +58,7 @@ fun createAndroidRootTerminalTools(controller: AndroidRootTerminalController): L
                 }
             )
         },
-        needsApproval = { true },
+        needsApproval = { requireApproval },
         execute = { input ->
             val p = input.jsonObject
             val action = p["action"]?.jsonPrimitive?.contentOrNull ?: "run"

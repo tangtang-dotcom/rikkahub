@@ -1317,5 +1317,18 @@
   <string name="setting_provider_page_test_tool_call">Tool Call</string>
   <string name="setting_provider_page_test_tool_called">Called: %1$s  Args: %2$s</string>
   <string name="setting_provider_page_test_tool_not_called">Tool not called, response: %s</string>
+  <string name="extensions_page_root_terminal">Root terminal</string>
+  <string name="extensions_page_root_terminal_desc">Manage Android Root command access and approvals</string>
+  <string name="root_terminal_page_title">Root terminal</string>
+  <string name="root_terminal_enabled">Enable Root terminal</string>
+  <string name="root_terminal_enabled_desc">Allow the Agent to execute commands in the Android host with Root privileges</string>
+  <string name="root_terminal_require_approval">Require confirmation before execution</string>
+  <string name="root_terminal_require_approval_desc">Ask for approval before every Root terminal tool call</string>
+  <string name="root_terminal_check_status">Check Root status</string>
+  <string name="root_terminal_check_status_desc">Verify that su can obtain UID 0</string>
+  <string name="root_terminal_checking">Checking…</string>
+  <string name="root_terminal_disable_approval_title">Disable Root command confirmation?</string>
+  <string name="root_terminal_disable_approval_warning">After confirmation is disabled, Agent commands will execute immediately with Root privileges. Incorrect commands may damage apps, data, or the system.</string>
+  <string name="root_terminal_disable_approval_confirm">Disable confirmation</string>
 </resources>
 

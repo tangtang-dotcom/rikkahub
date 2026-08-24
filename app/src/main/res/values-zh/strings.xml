@@ -1311,5 +1311,18 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="setting_provider_page_test_tool_call">工具调用</string>
   <string name="setting_provider_page_test_tool_called">已调用: %1$s  参数: %2$s</string>
   <string name="setting_provider_page_test_tool_not_called">未调用工具，响应：%s</string>
+  <string name="extensions_page_root_terminal">Root 终端</string>
+  <string name="extensions_page_root_terminal_desc">管理 Android Root 命令权限与执行确认</string>
+  <string name="root_terminal_page_title">Root 终端</string>
+  <string name="root_terminal_enabled">启用 Root 终端</string>
+  <string name="root_terminal_enabled_desc">允许 Agent 以 Root 权限在 Android 系统中执行命令</string>
+  <string name="root_terminal_require_approval">执行前需要确认</string>
+  <string name="root_terminal_require_approval_desc">每次调用 Root 终端工具前请求审批</string>
+  <string name="root_terminal_check_status">检测 Root 状态</string>
+  <string name="root_terminal_check_status_desc">验证 su 是否能获得 UID 0</string>
+  <string name="root_terminal_checking">正在检测…</string>
+  <string name="root_terminal_disable_approval_title">关闭 Root 命令确认？</string>
+  <string name="root_terminal_disable_approval_warning">关闭后，Agent 发起的命令会立即以 Root 权限执行。错误命令可能损坏应用、数据或系统。</string>
+  <string name="root_terminal_disable_approval_confirm">关闭确认</string>
 </resources>
 

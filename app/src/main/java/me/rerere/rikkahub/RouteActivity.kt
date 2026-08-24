@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -91,6 +90,7 @@ import me.rerere.rikkahub.ui.pages.debug.DebugPage
 import me.rerere.rikkahub.ui.pages.extensions.ExtensionsPage
 import me.rerere.rikkahub.ui.pages.extensions.PromptPage
 import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesPage
+import me.rerere.rikkahub.ui.pages.extensions.RootTerminalSettingsPage
 import me.rerere.rikkahub.ui.pages.extensions.skills.SkillDetailPage
 import me.rerere.rikkahub.ui.pages.extensions.skills.SkillsPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
@@ -487,6 +487,10 @@ class RouteActivity : ComponentActivity() {
                                 ExtensionsPage()
                             }
 
+                            entry<Screen.RootTerminalSettings> {
+                                RootTerminalSettingsPage()
+                            }
+
                             entry<Screen.QuickMessages> {
                                 QuickMessagesPage()
                             }
@@ -532,16 +536,6 @@ class RouteActivity : ComponentActivity() {
                             }
                         }
                     )
-                    if (BuildConfig.DEBUG) {
-                        Text(
-                            text = "[开发模式]",
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                        )
-                    }
                     AnimatedVisibility(
                         visible = migrationState is MigrationState.Migrating,
                         enter = fadeIn(),
@@ -702,6 +696,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object Extensions : Screen
+
+    @Serializable
+    data object RootTerminalSettings : Screen
 
     @Serializable
     data object QuickMessages : Screen

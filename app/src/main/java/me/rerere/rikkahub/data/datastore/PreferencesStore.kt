@@ -82,6 +82,8 @@ class SettingsStore(
         val DISPLAY_SETTING = stringPreferencesKey("display_setting")
         val NETWORK_SETTING = stringPreferencesKey("network_setting")
         val DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
+        val ROOT_TERMINAL_ENABLED = booleanPreferencesKey("root_terminal_enabled")
+        val ROOT_TERMINAL_NEEDS_APPROVAL = booleanPreferencesKey("root_terminal_needs_approval")
 
         // 模型选择
         val FAVORITE_MODELS = stringPreferencesKey("favorite_models")
@@ -199,6 +201,8 @@ class SettingsStore(
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
                 developerMode = preferences[DEVELOPER_MODE] == true,
+                rootTerminalEnabled = preferences[ROOT_TERMINAL_ENABLED] != false,
+                rootTerminalNeedsApproval = preferences[ROOT_TERMINAL_NEEDS_APPROVAL] != false,
                 displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
                 networkSetting = JsonInstant.decodeFromString(preferences[NETWORK_SETTING] ?: "{}"),
                 searchServices = preferences[SEARCH_SERVICES]?.let {
@@ -358,6 +362,8 @@ class SettingsStore(
             preferences[THEME_ID] = settings.themeId
             preferences[CUSTOM_THEMES] = JsonInstant.encodeToString(settings.customThemes)
             preferences[DEVELOPER_MODE] = settings.developerMode
+            preferences[ROOT_TERMINAL_ENABLED] = settings.rootTerminalEnabled
+            preferences[ROOT_TERMINAL_NEEDS_APPROVAL] = settings.rootTerminalNeedsApproval
             preferences[DISPLAY_SETTING] = JsonInstant.encodeToString(settings.displaySetting)
             preferences[NETWORK_SETTING] = JsonInstant.encodeToString(settings.networkSetting)
 
@@ -516,6 +522,8 @@ data class Settings(
     val themeId: String = PresetThemes[0].id,
     val customThemes: List<CustomTheme> = emptyList(),
     val developerMode: Boolean = false,
+    val rootTerminalEnabled: Boolean = true,
+    val rootTerminalNeedsApproval: Boolean = true,
     val displaySetting: DisplaySetting = DisplaySetting(),
     val networkSetting: NetworkSetting = NetworkSetting(),
     val favoriteModels: List<Uuid> = emptyList(),
