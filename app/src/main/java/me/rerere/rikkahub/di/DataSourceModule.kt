@@ -245,13 +245,14 @@ val dataSourceModule =
                         initialNetworkSetting.proxyPassword,
                     )
                 )
-            val client: OkHttpClient =
+            lateinit var client: OkHttpClient
+            client =
                 OkHttpClient
                     .Builder()
                     .proxySelector(SettingsProxySelector(settingsStore))
                     .proxyAuthenticator(SettingsProxyAuthenticator(settingsStore))
                     .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.MINUTES)
+                    .readTimeout(10, TimeUnit.MINUTES)
                 .writeTimeout(120, TimeUnit.SECONDS)
                 .followSslRedirects(true)
                 .followRedirects(true)

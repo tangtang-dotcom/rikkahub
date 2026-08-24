@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="provider_display_name_aicore">AICore（设备端）</string>
+  <string name="provider_display_name_litert">本地 · LiteRT</string>
+  <string name="provider_display_name_llamacpp">本地 · llama.cpp</string>
+  <string name="provider_display_name_backend">后端服务</string>
   <string name="chat_page_retrying">正在重试（第 %1$d/%2$d 次）。上次失败原因：%3$s</string>
   <string name="chat_server_tool_title">工具</string>
   <string name="chat_server_tool_in_progress">执行中…</string>

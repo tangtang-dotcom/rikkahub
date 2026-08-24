@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="provider_display_name_aicore">AICore (on-device)</string>
+  <string name="provider_display_name_litert">Local · LiteRT</string>
+  <string name="provider_display_name_llamacpp">Local · llama.cpp</string>
+  <string name="provider_display_name_backend">Backend Service</string>
   <string name="chat_page_retrying">Retrying (%1$d/%2$d). Previous failure: %3$s</string>
   <string name="chat_server_tool_title">Tool</string>
   <string name="chat_server_tool_in_progress">Running…</string>

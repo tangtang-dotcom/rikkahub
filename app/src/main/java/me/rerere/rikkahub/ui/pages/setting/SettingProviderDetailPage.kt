@@ -114,6 +114,7 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.ai.ModelAbilityTag
 import me.rerere.rikkahub.ui.components.ai.ModelModalityTag
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
+import me.rerere.rikkahub.ui.components.ai.providerDisplayName
 import me.rerere.rikkahub.ui.components.ai.ModelTypeTag
 import me.rerere.rikkahub.ui.components.ai.ProviderBalanceText
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -208,7 +209,7 @@ fun SettingProviderDetailPage(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         AutoAIIcon(provider.name, modifier = Modifier.size(22.dp))
-                        Text(text = provider.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = providerDisplayName(provider), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 actions = {

@@ -684,7 +684,7 @@ private fun ColumnScope.ModelList(
                         }
                     },
                     label = {
-                        Text(provider.name)
+                        Text(providerDisplayName(provider))
                     },
                     leadingIcon = {
                         AutoAIIcon(name = provider.name, modifier = Modifier.size(16.dp))

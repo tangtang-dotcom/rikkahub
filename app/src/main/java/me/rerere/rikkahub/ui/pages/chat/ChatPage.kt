@@ -81,6 +81,7 @@ import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.AutoTaskConfig
 import me.rerere.rikkahub.ui.components.ai.AutoTaskDialog
 import me.rerere.rikkahub.ui.components.ai.ChatInput
+import me.rerere.rikkahub.ui.components.ai.providerDisplayName
 
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
@@ -1058,7 +1059,7 @@ private fun TopBar(
                                 stringResource(
                                     R.string.assistant_page_default_assistant,
                                 )
-                            }} / ${model.displayName} (${provider.name})",
+                            }} / ${model.displayName} (${providerDisplayName(provider)})",
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             color = LocalContentColor.current.copy(0.65f),
