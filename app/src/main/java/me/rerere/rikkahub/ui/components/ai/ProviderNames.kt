@@ -10,7 +10,7 @@ import me.rerere.rikkahub.R
  * 品牌名（OpenAI/Google/Claude/Codex/Grok/Gemini）保留原文。
  */
 @Composable
-fun providerDisplayName(provider: ProviderSetting<*>): String =
+fun providerDisplayName(provider: ProviderSetting): String =
     when (provider.name) {
         "AICore (on-device)" -> stringResource(R.string.provider_display_name_aicore)
         "Local · LiteRT" -> stringResource(R.string.provider_display_name_litert)

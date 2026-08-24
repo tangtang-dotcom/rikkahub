@@ -245,8 +245,8 @@ val dataSourceModule =
                         initialNetworkSetting.proxyPassword,
                     )
                 )
-            lateinit var client: OkHttpClient
-            client =
+            val clientHolder = AtomicReference<OkHttpClient?>(null)
+            val client =
                 OkHttpClient
                     .Builder()
                     .proxySelector(SettingsProxySelector(settingsStore))
@@ -266,7 +266,7 @@ val dataSourceModule =
                             networkSetting.proxyPassword,
                         )
                     if (appliedProxySetting.getAndSet(currentProxySetting) != currentProxySetting) {
-                        client.connectionPool.evictAll()
+                        clientHolder.get()?.connectionPool?.evictAll()
                     }
 
                     val originalRequest = chain.request()
@@ -315,7 +315,10 @@ val dataSourceModule =
                         )
                     }
                 }.build()
-                .also { SearchService.init(it, get()) }
+                .also {
+                    clientHolder.set(it)
+                    SearchService.init(it, get())
+                }
         }
 
         single<OkHttpClient>(named("codex")) {
