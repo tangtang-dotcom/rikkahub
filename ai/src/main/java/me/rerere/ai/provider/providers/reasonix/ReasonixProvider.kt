@@ -204,19 +204,41 @@ class ReasonixProvider(
         }
 
         val api = api(providerSetting)
-        // 会话：当前无历史时新建会话（服务端管会话；本 Provider 单会话场景）
+
+        // ── 上下文注入(关键修复)──
+        // 直连模式下 serve 会话是"一次性"的:每回合 POST /new 新建、只提交增量输入,
+        // 服务端没有历史 → 多轮对话失忆。云端协议(custom)走完整 messages 无此问题。
+        // 方案:把除最后一条用户消息外的全部历史(含系统提示)序列化为带角色标签的
+        // 纯文本前缀,与本次输入一起 submit,让 serve 的模型看到等价完整上下文。
+        // 注:serve /submit 只接受纯文本 input;结构化多模态内容取其文本部分。
+        fun UIMessage.textContent(): String =
+            parts.filterIsInstance<UIMessagePart.Text>().joinToString("\n") { it.text }
+
+        val historyPrefix = StringBuilder()
+        for (m in messages.dropLast(1)) {
+            // 跳过空消息与工具/图片等非文本 part 已由 textContent() 过滤
+            val text = m.textContent()
+            if (text.isBlank()) continue
+            when (m.role) {
+                MessageRole.USER -> historyPrefix.append("[user] ")
+                MessageRole.ASSISTANT -> historyPrefix.append("[assistant] ")
+                MessageRole.SYSTEM -> historyPrefix.append("[system] ")
+                // 工具结果不做纯文本化(体量大、结构化信息失真),首版跳过
+                MessageRole.TOOL -> continue
+            }
+            historyPrefix.append(text).append('\n')
+        }
+        if (historyPrefix.isNotEmpty()) {
+            historyPrefix.append('\n') // 历史块与本轮输入之间空一行分隔
+        }
         val lastUserInput =
-            messages.lastOrNull { it.role == MessageRole.USER }?.parts
-                ?.filterIsInstance<UIMessagePart.Text>()
-                ?.joinToString("") { it.text }
+            messages.lastOrNull { it.role == MessageRole.USER }?.textContent()
                 ?: return@flow
 
-        // 必须先 POST /new（新建会话）+ POST /submit（提交增量输入），
-        // 服务端才会开始生成并向 /events 推送；否则两端 App 无限转圈。
-        api.newSession()
-        api.submit(lastUserInput)
+        val fullInput = historyPrefix.append(lastUserInput).toString()
 
-        // 通过 SSE 建立连接后提交增量输入
+        // 先建立 SSE 连接再 POST /new + /submit:连接就绪后提交,
+        // 避免服务端早期事件(turn_started/usage 等)在订阅前发出而丢失。
         val sse =
             ReasonixSseClient(
                 baseUrl = providerSetting.baseUrl,
@@ -225,6 +247,12 @@ class ReasonixProvider(
                 token = providerSetting.token,
             )
         val events = sse.connect()
+
+        // 必须先 POST /new(新建会话)+ POST /submit(提交增量输入),
+        // 服务端才会开始生成并向 /events 推送;否则两端 App 无限转圈。
+        api.newSession()
+        api.submit(fullInput)
+
         var usage: TokenUsage? = null
         var textStarted = false
         var reasoningStarted = false
@@ -377,6 +405,10 @@ class ReasonixProvider(
         runCatching { json.parseToJsonElement(s) }.getOrElse { JsonPrimitive(s) }
 }
 
-private const val TURN_DONE_IDLE_TIMEOUT_MS = 15_000L
+// turn_done 后的静默判定窗口：超过该时长无任何事件 → 任务真正完成 → 结束 flow。
+// 取 5s：实测 serve 在任务结束后不再推送（本机抓包验证），15s 会让 UI 收尾/usage
+// 持久化明显滞后；多 turn 任务实测 turn_done→turn_started 为即时连续，
+// 5s 对轮次间隙留足余量又不至于让收尾体感迟钝。
+private const val TURN_DONE_IDLE_TIMEOUT_MS = 5_000L
 private const val TEXT_ID = "text"
 private const val REASONING_ID = "reasoning"
