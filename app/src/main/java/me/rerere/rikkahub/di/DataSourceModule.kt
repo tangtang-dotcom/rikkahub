@@ -236,16 +236,6 @@ val dataSourceModule =
                     .fromAndroid(get())
                     .build()
             java.net.Authenticator.setDefault(SettingsSocks5Authenticator(settingsStore))
-            val initialNetworkSetting = settingsStore.settingsFlow.value.networkSetting
-            val appliedProxySetting =
-                AtomicReference(
-                    Triple(
-                        initialNetworkSetting.proxyUrl,
-                        initialNetworkSetting.proxyUsername,
-                        initialNetworkSetting.proxyPassword,
-                    )
-                )
-            val clientHolder = AtomicReference<OkHttpClient?>(null)
             val client =
                 OkHttpClient
                     .Builder()
@@ -259,16 +249,6 @@ val dataSourceModule =
                 .retryOnConnectionFailure(true)
                 .addInterceptor { chain ->
                     val networkSetting = settingsStore.settingsFlow.value.networkSetting
-                    val currentProxySetting =
-                        Triple(
-                            networkSetting.proxyUrl,
-                            networkSetting.proxyUsername,
-                            networkSetting.proxyPassword,
-                        )
-                    if (appliedProxySetting.getAndSet(currentProxySetting) != currentProxySetting) {
-                        clientHolder.get()?.connectionPool?.evictAll()
-                    }
-
                     val originalRequest = chain.request()
                     val requestBuilder =
                         originalRequest
@@ -315,10 +295,7 @@ val dataSourceModule =
                         )
                     }
                 }.build()
-                .also {
-                    clientHolder.set(it)
-                    SearchService.init(it, get())
-                }
+                .also { SearchService.init(it, get()) }
         }
 
         single<OkHttpClient>(named("codex")) {
