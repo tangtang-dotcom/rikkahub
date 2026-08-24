@@ -64,6 +64,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 val dataSourceModule =
     module {
@@ -229,75 +230,51 @@ val dataSourceModule =
         }
 
         single<OkHttpClient> {
-            val settingsStore: SettingsStore = get()
-            val acceptLang =
-                AcceptLanguageBuilder
-                    .fromAndroid(get())
-                    .build()
-            java.net.Authenticator.setDefault(SettingsSocks5Authenticator(settingsStore))
-            val client =
-                OkHttpClient
-                    .Builder()
-                    .proxySelector(SettingsProxySelector(settingsStore))
-                    .proxyAuthenticator(SettingsProxyAuthenticator(settingsStore))
-                    .connectTimeout(20, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.MINUTES)
-                .writeTimeout(120, TimeUnit.SECONDS)
-                .followSslRedirects(true)
-                .followRedirects(true)
-                .retryOnConnectionFailure(true)
-                .addInterceptor { chain ->
-                    val networkSetting = settingsStore.settingsFlow.value.networkSetting
-                    val originalRequest = chain.request()
-                    val requestBuilder =
-                        originalRequest
-                            .newBuilder()
-                            .addHeader(HttpHeaders.AcceptLanguage, acceptLang)
+        val settingsStore: SettingsStore = get()
+        val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
+            .build()
+        java.net.Authenticator.setDefault(SettingsSocks5Authenticator(settingsStore))
+        val initialNetworkSetting = settingsStore.settingsFlow.value.networkSetting
+        val appliedProxySetting = AtomicReference(
+            Triple(
+                initialNetworkSetting.proxyUrl,
+                initialNetworkSetting.proxyUsername,
+                initialNetworkSetting.proxyPassword,
+            )
+        )
+        lateinit var client: OkHttpClient
+        client = OkHttpClient.Builder()
+            .proxySelector(SettingsProxySelector(settingsStore))
+            .proxyAuthenticator(SettingsProxyAuthenticator(settingsStore))
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.MINUTES)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .followSslRedirects(true)
+            .followRedirects(true)
+            .retryOnConnectionFailure(true)
+            .addInterceptor { chain ->
+                val networkSetting = settingsStore.settingsFlow.value.networkSetting
+                val currentProxySetting = Triple(
+                    networkSetting.proxyUrl,
+                    networkSetting.proxyUsername,
+                    networkSetting.proxyPassword,
+                )
+                if (appliedProxySetting.getAndSet(currentProxySetting) != currentProxySetting) {
+                    client.connectionPool.evictAll()
+                }
 
-                    if (originalRequest.header(HttpHeaders.UserAgent) == null) {
-                        requestBuilder.addHeader(
-                            HttpHeaders.UserAgent,
-                            networkSetting.userAgent.trim().ifEmpty {
-                                "RikkaHub Agents-Android/${BuildConfig.VERSION_NAME}"
-                            },
-                        )
-                    }
+                val originalRequest = chain.request()
+                val requestBuilder = originalRequest.newBuilder()
+                    .addHeader(HttpHeaders.AcceptLanguage, acceptLang)
 
-                    chain.proceed(requestBuilder.build())
-                }.addNetworkInterceptor { chain ->
-                    val request = chain.request()
-                    val contentTypeHeader = request.header("Content-Type")
-                    if (
-                        contentTypeHeader != null &&
-                        contentTypeHeader.contains(";") &&
-                        contentTypeHeader.substringBefore(";").trim().equals("application/json", ignoreCase = true)
-                    ) {
-                        chain.proceed(
-                            request
-                                .newBuilder()
-                                .header("Content-Type", contentTypeHeader.substringBefore(";").trim())
-                                .build(),
-                        )
-                    } else {
-                        chain.proceed(request)
-                    }
-                }.addNetworkInterceptor(RequestLoggingInterceptor())
-                .addInterceptor(AIRequestInterceptor())
-                .apply {
-                    // HEADERS-level logging prints Authorization: Bearer <api-key> to logcat.
-                    // Debug-only so release builds never leak provider keys to logcat.
-                    if (BuildConfig.DEBUG) {
-                        addInterceptor(
-                            HttpLoggingInterceptor().apply {
-                                level = HttpLoggingInterceptor.Level.HEADERS
-                            },
-                        )
-                    }
-                }.build()
-                .also { SearchService.init(it, get()) }
-        }
+                if (originalRequest.header(HttpHeaders.UserAgent) == null) {
+                    val userAgent = settingsStore.settingsFlow.value.networkSetting.userAgent
+                        .trim()
+                        .ifEmpty { "RikkaHub-Android/${BuildConfig.VERSION_NAME}" }
+                    requestBuilder.addHeader(HttpHeaders.UserAgent, userAgent)
+                }
 
-        single<OkHttpClient>(named("codex")) {
+single<OkHttpClient>(named("codex")) {
             OkHttpClient
                 .Builder()
                 .connectTimeout(20, TimeUnit.SECONDS)
