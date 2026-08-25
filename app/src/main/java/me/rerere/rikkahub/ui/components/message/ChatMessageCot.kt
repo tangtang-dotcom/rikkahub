@@ -14,6 +14,10 @@ sealed interface ThinkingStep {
     data class ToolStep(
         val tool: UIMessagePart.Tool,
     ) : ThinkingStep
+
+    data class ServerToolStep(
+        val tool: UIMessagePart.ServerTool,
+    ) : ThinkingStep
 }
 
 /**
@@ -53,6 +57,10 @@ fun List<UIMessagePart>.groupMessageParts(): List<MessagePartBlock> {
 
             is UIMessagePart.Tool -> {
                 currentThinkingSteps.add(ThinkingStep.ToolStep(part))
+            }
+
+            is UIMessagePart.ServerTool -> {
+                currentThinkingSteps.add(ThinkingStep.ServerToolStep(part))
             }
 
             else -> {

@@ -70,6 +70,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.ServerToolStatus
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyUIMessage
 import me.rerere.ai.util.encodeBase64
@@ -664,6 +665,12 @@ private fun ExportedChatMessage(
                                             tool = step.tool,
                                         )
                                     }
+
+                                    is ThinkingStep.ServerToolStep -> {
+                                        ExportedServerToolStep(
+                                            tool = step.tool,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -896,6 +903,81 @@ private fun ChainOfThoughtScope.ExportedToolStep(tool: UIMessagePart.Tool) {
         },
         contentVisible = false,
         content = null,
+    )
+}
+
+@Composable
+private fun ChainOfThoughtScope.ExportedServerToolStep(tool: UIMessagePart.ServerTool) {
+    val statusText =
+        when (tool.status) {
+            ServerToolStatus.IN_PROGRESS ->
+                stringResource(R.string.chat_server_tool_in_progress)
+            ServerToolStatus.COMPLETED ->
+                stringResource(R.string.chat_server_tool_completed)
+            ServerToolStatus.FAILED ->
+                stringResource(R.string.chat_server_tool_failed)
+        }
+    val title =
+        tool.toolName.ifBlank {
+            stringResource(R.string.chat_server_tool_title)
+        }
+    val inputText =
+        tool.input?.let {
+            (it as? kotlinx.serialization.json.JsonPrimitive)?.content ?: it.toString()
+        }
+    val outputText =
+        tool.output?.let {
+            (it as? kotlinx.serialization.json.JsonPrimitive)?.content ?: it.toString()
+        }
+    ControlledChainOfThoughtStep(
+        expanded = false,
+        onExpandedChange = {},
+        icon = {
+            Icon(
+                imageVector = HugeIcons.Wrench01,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+        },
+        label = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        extra = {
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        },
+        contentVisible = false,
+        content =
+            if (!inputText.isNullOrBlank() || !outputText.isNullOrBlank()) {
+                {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (!inputText.isNullOrBlank()) {
+                            Text(
+                                text = stringResource(R.string.chat_server_tool_input, inputText.take(200)),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                        if (!outputText.isNullOrBlank() && tool.isFinished) {
+                            Text(
+                                text = stringResource(R.string.chat_server_tool_output, outputText.take(300)),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                }
+            } else {
+                null
+            },
     )
 }
 

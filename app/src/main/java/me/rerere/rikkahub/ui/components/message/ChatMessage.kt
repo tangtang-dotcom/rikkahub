@@ -86,6 +86,7 @@ import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
 import me.rerere.rikkahub.ui.components.richtext.buildMarkdownPreviewHtml
 import me.rerere.rikkahub.ui.components.ui.ChainOfThought
+import me.rerere.rikkahub.ui.components.ui.ChainOfThoughtScope
 import me.rerere.rikkahub.ui.components.ui.Favicon
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -405,6 +406,15 @@ private fun MessagePartsBlock(
                                     )
                                 }
                             }
+
+                            is ThinkingStep.ServerToolStep -> {
+                                key(step.tool.toolCallId.ifBlank { step.hashCode().toString() }) {
+                                    ChatMessageServerToolStep(
+                                        tool = step.tool,
+                                        loading = loading && !step.tool.isFinished,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -641,78 +651,8 @@ private fun MessagePartsBlock(
                         }
 
                         is UIMessagePart.ServerTool -> {
-                            val statusText =
-                                when (part.status) {
-                                    ServerToolStatus.IN_PROGRESS ->
-                                        stringResource(R.string.chat_server_tool_in_progress)
-                                    ServerToolStatus.COMPLETED ->
-                                        stringResource(R.string.chat_server_tool_completed)
-                                    ServerToolStatus.FAILED ->
-                                        stringResource(R.string.chat_server_tool_failed)
-                                }
-                            val inputText =
-                                part.input?.let {
-                                    (it as? kotlinx.serialization.json.JsonPrimitive)?.content
-                                        ?: it.toString()
-                                }
-                            val outputText =
-                                part.output?.let {
-                                    (it as? kotlinx.serialization.json.JsonPrimitive)?.content
-                                        ?: it.toString()
-                                }
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                color =
-                                    if (part.status == ServerToolStatus.FAILED) {
-                                        MaterialTheme.colorScheme.errorContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    },
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = HugeIcons.File02,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                        Text(
-                                            text =
-                                                part.toolName.ifBlank {
-                                                    stringResource(R.string.chat_server_tool_title)
-                                                },
-                                            style = MaterialTheme.typography.labelLarge,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                        Text(
-                                            text = statusText,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.secondary,
-                                        )
-                                    }
-                                    if (!inputText.isNullOrBlank()) {
-                                        Text(
-                                            text = stringResource(R.string.chat_server_tool_input, inputText.take(200)),
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    }
-                                    if (!outputText.isNullOrBlank() && part.isFinished) {
-                                        Text(
-                                            text = stringResource(R.string.chat_server_tool_output, outputText.take(300)),
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    }
-                                }
-                            }
+                            // ServerTool 已在 groupMessageParts() 里归入 ThinkingBlock 折叠展示，
+                            // 此处 ContentBlock 分支不再渲染，避免重复。
                         }
 
                         else -> {
@@ -781,4 +721,86 @@ private fun MessagePartsBlock(
             }
         }
     }
+}
+
+/**
+ * 服务端工具的折叠 step —— Reasonix 直连产生的 [UIMessagePart.ServerTool] 以链式
+ * 思考块呈现：默认折叠，点击展开查看输入/输出。与思考卡片统一收纳在
+ * Chain-of-Thought 折叠区内，避免与正文平铺混杂。
+ */
+@Composable
+private fun ChainOfThoughtScope.ChatMessageServerToolStep(
+    tool: UIMessagePart.ServerTool,
+    loading: Boolean = false,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val statusText =
+        when (tool.status) {
+            ServerToolStatus.IN_PROGRESS ->
+                stringResource(R.string.chat_server_tool_in_progress)
+            ServerToolStatus.COMPLETED ->
+                stringResource(R.string.chat_server_tool_completed)
+            ServerToolStatus.FAILED ->
+                stringResource(R.string.chat_server_tool_failed)
+        }
+    val inputText =
+        tool.input?.let {
+            (it as? kotlinx.serialization.json.JsonPrimitive)?.content ?: it.toString()
+        }
+    val outputText =
+        tool.output?.let {
+            (it as? kotlinx.serialization.json.JsonPrimitive)?.content ?: it.toString()
+        }
+    val title = tool.toolName.ifBlank { stringResource(R.string.chat_server_tool_title) }
+
+    ControlledChainOfThoughtStep(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        icon = {
+            Icon(
+                imageVector = HugeIcons.File02,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+        },
+        label = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.shimmer(isLoading = loading),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        extra = {
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.shimmer(isLoading = loading),
+            )
+        },
+        contentVisible = expanded,
+        content = {
+            Column(
+                modifier = Modifier.padding(top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (!inputText.isNullOrBlank()) {
+                    Text(
+                        text = stringResource(R.string.chat_server_tool_input, inputText.take(200)),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                if (!outputText.isNullOrBlank() && tool.isFinished) {
+                    Text(
+                        text = stringResource(R.string.chat_server_tool_output, outputText.take(300)),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        },
+    )
 }

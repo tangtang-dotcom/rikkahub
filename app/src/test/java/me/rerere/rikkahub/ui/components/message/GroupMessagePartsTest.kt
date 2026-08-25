@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.message
 
+import me.rerere.ai.ui.ServerToolStatus
 import me.rerere.ai.ui.UIMessagePart
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -15,6 +16,28 @@ class GroupMessagePartsTest {
     private fun text(s: String) = UIMessagePart.Text(s)
     private fun reasoning(s: String) = UIMessagePart.Reasoning(reasoning = s)
     private fun tool(id: String) = UIMessagePart.Tool(toolCallId = id, toolName = "t", input = "{}")
+    private fun serverTool(id: String) = UIMessagePart.ServerTool(
+        toolCallId = id,
+        toolName = "server-tool",
+        status = ServerToolStatus.COMPLETED,
+    )
+
+    @Test
+    fun `server tool collapses into thinking block like a tool`() {
+        val result = listOf(
+            reasoning("think a"),
+            serverTool("sc-1"),
+            text("answer"),
+        ).groupMessageParts()
+
+        assertEquals(2, result.size)
+        val thinking = result[0] as MessagePartBlock.ThinkingBlock
+        assertEquals(2, thinking.steps.size)
+        assertTrue(thinking.steps[0] is ThinkingStep.ReasoningStep)
+        assertTrue(thinking.steps[1] is ThinkingStep.ServerToolStep)
+        val content = result[1] as MessagePartBlock.ContentBlock
+        assertEquals(text("answer"), content.part)
+    }
 
     @Test
     fun `empty list produces no blocks`() {
