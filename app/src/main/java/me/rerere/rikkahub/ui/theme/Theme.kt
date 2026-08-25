@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.view.View
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -106,11 +107,30 @@ fun RikkahubTheme(
 
         SideEffect(applySystemBarAppearance)
         DisposableEffect(window, decorView, darkTheme) {
+            val deferredApply = Runnable { applySystemBarAppearance() }
+            val scheduleSystemBarAppearance = {
+                // ColorOS reapplies its own icon mode after the first focus callback while a
+                // mini-window is expanding. Cover both the next traversal and the end of the
+                // bounds animation; repeated layout callbacks coalesce the delayed restore.
+                decorView.removeCallbacks(deferredApply)
+                applySystemBarAppearance()
+                decorView.postOnAnimation(deferredApply)
+                decorView.postDelayed(deferredApply, 500L)
+            }
             val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
-                if (hasFocus) applySystemBarAppearance()
+                if (hasFocus) scheduleSystemBarAppearance()
+            }
+            val layoutListener = View.OnLayoutChangeListener {
+                    _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+                    scheduleSystemBarAppearance()
+                }
             }
             decorView.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
+            decorView.addOnLayoutChangeListener(layoutListener)
             onDispose {
+                decorView.removeCallbacks(deferredApply)
+                decorView.removeOnLayoutChangeListener(layoutListener)
                 if (decorView.viewTreeObserver.isAlive) {
                     decorView.viewTreeObserver.removeOnWindowFocusChangeListener(focusListener)
                 }
