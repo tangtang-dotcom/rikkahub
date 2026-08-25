@@ -1,12 +1,10 @@
 package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -57,7 +55,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -86,25 +83,20 @@ import dev.chrisbanes.haze.blur.materials.HazeMaterials
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
 import me.rerere.asr.ASRStatus
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
-import me.rerere.hugeicons.stroke.ArrowDown01
 import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.FullScreen
-import me.rerere.hugeicons.stroke.LockKey
 import me.rerere.hugeicons.stroke.Upload02
-import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.getQuickMessagesOfAssistant
@@ -153,22 +145,6 @@ fun ChatInput(
     val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
     val assistant = settings.getCurrentAssistant()
-    val settingsStore = koinInject<SettingsStore>()
-    val coroutineScope = rememberCoroutineScope()
-    // 功能按钮行（Zap/LockKey/ASR 等）折叠状态：默认折叠，用户展开后持久化记忆
-    val featureBarCollapsed = settings.displaySetting.featureBarCollapsed
-    val toggleFeatureBar: () -> Unit = {
-        coroutineScope.launch {
-            settingsStore.update { current ->
-                current.copy(
-                    displaySetting =
-                        current.displaySetting.copy(
-                            featureBarCollapsed = !featureBarCollapsed,
-                        ),
-                )
-            }
-        }
-    }
     val hazeTintColor = MaterialTheme.colorScheme.surfaceContainerLow
     val inputHazeStyle = HazeMaterials.thin(containerColor = hazeTintColor)
 
@@ -273,241 +249,174 @@ fun ChatInput(
                         MediaFileInputRow(state = state)
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // 功能按钮行折叠开关：收起时箭头向下（点击展开），展开时箭头向上（点击收起）
-                        ActionIconButton(
-                            onClick = toggleFeatureBar,
-                            modifier = Modifier.padding(end = 4.dp),
-                        ) {
-                            Icon(
-                                imageVector =
-                                    if (featureBarCollapsed) {
-                                        HugeIcons.ArrowDown01
-                                    } else {
-                                        HugeIcons.ArrowUp02
-                                    },
-                                contentDescription = stringResource(R.string.chat_input_toggle_toolbar),
-                            )
-                        }
-                        Box(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .padding(end = 8.dp),
-                        ) {
-                            TextInputRow(
-                                state = state,
-                                completionProviders = completionProviders,
-                                sessionTotals = sessionTotals,
-                                onSendMessage = { sendMessage() },
-                            )
-                        }
-                        SendButton(
-                            state = state,
-                            loading = loading,
-                            visible = !asrState.isRecording,
-                            onSend = { sendMessage() },
-                            onLongSend = { sendMessageWithoutAnswer() },
-                        )
-                    }
+                    TextInputRow(
+                        state = state,
+                        completionProviders = completionProviders,
+                        sessionTotals = sessionTotals,
+                        onSendMessage = { sendMessage() },
+                    )
 
-                    AnimatedVisibility(
-                        visible = !featureBarCollapsed,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically(),
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Row(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    .weight(1f)
+                                    .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            Row(
+                            // Model Picker
+                            ModelSelector(
+                                modelId = assistant.chatModelId ?: settings.chatModelId,
+                                providers = settings.providers,
+                                onSelect = {
+                                    onUpdateChatModel(it)
+                                },
+                                type = ModelType.CHAT,
+                                onlyIcon = true,
+                                modifier = Modifier,
+                            )
+
+                            // Search
+                            val enableSearchMsg = stringResource(R.string.web_search_enabled)
+                            val disableSearchMsg = stringResource(R.string.web_search_disabled)
+                            val chatModel = settings.getCurrentChatModel()
+                            SearchPickerButton(
+                                enableSearch = enableSearch,
+                                settings = settings,
+                                onToggleSearch = { enabled ->
+                                    onToggleSearch(enabled)
+                                    toaster.show(
+                                        message = if (enabled) enableSearchMsg else disableSearchMsg,
+                                        duration = 1.seconds,
+                                        type =
+                                            if (enabled) {
+                                                ToastType.Success
+                                            } else {
+                                                ToastType.Normal
+                                            },
+                                    )
+                                },
+                                onUpdateSearchService = onUpdateSearchService,
+                                model = chatModel,
+                            )
+
+                            // Reasoning
+                            val model = settings.getCurrentChatModel()
+                            if (model?.abilities?.contains(ModelAbility.REASONING) == true) {
+                                ReasoningButton(
+                                    reasoningLevel = assistant.reasoningLevel,
+                                    onUpdateReasoningLevel = {
+                                        onUpdateAssistant(assistant.copy(reasoningLevel = it))
+                                    },
+                                    onlyIcon = true,
+                                )
+                            }
+                        }
+
+                        ActionIconButton(
+                            onClick = onMoreClick,
+                        ) {
+                            Icon(
+                                imageVector = HugeIcons.Add01,
+                                contentDescription = stringResource(R.string.more_options),
+                            )
+                        }
+
+                        if (asrState.isAvailable || asrState.isRecording) {
+                            AsrButton(
+                                state = asrState,
+                                onClick = {
+                                    when (asrState.status) {
+                                        ASRStatus.Listening -> {
+                                            asr.stop()
+                                        }
+
+                                        ASRStatus.Idle, ASRStatus.Error -> {
+                                            if (!asrPermission.allRequiredPermissionsGranted) {
+                                                asrPermission.requestPermissions()
+                                            } else {
+                                                asrBaseText = state.textContent.text.toString()
+                                                asr.start { transcript ->
+                                                    val spacer =
+                                                        if (asrBaseText.isBlank() || transcript.isBlank()) "" else " "
+                                                    state.setMessageText(asrBaseText + spacer + transcript)
+                                                }
+                                            }
+                                        }
+
+                                        ASRStatus.Connecting, ASRStatus.Stopping -> {}
+                                    }
+                                },
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = !asrState.isRecording,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
                                 modifier =
                                     Modifier
-                                        .weight(1f)
-                                        .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        .size(30.dp)
+                                        .testTag("chat_send_button")
+                                        .clip(CircleShape)
+                                        .combinedClickable(
+                                            enabled = loading || !state.isEmpty(),
+                                            onClick = {
+                                                sendMessage()
+                                            },
+                                            onLongClick = {
+                                                sendMessageWithoutAnswer()
+                                            },
+                                        ),
                             ) {
-                                // Model Picker
-                                ModelSelector(
-                                    modelId = assistant.chatModelId ?: settings.chatModelId,
-                                    providers = settings.providers,
-                                    onSelect = {
-                                        onUpdateChatModel(it)
-                                    },
-                                    type = ModelType.CHAT,
-                                    onlyIcon = true,
-                                    modifier = Modifier,
+                                val containerColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.errorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                        else -> MaterialTheme.colorScheme.primary
+                                    }
+                                val contentColor =
+                                    when {
+                                        loading -> MaterialTheme.colorScheme.onErrorContainer
+                                        state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        else -> MaterialTheme.colorScheme.onPrimary
+                                    }
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    shape = CircleShape,
+                                    color = containerColor,
+                                    content = {},
                                 )
-
-                                // Search
-                                val enableSearchMsg = stringResource(R.string.web_search_enabled)
-                                val disableSearchMsg = stringResource(R.string.web_search_disabled)
-                                val chatModel = settings.getCurrentChatModel()
-                                SearchPickerButton(
-                                    enableSearch = enableSearch,
-                                    settings = settings,
-                                    onToggleSearch = { enabled ->
-                                        onToggleSearch(enabled)
-                                        toaster.show(
-                                            message = if (enabled) enableSearchMsg else disableSearchMsg,
-                                            duration = 1.seconds,
-                                            type =
-                                                if (enabled) {
-                                                    ToastType.Success
-                                                } else {
-                                                    ToastType.Normal
-                                                },
-                                        )
-                                    },
-                                    onUpdateSearchService = onUpdateSearchService,
-                                    model = chatModel,
-                                )
-
-                                // Reasoning
-                                val model = settings.getCurrentChatModel()
-                                if (model?.abilities?.contains(ModelAbility.REASONING) == true) {
-                                    ReasoningButton(
-                                        reasoningLevel = assistant.reasoningLevel,
-                                        onUpdateReasoningLevel = {
-                                            onUpdateAssistant(assistant.copy(reasoningLevel = it))
-                                        },
-                                        onlyIcon = true,
+                                if (loading) {
+                                    KeepScreenOn()
+                                    Icon(
+                                        imageVector = HugeIcons.Cancel01,
+                                        contentDescription = stringResource(R.string.stop),
+                                        tint = contentColor,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = HugeIcons.ArrowUp02,
+                                        contentDescription = stringResource(R.string.send),
+                                        tint = contentColor,
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
-
-                            ActionIconButton(
-                                onClick = onAutoClick,
-                            ) {
-                                Icon(
-                                    imageVector = HugeIcons.Zap,
-                                    contentDescription = stringResource(R.string.auto_task_title),
-                                )
-                            }
-
-                            // Vault 授权快捷入口（指纹签发 token，AI 直接读；可随时撤销）
-                            ActionIconButton(
-                                onClick = onVaultAuthorizeClick,
-                            ) {
-                                Icon(
-                                    imageVector = HugeIcons.LockKey,
-                                    contentDescription = stringResource(R.string.vault_authorize_shortcut),
-                                )
-                            }
-
-                            ActionIconButton(
-                                onClick = onMoreClick,
-                            ) {
-                                Icon(
-                                    imageVector = HugeIcons.Add01,
-                                    contentDescription = stringResource(R.string.more_options),
-                                )
-                            }
-
-                            if (asrState.isAvailable || asrState.isRecording) {
-                                AsrButton(
-                                    state = asrState,
-                                    onClick = {
-                                        when (asrState.status) {
-                                            ASRStatus.Listening -> {
-                                                asr.stop()
-                                            }
-
-                                            ASRStatus.Idle, ASRStatus.Error -> {
-                                                if (!asrPermission.allRequiredPermissionsGranted) {
-                                                    asrPermission.requestPermissions()
-                                                } else {
-                                                    asrBaseText = state.textContent.text.toString()
-                                                    asr.start { transcript ->
-                                                        val spacer =
-                                                            if (asrBaseText.isBlank() || transcript.isBlank()) "" else " "
-                                                        state.setMessageText(asrBaseText + spacer + transcript)
-                                                    }
-                                                }
-                                            }
-
-                                            ASRStatus.Connecting, ASRStatus.Stopping -> {}
-                                        }
-                                    },
-                                )
-                            }
-
-
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun SendButton(
-    state: ChatInputState,
-    loading: Boolean,
-    visible: Boolean,
-    onSend: () -> Unit,
-    onLongSend: () -> Unit,
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn() + scaleIn(),
-        exit = fadeOut() + scaleOut(),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .testTag("chat_send_button")
-                    .clip(CircleShape)
-                    .combinedClickable(
-                        enabled = loading || !state.isEmpty(),
-                        onClick = onSend,
-                        onLongClick = onLongSend,
-                    ),
-        ) {
-            val containerColor =
-                when {
-                    loading -> MaterialTheme.colorScheme.errorContainer
-                    state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
-                    else -> MaterialTheme.colorScheme.primary
-                }
-            val contentColor =
-                when {
-                    loading -> MaterialTheme.colorScheme.onErrorContainer
-                    state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                    else -> MaterialTheme.colorScheme.onPrimary
-                }
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                shape = CircleShape,
-                color = containerColor,
-                content = {},
-            )
-            if (loading) {
-                KeepScreenOn()
-                Icon(
-                    imageVector = HugeIcons.Cancel01,
-                    contentDescription = stringResource(R.string.stop),
-                    tint = contentColor,
-                    modifier = Modifier.size(24.dp),
-                )
-            } else {
-                Icon(
-                    imageVector = HugeIcons.ArrowUp02,
-                    contentDescription = stringResource(R.string.send),
-                    tint = contentColor,
-                    modifier = Modifier.size(24.dp),
-                )
             }
         }
     }
@@ -516,12 +425,11 @@ private fun SendButton(
 @Composable
 private fun ActionIconButton(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.size(30.dp),
+        modifier = Modifier.size(30.dp),
         shape = CircleShape,
         tonalElevation = 0.dp,
         color = Color.Transparent,
@@ -695,7 +603,7 @@ private fun TextInputRow(
                 Text(stringResource(R.string.chat_input_placeholder))
             },
             lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
-keyboardOptions =
+            keyboardOptions =
                 KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = if (settings.displaySetting.sendOnEnter) ImeAction.Send else ImeAction.Default,
@@ -990,7 +898,7 @@ private fun FullScreenEditor(
                         placeholder = {
                             Text(stringResource(R.string.chat_input_placeholder))
                         },
-keyboardOptions =
+                        keyboardOptions =
                             KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
                             ),
