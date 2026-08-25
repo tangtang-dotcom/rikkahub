@@ -2470,5 +2470,10 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
     <string name="assistant_page_local_tools_root_warning_title">关闭执行确认？</string>
     <string name="assistant_page_local_tools_root_warning_desc">助手将能够不经逐次询问直接执行 Root 命令，可能修改设备上的任何数据。HARDLINE 安全拦截仍然有效。</string>
     <string name="assistant_page_local_tools_root_warning_confirm">关闭确认</string>
+    <string name="workspace_detail_preset_alpine_tools">Alpine 工具环境</string>
+    <string name="workspace_detail_preset_custom">自定义 URL</string>
+    <string name="workspace_detail_alpine_tools_desc">一键下载并校验 Alpine 3.24.1，然后自动安装 Git、ripgrep、fd、curl、jq、SQLite、SSH、压缩与补丁等常用工具。</string>
+    <string name="workspace_detail_verifying">正在校验 SHA-256…</string>
+    <string name="workspace_detail_installing_tools">正在安装 Linux 工具…</string>
 </resources>
 

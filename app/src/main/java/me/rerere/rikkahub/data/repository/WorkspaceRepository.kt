@@ -12,6 +12,7 @@ import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.workspace.RootfsInstallProgress
+import me.rerere.workspace.RootfsInstallStage
 import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceCommandResult
 import me.rerere.workspace.WorkspaceFileEntry
@@ -115,6 +116,8 @@ class WorkspaceRepository(
     suspend fun installRootfs(
         id: String,
         url: String,
+        expectedSha256: String? = null,
+        installAgentTools: Boolean = false,
         onProgress: (RootfsInstallProgress) -> Unit = {},
     ): Boolean {
         val workspace = dao.getById(id) ?: return false
@@ -122,8 +125,21 @@ class WorkspaceRepository(
         try {
             // runInterruptible 让协程取消转成线程中断, 打断 install 内阻塞的下载/解压循环
             runInterruptible(Dispatchers.IO) {
-                rootfsInstaller.install(workspace.root, url, onProgress)
+                rootfsInstaller.install(workspace.root, url, expectedSha256, onProgress)
+                if (installAgentTools) {
+                    onProgress(RootfsInstallProgress(stage = RootfsInstallStage.INSTALLING_TOOLS))
+                    val result =
+                        manager.executeCommand(
+                            root = workspace.root,
+                            command = ALPINE_AGENT_TOOLS_COMMAND,
+                            timeoutMillis = ALPINE_TOOLS_TIMEOUT_MS,
+                        )
+                    check(result.exitCode == 0 && !result.timedOut) {
+                        result.stderr.ifBlank { result.stdout }.ifBlank { "Failed to install Alpine agent tools" }
+                    }
+                }
             }
+            onProgress(RootfsInstallProgress(stage = RootfsInstallStage.INSTALLED))
             updateShellState(workspace, WorkspaceShellStatus.READY.name)
             return true
         } catch (e: CancellationException) {
@@ -343,5 +359,14 @@ class WorkspaceRepository(
     companion object {
         private const val TAG = "WorkspaceRepository"
         private const val MAX_PREVIEW_BYTES = 512L * 1024
+        private const val ALPINE_TOOLS_TIMEOUT_MS = 10 * 60 * 1000L
+        private val ALPINE_AGENT_TOOLS_COMMAND =
+            "apk update && apk add --no-cache " +
+                listOf(
+                    "bash", "ca-certificates", "coreutils", "curl", "diffutils", "fd", "file",
+                    "findutils", "gawk", "git", "grep", "gzip", "jq", "less", "openssl",
+                    "openssh-client-default", "patch", "procps-ng", "ripgrep", "rsync", "sed",
+                    "sqlite", "tar", "unzip", "util-linux", "wget", "xz", "zip", "zstd",
+                ).joinToString(" ")
     }
 }
