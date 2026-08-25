@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -42,12 +43,16 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.tools.LocalToolOption
 import me.rerere.rikkahub.data.ai.tools.local.PermissionHelper
 import me.rerere.rikkahub.data.ai.tools.local.TermuxIntegration
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.preferences.ToolApprovalPreferences
+import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.telegram.TelegramBotPreferences
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
@@ -146,6 +151,9 @@ private fun AssistantLocalToolContent(
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
     val telegramBotPreferences = koinInject<TelegramBotPreferences>()
+    val toolApprovalPreferences = koinInject<ToolApprovalPreferences>()
+    val rootAlwaysAllow by toolApprovalPreferences.alwaysAllowFlow.collectAsStateWithLifecycle(initialValue = emptySet())
+    var showRootNoApprovalWarning by remember { mutableStateOf(false) }
     // Hardware-availability gate for the NFC toggle: a device with no NFC chip can never
     // run the nfc tools, so the toggle is shown disabled with a "no NFC hardware" subtitle
     // rather than letting the user enable a tool that would only ever error.
@@ -174,6 +182,25 @@ private fun AssistantLocalToolContent(
     val cronHintText = stringResource(R.string.assistant_page_local_tools_cron_jobs_toast_hint)
     val termuxCommand = stringResource(R.string.assistant_page_local_tools_termux_postgrant_command)
     val termuxCopiedText = stringResource(R.string.assistant_page_local_tools_termux_postgrant_copied)
+
+    if (showRootNoApprovalWarning) {
+        AlertDialog(
+            onDismissRequest = { showRootNoApprovalWarning = false },
+            title = { Text(stringResource(R.string.assistant_page_local_tools_root_warning_title)) },
+            text = { Text(stringResource(R.string.assistant_page_local_tools_root_warning_desc)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRootNoApprovalWarning = false
+                    scope.launch { toolApprovalPreferences.grantAlways("android_root_terminal") }
+                }) { Text(stringResource(R.string.assistant_page_local_tools_root_warning_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRootNoApprovalWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 
     if (showTermuxPostGrantDialog) {
         AlertDialog(
@@ -1383,6 +1410,38 @@ private fun AssistantLocalToolContent(
                     )
                 },
             )
+            item(
+                headlineContent = { Text(stringResource(R.string.assistant_page_local_tools_root_title)) },
+                supportingContent = {
+                    RootTerminalStatusRow(
+                        enabled = assistant.localTools.contains(LocalToolOption.AndroidRootTerminal),
+                    )
+                },
+                trailingContent = {
+                    PermissionedSwitch(
+                        checked = assistant.localTools.contains(LocalToolOption.AndroidRootTerminal),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.AndroidRootTerminal, it) },
+                    )
+                },
+            )
+            if (assistant.localTools.contains(LocalToolOption.AndroidRootTerminal)) {
+                item(
+                    headlineContent = { Text(stringResource(R.string.assistant_page_local_tools_root_confirm_title)) },
+                    supportingContent = { Text(stringResource(R.string.assistant_page_local_tools_root_confirm_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = "android_root_terminal" !in rootAlwaysAllow,
+                            onCheckedChange = { requireApproval ->
+                                if (requireApproval) {
+                                    scope.launch { toolApprovalPreferences.revoke("android_root_terminal") }
+                                } else {
+                                    showRootNoApprovalWarning = true
+                                }
+                            },
+                        )
+                    },
+                )
+            }
         }
 
         // Keyboard control section — drives the active text field through the co-signed
@@ -1734,6 +1793,48 @@ private fun PermissionedSwitch(
                 modifier = Modifier.clickable { requestPermission() },
             )
         }
+    }
+}
+
+@Composable
+private fun RootTerminalStatusRow(enabled: Boolean) {
+    val controller = koinInject<AndroidRootTerminalController>()
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+    val untested = stringResource(R.string.assistant_page_local_tools_root_status_untested)
+    val checkingText = stringResource(R.string.assistant_page_local_tools_root_status_checking)
+    val readyText = stringResource(R.string.assistant_page_local_tools_root_status_ready)
+    val unavailableText = stringResource(R.string.assistant_page_local_tools_root_status_unavailable)
+    val checkText = stringResource(R.string.assistant_page_local_tools_root_check)
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = when {
+                checking -> checkingText
+                status != null -> status.orEmpty()
+                else -> untested
+            },
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(
+            enabled = enabled && !checking,
+            onClick = {
+                checking = true
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) { runCatching { controller.rootStatus() } }
+                    status = result.fold(
+                        onSuccess = {
+                            if (it.exitCode == 0 && !it.timedOut && it.stdout.trim() == "0") readyText
+                            else unavailableText
+                        },
+                        onFailure = { unavailableText },
+                    )
+                    checking = false
+                }
+            },
+        ) { Text(checkText) }
     }
 }
 

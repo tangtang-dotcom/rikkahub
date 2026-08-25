@@ -34,6 +34,11 @@ val appModule =
         }
 
         single { CameraResultBuffer() }
+        single {
+            me.rerere.rikkahub.data.terminal.AndroidRootTerminalController(
+                get<android.content.Context>().cacheDir,
+            )
+        }
         single { BiometricResultBuffer() }
         // Phase 25 — NFC reader-mode + SAF directory-picker Activity bridges, and the SAF
         // tree-grant store backing the ExternalStorage tools.
@@ -261,6 +266,7 @@ val appModule =
                 storageVolumeGrantStore = get(),
                 okHttpClient = get(),
                 keyboardApiClient = get(),
+                androidRootTerminalController = get(),
             )
         }
 

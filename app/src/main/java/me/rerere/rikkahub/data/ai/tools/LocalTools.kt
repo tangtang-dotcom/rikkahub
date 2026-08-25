@@ -182,6 +182,7 @@ sealed class LocalToolOption {
     @Serializable @SerialName("screen_automation") data object ScreenAutomation : LocalToolOption()
     @Serializable @SerialName("app_launcher")      data object AppLauncher       : LocalToolOption()
     @Serializable @SerialName("termux")            data object Termux            : LocalToolOption()
+    @Serializable @SerialName("android_root_terminal") data object AndroidRootTerminal : LocalToolOption()
     @Serializable @SerialName("notification_listener") data object NotificationListener : LocalToolOption()
     @Serializable @SerialName("files")               data object Files              : LocalToolOption()
     @Serializable @SerialName("mcp_control")         data object McpControl         : LocalToolOption()
@@ -378,6 +379,7 @@ class LocalTools(
     private val okHttpClient: okhttp3.OkHttpClient,
     // agent-keyboard IPC client — backs the keyboard_* tools (drives the active text field).
     private val keyboardApiClient: me.rerere.rikkahub.data.keyboard.KeyboardApiClient,
+    private val androidRootTerminalController: me.rerere.rikkahub.data.terminal.AndroidRootTerminalController,
 ) {
     val javascriptTool by lazy {
         Tool(
@@ -876,6 +878,9 @@ class LocalTools(
             tools.add(me.rerere.rikkahub.data.ai.tools.local.launchAppTool(context, invocationContext, interactiveToolStreamer))
             tools.add(me.rerere.rikkahub.data.ai.tools.local.listInstalledAppsTool(context))
             tools.add(me.rerere.rikkahub.data.ai.tools.local.openUrlTool(context, invocationContext, interactiveToolStreamer))
+        }
+        if (options.contains(LocalToolOption.AndroidRootTerminal)) {
+            tools.addAll(createAndroidRootTerminalTools(androidRootTerminalController))
         }
         if (options.contains(LocalToolOption.Termux)) {
             tools.add(me.rerere.rikkahub.data.ai.tools.local.termuxRunCommandTool(context))

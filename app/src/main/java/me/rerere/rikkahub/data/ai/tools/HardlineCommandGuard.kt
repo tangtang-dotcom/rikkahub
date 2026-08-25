@@ -158,6 +158,8 @@ object HardlineCommandGuard {
      */
     fun checkToolParsed(toolName: String, input: JsonObject): String? {
         return when {
+            toolName == "android_root_terminal" ->
+                checkCommand(input["command"]?.jsonPrimitive?.contentOrNull)
             toolName == "termux_run_command" -> {
                 val cmd = input["command"]?.jsonPrimitive?.contentOrNull
                 checkCommand(cmd)?.let { return it }

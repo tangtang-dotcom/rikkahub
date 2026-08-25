@@ -2455,4 +2455,16 @@
   <string name="export_import_session">导入会话</string>
   <string name="export_import_desc">从 JSON 文件导入对话记录</string>
   <string name="asr_hotwords_placeholder">热词1, 热词2, 热词3</string>
+
+    <string name="assistant_page_local_tools_root_title">Android Root terminal</string>
+    <string name="assistant_page_local_tools_root_status_untested">Runs commands through su in the real Android host · not tested</string>
+    <string name="assistant_page_local_tools_root_status_checking">Checking su and UID 0…</string>
+    <string name="assistant_page_local_tools_root_status_ready">Root available · UID 0</string>
+    <string name="assistant_page_local_tools_root_status_unavailable">Root unavailable or permission denied</string>
+    <string name="assistant_page_local_tools_root_check">Check</string>
+    <string name="assistant_page_local_tools_root_confirm_title">Require confirmation before execution</string>
+    <string name="assistant_page_local_tools_root_confirm_desc">Uses unified tool approval. HARDLINE safety blocks always remain active.</string>
+    <string name="assistant_page_local_tools_root_warning_title">Disable execution confirmation?</string>
+    <string name="assistant_page_local_tools_root_warning_desc">The assistant can run Root commands without asking each time and modify any device data. HARDLINE safety blocks still apply.</string>
+    <string name="assistant_page_local_tools_root_warning_confirm">Disable confirmation</string>
 </resources>

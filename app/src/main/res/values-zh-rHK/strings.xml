@@ -1469,5 +1469,17 @@
   <string name="vault_session_mode_manual">當場有效</string>
   <string name="vault_session_mode_ttl_desc">Token 30 分鐘後自動過期，需重新指紋驗證簽發</string>
   <string name="vault_session_mode_manual_desc">Token 本次會話期間一直有效（App 結束/手動撤銷即失效）</string>
+
+    <string name="assistant_page_local_tools_root_title">Android Root 终端</string>
+    <string name="assistant_page_local_tools_root_status_untested">通过 su 在真实 Android 主机执行命令 · 尚未检测</string>
+    <string name="assistant_page_local_tools_root_status_checking">正在检测 su 和 UID 0…</string>
+    <string name="assistant_page_local_tools_root_status_ready">Root 可用 · UID 0</string>
+    <string name="assistant_page_local_tools_root_status_unavailable">Root 不可用或授权被拒绝</string>
+    <string name="assistant_page_local_tools_root_check">检测</string>
+    <string name="assistant_page_local_tools_root_confirm_title">执行前需要确认</string>
+    <string name="assistant_page_local_tools_root_confirm_desc">使用统一工具审批系统；HARDLINE 安全拦截始终有效。</string>
+    <string name="assistant_page_local_tools_root_warning_title">关闭执行确认？</string>
+    <string name="assistant_page_local_tools_root_warning_desc">助手将能够不经逐次询问直接执行 Root 命令，可能修改设备上的任何数据。HARDLINE 安全拦截仍然有效。</string>
+    <string name="assistant_page_local_tools_root_warning_confirm">关闭确认</string>
 </resources>
 
