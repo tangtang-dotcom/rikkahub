@@ -38,6 +38,11 @@ jobs:
           cache: pnpm
           cache-dependency-path: web-ui/pnpm-lock.yaml
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install web dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
