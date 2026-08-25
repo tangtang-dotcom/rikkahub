@@ -2470,5 +2470,11 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
     <string name="assistant_page_local_tools_root_warning_title">关闭执行确认？</string>
     <string name="assistant_page_local_tools_root_warning_desc">助手将能够不经逐次询问直接执行 Root 命令，可能修改设备上的任何数据。HARDLINE 安全拦截仍然有效。</string>
     <string name="assistant_page_local_tools_root_warning_confirm">关闭确认</string>
+  <string name="search_picker_local_title">本地搜索</string>
+  <string name="search_picker_local_description">接入各种三方搜索提供商</string>
+  <string name="search_picker_model_title">模型搜索</string>
+  <string name="search_picker_model_description">模型提供商云端自带搜索</string>
+  <string name="search_picker_select_provider">选择搜索服务商</string>
+  <string name="search_picker_turn_off">关闭搜索</string>
 </resources>
 
