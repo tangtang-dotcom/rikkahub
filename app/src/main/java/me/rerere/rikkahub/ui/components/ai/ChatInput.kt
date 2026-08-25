@@ -1,12 +1,10 @@
 package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -146,7 +144,14 @@ fun ChatInput(
     val containerShape = MaterialTheme.shapes.largeIncreased
     val density = LocalDensity.current
     // Unlike isImeVisible, the target changes as soon as the IME animation starts.
-    val imeTargetVisible = WindowInsets.imeAnimationTarget.getBottom(density) > 0
+    val imeSourceBottom = WindowInsets.imeAnimationSource.getBottom(density)
+    val imeTargetBottom = WindowInsets.imeAnimationTarget.getBottom(density)
+    val imeTargetVisible = imeTargetBottom > 0
+    // A live blur layer has to recapture the whole chat on every IME inset frame.
+    // Fall back to an opaque surface only during that transition; this preserves
+    // the configured appearance at rest while keeping keyboard motion smooth.
+    val imeAnimationRunning = imeSourceBottom != imeTargetBottom
+    val useInputBlur = settings.displaySetting.enableBlurEffect && !imeAnimationRunning
 
     fun sendMessage() {
         focusManager.clearFocus(force = true)
@@ -207,7 +212,7 @@ fun ChatInput(
                     .fillMaxWidth()
                     .clip(containerShape)
                     .then(
-                        if (settings.displaySetting.enableBlurEffect) Modifier.hazeEffect(state = hazeState) {
+                        if (useInputBlur) Modifier.hazeEffect(state = hazeState) {
                             blurEffect { style = inputHazeStyle }
                         }
                         else Modifier
@@ -215,7 +220,7 @@ fun ChatInput(
                 shape = containerShape,
                 tonalElevation = 0.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                color = if (settings.displaySetting.enableBlurEffect) Color.Transparent else hazeTintColor,
+                color = if (useInputBlur) Color.Transparent else hazeTintColor,
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -241,11 +246,7 @@ fun ChatInput(
                         },
                     )
 
-                    AnimatedVisibility(
-                        visible = !imeTargetVisible,
-                        enter = EnterTransition.None,
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
+                    if (!imeTargetVisible) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

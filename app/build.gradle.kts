@@ -81,6 +81,15 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            // Test APKs are distributed for day-to-day use. Run the same R8/resource
+            // optimization pipeline as release so Compose is not interpreted through
+            // an unoptimized debug build (a major source of whole-app jank).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
             buildConfigField("String", "UPDATE_API_URL", "\"https://api.github.com/repos/xiwangone/rikkahub-agents/releases/latest\"")
