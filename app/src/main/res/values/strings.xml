@@ -2467,9 +2467,4 @@
     <string name="assistant_page_local_tools_root_warning_title">Disable execution confirmation?</string>
     <string name="assistant_page_local_tools_root_warning_desc">The assistant can run Root commands without asking each time and modify any device data. HARDLINE safety blocks still apply.</string>
     <string name="assistant_page_local_tools_root_warning_confirm">Disable confirmation</string>
-    <string name="workspace_detail_preset_alpine_tools">Alpine tools</string>
-    <string name="workspace_detail_preset_custom">Custom URL</string>
-    <string name="workspace_detail_alpine_tools_desc">Downloads the verified Alpine 3.24.1 minirootfs and installs Git, ripgrep, fd, curl, jq, SQLite, SSH, archive and patch tools automatically.</string>
-    <string name="workspace_detail_verifying">Verifying SHA-256 checksum…</string>
-    <string name="workspace_detail_installing_tools">Installing Linux tools…</string>
 </resources>

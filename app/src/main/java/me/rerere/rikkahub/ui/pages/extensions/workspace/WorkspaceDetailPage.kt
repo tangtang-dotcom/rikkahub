@@ -286,12 +286,8 @@ fun WorkspaceDetailPage(id: String) {
             InstallRootfsDialog(
                 workspace = workspace,
                 onDismiss = { showInstallDialog = false },
-                onConfirm = { request ->
-                    vm.installRootfs(
-                        url = request.url,
-                        expectedSha256 = request.expectedSha256,
-                        installAgentTools = request.installAgentTools,
-                    )
+                onConfirm = { url ->
+                    vm.installRootfs(url)
                     showInstallDialog = false
                 },
             )
@@ -572,17 +568,9 @@ private fun RootfsProgress(progress: RootfsInstallProgress) {
                         )
                     }
 
-                    RootfsInstallStage.VERIFYING -> {
-                        stringResource(R.string.workspace_detail_verifying)
-                    }
-
                     RootfsInstallStage.EXTRACTING -> {
                         val entry = progress.currentEntry?.let { " · $it" }.orEmpty()
                         stringResource(R.string.workspace_detail_extracting, progress.entriesExtracted, entry)
-                    }
-
-                    RootfsInstallStage.INSTALLING_TOOLS -> {
-                        stringResource(R.string.workspace_detail_installing_tools)
                     }
 
                     RootfsInstallStage.INSTALLED -> {
@@ -601,9 +589,8 @@ private fun RootfsProgress(progress: RootfsInstallProgress) {
 private fun InstallRootfsDialog(
     workspace: WorkspaceEntity,
     onDismiss: () -> Unit,
-    onConfirm: (RootfsInstallRequest) -> Unit,
+    onConfirm: (String) -> Unit,
 ) {
-    var preset by rememberSaveable(workspace.id) { mutableStateOf(RootfsInstallPreset.ALPINE_TOOLS) }
     var url by rememberSaveable(workspace.id) { mutableStateOf(DEFAULT_ROOTFS_URL) }
 
     AlertDialog(
@@ -616,59 +603,19 @@ private fun InstallRootfsDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    RootfsInstallPreset.entries.forEachIndexed { index, item ->
-                        SegmentedButton(
-                            selected = preset == item,
-                            onClick = { preset = item },
-                            shape = SegmentedButtonDefaults.itemShape(index, RootfsInstallPreset.entries.size),
-                            label = {
-                                Text(
-                                    stringResource(
-                                        if (item == RootfsInstallPreset.ALPINE_TOOLS) {
-                                            R.string.workspace_detail_preset_alpine_tools
-                                        } else {
-                                            R.string.workspace_detail_preset_custom
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                    }
-                }
-                if (preset == RootfsInstallPreset.ALPINE_TOOLS) {
-                    Text(
-                        text = stringResource(R.string.workspace_detail_alpine_tools_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    OutlinedTextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.workspace_detail_download_url)) },
-                        maxLines = 5,
-                    )
-                }
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.workspace_detail_download_url)) },
+                    maxLines = 5,
+                )
             }
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    onConfirm(
-                        if (preset == RootfsInstallPreset.ALPINE_TOOLS) {
-                            RootfsInstallRequest(
-                                url = ALPINE_ROOTFS_URL,
-                                expectedSha256 = ALPINE_ROOTFS_SHA256,
-                                installAgentTools = true,
-                            )
-                        } else {
-                            RootfsInstallRequest(url = url.trim())
-                        },
-                    )
-                },
-                enabled = preset == RootfsInstallPreset.ALPINE_TOOLS || url.isNotBlank(),
+                onClick = { onConfirm(url.trim()) },
+                enabled = url.isNotBlank(),
             ) {
                 Text(stringResource(R.string.common_install))
             }
@@ -952,18 +899,6 @@ internal fun String.toShellStatusLabel(): String =
         WorkspaceShellStatus.BROKEN.name -> stringResource(R.string.workspace_detail_shell_broken)
         else -> lowercase()
     }
-
-private enum class RootfsInstallPreset { ALPINE_TOOLS, CUSTOM }
-
-private data class RootfsInstallRequest(
-    val url: String,
-    val expectedSha256: String? = null,
-    val installAgentTools: Boolean = false,
-)
-
-private const val ALPINE_ROOTFS_URL =
-    "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-minirootfs-3.24.1-aarch64.tar.gz"
-private const val ALPINE_ROOTFS_SHA256 = "f55a90f69052c5bd6f92cb09a8f47065970830b194c917a006fb94028e721259"
 
 private const val DEFAULT_ROOTFS_URL =
     "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"

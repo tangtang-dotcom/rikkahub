@@ -9,7 +9,6 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Files
-import java.security.MessageDigest
 import java.util.Locale
 import java.util.zip.GZIPInputStream
 
@@ -20,7 +19,6 @@ class RootfsInstaller(
     fun install(
         root: String,
         url: String,
-        expectedSha256: String? = null,
         onProgress: (RootfsInstallProgress) -> Unit = {},
     ) {
         require(url.isNotBlank()) { "Rootfs download url is required" }
@@ -35,13 +33,6 @@ class RootfsInstaller(
             stagingDir.deleteRecursively()
             stagingDir.mkdirs()
             download(url, archive, onProgress)
-            expectedSha256?.takeIf { it.isNotBlank() }?.let { expected ->
-                onProgress(RootfsInstallProgress(stage = RootfsInstallStage.VERIFYING))
-                val actual = archive.sha256()
-                require(actual.equals(expected, ignoreCase = true)) {
-                    "Rootfs checksum mismatch: expected $expected, got $actual"
-                }
-            }
             extractTar(archive, stagingDir, format, onProgress)
             linuxDir.deleteRecursively()
             require(stagingDir.renameTo(linuxDir)) {
@@ -197,20 +188,6 @@ class RootfsInstaller(
                 )
             }
         }
-    }
-
-    private fun File.sha256(): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        inputStream().buffered().use { input ->
-            val buffer = ByteArray(BUFFER_SIZE)
-            while (true) {
-                checkInterrupted()
-                val count = input.read(buffer)
-                if (count < 0) break
-                digest.update(buffer, 0, count)
-            }
-        }
-        return digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
     private fun createSymlink(
