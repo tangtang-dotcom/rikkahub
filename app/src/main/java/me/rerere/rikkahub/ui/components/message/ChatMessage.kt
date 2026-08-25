@@ -77,7 +77,6 @@ import me.rerere.hugeicons.stroke.MusicNote03
 import me.rerere.hugeicons.stroke.Video01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.costguards.TokenBudgetTracker
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.MessageNode
@@ -129,7 +128,6 @@ fun ChatMessage(
         ) -> Unit
     )? = null,
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
-    sessionTotals: TokenBudgetTracker.Totals? = null,
 ) {
     val message = node.messages[node.selectIndex]
     val settings = LocalSettings.current.displaySetting
@@ -231,7 +229,6 @@ fun ChatMessage(
         ProvideTextStyle(textStyle) {
             ChatMessageNerdLine(
                 message = message,
-                sessionTotals = sessionTotals,
             )
         }
     }
