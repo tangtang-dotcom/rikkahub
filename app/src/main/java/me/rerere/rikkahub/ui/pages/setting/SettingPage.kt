@@ -192,6 +192,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_preferences)) },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingLinuxEnvironment) },
+                        leadingContent = { Icon(HugeIcons.Console, null) },
+                        supportingContent = { Text("全局 Root chroot，所有助手共用，不属于工作空间沙箱") },
+                        headlineContent = { Text("Linux 工作环境") },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.Assistant) },
                         leadingContent = { Icon(HugeIcons.LookTop, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_assistant_desc)) },

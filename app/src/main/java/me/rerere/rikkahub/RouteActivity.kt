@@ -120,6 +120,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
+import me.rerere.rikkahub.ui.pages.setting.SettingLinuxEnvironmentPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingQuotaPage
@@ -560,6 +561,9 @@ class RouteActivity : ComponentActivity() {
                                 me.rerere.rikkahub.ui.pages.setting.browser.SettingBrowserPage()
                             }
 
+                            entry<Screen.SettingLinuxEnvironment> {
+                                SettingLinuxEnvironmentPage()
+                            }
                             entry<Screen.SettingTermux> {
                                 me.rerere.rikkahub.ui.pages.setting.termux.SettingTermuxPage()
                             }
@@ -850,6 +854,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data class ScheduledJobDetail(val id: String) : Screen
+
+    @Serializable
+    data object SettingLinuxEnvironment : Screen
 
     @Serializable
     data object SettingDoctor : Screen

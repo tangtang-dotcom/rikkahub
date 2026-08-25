@@ -16,6 +16,7 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
+import me.rerere.rikkahub.data.terminal.TerminalEnvironment
 
 /** A root-capable tool for commands outside the PRoot workspace sandbox. */
 fun createAndroidRootTerminalTools(
@@ -24,7 +25,7 @@ fun createAndroidRootTerminalTools(
     Tool(
         name = "android_root_terminal",
         description = """
-            Execute commands with real root privileges in the Android host environment (not the workspace/PRoot sandbox).
+            Execute commands with real root privileges. environment=android controls the Android host; environment=linux uses the app-wide Root chroot installed from Settings (it is shared globally and is not a security sandbox).
             Use action=run for normal commands. Use action=start for a long-running command, then action=read with job_id,
             and action=close to cancel or discard it. Use action=status to verify that su returns uid 0.
             Android absolute paths such as /data/adb, /data/data, /system and /storage/emulated/0 are supported.
@@ -38,6 +39,11 @@ fun createAndroidRootTerminalTools(
                         put("enum", buildJsonArray { listOf("run", "start", "read", "close", "status").forEach { add(it) } })
                         put("description", "Terminal action. Defaults to run.")
                     })
+                    put("environment", buildJsonObject {
+                        put("type", "string")
+                        put("enum", buildJsonArray { add("android"); add("linux") })
+                        put("description", "Execution environment; defaults to android")
+                    })
                     put("command", buildJsonObject {
                         put("type", "string")
                         put("description", "Shell command for run/start")
@@ -48,7 +54,7 @@ fun createAndroidRootTerminalTools(
                     })
                     put("timeout_ms", buildJsonObject {
                         put("type", "integer")
-                        put("description", "Timeout from 1000 to 180000 ms")
+                        put("description", "Timeout from 1000 to 600000 ms")
                     })
                     put("merge_stderr", buildJsonObject { put("type", "boolean") })
                     put("job_id", buildJsonObject { put("type", "string") })
@@ -61,8 +67,9 @@ fun createAndroidRootTerminalTools(
             val p = input.jsonObject
             val action = p["action"]?.jsonPrimitive?.contentOrNull ?: "run"
             val command = p["command"]?.jsonPrimitive?.contentOrNull
+            val environment = if (p["environment"]?.jsonPrimitive?.contentOrNull == "linux") TerminalEnvironment.LINUX else TerminalEnvironment.ANDROID
             val cwd = p["cwd"]?.jsonPrimitive?.contentOrNull
-            val timeout = (p["timeout_ms"]?.jsonPrimitive?.longOrNull ?: 30_000L).coerceIn(1_000L, 180_000L)
+            val timeout = (p["timeout_ms"]?.jsonPrimitive?.longOrNull ?: 30_000L).coerceIn(1_000L, 600_000L)
             val merge = p["merge_stderr"]?.jsonPrimitive?.booleanOrNull ?: false
             val payload = withContext(Dispatchers.IO) {
                 when (action) {
@@ -79,12 +86,12 @@ fun createAndroidRootTerminalTools(
                         }
                     }
                     "run" -> {
-                        val result = controller.executeSync(command ?: error("command is required"), cwd, timeout, merge)
+                        val result = controller.executeSync(command ?: error("command is required"), cwd, timeout, merge, environment)
                         buildResult(result.exitCode, result.timedOut, result.stdout, result.stderr, result.truncated)
                     }
                     "start" -> buildJsonObject {
                         put("ok", true)
-                        put("job_id", controller.executeAsync(command ?: error("command is required"), cwd, timeout, merge))
+                        put("job_id", controller.executeAsync(command ?: error("command is required"), cwd, timeout, merge, environment))
                         put("running", true)
                     }
                     "read" -> {

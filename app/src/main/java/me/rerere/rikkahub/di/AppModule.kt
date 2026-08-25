@@ -36,7 +36,13 @@ val appModule =
         single { CameraResultBuffer() }
         single {
             me.rerere.rikkahub.data.terminal.AndroidRootTerminalController(
-                get<android.content.Context>().cacheDir,
+                get<android.content.Context>(),
+            )
+        }
+        single {
+            me.rerere.rikkahub.data.terminal.GlobalLinuxEnvironmentManager(
+                get<android.content.Context>(),
+                get(),
             )
         }
         single { BiometricResultBuffer() }

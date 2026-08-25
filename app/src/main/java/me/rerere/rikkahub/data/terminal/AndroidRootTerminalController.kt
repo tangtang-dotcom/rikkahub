@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.terminal
 
+import android.content.Context
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
@@ -8,12 +9,15 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+enum class TerminalEnvironment { ANDROID, LINUX }
+
 /** Runs commands in Android's real root namespace through the device su implementation. */
-class AndroidRootTerminalController(private val cacheDir: File) : AutoCloseable {
+class AndroidRootTerminalController(private val context: Context) : AutoCloseable {
+    private val cacheDir get() = context.cacheDir
     companion object {
         private const val DEFAULT_CWD = "/data/local/tmp/rikkahub"
         private const val DEFAULT_TIMEOUT_MS = 30_000L
-        private const val MAX_TIMEOUT_MS = 180_000L
+        private const val MAX_TIMEOUT_MS = 600_000L
         private const val MAX_COMMAND_CHARS = 16_000
         private const val MAX_CAPTURE_BYTES = 128 * 1024
         private const val MAX_RETURN_CHARS = 16_000
@@ -24,9 +28,9 @@ class AndroidRootTerminalController(private val cacheDir: File) : AutoCloseable 
 
     fun rootStatus(): TerminalResult = executeSync("id -u", DEFAULT_CWD, 10_000, false)
 
-    fun executeSync(command: String, cwd: String? = null, timeoutMs: Long = DEFAULT_TIMEOUT_MS, mergeStderr: Boolean = false): TerminalResult {
+    fun executeSync(command: String, cwd: String? = null, timeoutMs: Long = DEFAULT_TIMEOUT_MS, mergeStderr: Boolean = false, environment: TerminalEnvironment = TerminalEnvironment.ANDROID): TerminalResult {
         check(!closing) { "Root terminal is closed" }
-        val running = start(command, cwd, timeoutMs, mergeStderr)
+        val running = start(command, cwd, timeoutMs, mergeStderr, environment)
         val finished = running.process.waitFor(running.timeoutMs, TimeUnit.MILLISECONDS)
         if (!finished) terminate(running)
         running.stdoutThread.join(1_000)
@@ -35,9 +39,9 @@ class AndroidRootTerminalController(private val cacheDir: File) : AutoCloseable 
         return running.result(timedOut = !finished)
     }
 
-    fun executeAsync(command: String, cwd: String? = null, timeoutMs: Long = DEFAULT_TIMEOUT_MS, mergeStderr: Boolean = false): String {
+    fun executeAsync(command: String, cwd: String? = null, timeoutMs: Long = DEFAULT_TIMEOUT_MS, mergeStderr: Boolean = false, environment: TerminalEnvironment = TerminalEnvironment.ANDROID): String {
         check(!closing) { "Root terminal is closed" }
-        val running = start(command, cwd, timeoutMs, mergeStderr)
+        val running = start(command, cwd, timeoutMs, mergeStderr, environment)
         val id = "root_" + UUID.randomUUID().toString().take(8)
         val job = TerminalJob(id, running)
         jobs[id] = job
@@ -77,20 +81,21 @@ class AndroidRootTerminalController(private val cacheDir: File) : AutoCloseable 
         jobs.keys.toList().forEach(::closeJob)
     }
 
-    private fun start(command: String, cwd: String?, timeoutMs: Long, mergeStderr: Boolean): RunningCommand {
+    private fun start(command: String, cwd: String?, timeoutMs: Long, mergeStderr: Boolean, environment: TerminalEnvironment): RunningCommand {
         val trimmed = command.trim()
         require(trimmed.isNotEmpty()) { "command is required" }
         require(trimmed.length <= MAX_COMMAND_CHARS) { "command is too long" }
-        val workingDir = cwd?.trim()?.takeIf(String::isNotEmpty) ?: DEFAULT_CWD
-        require(workingDir.startsWith('/')) { "cwd must be an absolute Android path" }
+        val workingDir = cwd?.trim()?.takeIf(String::isNotEmpty) ?: if (environment == TerminalEnvironment.LINUX) "/workspace" else DEFAULT_CWD
+        require(workingDir.startsWith('/')) { "cwd must be an absolute path" }
         require(workingDir.indexOf('\u0000') < 0) { "cwd contains NUL" }
 
         val ownerDir = File(cacheDir, "root_terminal").apply { mkdirs() }
         val ownerFile = File(ownerDir, UUID.randomUUID().toString() + ".owner")
         val token = UUID.randomUUID().toString().replace("-", "")
-        val body = "mkdir -p ${quote(workingDir)} && cd ${quote(workingDir)} || exit 126\n" +
+        val commandBody = if (environment == TerminalEnvironment.LINUX) buildLinuxCommand(trimmed, workingDir) else trimmed
+        val body = (if (environment == TerminalEnvironment.ANDROID) "mkdir -p ${quote(workingDir)} && cd ${quote(workingDir)} || exit 126\n" else "") +
             "export TERM=dumb NO_COLOR=1 RIKKAHUB_PROCESS_OWNER=${quote(token)}\n" +
-            "$trimmed\nrikkahub_status=\$?\nwait\nexit \$rikkahub_status"
+            "$commandBody\nrikkahub_status=\$?\nwait\nexit \$rikkahub_status"
         val groupBody = "printf '%s group\\n' \"\$\$\" > ${quote(ownerFile.absolutePath)}; $body"
         val treeBody = "printf '%s tree\\n' \"\$\$\" > ${quote(ownerFile.absolutePath)}; $body"
         val launcher = "export RIKKAHUB_PROCESS_OWNER=${quote(token)}; " +
@@ -103,6 +108,24 @@ class AndroidRootTerminalController(private val cacheDir: File) : AutoCloseable 
         val running = RunningCommand(process, stdout, stderr, outThread, errThread, ownerFile, token, timeoutMs.coerceIn(1_000, MAX_TIMEOUT_MS), mergeStderr)
         resolveOwnership(running)
         return running
+    }
+
+    private fun buildLinuxCommand(command: String, cwd: String): String {
+        val rootfs = File(context.filesDir, "terminal/alpine/rootfs")
+        require(File(rootfs, ".rikkahub-environment-ready").isFile) { "全局 Linux 环境尚未安装" }
+        val inner = """
+            bb=${'$'}1; root=${'$'}2
+            "${'$'}bb" mount -t proc proc "${'$'}root/proc" || exit 125
+            "${'$'}bb" mount -o rbind /dev "${'$'}root/dev" || exit 125
+            "${'$'}bb" mount -o rbind /sys "${'$'}root/sys" 2>/dev/null || true
+            "${'$'}bb" mount -o bind /storage/emulated/0 "${'$'}root/storage/emulated/0" 2>/dev/null || true
+            "${'$'}bb" mount -o bind /data/local/tmp "${'$'}root/data/local/tmp" || exit 125
+            "${'$'}bb" mkdir -p /data/local/tmp/rikkahub
+            "${'$'}bb" mount -o bind /data/local/tmp/rikkahub "${'$'}root/workspace" || exit 125
+            exec "${'$'}bb" chroot "${'$'}root" /usr/bin/env -i HOME=/root USER=root LOGNAME=root TERM=dumb NO_COLOR=1 LANG=C.UTF-8 LC_ALL=C.UTF-8 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin /bin/sh -lc ${quote("cd -- ${quote(cwd)} && $command")}
+        """.trimIndent()
+        val discovery = "bb=''; for p in /data/adb/magisk/busybox /data/adb/ksu/bin/busybox /data/adb/ap/bin/busybox /system/xbin/busybox /system/bin/busybox; do [ -x \"\$p\" ] && bb=\"\$p\" && break; done"
+        return "$discovery; [ -n \"\$bb\" ] || { echo BUSYBOX_MISSING >&2; exit 127; }; \"\$bb\" unshare -m --propagation private \"\$bb\" sh -c ${quote(inner)} linux \"\$bb\" ${quote(rootfs.absolutePath)}"
     }
 
     private fun resolveOwnership(running: RunningCommand) {
