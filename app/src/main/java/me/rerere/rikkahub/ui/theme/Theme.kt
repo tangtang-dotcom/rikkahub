@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.view.ViewTreeObserver
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -11,6 +12,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
@@ -82,14 +84,36 @@ fun RikkahubTheme(
         }
     val extendColors = if (darkTheme) ExtendDarkColors else ExtendLightColors
 
-    // 更新状态栏图标颜色
+    // Keep system-bar icon contrast tied to the app theme, rather than the system theme
+    // sampled once by enableEdgeToEdge(). Some OEMs reset these flags when a dialog,
+    // permission screen, or another activity gives the window focus back. Use decorView
+    // (the actual system-bar host) and restore the flags on every focus regain.
     val view = LocalView.current
     if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).apply {
+        val activity = view.context as Activity
+        val window = activity.window
+        val decorView = window.decorView
+        val applySystemBarAppearance = {
+            WindowCompat.getInsetsController(window, decorView).apply {
                 isAppearanceLightStatusBars = !darkTheme
                 isAppearanceLightNavigationBars = !darkTheme
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isStatusBarContrastEnforced = false
+                window.isNavigationBarContrastEnforced = false
+            }
+        }
+
+        SideEffect(applySystemBarAppearance)
+        DisposableEffect(window, decorView, darkTheme) {
+            val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+                if (hasFocus) applySystemBarAppearance()
+            }
+            decorView.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
+            onDispose {
+                if (decorView.viewTreeObserver.isAlive) {
+                    decorView.viewTreeObserver.removeOnWindowFocusChangeListener(focusListener)
+                }
             }
         }
     }
