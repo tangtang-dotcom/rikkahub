@@ -31,7 +31,7 @@ fun createAndroidDeviceTools(context: Context): List<Tool> = listOf(Tool(
     parameters = { InputSchema.Obj(properties = buildJsonObject {
         put("action", buildJsonObject {
                             put("type", "string")
-                            put("enum", buildJsonArray { DEVICE_ACTIONS.forEach(::add) })
+                            put("enum", buildJsonArray { DEVICE_ACTIONS.forEach { add(it) } })
                             put("description", "Read-only diagnostic category")
                         })
     }, required = listOf("action")) },
