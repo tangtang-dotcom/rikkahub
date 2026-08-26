@@ -259,11 +259,7 @@ fun MarkdownBlock(
             .mapLatest { parseMarkdown(it) }
             .catch { exception -> Log.e(TAG, "MarkdownBlock: failed to parse markdown", exception) }
             .flowOn(Dispatchers.Default)
-            .collectLatest { parsed ->
-                setData { old ->
-                    if (old.preprocessed == parsed.preprocessed) old else parsed
-                }
-            }
+            .collectLatest { parsed -> setData(parsed) }
     }
 
     if (data.hasHtml) {
