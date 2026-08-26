@@ -54,6 +54,7 @@ import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidRootTerminalTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidDeviceTools
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
@@ -560,6 +561,7 @@ class ChatService(
                         addAll(createSearchTools(settings))
                     }
                     addAll(localTools.getTools(assistant.localTools))
+                    addAll(createAndroidDeviceTools(context))
                     if (settings.rootTerminalEnabled) {
                         addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
                     }
