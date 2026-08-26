@@ -261,8 +261,8 @@ fun MarkdownBlock(
             .catch { exception -> Log.e(TAG, "MarkdownBlock: failed to parse markdown", exception) }
             .flowOn(Dispatchers.Default)
             .collect { parsed ->
-                setData { old ->
-                    if (old.preprocessed == parsed.preprocessed) old else parsed
+                if (data.preprocessed != parsed.preprocessed) {
+                    setData(parsed)
                 }
             }
     }

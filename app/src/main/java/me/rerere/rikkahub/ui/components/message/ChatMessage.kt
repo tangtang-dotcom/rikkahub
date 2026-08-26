@@ -60,6 +60,7 @@ import androidx.core.net.toFile
 import androidx.core.net.toUri
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
