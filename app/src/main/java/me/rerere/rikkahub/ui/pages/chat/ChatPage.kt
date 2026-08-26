@@ -55,11 +55,6 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.hazeBlur
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.BuiltInTools
@@ -325,7 +320,6 @@ private fun ChatPageContent(
     setting: Settings,
     bigScreen: Boolean,
     conversation: Conversation,
-    hazeState: dev.chrisbanes.haze.HazeState,
     drawerState: DrawerState,
     navController: Navigator,
     vm: ChatVM,
@@ -415,7 +409,6 @@ private fun ChatPageContent(
     // 进入对话页时检查沙箱授权状态（token 文件是否存在）
     LaunchedEffect(Unit) { checkVaultAuth() }
     var previewMode by rememberSaveable { mutableStateOf(false) }
-    val hazeState = rememberHazeState()
     val assistant = setting.getCurrentAssistant()
     var showFilesSheet by remember { mutableStateOf(false) }
     var showAutoTaskDialog by remember { mutableStateOf(false) }
@@ -441,13 +434,12 @@ private fun ChatPageContent(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize(),
     ) {
-        AssistantBackground(setting = setting, modifier = Modifier.hazeSource(hazeState))
+        AssistantBackground(setting = setting)
         Scaffold(
             topBar = {
                 TopBar(
                     settings = setting,
                     conversation = conversation,
-                    hazeState = hazeState,
                     bigScreen = bigScreen,
                     drawerState = drawerState,
                     previewMode = previewMode,
@@ -472,7 +464,6 @@ private fun ChatPageContent(
                     state = inputState,
                     loading = loadingJob != null,
                     settings = setting,
-                    hazeState = hazeState,
                     completionProviders = completionProviders,
                     onCancelClick = {
                         vm.stopGeneration()
@@ -1019,10 +1010,7 @@ private fun TopBar(
         }
 
     TopAppBar(
-        modifier = Modifier.hazeBlur(
-            input = HazeInput.Sources(hazeState),
-            style = HazeBlurStyle.Materials { blurRadius(12.dp) },
-        ),
+        modifier = Modifier,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             if (!bigScreen) {
