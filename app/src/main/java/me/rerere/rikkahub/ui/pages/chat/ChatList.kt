@@ -333,6 +333,7 @@ private fun ChatListNormal(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .hazeSource(state = hazeState)
                         .padding(top = innerPadding.calculateTopPadding()),
             ) {
                 itemsIndexed(
