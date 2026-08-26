@@ -300,14 +300,19 @@ private fun ChatListNormal(
         // 自动滚动到底部
         if (settings.displaySetting.enableAutoScroll) {
             LaunchedEffect(state) {
-                snapshotFlow { state.layoutInfo.visibleItemsInfo }.collect { visibleItemsInfo ->
-                    // println("is bottom = ${visibleItemsInfo.isAtBottom()}, scroll = ${state.isScrollInProgress}, can_scroll = ${state.canScrollForward}, loading = $loading")
-                    if (!state.isScrollInProgress && loadingState) {
-                        if (visibleItemsInfo.isAtBottom()) {
-                            state.requestScrollToItem(conversationUpdated.messageNodes.lastIndex + 10)
-                            // Log.i(TAG, "ChatList: scroll to ${conversationUpdated.messageNodes.lastIndex}")
-                        }
+                snapshotFlow {
+                    Triple(state.layoutInfo.visibleItemsInfo, state.layoutInfo.totalItemsCount, state.isScrollInProgress)
+                }.collect { (visibleItemsInfo, totalItemsCount, scrolling) ->
+                    if (!scrolling && loadingState && visibleItemsInfo.isAtBottom()) {
+                        state.requestScrollToItem((totalItemsCount - 1).coerceAtLeast(0))
                     }
+                }
+            }
+            LaunchedEffect(state, conversationUpdated.messageNodes.size) {
+                snapshotFlow { state.layoutInfo.totalItemsCount }.collect { totalItemsCount ->
+                    if (totalItemsCount > 0 && !state.isScrollInProgress &&
+                        (loadingState || state.firstVisibleItemIndex >= totalItemsCount - 2)
+                    ) state.requestScrollToItem(totalItemsCount - 1)
                 }
             }
         }
