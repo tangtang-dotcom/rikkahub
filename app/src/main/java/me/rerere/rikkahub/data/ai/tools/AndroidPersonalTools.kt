@@ -51,7 +51,8 @@ fun createAndroidPersonalTools(context: Context): List<Tool> = listOf(Tool(
             put("items", buildJsonArray { page.forEach { add(it) } })
         }.toString()))
     },
-    Tool(
+),
+Tool(
         name = "android_contacts",
         description = "Read bounded contact names and phone numbers; exposes personal data and requires approval.",
         parameters = { InputSchema.Obj(properties = buildJsonObject {
