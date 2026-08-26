@@ -55,6 +55,10 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.blur.material3.Material3
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Job
@@ -460,6 +464,7 @@ private fun ChatPageContent(
                             setting.copy(executionBackend = backend),
                         )
                     },
+                    hazeState = hazeState,
                 )
             },
             bottomBar = {
@@ -1004,6 +1009,7 @@ private fun TopBar(
     onNewChat: () -> Unit,
     onUpdateTitle: (String) -> Unit,
     onBackendChange: (String) -> Unit,
+    hazeState: dev.chrisbanes.haze.HazeState,
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -1012,9 +1018,16 @@ private fun TopBar(
         useEditState<String> {
             onUpdateTitle(it)
         }
+    val topBarHazeStyle = HazeBlurStyle.Material3 {
+        blurRadius(16.dp)
+    }
 
     TopAppBar(
-        modifier = Modifier,
+        modifier = Modifier
+            .hazeBlur(
+                input = HazeInput.Sources(hazeState),
+                style = topBarHazeStyle,
+            ),
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             if (!bigScreen) {
