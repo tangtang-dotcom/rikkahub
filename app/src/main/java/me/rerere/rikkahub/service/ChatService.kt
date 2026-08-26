@@ -55,6 +55,7 @@ import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidRootTerminalTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidDeviceTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidSystemTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidAppControlTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidMediaTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidMediaIndexTools
@@ -567,6 +568,7 @@ class ChatService(
                     }
                     addAll(localTools.getTools(assistant.localTools))
                     addAll(createAndroidDeviceTools(context))
+                    addAll(createAndroidSystemTools(context))
                     addAll(createAndroidAppControlTools(context))
                     addAll(createAndroidMediaTools(context))
                     addAll(createAndroidMediaIndexTools(context))
