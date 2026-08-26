@@ -721,6 +721,10 @@ private fun ChatFilesPickerSheet(
             onPickVideo = { videoPickerLauncher.launch("video/*") },
             onPickAudio = { audioPickerLauncher.launch("audio/*") },
             onPickFile = { filePickerLauncher.launch(arrayOf("*/*")) },
+            showAutoCompressDialog = showAutoCompressDialog,
+            onShowAutoCompressDialogChange = { showAutoCompressDialog = it },
+            showToolOutputDialog = showToolOutputDialog,
+            onShowToolOutputDialogChange = { showToolOutputDialog = it },
         )
     }
 }
