@@ -1023,11 +1023,7 @@ private fun TopBar(
     }
 
     TopAppBar(
-        modifier = Modifier
-            .hazeBlur(
-                input = HazeInput.Sources(hazeState),
-                style = topBarHazeStyle,
-            ),
+        modifier = Modifier,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             if (!bigScreen) {
@@ -1041,6 +1037,14 @@ private fun TopBar(
             }
         },
         title = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = topBarHazeStyle,
+                    ),
+            ) {
             val editTitleWarning = stringResource(R.string.chat_page_edit_title_warning)
             Surface(
                 onClick = {
@@ -1079,6 +1083,7 @@ private fun TopBar(
                         )
                     }
                 }
+            }
             }
         },
         actions = {
