@@ -221,7 +221,11 @@ fun ChatInput(
                 shape = containerShape,
                 tonalElevation = 0.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                color = if (useInputBlur) Color.Transparent else hazeTintColor,
+                color = if (useInputBlur) {
+                    hazeTintColor.copy(alpha = 0.82f)
+                } else {
+                    hazeTintColor
+                },
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

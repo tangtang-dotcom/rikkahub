@@ -668,7 +668,7 @@ private fun ChatListPreview(
             Modifier
                 .padding(top = innerPadding.calculateTopPadding())
                 .fillMaxSize()
-                .hazeSource(state = hazeState),
+
     ) {
         // 搜索框
         OutlinedTextField(
