@@ -2,6 +2,9 @@ package me.rerere.rikkahub.data.ai.tools
 
 import android.content.Context
 import android.provider.CalendarContract
+import android.provider.ContactsContract
+import android.Manifest
+import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
@@ -48,4 +51,35 @@ fun createAndroidPersonalTools(context: Context): List<Tool> = listOf(Tool(
             put("items", buildJsonArray { page.forEach { add(it) } })
         }.toString()))
     },
+    Tool(
+        name = "android_contacts",
+        description = "Read bounded contact names and phone numbers; exposes personal data and requires approval.",
+        parameters = { InputSchema.Obj(properties = buildJsonObject {
+            put("query", buildJsonObject { put("type", "string") })
+            put("limit", buildJsonObject { put("type", "integer") })
+        }) },
+        needsApproval = { true },
+        execute = { input ->
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                return@Tool listOf(UIMessagePart.Text(buildJsonObject {
+                    put("error", "NO_PERMISSION"); put("message", "READ_CONTACTS permission is not granted")
+                }.toString()))
+            }
+            val query = input.jsonObject["query"]?.jsonPrimitive?.contentOrNull
+            val limit = (input.jsonObject["limit"]?.jsonPrimitive?.intOrNull ?: 50).coerceIn(1, 100)
+            val rows = mutableListOf<JsonObject>()
+            context.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.Data.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER),
+                query?.let { "${ContactsContract.Data.DISPLAY_NAME} LIKE ?" }, query?.let { arrayOf("%$it%") },
+                "${ContactsContract.Data.DISPLAY_NAME} ASC")?.use { c ->
+                while (c.moveToNext() && rows.size < limit) rows += buildJsonObject {
+                    put("name", c.getString(0) ?: ""); put("phone", c.getString(1) ?: "")
+                }
+            }
+            listOf(UIMessagePart.Text(buildJsonObject {
+                put("query", query ?: ""); put("count", rows.size)
+                put("items", buildJsonArray { rows.forEach { add(it) } })
+            }.toString()))
+        },
+    ),
 ))
