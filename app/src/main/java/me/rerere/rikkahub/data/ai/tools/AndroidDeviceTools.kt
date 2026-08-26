@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Build
 import android.os.StatFs
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -16,15 +17,27 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 
+private val DEVICE_ACTIONS = listOf("status", "battery", "memory", "storage", "network")
+
+internal fun androidDeviceAction(input: kotlinx.serialization.json.JsonObject): String {
+    val action = input["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
+    require(action in DEVICE_ACTIONS) { "Unsupported action: $action" }
+    return action
+}
+
 fun createAndroidDeviceTools(context: Context): List<Tool> = listOf(Tool(
     name = "android_device_info",
     description = "Read Android device status, battery, memory, storage, and network information.",
     parameters = { InputSchema.Obj(properties = buildJsonObject {
-        put("action", buildJsonObject { put("type", "string") })
+        put("action", buildJsonObject {
+                            put("type", "string")
+                            put("enum", buildJsonArray { DEVICE_ACTIONS.forEach(::add) })
+                            put("description", "Read-only diagnostic category")
+                        })
     }, required = listOf("action")) },
     needsApproval = { false },
     execute = { input ->
-        val action = input.jsonObject["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
+        val action = androidDeviceAction(input.jsonObject)
         val payload = when (action) {
             "status" -> buildJsonObject {
                     put("manufacturer", Build.MANUFACTURER); put("model", Build.MODEL)
