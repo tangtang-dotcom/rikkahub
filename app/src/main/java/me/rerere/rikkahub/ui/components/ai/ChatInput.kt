@@ -144,15 +144,8 @@ fun ChatInput(
 
     val containerShape = MaterialTheme.shapes.largeIncreased
     val density = LocalDensity.current
-    // Unlike isImeVisible, the target changes as soon as the IME animation starts.
-    val imeCurrentBottom = WindowInsets.ime.getBottom(density)
-    val imeTargetBottom = WindowInsets.imeAnimationTarget.getBottom(density)
-    val imeTargetVisible = imeTargetBottom > 0
-    // A live blur layer has to recapture the whole chat on every IME inset frame.
-    // Fall back to an opaque surface only during that transition; this preserves
-    // the configured appearance at rest while keeping keyboard motion smooth.
-    val imeAnimationRunning = imeCurrentBottom != imeTargetBottom
-    val useInputBlur = settings.displaySetting.enableBlurEffect && !imeAnimationRunning
+    val imeTargetVisible = WindowInsets.imeAnimationTarget.getBottom(density) > 0
+    val useInputBlur = settings.displaySetting.enableBlurEffect
 
     fun sendMessage() {
         focusManager.clearFocus(force = true)
