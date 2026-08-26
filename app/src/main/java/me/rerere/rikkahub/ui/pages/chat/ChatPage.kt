@@ -1021,7 +1021,7 @@ private fun TopBar(
     TopAppBar(
         modifier = Modifier.hazeBlur(
             input = HazeInput.Sources(hazeState),
-            style = HazeBlurStyle.Material3 { blurRadius(12.dp) },
+            style = HazeBlurStyle.Materials { blurRadius(12.dp) },
         ),
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
