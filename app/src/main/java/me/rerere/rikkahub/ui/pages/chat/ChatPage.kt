@@ -56,6 +56,9 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -445,6 +448,7 @@ private fun ChatPageContent(
                     conversation = conversation,
                     bigScreen = bigScreen,
                     drawerState = drawerState,
+                    hazeState = hazeState,
                     previewMode = previewMode,
                     onNewChat = {
                         navigateToChatPage(navController)
@@ -998,6 +1002,7 @@ private fun TopBar(
     settings: Settings,
     conversation: Conversation,
     drawerState: DrawerState,
+    hazeState: dev.chrisbanes.haze.HazeState,
     bigScreen: Boolean,
     previewMode: Boolean,
     onClickMenu: () -> Unit,
@@ -1014,7 +1019,12 @@ private fun TopBar(
         }
 
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        modifier = Modifier.hazeEffect(state = hazeState) {
+            blurEffect { style = HazeMaterials.thin(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.78f),
+        ),
         navigationIcon = {
             if (!bigScreen) {
                 IconButton(
