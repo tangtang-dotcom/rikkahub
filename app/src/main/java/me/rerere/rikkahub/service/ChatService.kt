@@ -55,6 +55,7 @@ import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidRootTerminalTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidDeviceTools
+import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
@@ -607,7 +608,7 @@ class ChatService(
                             )
                         )
                     }
-                },
+                }.let(::normalizeToolRegistry),
             ).onCompletion {
                 // 可能被取消了，或者意外结束，兜底更新
                 val updatedConversation = getConversationFlow(conversationId).value.copy(
