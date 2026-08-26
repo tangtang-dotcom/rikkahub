@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.ai.tools
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonElement
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import org.junit.Assert.assertTrue
@@ -11,7 +11,7 @@ class ToolRegistryTest {
     private fun tool(name: String, fail: Boolean = false) = Tool(
         name = name,
         description = "test",
-        execute = { _: JsonObject ->
+        execute = { _: JsonElement ->
             if (fail) error("boom")
             listOf(UIMessagePart.Text("ok"))
         },
@@ -23,7 +23,7 @@ class ToolRegistryTest {
     }
 
     @Test fun `tool failures become structured results`() = runBlocking {
-        val result = normalizeToolRegistry(listOf(tool("x", fail = true))).single().execute(JsonObject(emptyMap())).single()
+        val result = normalizeToolRegistry(listOf(tool("x", fail = true))).single().execute(JsonElement?::class.java.let { kotlinx.serialization.json.JsonObject(emptyMap()) }).single()
         assertTrue(result is UIMessagePart.Text)
         assertTrue((result as UIMessagePart.Text).text.contains("TOOL_EXECUTION_FAILED"))
         assertTrue(result.text.contains("\"ok\":false"))
