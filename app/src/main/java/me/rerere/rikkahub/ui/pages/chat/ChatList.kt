@@ -300,12 +300,9 @@ private fun ChatListNormal(
         // 自动滚动到底部
         if (settings.displaySetting.enableAutoScroll) {
             LaunchedEffect(state) {
-                snapshotFlow {
-                    state.layoutInfo.visibleItemsInfo.lastOrNull()?.index to
-                        state.layoutInfo.totalItemsCount
-                }.collect { (lastVisibleIndex, totalItemsCount) ->
-                    if (loadingState && lastVisibleIndex == totalItemsCount - 1) {
-                        state.requestScrollToItem((totalItemsCount - 1).coerceAtLeast(0))
+                snapshotFlow { state.layoutInfo.visibleItemsInfo }.collect { visibleItemsInfo ->
+                    if (!state.isScrollInProgress && loadingState && visibleItemsInfo.isAtBottom()) {
+                        state.requestScrollToItem(conversationUpdated.messageNodes.lastIndex + 10)
                     }
                 }
             }
@@ -339,7 +336,6 @@ private fun ChatListNormal(
                 itemsIndexed(
                     items = conversation.messageNodes,
                     key = { _, item -> item.id },
-                    contentType = { _, item -> item.currentMessage.role },
                 ) { index, node ->
                     Column {
                         ListSelectableItem(

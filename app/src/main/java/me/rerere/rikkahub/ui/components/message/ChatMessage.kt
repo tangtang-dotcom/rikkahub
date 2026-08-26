@@ -338,17 +338,14 @@ private fun MessagePartsBlock(
                 }
             }
         }
-    LaunchedEffect(settings.displaySetting, loading) {
-        if (loading && settings.displaySetting.enableMessageGenerationHapticEffect) {
-            snapshotFlow { partsState.lastOrNull()?.hashCode() }
-                .distinctUntilChanged()
-                .debounce(50.milliseconds)
-                .collect { partHash ->
-                    if (partHash != null) {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.KeyboardTap)
-                    }
+    LaunchedEffect(settings.displaySetting) {
+        snapshotFlow { partsState }
+            .debounce(50.milliseconds)
+            .collect { parts ->
+                if (parts.isNotEmpty() && loading && settings.displaySetting.enableMessageGenerationHapticEffect) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.KeyboardTap)
                 }
-        }
+            }
     }
 
     // Render parts in original order (group thinking/tool as chain-of-thought)
@@ -356,8 +353,7 @@ private fun MessagePartsBlock(
     // recomposition. During streaming the list grows one element at a time so size alone is
     // sufficient to detect a meaningful change; the lastOrNull() hash catches in-place edits
     // on the tail part (e.g. streaming text appended to the final Text part).
-    val partsKey = parts.size.toString() + (parts.lastOrNull()?.hashCode()?.toString() ?: "")
-    val groupedParts = remember(partsKey) { parts.groupMessageParts() }
+    val groupedParts = remember(parts) { parts.groupMessageParts() }
     groupedParts.fastForEach { block ->
         when (block) {
             is MessagePartBlock.ThinkingBlock -> {
