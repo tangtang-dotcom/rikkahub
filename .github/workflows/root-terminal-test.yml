@@ -1,10 +1,11 @@
-name: Root Terminal Test APK
+name: RikkaHub Eta Integration Debug APK
 
 on:
   workflow_dispatch:
   push:
     branches:
       - feature/android-root-terminal
+      - feature/eta-agent-integration
 
 permissions:
   contents: read
@@ -85,7 +86,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rikkahub-root-terminal-debug-${{ github.sha }}
+          name: rikkahub-eta-integration-debug-${{ github.sha }}
           path: root-terminal-apk/
           if-no-files-found: error
           retention-days: 14
