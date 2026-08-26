@@ -369,7 +369,6 @@ private fun MessagePartsBlock(
                                 it.tool.approvalState is ToolApprovalState.Pending
                         }
                     ChainOfThought(
-                        modifier = Modifier.animateContentSize(),
                         steps = block.steps,
                         collapsedAdaptiveWidth = isReasoningOnlyBlock,
                         forceExpanded = hasPendingApproval,
@@ -443,7 +442,6 @@ private fun MessagePartsBlock(
                             val textContent = @Composable {
                                 if (role == MessageRole.USER) {
                                     Surface(
-                                        modifier = Modifier.animateContentSize(),
                                         shape = RoundedCornerShape(16.dp),
                                         color =
                                             MaterialTheme.colorScheme.primaryContainer.copy(
@@ -461,7 +459,6 @@ private fun MessagePartsBlock(
                                 } else {
                                     if (settings.displaySetting.showAssistantBubble) {
                                         Surface(
-                                            modifier = Modifier.animateContentSize(),
                                             shape = RoundedCornerShape(16.dp),
                                             color =
                                                 MaterialTheme.colorScheme.surfaceContainerHigh.copy(
@@ -479,9 +476,7 @@ private fun MessagePartsBlock(
                                         MarkdownBlock(
                                             content = renderedText,
                                             onClickCitation = handleClickCitation,
-                                            modifier =
-                                                Modifier
-                                                    .animateContentSize(),
+                                            modifier = Modifier,
                                         )
                                     }
                                 }
