@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -43,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -1025,7 +1023,12 @@ private fun TopBar(
     }
 
     TopAppBar(
-        modifier = Modifier,
+        modifier = Modifier
+            .fillMaxWidth()
+            .hazeBlur(
+                input = HazeInput.Sources(hazeState),
+                style = topBarHazeStyle,
+            ),
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             if (!bigScreen) {
@@ -1039,14 +1042,6 @@ private fun TopBar(
             }
         },
         title = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .hazeBlur(
-                        input = HazeInput.Sources(hazeState),
-                        style = topBarHazeStyle,
-                    ),
-            ) {
             val editTitleWarning = stringResource(R.string.chat_page_edit_title_warning)
             Surface(
                 onClick = {
@@ -1085,7 +1080,6 @@ private fun TopBar(
                         )
                     }
                 }
-            }
             }
         },
         actions = {
