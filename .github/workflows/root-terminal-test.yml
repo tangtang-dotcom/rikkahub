@@ -72,6 +72,11 @@ jobs:
           }
           JSON
 
+      - name: Run JVM unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest --no-daemon
+
       - name: Build debug APK
         run: |
           chmod +x gradlew
