@@ -360,7 +360,15 @@ class ResponseAPI(
                                     val content = reasoningParts
                                         .filter { it.reasoningType == ReasoningType.REASONING_TEXT }
                                         .filter { it.reasoning.isNotEmpty() }
-                                    if (content.isNotEmpty()) {
+                                    // A lone encrypted reasoning item must not replay plaintext.
+                                    // When the item also has a summary, preserve the distinct raw
+                                    // reasoning stream so round-tripping does not lose content.
+                                    val shouldReplayContent = content.isNotEmpty() &&
+                                        (encryptedContent == null || reasoningParts.any {
+                                            it.reasoningType == ReasoningType.SUMMARY_TEXT &&
+                                                it.reasoning.isNotEmpty()
+                                        })
+                                    if (shouldReplayContent) {
                                         put("content", buildJsonArray {
                                             content.forEach {
                                                 add(buildJsonObject {
