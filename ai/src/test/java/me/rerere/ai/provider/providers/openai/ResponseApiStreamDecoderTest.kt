@@ -128,6 +128,17 @@ class ResponseApiStreamDecoderTest {
     }
 
     @Test
+    fun `reasoning item without text or encrypted content emits no synthetic part`() {
+        val decoder = ResponseApiStreamDecoder()
+        val chunks = buildList {
+            addAll(decoder.decode(reasoningItemEvent("response.output_item.added")))
+            addAll(decoder.decode(reasoningItemEvent("response.output_item.done")))
+        }
+
+        assertTrue(chunks.isEmpty())
+    }
+
+    @Test
     fun `reasoning item should keep final metadata after summary done event`() {
         val decoder = ResponseApiStreamDecoder()
         val chunks = buildList {

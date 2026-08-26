@@ -277,6 +277,10 @@ internal class ResponseApiStreamDecoder : StreamChunkDecoder {
             if (ids.isNotEmpty()) return ids.flatMap { endReasoning(it, metadata) }
 
             // encrypted_content 可以在 summary 为空时单独出现，仍需物化 metadata-only reasoning part。
+            // 没有任何文本和加密内容时，不创建虚假的空 reasoning。
+            val hasEncryptedContent = metadata?.get("encrypted_content")
+                ?.jsonPrimitive?.contentOrNull != null
+            if (!hasEncryptedContent) return emptyList()
             val id = "$itemId:reasoning:metadata:0"
             return startReasoning(id, metadata, ReasoningType.REASONING_TEXT) + endReasoning(id, metadata)
         }

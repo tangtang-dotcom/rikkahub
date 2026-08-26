@@ -29,6 +29,7 @@ fun createAndroidRootTerminalTools(
             Use action=run for normal commands. Use action=start for a long-running command, then action=read with job_id,
             and action=close to cancel or discard it. Use action=status to verify that su returns uid 0.
             Android absolute paths such as /data/adb, /data/data, /system and /storage/emulated/0 are supported.
+            This is a destructive capability: do not modify or delete data unless the user explicitly asked for it.
             Approval behavior is controlled by the Root terminal setting.
         """.trimIndent().replace("\n", " "),
         parameters = {
@@ -55,7 +56,8 @@ fun createAndroidRootTerminalTools(
                     put("job_id", buildJsonObject { put("type", "string") })
                     put("offset", buildJsonObject { put("type", "integer") })
                     put("max_chars", buildJsonObject { put("type", "integer") })
-                }
+                },
+                required = listOf("action"),
             )
         },
         needsApproval = { requireApproval },
