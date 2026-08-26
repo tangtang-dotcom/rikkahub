@@ -1019,9 +1019,7 @@ private fun TopBar(
         }
 
     TopAppBar(
-        modifier = Modifier.hazeEffect(state = hazeState) {
-            blurEffect { style = HazeMaterials.thin(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) }
-        },
+        modifier = Modifier.hazeEffect(state = hazeState),
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.78f),
         ),
