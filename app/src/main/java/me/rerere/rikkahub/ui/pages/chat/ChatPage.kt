@@ -56,7 +56,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
@@ -1019,10 +1020,11 @@ private fun TopBar(
         }
 
     TopAppBar(
-        modifier = Modifier.hazeEffect(state = hazeState),
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.78f),
+        modifier = Modifier.hazeBlur(
+            input = dev.chrisbanes.haze.HazeInput.Sources(hazeState),
+            style = HazeBlurStyle.Material3 { blurRadius(12.dp) },
         ),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             if (!bigScreen) {
                 IconButton(

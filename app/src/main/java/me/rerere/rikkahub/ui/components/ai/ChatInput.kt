@@ -79,7 +79,9 @@ import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.hazeBlur
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collectLatest
 import me.rerere.ai.provider.Model
@@ -206,19 +208,15 @@ fun ChatInput(
                     .fillMaxWidth()
                     .clip(containerShape)
                     .then(
-                        if (useInputBlur) Modifier.hazeEffect(state = hazeState) {
-                            blurEffect { style = inputHazeStyle }
-                        }
-                        else Modifier
+                        if (useInputBlur) Modifier.hazeBlur(
+                            input = HazeInput.Sources(hazeState),
+                            style = HazeBlurStyle.Material3 { blurRadius(12.dp) },
+                        ) else Modifier
                     ),
                 shape = containerShape,
                 tonalElevation = 0.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                color = if (useInputBlur) {
-                    hazeTintColor.copy(alpha = 0.82f)
-                } else {
-                    hazeTintColor
-                },
+                color = if (useInputBlur) Color.Transparent else hazeTintColor,
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
