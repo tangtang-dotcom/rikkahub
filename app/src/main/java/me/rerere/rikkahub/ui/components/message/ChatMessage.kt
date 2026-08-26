@@ -337,14 +337,17 @@ private fun MessagePartsBlock(
                 }
             }
         }
-    LaunchedEffect(settings.displaySetting) {
-        snapshotFlow { partsState }
-            .debounce(50.milliseconds)
-            .collect { parts ->
-                if (parts.isNotEmpty() && loading && settings.displaySetting.enableMessageGenerationHapticEffect) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+    LaunchedEffect(settings.displaySetting, loading) {
+        if (loading && settings.displaySetting.enableMessageGenerationHapticEffect) {
+            snapshotFlow { partsState.lastOrNull()?.hashCode() }
+                .distinctUntilChanged()
+                .debounce(50.milliseconds)
+                .collect { partHash ->
+                    if (partHash != null) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+                    }
                 }
-            }
+        }
     }
 
     // Render parts in original order (group thinking/tool as chain-of-thought)
