@@ -60,10 +60,14 @@ fun createAndroidRootTerminalTools(
                 required = listOf("action"),
             )
         },
-        needsApproval = { requireApproval },
+        // Read-only lifecycle operations do not need approval. Commands that can
+        // affect the Android host (run/start) remain approval-gated.
+        needsApproval = { input ->
+            rootTerminalNeedsApproval(input.jsonObject, requireApproval)
+        },
         execute = { input ->
             val p = input.jsonObject
-            val action = p["action"]?.jsonPrimitive?.contentOrNull ?: "run"
+            val action = rootTerminalAction(p)
             val command = p["command"]?.jsonPrimitive?.contentOrNull
             val cwd = p["cwd"]?.jsonPrimitive?.contentOrNull
             val timeout = (p["timeout_ms"]?.jsonPrimitive?.longOrNull ?: 30_000L).coerceIn(1_000L, 180_000L)
@@ -105,7 +109,7 @@ fun createAndroidRootTerminalTools(
                         }
                     }
                     "close" -> buildJsonObject {
-                        put("ok", controller.closeJob(p["job_id"]?.jsonPrimitive?.contentOrNull ?: error("job_id is required")))
+                        put("ok", controller.closeJob(requiredString(p, "job_id")))
                     }
                     else -> error("Unsupported action: $action")
                 }
@@ -114,6 +118,25 @@ fun createAndroidRootTerminalTools(
         },
     )
 )
+
+private val ROOT_TERMINAL_ACTIONS = setOf("run", "start", "read", "close", "status")
+private val APPROVAL_REQUIRED_ACTIONS = setOf("run", "start")
+
+internal fun rootTerminalAction(input: kotlinx.serialization.json.JsonObject): String {
+    val action = input["action"]?.jsonPrimitive?.contentOrNull
+        ?: error("action is required")
+    require(action in ROOT_TERMINAL_ACTIONS) { "Unsupported action: $action" }
+    return action
+}
+
+internal fun rootTerminalNeedsApproval(
+    input: kotlinx.serialization.json.JsonObject,
+    requireApproval: Boolean,
+): Boolean = requireApproval && rootTerminalAction(input) in APPROVAL_REQUIRED_ACTIONS
+
+private fun requiredString(input: kotlinx.serialization.json.JsonObject, name: String): String =
+    input[name]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+        ?: error("$name is required")
 
 private fun buildResult(exitCode: Int?, timedOut: Boolean, stdout: String, stderr: String, truncated: Boolean) = buildJsonObject {
     put("ok", exitCode == 0 && !timedOut)
