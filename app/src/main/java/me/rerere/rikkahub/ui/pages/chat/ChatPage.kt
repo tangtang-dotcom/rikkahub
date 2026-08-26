@@ -413,6 +413,7 @@ private fun ChatPageContent(
     var showFilesSheet by remember { mutableStateOf(false) }
     var showAutoTaskDialog by remember { mutableStateOf(false) }
     var autoTaskConfig by remember { mutableStateOf(readAutoTaskConfig(context)) }
+    val hazeState = rememberHazeState()
 
     val completionProviders =
         remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
@@ -434,7 +435,7 @@ private fun ChatPageContent(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize(),
     ) {
-        AssistantBackground(setting = setting)
+        AssistantBackground(setting = setting, modifier = Modifier)
         Scaffold(
             topBar = {
                 TopBar(
@@ -464,6 +465,7 @@ private fun ChatPageContent(
                     state = inputState,
                     loading = loadingJob != null,
                     settings = setting,
+                    hazeState = hazeState,
                     completionProviders = completionProviders,
                     onCancelClick = {
                         vm.stopGeneration()
