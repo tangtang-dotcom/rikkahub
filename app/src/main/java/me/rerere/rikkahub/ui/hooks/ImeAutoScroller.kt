@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalDensity
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun ImeLazyListAutoScroller(lazyListState: LazyListState) {
@@ -21,16 +21,15 @@ fun ImeLazyListAutoScroller(lazyListState: LazyListState) {
     var previousImeBottom by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(lazyListState, density) {
-        snapshotFlow { ime.getBottom(density) }.collect { imeBottom ->
-            val delta = imeBottom - previousImeBottom
-            previousImeBottom = imeBottom
-            if (delta == 0 || !lazyListState.canScrollForward) return@collect
-            lazyListState.scrollBy(delta.toFloat())
-            delay(16)
-            if (imeBottom == ime.getBottom(density) && lazyListState.canScrollForward) {
-                lazyListState.scrollBy(1f)
-                lazyListState.scrollBy(-1f)
+        snapshotFlow { ime.getBottom(density) }
+            .distinctUntilChanged()
+            .collect { imeBottom ->
+                val delta = imeBottom - previousImeBottom
+                previousImeBottom = imeBottom
+                if (delta == 0 || !lazyListState.canScrollForward) return@collect
+                // Apply the inset delta directly. Avoid the old delay and 1/-1 nudge,
+                // which caused extra measure/layout passes and jank while the IME closed.
+                lazyListState.scrollBy(delta.toFloat())
             }
-        }
     }
 }

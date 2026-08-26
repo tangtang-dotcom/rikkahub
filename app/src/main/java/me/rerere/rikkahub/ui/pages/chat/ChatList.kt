@@ -301,18 +301,15 @@ private fun ChatListNormal(
         if (settings.displaySetting.enableAutoScroll) {
             LaunchedEffect(state) {
                 snapshotFlow {
-                    Triple(state.layoutInfo.visibleItemsInfo, state.layoutInfo.totalItemsCount, state.isScrollInProgress)
-                }.collect { (visibleItemsInfo, totalItemsCount, scrolling) ->
-                    if (!scrolling && loadingState && visibleItemsInfo.isAtBottom()) {
+                    Triple(
+                        state.layoutInfo.visibleItemsInfo.lastOrNull()?.index,
+                        state.layoutInfo.totalItemsCount,
+                        state.isScrollInProgress,
+                    )
+                }.collect { (lastVisibleIndex, totalItemsCount, scrolling) ->
+                    if (!scrolling && loadingState && lastVisibleIndex == totalItemsCount - 1) {
                         state.requestScrollToItem((totalItemsCount - 1).coerceAtLeast(0))
                     }
-                }
-            }
-            LaunchedEffect(state, conversationUpdated.messageNodes.size) {
-                snapshotFlow { state.layoutInfo.totalItemsCount }.collect { totalItemsCount ->
-                    if (totalItemsCount > 0 && !state.isScrollInProgress &&
-                        (loadingState || state.firstVisibleItemIndex >= totalItemsCount - 2)
-                    ) state.requestScrollToItem(totalItemsCount - 1)
                 }
             }
         }
