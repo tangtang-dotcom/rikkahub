@@ -360,7 +360,7 @@ class ResponseAPI(
                                     val content = reasoningParts
                                         .filter { it.reasoningType == ReasoningType.REASONING_TEXT }
                                         .filter { it.reasoning.isNotEmpty() }
-                                    if (encryptedContent == null && content.isNotEmpty()) {
+                                    if (content.isNotEmpty()) {
                                         put("content", buildJsonArray {
                                             content.forEach {
                                                 add(buildJsonObject {
