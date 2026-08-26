@@ -10,6 +10,7 @@ import android.os.PowerManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.StatFs
+import android.app.usage.UsageStatsManager
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -21,7 +22,7 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 
-private val DEVICE_ACTIONS = listOf("status", "battery", "memory", "storage", "network", "time", "environment", "apps")
+private val DEVICE_ACTIONS = listOf("status", "battery", "memory", "storage", "network", "time", "environment", "apps", "app_usage")
 
 internal fun androidDeviceAction(input: kotlinx.serialization.json.JsonObject): String {
     val action = input["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
@@ -40,6 +41,7 @@ fun createAndroidDeviceTools(context: Context): List<Tool> = listOf(Tool(
                         })
                         put("offset", buildJsonObject { put("type", "integer") })
                         put("limit", buildJsonObject { put("type", "integer") })
+                        put("hours", buildJsonObject { put("type", "integer") })
     }, required = listOf("action")) },
     needsApproval = { false },
     execute = { input ->
@@ -91,6 +93,28 @@ fun createAndroidDeviceTools(context: Context): List<Tool> = listOf(Tool(
                     put("music_active", audio.isMusicActive)
                     put("volume_music", audio.getStreamVolume(AudioManager.STREAM_MUSIC))
                     put("max_volume_music", audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
+                }
+            "app_usage" -> {
+                    val end = System.currentTimeMillis()
+                    val start = end - ((input.jsonObject["hours"]?.jsonPrimitive?.intOrNull ?: 24)
+                        .coerceIn(1, 168) * 3_600_000L)
+                    val offset = (input.jsonObject["offset"]?.jsonPrimitive?.intOrNull ?: 0).coerceAtLeast(0)
+                    val limit = (input.jsonObject["limit"]?.jsonPrimitive?.intOrNull ?: 50).coerceIn(1, 100)
+                    val manager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                    val stats = manager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, start, end)
+                        .filter { it.totalTimeInForeground > 0 }
+                        .sortedByDescending { it.totalTimeInForeground }
+                    val page = stats.drop(offset).take(limit)
+                    buildJsonObject {
+                        put("start_epoch_ms", start); put("end_epoch_ms", end)
+                        put("offset", offset); put("limit", limit); put("total", stats.size)
+                        put("has_more", offset + page.size < stats.size)
+                        put("items", buildJsonArray { page.forEach { item -> add(buildJsonObject {
+                            put("package_name", item.packageName)
+                            put("foreground_ms", item.totalTimeInForeground)
+                            put("last_time_used_epoch_ms", item.lastTimeUsed)
+                        }) } })
+                    }
                 }
             "apps" -> {
                     val offset = (input.jsonObject["offset"]?.jsonPrimitive?.intOrNull ?: 0).coerceAtLeast(0)
