@@ -301,13 +301,10 @@ private fun ChatListNormal(
         if (settings.displaySetting.enableAutoScroll) {
             LaunchedEffect(state) {
                 snapshotFlow {
-                    Triple(
-                        state.layoutInfo.visibleItemsInfo.lastOrNull()?.index,
-                        state.layoutInfo.totalItemsCount,
-                        state.isScrollInProgress,
-                    )
-                }.collect { (lastVisibleIndex, totalItemsCount, scrolling) ->
-                    if (!scrolling && loadingState && lastVisibleIndex == totalItemsCount - 1) {
+                    state.layoutInfo.visibleItemsInfo.lastOrNull()?.index to
+                        state.layoutInfo.totalItemsCount
+                }.collect { (lastVisibleIndex, totalItemsCount) ->
+                    if (loadingState && lastVisibleIndex == totalItemsCount - 1) {
                         state.requestScrollToItem((totalItemsCount - 1).coerceAtLeast(0))
                     }
                 }
@@ -336,7 +333,6 @@ private fun ChatListNormal(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .hazeSource(state = hazeState)
                         .padding(top = innerPadding.calculateTopPadding()),
             ) {
                 itemsIndexed(
