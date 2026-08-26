@@ -23,7 +23,7 @@ class ToolRegistryTest {
     }
 
     @Test fun `tool failures become structured results`() = runBlocking {
-        val result = normalizeToolRegistry(listOf(tool("x", fail = true))).single().execute(JsonElement?::class.java.let { kotlinx.serialization.json.JsonObject(emptyMap()) }).single()
+        val result = normalizeToolRegistry(listOf(tool("x", fail = true))).single().execute(kotlinx.serialization.json.JsonObject(emptyMap())).single()
         assertTrue(result is UIMessagePart.Text)
         assertTrue((result as UIMessagePart.Text).text.contains("TOOL_EXECUTION_FAILED"))
         assertTrue(result.text.contains("\"ok\":false"))
