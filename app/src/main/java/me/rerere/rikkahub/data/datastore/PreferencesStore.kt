@@ -201,7 +201,7 @@ class SettingsStore(
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
                 developerMode = preferences[DEVELOPER_MODE] == true,
-                rootTerminalEnabled = preferences[ROOT_TERMINAL_ENABLED] != false,
+                rootTerminalEnabled = preferences[ROOT_TERMINAL_ENABLED] == true,
                 rootTerminalNeedsApproval = preferences[ROOT_TERMINAL_NEEDS_APPROVAL] != false,
                 displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
                 networkSetting = JsonInstant.decodeFromString(preferences[NETWORK_SETTING] ?: "{}"),
@@ -522,7 +522,7 @@ data class Settings(
     val themeId: String = PresetThemes[0].id,
     val customThemes: List<CustomTheme> = emptyList(),
     val developerMode: Boolean = false,
-    val rootTerminalEnabled: Boolean = true,
+    val rootTerminalEnabled: Boolean = false,
     val rootTerminalNeedsApproval: Boolean = true,
     val displaySetting: DisplaySetting = DisplaySetting(),
     val networkSetting: NetworkSetting = NetworkSetting(),
