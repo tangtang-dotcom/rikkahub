@@ -67,6 +67,7 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidSettingsTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidSchedulingTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidPermissionTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidUriTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidLocationTools
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
@@ -587,6 +588,7 @@ class ChatService(
                     addAll(createAndroidSchedulingTools(context))
                     addAll(createAndroidPermissionTools(context))
                     addAll(createAndroidUriTools(context))
+                    addAll(createAndroidLocationTools(context))
                     if (settings.rootTerminalEnabled) {
                         addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
                     }
