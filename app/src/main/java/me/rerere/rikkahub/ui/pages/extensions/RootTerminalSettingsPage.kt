@@ -111,6 +111,18 @@ fun RootTerminalSettingsPage(
                         },
                     )
                     item(
+                        headlineContent = { Text(stringResource(R.string.accessibility_require_approval)) },
+                        supportingContent = { Text(stringResource(R.string.accessibility_require_approval_desc)) },
+                        trailingContent = {
+                            Switch(
+                                checked = settings.accessibilityNeedsApproval,
+                                onCheckedChange = {
+                                    vm.updateSettings(settings.copy(accessibilityNeedsApproval = it))
+                                },
+                            )
+                        },
+                    )
+                    item(
                         onClick = {
                             if (!checking) {
                                 checking = true

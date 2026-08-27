@@ -84,6 +84,7 @@ class SettingsStore(
         val DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
         val ROOT_TERMINAL_ENABLED = booleanPreferencesKey("root_terminal_enabled")
         val ROOT_TERMINAL_NEEDS_APPROVAL = booleanPreferencesKey("root_terminal_needs_approval")
+        val ACCESSIBILITY_NEEDS_APPROVAL = booleanPreferencesKey("accessibility_needs_approval")
 
         // 模型选择
         val FAVORITE_MODELS = stringPreferencesKey("favorite_models")
@@ -203,6 +204,7 @@ class SettingsStore(
                 developerMode = preferences[DEVELOPER_MODE] == true,
                 rootTerminalEnabled = preferences[ROOT_TERMINAL_ENABLED] == true,
                 rootTerminalNeedsApproval = preferences[ROOT_TERMINAL_NEEDS_APPROVAL] != false,
+                accessibilityNeedsApproval = preferences[ACCESSIBILITY_NEEDS_APPROVAL] != false,
                 displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
                 networkSetting = JsonInstant.decodeFromString(preferences[NETWORK_SETTING] ?: "{}"),
                 searchServices = preferences[SEARCH_SERVICES]?.let {
@@ -364,6 +366,7 @@ class SettingsStore(
             preferences[DEVELOPER_MODE] = settings.developerMode
             preferences[ROOT_TERMINAL_ENABLED] = settings.rootTerminalEnabled
             preferences[ROOT_TERMINAL_NEEDS_APPROVAL] = settings.rootTerminalNeedsApproval
+            preferences[ACCESSIBILITY_NEEDS_APPROVAL] = settings.accessibilityNeedsApproval
             preferences[DISPLAY_SETTING] = JsonInstant.encodeToString(settings.displaySetting)
             preferences[NETWORK_SETTING] = JsonInstant.encodeToString(settings.networkSetting)
 
@@ -524,6 +527,7 @@ data class Settings(
     val developerMode: Boolean = false,
     val rootTerminalEnabled: Boolean = false,
     val rootTerminalNeedsApproval: Boolean = true,
+    val accessibilityNeedsApproval: Boolean = true,
     val displaySetting: DisplaySetting = DisplaySetting(),
     val networkSetting: NetworkSetting = NetworkSetting(),
     val favoriteModels: List<Uuid> = emptyList(),

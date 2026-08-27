@@ -8,7 +8,7 @@ import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
 
 private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "long_press", "input", "scroll_forward", "scroll_backward", "enter", "back", "home", "recents")
 
-fun createAndroidAccessibilityTools(): List<Tool> = listOf(Tool(
+fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool> = listOf(Tool(
     name = "android_accessibility",
     description = "Observe the active Android screen as a bounded UI tree, then act only using the returned observation_id and node index. Use observe before every action. Supports tap, long press, input, enter, scrolling, back, home, and recents. The user-enabled accessibility bridge executes gestures without per-action approval prompts. Expired observations and unavailable service return explicit errors; never retry blindly.",
     parameters = {
@@ -23,9 +23,9 @@ fun createAndroidAccessibilityTools(): List<Tool> = listOf(Tool(
             required = listOf("action"),
         )
     },
-    // The user explicitly enabled the accessibility service; keep screen-control flows usable
-    // without an approval prompt for every individual gesture.
-    needsApproval = { false },
+    needsApproval = { input ->
+        requireApproval && input.jsonObject["action"]?.jsonPrimitive?.contentOrNull != "observe"
+    },
     execute = { input ->
         val p = input.jsonObject
         val action = p["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
