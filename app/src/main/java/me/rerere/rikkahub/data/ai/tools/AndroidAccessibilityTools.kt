@@ -34,7 +34,7 @@ fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool>
             action == "observe" -> {
                 val observation = RikkaAccessibilityService.observe((p["max_nodes"]?.jsonPrimitive?.intOrNull ?: 120).coerceIn(1, 120))
                 buildJsonObject {
-                    put("ok", true); put("observation_id", observation.observationId)
+                    put("ok", true); put("observation_id", observation.observationId); put("truncated", observation.truncated)
                     observation.packageName?.let { put("package_name", it) }
                     put("nodes", buildJsonArray {
                         observation.nodes.forEach { node ->
