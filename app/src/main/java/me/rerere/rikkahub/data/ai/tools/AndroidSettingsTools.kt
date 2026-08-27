@@ -11,8 +11,8 @@ fun createAndroidSettingsTools(context: Context): List<Tool> = listOf(Tool(
     name = "android_display_settings",
     description = "Read or update a small allowlisted set of display settings: screen timeout, brightness mode, brightness, and auto-rotate. Updates require approval and WRITE_SETTINGS access.",
     parameters = { InputSchema.Obj(properties = buildJsonObject {
-        put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("read"); add("write") }) })
-        put("key", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("screen_timeout_ms"); add("brightness_mode"); add("brightness"); add("auto_rotate") }) })
+        put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("read")); add(JsonPrimitive("write")) }) })
+        put("key", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("screen_timeout_ms")); add(JsonPrimitive("brightness_mode")); add(JsonPrimitive("brightness")); add(JsonPrimitive("auto_rotate")) }) })
         put("value", buildJsonObject { put("type", "integer"); put("description", "Value for write: timeout milliseconds, mode 0/1, brightness 0-255, or auto-rotate 0/1") })
     }, required = listOf("action", "key")) },
     needsApproval = { it.jsonObject["action"]?.jsonPrimitive?.contentOrNull == "write" },

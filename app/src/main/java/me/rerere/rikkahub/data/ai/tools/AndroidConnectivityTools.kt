@@ -15,7 +15,7 @@ fun createAndroidConnectivityTools(context: Context): List<Tool> = listOf(Tool(
     name = "android_connectivity",
     description = "Read Wi-Fi/Bluetooth state or open the corresponding Android settings page. The settings-page action requires approval; the agent does not silently toggle radios.",
     parameters = { InputSchema.Obj(properties = buildJsonObject {
-        put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("status"); add("wifi_settings"); add("bluetooth_settings") }) })
+        put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("status")); add(JsonPrimitive("wifi_settings")); add(JsonPrimitive("bluetooth_settings")) }) })
     }, required = listOf("action")) },
     needsApproval = { it.jsonObject["action"]?.jsonPrimitive?.contentOrNull != "status" }, execute = { input ->
         val action = input.jsonObject["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")

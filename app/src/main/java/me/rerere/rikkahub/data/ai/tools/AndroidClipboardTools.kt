@@ -13,7 +13,7 @@ fun createAndroidClipboardTools(context: Context): List<Tool> = listOf(
         name = "android_clipboard",
         description = "Read or replace the current text clipboard. Clipboard access is privacy-sensitive; mutations require approval.",
         parameters = { InputSchema.Obj(properties = buildJsonObject {
-            put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("read"); add("write"); add("clear") }) })
+            put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("read")); add(JsonPrimitive("write")); add(JsonPrimitive("clear")) }) })
             put("text", buildJsonObject { put("type", "string") })
         }, required = listOf("action")) },
         needsApproval = { input -> input.jsonObject["action"]?.jsonPrimitive?.contentOrNull in setOf("write", "clear") },

@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.ai.tools
 import android.content.Context
 import android.provider.Settings
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -20,7 +21,7 @@ fun createAndroidMediaTools(context: Context): List<Tool> = listOf(
             put("key", buildJsonObject {
                 put("type", "string")
                 put("enum", kotlinx.serialization.json.buildJsonArray {
-                    add("screen_timeout_ms"); add("screen_brightness_mode"); add("screen_brightness")
+                    add(JsonPrimitive("screen_timeout_ms")); add(JsonPrimitive("screen_brightness_mode")); add(JsonPrimitive("screen_brightness"))
                 })
             })
         }, required = listOf("key")) },

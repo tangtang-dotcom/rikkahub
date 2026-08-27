@@ -13,6 +13,7 @@ import android.os.StatFs
 import android.app.usage.UsageStatsManager
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
@@ -36,7 +37,7 @@ fun createAndroidDeviceTools(context: Context): List<Tool> = listOf(Tool(
     parameters = { InputSchema.Obj(properties = buildJsonObject {
         put("action", buildJsonObject {
                             put("type", "string")
-                            put("enum", buildJsonArray { DEVICE_ACTIONS.forEach { add(it) } })
+                            put("enum", buildJsonArray { DEVICE_ACTIONS.forEach { add(JsonPrimitive(it)) } })
                             put("description", "Read-only diagnostic category")
                         })
                         put("offset", buildJsonObject { put("type", "integer") })

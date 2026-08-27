@@ -13,7 +13,7 @@ fun createAndroidAppControlTools(context: Context): List<Tool> = listOf(
         name = "android_app_control",
         description = "Inspect an installed package or launch its main activity. Launching is an external side effect and requires approval.",
         parameters = { InputSchema.Obj(properties = buildJsonObject {
-            put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("info"); add("launch") }) })
+            put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("info")); add(JsonPrimitive("launch")) }) })
             put("package_name", buildJsonObject { put("type", "string") })
         }, required = listOf("action", "package_name")) },
         needsApproval = { input -> input.jsonObject["action"]?.jsonPrimitive?.contentOrNull == "launch" },

@@ -11,7 +11,7 @@ fun createAndroidMediaIndexTools(context: Context): List<Tool> = listOf(Tool(
     name = "android_media_index",
     description = "List bounded metadata for user-visible images, audio, video, or downloads. Does not open or modify files.",
     parameters = { InputSchema.Obj(properties = buildJsonObject {
-        put("kind", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("images"); add("audio"); add("video"); add("downloads") }) })
+        put("kind", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add(JsonPrimitive("images")); add(JsonPrimitive("audio")); add(JsonPrimitive("video")); add(JsonPrimitive("downloads")) }) })
         put("query", buildJsonObject { put("type", "string") }); put("limit", buildJsonObject { put("type", "integer") })
     }, required = listOf("kind")) },
     needsApproval = { true }, execute = { input ->
