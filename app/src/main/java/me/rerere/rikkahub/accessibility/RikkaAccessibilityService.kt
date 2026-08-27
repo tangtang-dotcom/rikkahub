@@ -47,7 +47,7 @@ class RikkaAccessibilityService : AccessibilityService() {
                 }
                 "scroll_forward" -> node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
                 "scroll_backward" -> node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
-                "enter" -> node.performAction(AccessibilityNodeInfo.ACTION_IME_ENTER)
+                "enter" -> node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                 else -> error("ACCESSIBILITY_ACTION_UNSUPPORTED")
             }
             return AccessibilityActionResult(ok, action)
