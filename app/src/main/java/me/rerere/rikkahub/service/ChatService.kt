@@ -64,6 +64,7 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidCommunicationTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidSmsTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidClipboardTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidSettingsTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidSchedulingTools
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
@@ -581,6 +582,7 @@ class ChatService(
                     addAll(createAndroidSmsTools(context))
                     addAll(createAndroidClipboardTools(context))
                     addAll(createAndroidSettingsTools(context))
+                    addAll(createAndroidSchedulingTools(context))
                     if (settings.rootTerminalEnabled) {
                         addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
                     }
