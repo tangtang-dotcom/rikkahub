@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.accessibility
 
-import android.view.accessibility.AccessibilityNodeInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,12 +35,12 @@ class AccessibilityGesturePolicyTest {
     }
 
     @Test fun `content directions map to platform scroll actions`() {
-        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id, AccessibilityGesturePolicy.scrollAction("down"))
-        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id, AccessibilityGesturePolicy.scrollAction("up"))
-        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id, AccessibilityGesturePolicy.scrollAction("left"))
-        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id, AccessibilityGesturePolicy.scrollAction("right"))
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityGesturePolicy.fallbackScrollAction("down"))
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD, AccessibilityGesturePolicy.fallbackScrollAction("up"))
+        assertEquals(0x04000000, AccessibilityGesturePolicy.scrollAction("down"))
+        assertEquals(0x01000000, AccessibilityGesturePolicy.scrollAction("up"))
+        assertEquals(0x02000000, AccessibilityGesturePolicy.scrollAction("left"))
+        assertEquals(0x08000000, AccessibilityGesturePolicy.scrollAction("right"))
+        assertEquals(0x00001000, AccessibilityGesturePolicy.fallbackScrollAction("down"))
+        assertEquals(0x00002000, AccessibilityGesturePolicy.fallbackScrollAction("up"))
         assertTrue(AccessibilityGesturePolicy.fallbackScrollAction("left") == null)
     }
 
