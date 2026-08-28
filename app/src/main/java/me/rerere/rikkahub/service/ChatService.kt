@@ -75,7 +75,6 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidPersonalSearchTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredCoreTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidPrivateDatabaseTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredContextTools
-import me.rerere.rikkahub.data.ai.tools.createAndroidColorOsMemoryTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidBrowserTools
 import me.rerere.rikkahub.data.ai.tools.createEtaAndroidCompatibilityTools
 import me.rerere.rikkahub.data.ai.browser.AgentBrowserSession
@@ -638,7 +637,6 @@ class ChatService(
                         addAll(createAndroidStructuredCoreTools(context, rootController))
                         addAll(createAndroidStructuredContextTools(context, rootController))
                         addAll(createAndroidPrivateDatabaseTools(context, rootController))
-                        addAll(createAndroidColorOsMemoryTools(context, rootController))
                         addAll(createAndroidPersonalSearchTools(rootController))
                         addAll(createAndroidRootTerminalTools(rootController, settings.rootTerminalNeedsApproval))
                     }

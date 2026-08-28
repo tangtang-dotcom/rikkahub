@@ -14,48 +14,11 @@ internal class StructuredPrivateDatabaseSource(
     private val root: AndroidRootTerminalController,
 ) {
     fun execute(name: String, args: JSONObject): String? = when (name) {
-        "list_alarms" -> sensitive(readDatabase(CLOCK_DATABASE, "CLOCK_DATA_UNAVAILABLE") { listAlarms(it, args) })
-        "list_active_timers" -> sensitive(readDatabase(CLOCK_DATABASE, "CLOCK_DATA_UNAVAILABLE") { listTimers(it, args) })
         "search_clipboard_history" -> sensitive(readDatabase(CLIPBOARD_DATABASE, "CLIPBOARD_HISTORY_UNAVAILABLE") { searchClipboard(it, args) })
         "get_health_summary" -> sensitive(readDatabase(HEALTH_DATABASE, "HEALTH_DATA_UNAVAILABLE") { healthSummary(it, args) })
         else -> null
     }
 
-    private fun listAlarms(database: SQLiteDatabase, args: JSONObject): String {
-        if (!database.hasColumns("alarms", setOf("_id", "hour", "minutes", "enabled"))) {
-            return error("CLOCK_SCHEMA_UNSUPPORTED", "当前时钟数据库结构暂不受支持")
-        }
-        val limit = args.optInt("limit", 20).coerceIn(1, 50)
-        val items = database.rows(
-            table = "alarms",
-            columns = listOf(
-                "_id", "hour", "minutes", "daysofweek", "alarmtime", "enabled", "message",
-                "vibrate", "deleteAfterUse", "workdaySwitch", "holidaySwitch", "snoozeTime",
-            ),
-            selection = if (args.optBoolean("enabled_only", true)) "enabled=1" else null,
-            order = "enabled DESC, alarmtime ASC",
-            limit = limit,
-        )
-        return ok("list_alarms", items, limit)
-    }
-
-    private fun listTimers(database: SQLiteDatabase, args: JSONObject): String {
-        if (!database.hasColumns("timer_schedule", setOf("_id", "duration", "state"))) {
-            return error("CLOCK_SCHEMA_UNSUPPORTED", "当前时钟数据库结构暂不受支持")
-        }
-        val limit = args.optInt("limit", 20).coerceIn(1, 50)
-        val items = database.rows(
-            table = "timer_schedule",
-            columns = listOf(
-                "_id", "description", "duration", "state", "first_start_time", "start_time",
-                "remain_time", "pause_remain_time", "alert_time",
-            ),
-            selection = "state<>0",
-            order = "alert_time ASC",
-            limit = limit,
-        )
-        return ok("list_active_timers", items, limit)
-    }
 
     private fun searchClipboard(database: SQLiteDatabase, args: JSONObject): String {
         if (!database.hasColumns("CLIPBOARD_ITEM", setOf("TIME", "CONTENT"))) {
@@ -256,11 +219,6 @@ internal class StructuredPrivateDatabaseSource(
         const val SNAPSHOT_PREFIX = "rikka-private-data-"
         const val MAX_FIELD_CHARS = 4_000
         const val DAY_MS = 24L * 60 * 60 * 1_000
-        val CLOCK_DATABASE = DatabaseSource(
-            "/data/user_de/{user}/com.coloros.alarmclock/databases/alarms.db",
-            32L * 1024 * 1024,
-            "ColorOS 时钟数据暂时不可访问",
-        )
         val CLIPBOARD_DATABASE = DatabaseSource(
             "/data/user/{user}/com.sohu.inputmethod.sogouoem/databases/clipboard_db",
             32L * 1024 * 1024,

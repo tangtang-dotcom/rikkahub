@@ -9,8 +9,8 @@ import org.json.JSONObject
 
 private val PERSONAL_SEARCH_TOOL_NAMES = listOf(
     "search_media","search_audio","search_recordings","search_files","search_calendar_events","search_contacts",
-    "search_call_history","search_messages","search_downloads","search_coloros_notes","search_coloros_recordings",
-    "search_recording_summaries","search_qq_chat_images","search_wechat_chat_images",
+    "search_call_history","search_messages","search_downloads",
+    "search_qq_chat_images","search_wechat_chat_images",
 )
 
 fun createAndroidPersonalSearchTools(root: AndroidRootTerminalController): List<Tool> {

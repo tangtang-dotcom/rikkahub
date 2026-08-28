@@ -24,9 +24,6 @@ internal class StructuredPersonalDataSource(
             "search_call_history" -> searchCallHistory(args)
             "search_messages" -> searchMessages(args)
             "search_downloads" -> searchDownloads(args)
-            "search_coloros_notes" -> searchColorOsNotes(args)
-            "search_coloros_recordings" -> searchColorOsRecordings(args)
-            "search_recording_summaries" -> searchRecordingSummaries(args)
             "search_qq_chat_images" -> searchQqChatImages(args)
             "search_wechat_chat_images" -> searchWechatChatImages(args)
             else -> null
@@ -120,35 +117,6 @@ internal class StructuredPersonalDataSource(
         args = args,
     )
 
-    private fun searchColorOsNotes(args: JSONObject): String = query(
-        tool = "search_coloros_notes",
-        uri = "content://com.nearme.note/rich_notes",
-        projection = listOf("local_id", "raw_title", "raw_text", "update_time", "create_time", "folder_id", "deleted", "recycle_time"),
-        sort = "update_time DESC",
-        searchableColumns = listOf("raw_title", "raw_text"),
-        fixedWhere = "deleted=0 AND recycle_time=0",
-        args = args,
-    )
-
-    private fun searchColorOsRecordings(args: JSONObject): String = query(
-        tool = "search_coloros_recordings",
-        uri = "content://com.coloros.soundrecorder.provider/records",
-        projection = listOf("_id", "display_name", "_data", "duration", "date_modified", "record_type", "relative_path"),
-        sort = "date_modified DESC",
-        searchableColumns = listOf("display_name", "_data", "relative_path"),
-        fixedWhere = "deleted=0 AND is_recycle=0",
-        args = args,
-    )
-
-    private fun searchRecordingSummaries(args: JSONObject): String = query(
-        tool = "search_recording_summaries",
-        uri = "content://com.coloros.soundrecorder.provider/summary",
-        projection = listOf("_id", "record_uuid", "record_type", "note_content", "note_state", "media_id", "media_path", "note_id"),
-        sort = "_id DESC",
-        searchableColumns = listOf("note_content", "media_path"),
-        fixedWhere = null,
-        args = args,
-    )
 
     private fun searchQqChatImages(args: JSONObject): String = searchPrivateChatImages(
         tool = "search_qq_chat_images",
