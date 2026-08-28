@@ -237,6 +237,13 @@ class RouteActivity : ComponentActivity() {
         reapplySystemBarsAfterWindowTransition()
     }
 
+    override fun onPostResume() {
+        super.onPostResume()
+        reapplySystemBarsAfterWindowTransition()
+        window.decorView.postDelayed({ reapplySystemBarsAfterWindowTransition() }, 80L)
+        window.decorView.postDelayed({ reapplySystemBarsAfterWindowTransition() }, 320L)
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) reapplySystemBarsAfterWindowTransition()

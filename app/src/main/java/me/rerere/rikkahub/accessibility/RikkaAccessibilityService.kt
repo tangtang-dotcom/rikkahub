@@ -37,7 +37,10 @@ class RikkaAccessibilityService : AccessibilityService() {
         instance = this
         when (event?.eventType) {
             AccessibilityEvent.TYPE_WINDOWS_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> synchronized(lock) { windowGenerations.clear() }
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> synchronized(lock) {
+                val liveWindowIds = windows.orEmpty().mapTo(hashSetOf()) { it.id }
+                windowGenerations.keys.retainAll(liveWindowIds)
+            }
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 recordScrollEvent(event)
                 synchronized(lock) {
