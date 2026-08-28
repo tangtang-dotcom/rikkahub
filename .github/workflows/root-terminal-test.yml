@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-debug-apk:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
@@ -20,19 +20,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Ensure material color utilities submodule is present
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-          test -f material3/material-color-utilities/kotlin/dynamiccolor/DynamicScheme.kt
-
-      - name: Avoid broken committed Gradle daemon toolchain pin
-        run: rm -f gradle/gradle-daemon-jvm.properties
-
-      - name: Set up Temurin JDK 21
-        uses: actions/setup-java@v5
+      - name: Set up JetBrains JDK 21
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: jetbrains
           java-version: '21'
           cache: gradle
 
@@ -51,27 +42,6 @@ jobs:
       - name: Install web dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
-
-      - name: Prepare Android native build toolchain
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools cmake;3.22.1 ndk;28.2.13676358'
-
-      - name: Verify Android native build toolchain
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-          test -n "$SDK_ROOT"
-          export ANDROID_SDK_ROOT="$SDK_ROOT"
-          echo "RUNNER_ARCH=$(uname -m)"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          command -v sdkmanager || true
-          test -x "$SDK_ROOT/cmake/3.22.1/bin/cmake"
-          test -d "$SDK_ROOT/ndk/28.2.13676358"
-          file "$SDK_ROOT/cmake/3.22.1/bin/cmake"
-          "$SDK_ROOT/cmake/3.22.1/bin/cmake" --version
-          test "$(uname -m)" = "x86_64"
 
       - name: Create test Firebase configuration
         run: |
@@ -101,13 +71,8 @@ jobs:
             "configuration_version": "1"
           }
           JSON
-          test -s app/google-services.json
-          mkdir -p app/src/debug
-          cp app/google-services.json app/src/debug/google-services.json
-          test -s app/src/debug/google-services.json
 
       - name: Run JVM unit tests
-        continue-on-error: true
         run: |
           chmod +x gradlew
           ./gradlew testDebugUnitTest --no-daemon
@@ -124,31 +89,9 @@ jobs:
           retention-days: 7
 
       - name: Build debug APK
-        id: build_apk
-        continue-on-error: true
         run: |
-          set -o pipefail
           chmod +x gradlew
-          echo "RUNNER_ARCH=$(uname -m)"
-          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
-
-      - name: Print native build diagnostics on failure
-        if: steps.build_apk.outcome == 'failure'
-        run: |
-          grep -RInE "CMake Error|Exec format error|Could not start|ninja: error|FAILED" workspace/build/intermediates/cxx workspace/.cxx 2>/dev/null | tail -100 || true
-
-      - name: Upload Gradle build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikkahub-gradle-build-log-${{ github.sha }}
-          path: gradle-build.log
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Fail if APK build failed
-        if: steps.build_apk.outcome == 'failure'
-        run: exit 1
+          ./gradlew assembleDebug --no-daemon
 
       - name: Collect APKs
         run: |
