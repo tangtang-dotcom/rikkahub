@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import org.json.JSONObject
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 class RikkaAccessibilityService : AccessibilityService() {
 
@@ -86,14 +87,17 @@ class RikkaAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
+        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         scrollEventExecutor.shutdownNow()
         super.onDestroy()
