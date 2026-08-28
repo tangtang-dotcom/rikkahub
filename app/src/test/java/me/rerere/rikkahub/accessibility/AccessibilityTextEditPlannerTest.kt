@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.accessibility
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
 
 class AccessibilityTextEditPlannerTest {
     @Test fun insertsAtCursor() {
