@@ -16,10 +16,10 @@ class AccessibilityNodeIdentityTest {
         assertFalse(observed.copy(viewId = "stable:id").matches(observed.copy(viewId = "other:id")))
     }
 
-    @Test fun truncatedSnapshotsNeedUniqueId() {
-        assertTrue(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(true, true, 1))
-        assertFalse(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(false, true, 1))
-        assertTrue(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(false, false, 1))
-        assertFalse(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(true, false, 2))
+    @Test fun generationChangesAllowUniqueFreshResolution() {
+        assertTrue(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(true, false, 1))
+        assertFalse(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(false, false, 1))
+        assertTrue(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(false, true, 1))
+        assertFalse(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(true, true, 2))
     }
 }

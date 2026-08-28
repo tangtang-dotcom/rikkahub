@@ -67,6 +67,7 @@ class RikkaAccessibilityService : AccessibilityService() {
     companion object {
         private const val SCREENSHOT_TIMEOUT_MS = 4_000L
         private const val MAX_SCREENSHOT_FILES = 8
+        private const val MAX_ACTION_RESOLUTION_NODES = 1_000
         private val screenshotExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "rikka-accessibility-screenshot").apply { isDaemon = true }
         }
@@ -456,7 +457,8 @@ class RikkaAccessibilityService : AccessibilityService() {
             val root = service.rootInActiveWindow ?: error("ACCESSIBILITY_NO_ACTIVE_WINDOW")
             val current = ArrayList<AccessibilityNodeInfo>()
             try {
-                collectCurrent(root, current, 240, 0)
+                collectCurrent(root, current, MAX_ACTION_RESOLUTION_NODES + 1, 0)
+                val currentTraversalComplete = current.size <= MAX_ACTION_RESOLUTION_NODES
                 val matches = current.filter { AccessibilityNodeIdentity.from(it).matches(expected) }
                 val windowChanged = record.packageName != root.packageName?.toString() || record.windowId != root.windowId
                 val generationChanged = synchronized(lock) {
@@ -464,7 +466,7 @@ class RikkaAccessibilityService : AccessibilityService() {
                 }
                 val fresh = matches.size == 1 && (!generationChanged ||
                     AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(
-                        expected.uniqueId.isNotBlank(), record.truncated, matches.size,
+                        expected.uniqueId.isNotBlank(), currentTraversalComplete, matches.size,
                     ))
                 if (windowChanged || !fresh) error("ACCESSIBILITY_STALE_ACTION_TARGET")
                 return block(matches.single())

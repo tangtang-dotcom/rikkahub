@@ -31,6 +31,12 @@ data class AccessibilityNodeIdentity(
 }
 
 object AccessibilityIdentityFreshnessPolicy {
-    fun canUseAfterContentChange(hasUniqueId: Boolean, snapshotTruncated: Boolean, identityMatchCount: Int) =
-        identityMatchCount == 1 && (hasUniqueId || !snapshotTruncated)
+    /**
+     * A confirmation UI may temporarily background and then restore the observed window, producing a
+     * harmless content-generation change. Re-resolving is safe when the identity is unique in a complete
+     * fresh traversal, or when Android supplied a stable uniqueId. The size of the original model snapshot
+     * is irrelevant because the selected node identity itself was retained.
+     */
+    fun canUseAfterContentChange(hasUniqueId: Boolean, currentTraversalComplete: Boolean, identityMatchCount: Int) =
+        identityMatchCount == 1 && (hasUniqueId || currentTraversalComplete)
 }
