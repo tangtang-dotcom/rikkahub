@@ -13,6 +13,14 @@ data class AccessibilityNodeIdentity(
     val description: String,
     val password: Boolean,
 ) {
+    val strong: Boolean
+        get() = uniqueId.isNotBlank() || text.isNotBlank() || description.isNotBlank()
+
+    fun sameSemanticIdentity(other: AccessibilityNodeIdentity): Boolean =
+        windowId == other.windowId && packageName == other.packageName &&
+            className == other.className && viewId == other.viewId &&
+            text == other.text && description == other.description && password == other.password
+
     fun matches(other: AccessibilityNodeIdentity): Boolean {
         if (windowId != other.windowId || packageName != other.packageName || className != other.className) return false
         if (password != other.password || uniqueId != other.uniqueId) return false
