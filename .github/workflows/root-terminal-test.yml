@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-debug-apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
@@ -51,6 +51,13 @@ jobs:
       - name: Install web dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
+
+      - name: Install Android native build toolchain
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "cmake;3.22.1" "ndk;28.2.13676358"
+          file "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake"
+          "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake" --version
 
       - name: Create test Firebase configuration
         run: |
@@ -109,6 +116,11 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
           test ${PIPESTATUS[0]} -eq 0
+
+      - name: Print native build diagnostics on failure
+        if: steps.build_apk.outcome == 'failure'
+        run: |
+          grep -RInE "CMake Error|Exec format error|Could not start|ninja: error|FAILED" workspace/build/intermediates/cxx workspace/.cxx 2>/dev/null | tail -100 || true
 
       - name: Upload Gradle build log
         if: always()
