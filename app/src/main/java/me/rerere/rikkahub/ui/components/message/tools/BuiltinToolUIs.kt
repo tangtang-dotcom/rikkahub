@@ -63,6 +63,8 @@ import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Time02
 import me.rerere.hugeicons.stroke.VolumeHigh
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.repository.MemoryRepository
@@ -247,6 +249,41 @@ object ScrapeWebToolUI : ToolUIRenderer {
             return
         }
         ScrapeWebPreview(content = content)
+    }
+}
+
+/** Shared offscreen Agent browser. */
+object BrowserUseToolUI : ToolUIRenderer {
+    override val toolName: String = "browser_use"
+    override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Earth
+
+    @Composable
+    override fun title(context: ToolUIContext): String {
+        val action = context.arguments.getStringContent("action") ?: "browser"
+        return "Browser: $action"
+    }
+
+    override fun hasSummary(context: ToolUIContext): Boolean =
+        context.arguments.getStringContent("url") != null || context.content.getStringContent("title") != null
+
+    @Composable
+    override fun Summary(context: ToolUIContext) {
+        val value = context.content.getStringContent("title")
+            ?: context.content.getStringContent("url")
+            ?: context.arguments.getStringContent("url")
+            ?: return
+        Text(value, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+
+    @Composable
+    override fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
+        val navController = LocalNavController.current
+        DefaultToolPreview(context = context, headerActions = {
+            IconButton(onClick = {
+                onDismissRequest()
+                navController.navigate(Screen.AgentBrowser)
+            }) { Icon(HugeIcons.Earth, contentDescription = "Open shared browser") }
+        })
     }
 }
 

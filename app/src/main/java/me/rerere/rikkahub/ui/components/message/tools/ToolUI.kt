@@ -93,6 +93,7 @@ object ToolUIRegistry {
         MemoryToolUI,
         SearchWebToolUI,
         ScrapeWebToolUI,
+        BrowserUseToolUI,
         GetTimeInfoToolUI,
         ClipboardToolUI,
         TextToSpeechToolUI,
