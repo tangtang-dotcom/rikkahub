@@ -2,14 +2,24 @@ package me.rerere.rikkahub.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.graphics.Bitmap
 import android.graphics.Path
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import android.graphics.Point
+import android.os.Build
 import android.os.Bundle
+import android.os.Looper
+import android.view.Display
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.graphics.Rect
+import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 class RikkaAccessibilityService : AccessibilityService() {
@@ -40,6 +50,11 @@ class RikkaAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        private const val SCREENSHOT_TIMEOUT_MS = 4_000L
+        private const val MAX_SCREENSHOT_FILES = 8
+        private val screenshotExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "rikka-accessibility-screenshot").apply { isDaemon = true }
+        }
         private val SERVICE_TOKENS = AtomicLong(0)
         @Volatile private var instance: RikkaAccessibilityService? = null
         private val lock = Any()
@@ -57,7 +72,9 @@ class RikkaAccessibilityService : AccessibilityService() {
             val id = "a11y-${UUID.randomUUID()}"
             val packageName = root.packageName?.toString()
             val windowId = root.windowId
-            val observation = AccessibilityObservation(id, packageName, nodes.size >= limit, nodes.map { it.snapshot })
+            val observation = AccessibilityObservation(
+                id, packageName, nodes.size >= limit, nodes.map { it.snapshot }, service.displaySize(),
+            )
             synchronized(lock) {
                 observations[id] = ObservationRecord(service.serviceToken, packageName, windowId,
                     windowGenerations[windowId] ?: 0L, nodes.size >= limit, nodes.map { it.identity })
@@ -95,6 +112,7 @@ class RikkaAccessibilityService : AccessibilityService() {
                     }
                     "scroll_forward" -> performOnActionable(node, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) { it.isScrollable }
                     "scroll_backward" -> performOnActionable(node, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD) { it.isScrollable }
+                    "scroll" -> performScroll(node, text ?: error("ACCESSIBILITY_INVALID_SCROLL_DIRECTION"))
                     "enter" -> node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                     else -> error("ACCESSIBILITY_ACTION_UNSUPPORTED")
                 }
@@ -106,7 +124,26 @@ class RikkaAccessibilityService : AccessibilityService() {
         fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long): AccessibilityActionResult {
             val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
             require(durationMs in 100..2000) { "ACCESSIBILITY_INVALID_GESTURE_DURATION" }
-            val path = Path().apply { moveTo(x1.toFloat(), y1.toFloat()); lineTo(x2.toFloat(), y2.toFloat()) }
+            val display = service.displaySize()
+            val points = when (action) {
+                "swipe" -> {
+                    AccessibilityGesturePolicy.validateSwipe(x1, y1, x2, y2, display)
+                    intArrayOf(x1, y1, x2, y2)
+                }
+                "tap_area" -> {
+                    val area = AccessibilityGesturePolicy.Rect(x1, y1, x2, y2)
+                    AccessibilityGesturePolicy.validateArea(area, display)
+                    intArrayOf(area.centerX(), area.centerY(), area.centerX(), area.centerY())
+                }
+                else -> {
+                    AccessibilityGesturePolicy.validatePoint(x1, y1, display)
+                    intArrayOf(x1, y1, x2, y2)
+                }
+            }
+            val path = Path().apply {
+                moveTo(points[0].toFloat(), points[1].toFloat())
+                lineTo(points[2].toFloat(), points[3].toFloat())
+            }
             val description = GestureDescription.Builder().addStroke(
                 GestureDescription.StrokeDescription(path, 0, durationMs)
             ).build()
@@ -133,6 +170,21 @@ class RikkaAccessibilityService : AccessibilityService() {
             }
             if (!service.performGlobalAction(global)) error("ACTION_OUTCOME_UNKNOWN")
             return AccessibilityActionResult(true, action)
+        }
+
+        fun captureScreenshot(): AccessibilityScreenshot {
+            val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) error("ACCESSIBILITY_SCREENSHOT_UNSUPPORTED")
+            if (Looper.myLooper() == Looper.getMainLooper()) error("ACCESSIBILITY_SCREENSHOT_MAIN_THREAD")
+            return service.captureScreenshot()
+        }
+
+        private fun performScroll(node: AccessibilityNodeInfo, direction: String): Boolean {
+            val action = AccessibilityGesturePolicy.scrollAction(direction)
+            return performOnActionable(node, action) { it.isScrollable } ||
+                (AccessibilityGesturePolicy.fallbackScrollAction(direction)?.let { fallback ->
+                    performOnActionable(node, fallback) { it.isScrollable }
+                } ?: false)
         }
 
         private fun performOnActionable(node: AccessibilityNodeInfo, action: Int, accepts: (AccessibilityNodeInfo) -> Boolean): Boolean {
@@ -164,6 +216,72 @@ class RikkaAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun displaySize(): AccessibilityGesturePolicy.DisplaySize {
+        val point = Point()
+        @Suppress("DEPRECATION")
+        (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealSize(point)
+        return AccessibilityGesturePolicy.DisplaySize(point.x, point.y)
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun captureScreenshot(): AccessibilityScreenshot {
+        val latch = CountDownLatch(1)
+        var bitmap: Bitmap? = null
+        takeScreenshot(Display.DEFAULT_DISPLAY, screenshotExecutor, object : TakeScreenshotCallback {
+            override fun onSuccess(screenshot: ScreenshotResult) {
+                try {
+                    val buffer = screenshot.hardwareBuffer
+                    try {
+                        val hardware = Bitmap.wrapHardwareBuffer(buffer, screenshot.colorSpace)
+                            ?: error("ACCESSIBILITY_SCREENSHOT_FAILED")
+                        try {
+                            bitmap = hardware.copy(Bitmap.Config.ARGB_8888, false)
+                        } finally {
+                            hardware.recycle()
+                        }
+                    } finally {
+                        buffer.close()
+                    }
+                } catch (_: Throwable) {
+                    // The tool only exposes a stable failure code; platform error values vary by API level.
+                } finally {
+                    latch.countDown()
+                }
+            }
+
+            override fun onFailure(errorCode: Int) {
+                latch.countDown()
+            }
+        })
+        if (!latch.await(SCREENSHOT_TIMEOUT_MS, TimeUnit.MILLISECONDS)) error("ACCESSIBILITY_SCREENSHOT_TIMEOUT")
+        val captured = bitmap ?: error("ACCESSIBILITY_SCREENSHOT_FAILED")
+        return try {
+            val file = saveScreenshot(captured)
+            AccessibilityScreenshot(file.toURI().toString(), captured.width, captured.height)
+        } finally {
+            captured.recycle()
+        }
+    }
+
+    private fun saveScreenshot(bitmap: Bitmap): File {
+        val directory = File(cacheDir, "accessibility-screenshots")
+        if (!directory.exists() && !directory.mkdirs()) error("ACCESSIBILITY_SCREENSHOT_STORAGE_FAILED")
+        directory.listFiles()?.sortedByDescending(File::lastModified)?.drop(MAX_SCREENSHOT_FILES - 1)
+            ?.forEach(File::delete)
+        val file = File.createTempFile("observe-", ".png", directory)
+        try {
+            FileOutputStream(file).use { output ->
+                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
+                    error("ACCESSIBILITY_SCREENSHOT_STORAGE_FAILED")
+                }
+            }
+            return file
+        } catch (error: Throwable) {
+            file.delete()
+            throw error
+        }
+    }
+
     private data class NodeRef(val identity: AccessibilityNodeIdentity, val snapshot: AccessibilityNodeSnapshot)
     private data class ObservationRecord(
         val serviceToken: Long, val packageName: String?, val windowId: Int,
@@ -171,6 +289,13 @@ class RikkaAccessibilityService : AccessibilityService() {
     )
 }
 
-data class AccessibilityObservation(val observationId: String, val packageName: String?, val truncated: Boolean, val nodes: List<AccessibilityNodeSnapshot>)
+data class AccessibilityObservation(
+    val observationId: String,
+    val packageName: String?,
+    val truncated: Boolean,
+    val nodes: List<AccessibilityNodeSnapshot>,
+    val display: AccessibilityGesturePolicy.DisplaySize,
+)
+data class AccessibilityScreenshot(val uri: String, val width: Int, val height: Int)
 data class AccessibilityNodeSnapshot(val index: Int, val className: String?, val text: String?, val contentDescription: String?, val clickable: Boolean, val editable: Boolean, val enabled: Boolean, val left: Int, val top: Int, val right: Int, val bottom: Int)
 data class AccessibilityActionResult(val ok: Boolean, val action: String)

@@ -5,11 +5,12 @@ import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.AccessibilityScreenshot
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityKeeper
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 
-private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "tap_area", "long_press", "input", "scroll_forward", "scroll_backward", "swipe", "enter", "back", "home", "recents", "notifications", "quick_settings")
+private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "tap_area", "long_press", "input", "scroll_forward", "scroll_backward", "scroll", "swipe", "enter", "back", "home", "recents", "notifications", "quick_settings")
 
 fun createAndroidAccessibilityTools(
     context: Context,
@@ -18,7 +19,7 @@ fun createAndroidAccessibilityTools(
     rootController: AndroidRootTerminalController? = null,
 ): List<Tool> = listOf(Tool(
     name = "android_accessibility",
-    description = "Observe the active Android screen as a bounded UI tree, then act only using the returned observation_id and node index. Use observe before every action. Supports tap, long press, input, enter, scrolling, back, home, and recents. The user-enabled accessibility bridge executes gestures without per-action approval prompts. Expired observations and unavailable service return explicit errors; never retry blindly.",
+    description = "Observe the active Android screen as a bounded UI tree, then act only using the returned observation_id and node index. Use observe before every action. Supports tap, long press, input, directional scrolling, physical-screen gestures, global actions, and optional screenshots. Bounds and gesture coordinates use the same full-display screen-pixel coordinate space. The user-enabled accessibility bridge executes gestures without per-action approval prompts. Expired observations and unavailable service return explicit errors; never retry blindly.",
     parameters = {
         InputSchema.Obj(
             properties = buildJsonObject {
@@ -33,6 +34,7 @@ fun createAndroidAccessibilityTools(
                 put("y2", buildJsonObject { put("type", "integer") })
                 put("duration_ms", buildJsonObject { put("type", "integer") })
                 put("max_nodes", buildJsonObject { put("type", "integer") })
+                put("include_screenshot", buildJsonObject { put("type", "boolean") })
             },
             required = listOf("action"),
         )
@@ -45,11 +47,28 @@ fun createAndroidAccessibilityTools(
         val action = p["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
         require(action in ACCESSIBILITY_ACTIONS) { "Unsupported accessibility action: $action" }
         RikkaAccessibilityKeeper.ensureAvailable(context, protectionEnabled, rootController)
+        var screenshot: AccessibilityScreenshot? = null
         val result = when {
             action == "observe" -> {
                 val observation = RikkaAccessibilityService.observe((p["max_nodes"]?.jsonPrimitive?.intOrNull ?: 120).coerceIn(1, 120))
+                if (p["include_screenshot"]?.jsonPrimitive?.booleanOrNull == true) {
+                    screenshot = RikkaAccessibilityService.captureScreenshot()
+                }
                 buildJsonObject {
                     put("ok", true); put("observation_id", observation.observationId); put("truncated", observation.truncated)
+                    put("coordinate_space", "screen")
+                    put("screen", buildJsonObject {
+                        put("width", observation.display.width); put("height", observation.display.height)
+                    })
+                    screenshot?.let { capture ->
+                        put("screenshot", buildJsonObject {
+                            put("included", true); put("width", capture.width); put("height", capture.height)
+                            put("screen_to_image_scale", buildJsonObject {
+                                put("x", capture.width.toDouble() / observation.display.width)
+                                put("y", capture.height.toDouble() / observation.display.height)
+                            })
+                        })
+                    }
                     observation.packageName?.let { put("package_name", it) }
                     put("nodes", buildJsonArray {
                         observation.nodes.forEach { node ->
@@ -72,22 +91,22 @@ fun createAndroidAccessibilityTools(
                 val top = p["y1"]?.jsonPrimitive?.intOrNull ?: error("y1 is required")
                 val right = p["x2"]?.jsonPrimitive?.intOrNull ?: error("x2 is required")
                 val bottom = p["y2"]?.jsonPrimitive?.intOrNull ?: error("y2 is required")
-                require(right >= left && bottom >= top) { "ACCESSIBILITY_INVALID_AREA" }
-                val x1 = if (action == "tap_area") left + (right - left) / 2 else left
-                val y1 = if (action == "tap_area") top + (bottom - top) / 2 else top
-                val x2 = if (action == "tap_area") x1 else right
-                val y2 = if (action == "tap_area") y1 else bottom
                 val duration = p["duration_ms"]?.jsonPrimitive?.longOrNull ?: if (action == "tap_area") 100L else 500L
-                val r = RikkaAccessibilityService.gesture(action, x1, y1, x2, y2, duration)
+                val r = RikkaAccessibilityService.gesture(action, left, top, right, bottom, duration)
                 buildJsonObject { put("ok", r.ok); put("action", r.action) }
             }
             else -> {
                 val index = p["node_index"]?.jsonPrimitive?.intOrNull ?: error("node_index is required")
                 val observationId = p["observation_id"]?.jsonPrimitive?.contentOrNull ?: error("observation_id is required")
-                val r = RikkaAccessibilityService.execute(observationId, index, action, p["text"]?.jsonPrimitive?.contentOrNull)
+                val value = if (action == "scroll") p["direction"]?.jsonPrimitive?.contentOrNull
+                    else p["text"]?.jsonPrimitive?.contentOrNull
+                val r = RikkaAccessibilityService.execute(observationId, index, action, value)
                 buildJsonObject { put("ok", r.ok); put("action", r.action); put("observation_id", observationId) }
             }
         }
-        listOf(UIMessagePart.Text(result.toString()))
+        buildList {
+            add(UIMessagePart.Text(result.toString()))
+            screenshot?.let { add(UIMessagePart.Image(it.uri)) }
+        }
     },
 ))
