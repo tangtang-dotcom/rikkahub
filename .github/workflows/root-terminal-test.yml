@@ -89,9 +89,20 @@ jobs:
           retention-days: 7
 
       - name: Build debug APK
+        if: always()
         run: |
+          set -o pipefail
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-build.log
+
+      - name: Upload Gradle build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikkahub-gradle-build-log-${{ github.sha }}
+          path: gradle-build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Collect APKs
         run: |
