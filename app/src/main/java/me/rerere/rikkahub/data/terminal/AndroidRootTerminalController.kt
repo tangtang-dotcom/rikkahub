@@ -374,7 +374,7 @@ class AndroidRootTerminalController(
         val slice = merged.substring(offset, (offset + limit).coerceAtMost(merged.length))
         val done = job.exitCode != null
         if (done && closeIfDone) {
-            synchronized(asyncJobs) { asyncJobs.remove(jobId) }?.let(::closeJob)
+            synchronized(asyncJobs) { asyncJobs.remove(jobId) }?.let(::closeAsyncJob)
         }
         return JSONObject()
             .put("ok", true)
