@@ -527,6 +527,8 @@ internal object AgentBrowserSession {
             .put("image_width", captured.width)
             .put("image_height", captured.height)
             .put("image_bytes", captured.bytes.size)
+            .put("image_attached", includeImage)
+            .put("image_mime_type", "image/jpeg")
         val image = if (includeImage) {
             BrowserImage(
                 dataUrl = "data:image/jpeg;base64," + Base64.encodeToString(captured.bytes, Base64.NO_WRAP),
@@ -549,9 +551,11 @@ internal object AgentBrowserSession {
 
     private fun historyNavigation(action: String, backwards: Boolean): BrowserToolResult {
         val view = requirePage()
-        val targetIndex = callOnMain {
+        val target = callOnMain {
             val history = view.copyBackForwardList()
-            browserHistoryTargetIndex(history.currentIndex, history.size, backwards)
+            val index = browserHistoryTargetIndex(history.currentIndex, history.size, backwards)
+                ?: return@callOnMain null
+            BrowserHistoryTarget(index, history.getItemAtIndex(index)?.url.orEmpty())
         } ?: throw BrowserFailure("HISTORY_UNAVAILABLE", "当前没有可用的浏览记录")
         val epoch = activeOperationEpoch
         val generation = navigationGeneration.incrementAndGet()
@@ -561,19 +565,22 @@ internal object AgentBrowserSession {
             currentLoading = true
             currentProgress = 0
             publishSnapshotOnMain()
-            if (backwards) view.goBack() else view.goForward()
+            view.stopLoading()
+            view.goBackOrForward(if (backwards) -1 else 1)
         }
         val deadline = System.currentTimeMillis() + POST_ACTION_TIMEOUT_MS
         var reached = false
         while (System.currentTimeMillis() < deadline) {
             throwIfInterrupted()
-            reached = callOnMain { view.copyBackForwardList().currentIndex == targetIndex }
+            reached = callOnMain {
+                val history = view.copyBackForwardList()
+                browserHistoryReached(target, history.currentIndex,
+                    history.currentItem?.url.orEmpty().ifBlank { view.url.orEmpty() })
+            }
             if (reached) break
             Thread.sleep(50L)
         }
         if (!reached) throw BrowserFailure("ACTION_TIMEOUT", "浏览器历史位置未发生切换", "timeout")
-        // WebChromeClient may leave progress below 100 for cached history restores even though
-        // WebView has already committed the target item. History position is the source of truth.
         val settledDeadline = System.currentTimeMillis() + 2_000L
         while (snapshots.value.isLoading && System.currentTimeMillis() < settledDeadline) {
             throwIfInterrupted(); Thread.sleep(50L)
@@ -587,9 +594,8 @@ internal object AgentBrowserSession {
             currentPageVisible = currentUrl.isNotBlank()
             publishSnapshotOnMain()
         }
-        return toolResult(baseEnvelope(action, true, "ok").put("history_index", targetIndex))
+        return toolResult(baseEnvelope(action, true, "ok").put("history_index", target.index))
     }
-
     private fun reload(): BrowserToolResult {
         val view = requirePage()
         val epoch = activeOperationEpoch
@@ -1154,5 +1160,10 @@ internal object AgentBrowserSession {
 
 }
 
+internal data class BrowserHistoryTarget(val index: Int, val url: String)
+
 internal fun browserHistoryTargetIndex(currentIndex: Int, size: Int, backwards: Boolean): Int? =
     (currentIndex + if (backwards) -1 else 1).takeIf { it in 0 until size }
+
+internal fun browserHistoryReached(target: BrowserHistoryTarget, actualIndex: Int, actualUrl: String): Boolean =
+    actualIndex == target.index || (target.url.isNotBlank() && actualUrl == target.url)

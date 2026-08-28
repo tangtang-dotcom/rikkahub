@@ -18,7 +18,7 @@ class AndroidRootTerminalController(
 ) : AutoCloseable {
     private val linuxRootfsPath: String = LinuxEnvironmentPaths.rootfsDir(filesDir).absolutePath
     private companion object {
-        const val DEFAULT_CWD = "/data/local/tmp/rikkahub"
+        const val DEFAULT_CWD = "/data/local/tmp/fuck_andes"
         const val LINUX_DEFAULT_CWD = "/workspace"
         const val USER_STORAGE = "/storage/emulated/0"
         const val DEFAULT_TIMEOUT_SECONDS = 30

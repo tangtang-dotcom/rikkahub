@@ -48,7 +48,7 @@ class ShellProcessSupervisorTest {
         assertTrue(payload.contains("unshare -m --propagation private"))
         assertTrue(payload.contains("mount -t proc"))
         assertTrue(payload.contains("eta_mount_required /data/local/tmp"))
-        assertTrue(payload.contains("eta_mount_required /data/local/tmp/rikkahub"))
+        assertTrue(payload.contains("eta_mount_required /data/local/tmp/fuck_andes"))
         assertTrue(payload.contains("eta_rootfs/workspace"))
         assertTrue(payload.contains("chroot"))
         assertTrue(payload.contains(LinuxEnvironmentPaths.READY_MARKER))
