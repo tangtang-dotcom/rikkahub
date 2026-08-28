@@ -106,6 +106,7 @@ class GenerationHandler(
                     onUpdate = { id, content -> memoryRepo.updateContent(id, content) },
                     onDelete = { id -> memoryRepo.deleteMemory(id) },
                     onRead = { memoryRepo.getMemoriesOfAssistant(memoryAssistantId) },
+                    onReplaceAll = { content -> memoryRepo.replaceMemoriesOfAssistant(memoryAssistantId, content) },
                     includeMutations = assistant.enableMemory,
                 ).let(this::addAll)
                 addAll(tools)

@@ -19,7 +19,8 @@ class EtaCompatibilityToolsTest {
             listOf(
                 "observe_screen", "tap", "tap_area", "tap_element", "long_press", "long_press_element",
                 "swipe", "scroll", "scroll_element", "search_apps", "launch_app", "open_uri", "read_image",
-                "get_current_context", "skills_list", "skills_read",
+                "get_current_context", "skills_list", "skills_read", "skills_read_resource",
+                "skills_list_curated", "skills_inspect_github", "skills_install_from_github",
             ),
             EtaCompatibilityToolNames.all,
         )
@@ -32,8 +33,9 @@ class EtaCompatibilityToolsTest {
             onUpdate = { id, content -> AssistantMemory(id, content) },
             onDelete = {},
             onRead = { listOf(AssistantMemory(7, "Eta durable fact")) },
+            onReplaceAll = {},
         )
-        assertEquals(listOf("memory_get", "memory_tool"), tools.map { it.name })
+        assertEquals(listOf("memory_get", "memory_write", "memory_tool"), tools.map { it.name })
     }
 
     @Test

@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import me.rerere.rikkahub.data.db.entity.MemoryEntity
@@ -35,4 +36,10 @@ interface MemoryDAO {
 
     @Query("DELETE FROM memoryentity WHERE assistant_id = :assistantId")
     suspend fun deleteMemoriesOfAssistant(assistantId: String)
+
+    @Transaction
+    suspend fun replaceMemoriesOfAssistant(assistantId: String, content: String) {
+        deleteMemoriesOfAssistant(assistantId)
+        if (content.isNotBlank()) insertMemory(MemoryEntity(assistantId = assistantId, content = content))
+    }
 }

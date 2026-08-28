@@ -1,13 +1,13 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import java.security.MessageDigest
+import java.time.LocalDate
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.utils.toLocalString
-import java.security.MessageDigest
-import java.time.LocalDate
 
 fun buildMemoryTools(
     json: Json,
@@ -15,11 +15,21 @@ fun buildMemoryTools(
     onUpdate: suspend (Int, String) -> AssistantMemory,
     onDelete: suspend (Int) -> Unit,
     onRead: suspend () -> List<AssistantMemory>,
+    onReplaceAll: (suspend (String) -> Unit)? = null,
     includeMutations: Boolean = true,
 ): List<Tool> = buildList {
     add(buildMemoryGetTool(onRead))
-    if (includeMutations) add(buildMemoryMutationTool(json, onCreation, onUpdate, onDelete))
+    if (includeMutations) {
+        onReplaceAll?.let { add(buildMemoryWriteTool(onRead, it)) }
+        add(buildMemoryMutationTool(json, onCreation, onUpdate, onDelete))
+    }
 }
+
+private fun memoryDocument(memories: List<AssistantMemory>): String =
+    memories.joinToString("\n\n") { it.content.trimEnd() }.trimEnd()
+
+private fun memoryRevision(document: String): String = MessageDigest.getInstance("SHA-256")
+    .digest(document.toByteArray()).joinToString("") { "%02x".format(it) }
 
 private fun buildMemoryGetTool(onRead: suspend () -> List<AssistantMemory>) = Tool(
     name = "memory_get",
@@ -30,13 +40,9 @@ private fun buildMemoryGetTool(onRead: suspend () -> List<AssistantMemory>) = To
         put("max_chars", buildJsonObject { put("type", "integer"); put("minimum", 1); put("maximum", 32000) })
     }) },
     execute = { input ->
-        val document = buildString {
-            appendLine("# RikkaHub Memory")
-            onRead().forEach { memory -> appendLine(); appendLine("## Memory ${memory.id}"); appendLine(memory.content) }
-        }.trimEnd()
+        val document = memoryDocument(onRead())
         val bytes = document.toByteArray()
-        val revision = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
-        val lines = document.lines()
+        val lines = if (document.isEmpty()) emptyList() else document.lines()
         val query = input.jsonObject["query"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
         val maxChars = (input.jsonObject["max_chars"]?.jsonPrimitive?.intOrNull ?: 12_000).coerceIn(1, 32_000)
         val start = (input.jsonObject["start_line"]?.jsonPrimitive?.intOrNull ?: 1).coerceAtLeast(1)
@@ -50,7 +56,7 @@ private fun buildMemoryGetTool(onRead: suspend () -> List<AssistantMemory>) = To
             visible += line; charCount += extra
         }
         val payload = buildJsonObject {
-            put("ok", true); put("revision", revision); put("bytes", bytes.size); put("line_count", lines.size)
+            put("ok", true); put("revision", memoryRevision(document)); put("bytes", bytes.size); put("line_count", lines.size)
             if (query.isBlank()) {
                 put("start_line", start); if (visible.isEmpty()) put("end_line", JsonNull) else put("end_line", start + visible.size - 1)
             } else { put("start_line", JsonNull); put("end_line", JsonNull) }
@@ -58,6 +64,58 @@ private fun buildMemoryGetTool(onRead: suspend () -> List<AssistantMemory>) = To
             put("has_more", visible.size < selected.size); put("content", visible.joinToString("\n"))
         }
         listOf(UIMessagePart.Text(payload.toString()))
+    },
+)
+
+private fun buildMemoryWriteTool(
+    onRead: suspend () -> List<AssistantMemory>,
+    onReplaceAll: suspend (String) -> Unit,
+) = Tool(
+    name = "memory_write",
+    description = "Atomically update persistent memory using the exact revision from memory_get. Store durable facts only; never store secrets or transient requests.",
+    parameters = { InputSchema.Obj(properties = buildJsonObject {
+        put("mode", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("replace_range"); add("append"); add("clear") }) })
+        put("revision", buildJsonObject { put("type", "string"); put("minLength", 64); put("maxLength", 64) })
+        put("start_line", buildJsonObject { put("type", "integer"); put("minimum", 1) })
+        put("end_line", buildJsonObject { put("type", "integer"); put("minimum", 1) })
+        put("content", buildJsonObject { put("type", "string"); put("maxLength", 3500) })
+    }, required = listOf("mode", "revision")) },
+    needsApproval = { true },
+    execute = { input ->
+        val args = input.jsonObject
+        val mode = args["mode"]?.jsonPrimitive?.contentOrNull ?: error("MODE_REQUIRED")
+        val suppliedRevision = args["revision"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        require(Regex("[0-9a-fA-F]{64}").matches(suppliedRevision)) { "INVALID_REVISION" }
+        val current = memoryDocument(onRead())
+        val currentRevision = memoryRevision(current)
+        if (!currentRevision.equals(suppliedRevision, ignoreCase = true)) error("MEMORY_REVISION_CONFLICT")
+        val content = args["content"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        require(content.length <= 3500) { "CONTENT_TOO_LARGE" }
+        val updated = when (mode) {
+            "clear" -> {
+                require(args["start_line"] == null && args["end_line"] == null && content.isEmpty()) { "INVALID_CLEAR_ARGUMENTS" }
+                ""
+            }
+            "append" -> {
+                require(args["start_line"] == null && args["end_line"] == null && content.isNotBlank()) { "INVALID_APPEND_ARGUMENTS" }
+                if (current.isBlank()) content.trim() else current.trimEnd() + "\n\n" + content.trim()
+            }
+            "replace_range" -> {
+                val start = args["start_line"]?.jsonPrimitive?.intOrNull ?: error("START_LINE_REQUIRED")
+                val end = args["end_line"]?.jsonPrimitive?.intOrNull ?: error("END_LINE_REQUIRED")
+                val lines = if (current.isEmpty()) emptyList() else current.lines()
+                require(start >= 1 && end >= start && end <= lines.size) { "INVALID_LINE_RANGE" }
+                buildList {
+                    addAll(lines.take(start - 1)); if (content.isNotEmpty()) addAll(content.lines()); addAll(lines.drop(end))
+                }.joinToString("\n").trimEnd()
+            }
+            else -> error("INVALID_MODE")
+        }
+        onReplaceAll(updated)
+        listOf(UIMessagePart.Text(buildJsonObject {
+            put("ok", true); put("tool", "memory_write"); put("mode", mode); put("revision", memoryRevision(updated))
+            put("bytes", updated.toByteArray().size); put("line_count", if (updated.isEmpty()) 0 else updated.lines().size)
+        }.toString()))
     },
 )
 

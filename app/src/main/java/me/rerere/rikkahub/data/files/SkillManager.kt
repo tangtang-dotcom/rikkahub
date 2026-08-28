@@ -225,6 +225,57 @@ class SkillManager(
         }
     }
 
+    fun isBuiltinSkillId(skillName: String): Boolean = runCatching {
+        context.assets.open(BUILTIN_SKILLS_MANIFEST).bufferedReader().use { reader ->
+            parseBuiltinSkillManifest(reader.readText()).any { it.id == skillName }
+        }
+    }.getOrDefault(false)
+
+    fun installSkillBatchAtomically(skills: Map<String, Map<String, ByteArray>>): Boolean {
+        if (skills.isEmpty() || skills.keys.any { resolveSkillDir(it) == null }) return false
+        val root = getSkillsDir()
+        val operation = root.resolve(".install-${System.nanoTime()}.tmp")
+        val staged = operation.resolve("staged")
+        val backups = operation.resolve("backups")
+        if (!staged.mkdirs() || !backups.mkdirs()) return false
+        val movedTargets = mutableListOf<Pair<File, File>>()
+        val installedTargets = mutableListOf<File>()
+        try {
+            skills.forEach { (id, files) ->
+                val dir = staged.resolve(id)
+                files.forEach { (relativePath, bytes) ->
+                    val target = SkillPaths.resolveSkillFile(dir, relativePath) ?: return false
+                    target.parentFile?.mkdirs(); target.writeBytes(bytes)
+                }
+                if (!dir.resolve("SKILL.md").isFile) return false
+            }
+            skills.keys.forEach { id ->
+                val target = resolveSkillDir(id) ?: return false
+                if (target.exists()) {
+                    val backup = backups.resolve(id)
+                    if (!target.renameTo(backup)) return false
+                    movedTargets += target to backup
+                }
+            }
+            skills.keys.forEach { id ->
+                val source = staged.resolve(id)
+                val target = resolveSkillDir(id) ?: return false
+                if (!source.renameTo(target)) error("Unable to commit Skill $id")
+                installedTargets += target
+            }
+            return true
+        } catch (error: Exception) {
+            Log.w(TAG, "installSkillBatchAtomically failed", error)
+            installedTargets.asReversed().forEach { it.deleteRecursively() }
+            movedTargets.asReversed().forEach { (target, backup) ->
+                if (!target.exists()) backup.renameTo(target)
+            }
+            return false
+        } finally {
+            operation.deleteRecursively()
+        }
+    }
+
     fun deleteSkillFile(skillName: String, relativePath: String): Boolean {
         val skillDir = resolveSkillDir(skillName) ?: return false
         val target = SkillPaths.resolveSkillFile(skillDir, relativePath) ?: return false

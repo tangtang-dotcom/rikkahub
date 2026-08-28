@@ -37,6 +37,10 @@ class MemoryRepository(private val memoryDAO: MemoryDAO) {
         memoryDAO.deleteMemoriesOfAssistant(assistantId)
     }
 
+    suspend fun replaceMemoriesOfAssistant(assistantId: String, content: String) {
+        memoryDAO.replaceMemoriesOfAssistant(assistantId, content)
+    }
+
     suspend fun updateContent(id: Int, content: String): AssistantMemory {
         val old = memoryDAO.getMemoryById(id) ?: error("Memory record #$id not found")
         val newMemory = old.copy(
