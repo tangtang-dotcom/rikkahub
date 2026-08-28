@@ -30,6 +30,9 @@ internal object EtaCompatibilityToolNames {
     const val OBSERVE_SCREEN = "observe_screen"
     const val SEARCH_APPS = "search_apps"
     const val CURRENT_CONTEXT = "get_current_context"
+    const val LAUNCH_APP = "launch_app"
+    const val OPEN_URI = "open_uri"
+    const val READ_IMAGE = "read_image"
     const val TAP = "tap"
     const val TAP_AREA = "tap_area"
     const val TAP_ELEMENT = "tap_element"
@@ -42,7 +45,8 @@ internal object EtaCompatibilityToolNames {
     const val SKILLS_READ = "skills_read"
     val all = listOf(
         OBSERVE_SCREEN, TAP, TAP_AREA, TAP_ELEMENT, LONG_PRESS, LONG_PRESS_ELEMENT, SWIPE,
-        SCROLL, SCROLL_ELEMENT, SEARCH_APPS, CURRENT_CONTEXT, SKILLS_LIST, SKILLS_READ,
+        SCROLL, SCROLL_ELEMENT, SEARCH_APPS, LAUNCH_APP, OPEN_URI, READ_IMAGE, CURRENT_CONTEXT,
+        SKILLS_LIST, SKILLS_READ,
     )
 }
 
@@ -57,7 +61,9 @@ fun createEtaAndroidCompatibilityTools(
 ): List<Tool> = listOf(
     observeScreenTool(context, protectionEnabled, rootController),
     *etaGestureTools(context, protectionEnabled, rootController, accessibilityNeedsApproval).toTypedArray(),
-    searchAppsTool(context), currentContextTool(context),
+    searchAppsTool(context),
+    *etaContextActionTools(context, rootController).toTypedArray(),
+    currentContextTool(context),
     skillsListTool(skillManager, enabledSkills), skillsReadTool(skillManager, enabledSkills),
 )
 

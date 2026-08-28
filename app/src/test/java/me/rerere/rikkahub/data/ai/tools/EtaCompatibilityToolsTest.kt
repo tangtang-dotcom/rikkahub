@@ -18,7 +18,8 @@ class EtaCompatibilityToolsTest {
         assertEquals(
             listOf(
                 "observe_screen", "tap", "tap_area", "tap_element", "long_press", "long_press_element",
-                "swipe", "scroll", "scroll_element", "search_apps", "get_current_context", "skills_list", "skills_read",
+                "swipe", "scroll", "scroll_element", "search_apps", "launch_app", "open_uri", "read_image",
+                "get_current_context", "skills_list", "skills_read",
             ),
             EtaCompatibilityToolNames.all,
         )
