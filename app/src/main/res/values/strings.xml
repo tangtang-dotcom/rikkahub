@@ -1324,8 +1324,8 @@
   <string name="root_terminal_enabled_desc">Allow the Agent to execute commands in the Android host with Root privileges</string>
   <string name="root_terminal_require_approval">Require confirmation before execution</string>
   <string name="root_terminal_require_approval_desc">Ask for approval before every Root terminal tool call</string>
-  <string name="accessibility_require_approval">Require confirmation for accessibility actions</string>
-  <string name="accessibility_require_approval_desc">Ask for approval before each tap, input, scroll, or other screen action</string>
+  <string name="accessibility_require_approval">Unified approval for non-root tools</string>
+  <string name="accessibility_require_approval_desc">Master approval gate for every non-root tool. When disabled, screen actions, file writes, app launches, MCP, workspace tools, and other non-root operations no longer ask separately.</string>
   <string name="root_terminal_check_status">Check Root status</string>
   <string name="root_terminal_check_status_desc">Verify that su can obtain UID 0</string>
   <string name="root_terminal_checking">Checking…</string>

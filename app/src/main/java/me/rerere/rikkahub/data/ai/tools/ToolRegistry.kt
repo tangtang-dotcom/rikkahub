@@ -6,6 +6,14 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 
+internal val ROOT_TERMINAL_APPROVAL_TOOL_NAMES = setOf("terminal", "run_command", "write_file")
+
+/** Accessibility approval is the master gate for non-root tools; root stays independent. */
+internal fun applyNonRootApprovalGate(tools: List<Tool>, enabled: Boolean): List<Tool> = tools.map { tool ->
+    if (tool.name in ROOT_TERMINAL_APPROVAL_TOOL_NAMES) tool
+    else tool.copy(needsApproval = { input -> enabled && tool.needsApproval(input) })
+}
+
 /** Final boundary for first-party, workspace, skill and MCP tools. */
 internal fun normalizeToolRegistry(tools: List<Tool>): List<Tool> {
     val duplicates = tools.groupBy(Tool::name).filterValues { it.size > 1 }.keys

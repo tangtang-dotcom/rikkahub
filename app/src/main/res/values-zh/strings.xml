@@ -1318,8 +1318,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="root_terminal_enabled_desc">允许 Agent 以 Root 权限在 Android 系统中执行命令</string>
   <string name="root_terminal_require_approval">执行前需要确认</string>
   <string name="root_terminal_require_approval_desc">每次调用 Root 终端工具前请求审批</string>
-  <string name="accessibility_require_approval">无障碍操作前需要确认</string>
-  <string name="accessibility_require_approval_desc">每次点击、输入、滑动等屏幕操作前请求审批</string>
+  <string name="accessibility_require_approval">非 Root 工具统一审批</string>
+  <string name="accessibility_require_approval_desc">统一控制所有非 Root 工具的审批；关闭后点击、输入、文件写入、应用启动、MCP 与工作区等操作不再逐项请求确认</string>
   <string name="root_terminal_check_status">检测 Root 状态</string>
   <string name="root_terminal_check_status_desc">验证 su 是否能获得 UID 0</string>
   <string name="root_terminal_checking">正在检测…</string>

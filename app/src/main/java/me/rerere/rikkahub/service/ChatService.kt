@@ -80,6 +80,7 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidBrowserTools
 import me.rerere.rikkahub.data.ai.tools.createEtaAndroidCompatibilityTools
 import me.rerere.rikkahub.data.ai.browser.AgentBrowserSession
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
+import me.rerere.rikkahub.data.ai.tools.applyNonRootApprovalGate
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
@@ -683,7 +684,9 @@ class ChatService(
                             )
                         )
                     }
-                }.let(::normalizeToolRegistry),
+                }
+                    .let { applyNonRootApprovalGate(it, settings.accessibilityNeedsApproval) }
+                    .let(::normalizeToolRegistry),
             ).onCompletion {
                 AgentBrowserSession.interruptAgentAction(conversationId.toString())
                 closeGenerationRootController(conversationId, generationRootController)
