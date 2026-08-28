@@ -64,12 +64,14 @@ jobs:
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
           test -n "$SDK_ROOT"
           export ANDROID_SDK_ROOT="$SDK_ROOT"
+          echo "RUNNER_ARCH=$(uname -m)"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           command -v sdkmanager || true
           test -x "$SDK_ROOT/cmake/3.22.1/bin/cmake"
           test -d "$SDK_ROOT/ndk/28.2.13676358"
           file "$SDK_ROOT/cmake/3.22.1/bin/cmake"
           "$SDK_ROOT/cmake/3.22.1/bin/cmake" --version
+          test "$(uname -m)" = "x86_64"
 
       - name: Create test Firebase configuration
         run: |
@@ -125,9 +127,10 @@ jobs:
         id: build_apk
         continue-on-error: true
         run: |
+          set -o pipefail
           chmod +x gradlew
+          echo "RUNNER_ARCH=$(uname -m)"
           ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
-          test ${PIPESTATUS[0]} -eq 0
 
       - name: Print native build diagnostics on failure
         if: steps.build_apk.outcome == 'failure'
