@@ -2359,7 +2359,19 @@ class RikkaAccessibilityService : AccessibilityService() {
         private var instance: RikkaAccessibilityService? = null
 
         fun current(): RikkaAccessibilityService? = instance
-
+        fun observe(maxNodes: Int = 120) = compatObserve(maxNodes)
+        fun nodeBounds(id: String, index: Int) = compatNodeBounds(id, index)
+        fun execute(id: String, index: Int, action: String, value: String? = null) = compatExecute(id, index, action, value)
+        fun inputFocused(text: String) = compatInputFocused(text)
+        fun pasteFocused(text: String) = compatPasteFocused(text)
+        fun replaceText(id: String?, index: Int?, text: String) = compatReplaceText(id, index, text)
+        fun clearText(id: String?, index: Int?) = compatClearText(id, index)
+        fun pressEnter() = compatPressEnter()
+        fun currentPackageName() = compatCurrentPackageName()
+        fun global(action: String) = compatGlobal(action)
+        fun queryText(text: String, includeDescription: Boolean, matchMode: String) = compatQueryText(text, includeDescription, matchMode)
+        fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String? = null, coordinateSpace: String? = null) = compatGesture(action, x1, y1, x2, y2, durationMs, observationId, coordinateSpace)
+        fun captureScreenshot(id: String? = null) = compatCaptureScreenshot(id)
         fun isAvailable(): Boolean = instance != null
     }
 
