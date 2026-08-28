@@ -96,7 +96,7 @@ class RikkaAccessibilityService : AccessibilityService() {
                 try {
                     val limit = maxNodes.coerceIn(1, 120)
                     val nodes = ArrayList<NodeRef>()
-                    collect(root, nodes, limit, 0)
+                    collect(root, nodes, limit, 0, emptyList())
                     val id = "a11y-${UUID.randomUUID()}"
                     val packageName = root.packageName?.toString()
                     val windowId = root.windowId
@@ -108,7 +108,7 @@ class RikkaAccessibilityService : AccessibilityService() {
                         observations[id] = ObservationRecord(
                             service.serviceToken, packageName, windowId,
                             windowGenerations[windowId] ?: 0L, nodes.size >= limit,
-                            nodes.map { ObservedNode(it.identity, it.node) }, display,
+                            nodes.map { ObservedNode(it.identity, it.path) }, display,
                         )
                         latestObservationId = id
                         while (observations.size > 8) {
@@ -461,26 +461,65 @@ class RikkaAccessibilityService : AccessibilityService() {
                 if (record.packageName != root.packageName?.toString() || record.windowId != root.windowId) {
                     error("ACCESSIBILITY_STALE_ACTION_TARGET")
                 }
-            } finally {
-                root.recycle()
+                val pathNode = resolveByPath(root, observed.path)
+                val resolved = if (pathNode != null && observed.identity.matches(AccessibilityNodeIdentity.from(pathNode))) {
+                    pathNode
+                } else {
+                    pathNode?.recycle()
+                    findUniqueIdentityMatch(root, observed.identity, record.truncated)
+                        ?: error("ACCESSIBILITY_STALE_ACTION_TARGET")
+                }
+                try {
+                    if (!resolved.isVisibleToUser || !resolved.isEnabled) error("ACCESSIBILITY_STALE_ACTION_TARGET")
+                    return block(resolved)
+                } finally { resolved.recycle() }
+            } finally { root.recycle() }
+        }
+
+        private fun resolveByPath(root: AccessibilityNodeInfo, path: List<Int>): AccessibilityNodeInfo? {
+            var current = AccessibilityNodeInfo.obtain(root)
+            for (childIndex in path) {
+                val child = current.getChild(childIndex)
+                current.recycle()
+                if (child == null) return null
+                current = child
             }
-            val generationChanged = synchronized(lock) {
-                (windowGenerations[record.windowId] ?: 0L) != record.contentGeneration
+            return current
+        }
+
+        private fun findUniqueIdentityMatch(
+            root: AccessibilityNodeInfo,
+            identity: AccessibilityNodeIdentity,
+            originalTraversalTruncated: Boolean,
+        ): AccessibilityNodeInfo? {
+            if (!identity.strong) return null
+            val queue = ArrayDeque<AccessibilityNodeInfo>()
+            queue.add(AccessibilityNodeInfo.obtain(root))
+            var match: AccessibilityNodeInfo? = null
+            var visited = 0
+            var traversalComplete = true
+            while (queue.isNotEmpty()) {
+                if (visited >= 400) { traversalComplete = false; break }
+                val node = queue.removeFirst()
+                visited++
+                if (identity.matches(AccessibilityNodeIdentity.from(node))) {
+                    if (match != null) {
+                        match.recycle(); node.recycle()
+                        queue.forEach(AccessibilityNodeInfo::recycle)
+                        return null
+                    }
+                    match = AccessibilityNodeInfo.obtain(node)
+                }
+                for (i in 0 until node.childCount) node.getChild(i)?.let(queue::addLast)
+                node.recycle()
             }
-            if (generationChanged && !record.hasUnambiguousIdentity(observed)) {
-                error("ACCESSIBILITY_STALE_ACTION_TARGET")
-            }
-            val node = observed.node
-            if (!runCatching { node.refresh() }.getOrDefault(false)) {
-                error("ACCESSIBILITY_STALE_ACTION_TARGET")
-            }
-            if (!observed.identity.matches(AccessibilityNodeIdentity.from(node))) {
-                error("ACCESSIBILITY_STALE_ACTION_TARGET")
-            }
-            if (!node.isVisibleToUser || !node.isEnabled) {
-                error("ACCESSIBILITY_STALE_ACTION_TARGET")
-            }
-            return block(node)
+            queue.forEach(AccessibilityNodeInfo::recycle)
+            val usable = AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(
+                identity.uniqueId.isNotBlank(), traversalComplete && !originalTraversalTruncated,
+                if (match == null) 0 else 1,
+            )
+            if (!usable) { match?.recycle(); return null }
+            return match
         }
 
         private fun findActionable(node: AccessibilityNodeInfo, accepts: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
@@ -556,11 +595,11 @@ class RikkaAccessibilityService : AccessibilityService() {
             }
         }
 
-        private fun collect(node: AccessibilityNodeInfo, out: MutableList<NodeRef>, max: Int, depth: Int) {
+        private fun collect(node: AccessibilityNodeInfo, out: MutableList<NodeRef>, max: Int, depth: Int, path: List<Int>) {
             if (out.size >= max || depth > 32) return
             val bounds = Rect().also { node.getBoundsInScreen(it) }
-            out += NodeRef(AccessibilityNodeIdentity.from(node), AccessibilityNodeInfo.obtain(node), AccessibilityNodeSnapshot(out.size, node.className?.toString(), node.text?.toString(), node.contentDescription?.toString(), node.isClickable, node.isEditable, node.isScrollable, node.isEnabled, bounds.left, bounds.top, bounds.right, bounds.bottom))
-            for (i in 0 until node.childCount) node.getChild(i)?.let { child -> collect(child, out, max, depth + 1); child.recycle() }
+            out += NodeRef(AccessibilityNodeIdentity.from(node), path, AccessibilityNodeSnapshot(out.size, node.className?.toString(), node.text?.toString(), node.contentDescription?.toString(), node.isClickable, node.isEditable, node.isScrollable, node.isEnabled, bounds.left, bounds.top, bounds.right, bounds.bottom))
+            for (i in 0 until node.childCount) node.getChild(i)?.let { child -> collect(child, out, max, depth + 1, path + i); child.recycle() }
         }
     }
 
@@ -661,12 +700,12 @@ class RikkaAccessibilityService : AccessibilityService() {
 
     private data class NodeRef(
         val identity: AccessibilityNodeIdentity,
-        val node: AccessibilityNodeInfo,
+        val path: List<Int>,
         val snapshot: AccessibilityNodeSnapshot,
     )
     private data class ObservedNode(
         val identity: AccessibilityNodeIdentity,
-        val node: AccessibilityNodeInfo,
+        val path: List<Int>,
     )
     private data class ObservationRecord(
         val serviceToken: Long, val packageName: String?, val windowId: Int,
@@ -686,7 +725,7 @@ class RikkaAccessibilityService : AccessibilityService() {
             )
         }
 
-        fun recycle() = nodes.forEach { it.node.recycle() }
+        fun recycle() = Unit
     }
 }
 

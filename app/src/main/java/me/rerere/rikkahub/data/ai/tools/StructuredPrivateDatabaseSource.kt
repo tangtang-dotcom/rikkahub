@@ -15,7 +15,7 @@ internal class StructuredPrivateDatabaseSource(
 ) {
     fun execute(name: String, args: JSONObject): String? = when (name) {
         "list_alarms" -> sensitive(readDatabase(CLOCK_DATABASE, "CLOCK_DATA_UNAVAILABLE") { listAlarms(it, args) })
-        "list_active_timers" -> sensitive(readDatabase(CLOCK_DATABASE, "CLOCK_DATA_UNAVAILABLE") { listTimers(it, args) })
+        "list_active_timers" -> sensitive(readClockTimers(args))
         "search_clipboard_history" -> sensitive(readDatabase(CLIPBOARD_DATABASE, "CLIPBOARD_HISTORY_UNAVAILABLE") { searchClipboard(it, args) })
         "get_health_summary" -> sensitive(readDatabase(HEALTH_DATABASE, "HEALTH_DATA_UNAVAILABLE") { healthSummary(it, args) })
         else -> null
@@ -127,12 +127,53 @@ internal class StructuredPrivateDatabaseSource(
             .toString()
     }
 
+    private fun readClockTimers(args: JSONObject): String {
+        val userId = context.dataDir.parentFile?.name?.toIntOrNull()
+            ?: return error("CLOCK_DATA_UNAVAILABLE", "无法确定当前 Android 用户")
+        val preferenceSnapshot = MIUI_TIMER_PREFERENCES.asSequence()
+            .map { it.replace("{user}", userId.toString()) }
+            .mapNotNull { createSnapshot(it, 2L * 1024 * 1024) }
+            .firstOrNull()
+        if (preferenceSnapshot != null) {
+            try {
+                val xml = preferenceSnapshot.readText()
+                fun longValue(name: String) = Regex("<long\\s+name=\\\"$name\\\"\\s+value=\\\"(-?\\d+)\\\"")
+                    .find(xml)?.groupValues?.get(1)?.toLongOrNull()
+                fun intValue(name: String) = Regex("<int\\s+name=\\\"$name\\\"\\s+value=\\\"(-?\\d+)\\\"")
+                    .find(xml)?.groupValues?.get(1)?.toIntOrNull()
+                val duration = longValue("duration") ?: 0L
+                val endTime = longValue("endtime") ?: 0L
+                val storedRemaining = longValue("timerremained") ?: duration
+                val now = System.currentTimeMillis()
+                val running = duration > 0L && endTime > now
+                val remaining = if (running) (endTime - now).coerceAtMost(duration) else storedRemaining.coerceIn(0L, duration)
+                val limit = args.optInt("limit", 20).coerceIn(1, 50)
+                val items = JSONArray()
+                if (running && limit > 0) items.put(JSONObject()
+                    .put("duration_ms", duration)
+                    .put("remaining_ms", remaining)
+                    .put("end_time_ms", endTime)
+                    .put("state", "running")
+                    .put("platform_state", intValue("timestate"))
+                    .put("label", JSONObject.NULL)
+                    .put("label_supported", false)
+                    .put("source", "miui_preferences"))
+                return ok("list_active_timers", items, limit)
+            } catch (_: Throwable) {
+                // Fall through to supported database sources.
+            } finally { deleteSnapshot(preferenceSnapshot) }
+        }
+        return readDatabase(CLOCK_DATABASE, "CLOCK_DATA_UNAVAILABLE") { listTimers(it, args) }
+    }
+
     private fun readDatabase(source: DatabaseSource, unavailableCode: String, block: (SQLiteDatabase) -> String): String =
         synchronized(snapshotLock) {
             val userId = context.dataDir.parentFile?.name?.toIntOrNull()
                 ?: return@synchronized error(unavailableCode, "无法确定当前 Android 用户")
-            val sourcePath = source.path.replace("{user}", userId.toString())
-            val snapshot = createSnapshot(sourcePath, source.maxBytes)
+            val snapshot = source.paths.asSequence()
+                .map { it.replace("{user}", userId.toString()) }
+                .mapNotNull { createSnapshot(it, source.maxBytes) }
+                .firstOrNull()
                 ?: return@synchronized error(unavailableCode, source.unavailableMessage)
             try {
                 runCatching {
@@ -249,25 +290,33 @@ internal class StructuredPrivateDatabaseSource(
     private fun error(code: String, message: String): String = JSONObject().put("ok", false).put("code", code).put("message", message).toString()
     private fun sensitive(content: String) = content
 
-    private data class DatabaseSource(val path: String, val maxBytes: Long, val unavailableMessage: String)
+    private data class DatabaseSource(val paths: List<String>, val maxBytes: Long, val unavailableMessage: String)
 
     private companion object {
         val snapshotLock = Any()
         const val SNAPSHOT_PREFIX = "rikka-private-data-"
         const val MAX_FIELD_CHARS = 4_000
         const val DAY_MS = 24L * 60 * 60 * 1_000
+        val MIUI_TIMER_PREFERENCES = listOf(
+            "/data/user_de/{user}/com.android.deskclock/shared_prefs/com.android.deskclock_preferences.xml",
+            "/data_mirror/data_de/null/{user}/com.android.deskclock/shared_prefs/com.android.deskclock_preferences.xml",
+        )
         val CLOCK_DATABASE = DatabaseSource(
-            "/data/user_de/{user}/com.coloros.alarmclock/databases/alarms.db",
+            listOf(
+                "/data/user_de/{user}/com.coloros.alarmclock/databases/alarms.db",
+                "/data/user_de/{user}/com.android.deskclock/databases/alarms.db",
+                "/data_mirror/data_de/null/{user}/com.android.deskclock/databases/alarms.db",
+            ),
             32L * 1024 * 1024,
             "ColorOS 时钟数据暂时不可访问",
         )
         val CLIPBOARD_DATABASE = DatabaseSource(
-            "/data/user/{user}/com.sohu.inputmethod.sogouoem/databases/clipboard_db",
+            listOf("/data/user/{user}/com.sohu.inputmethod.sogouoem/databases/clipboard_db"),
             32L * 1024 * 1024,
             "当前输入法没有可访问的剪贴板历史",
         )
         val HEALTH_DATABASE = DatabaseSource(
-            "/data/system_ce/{user}/healthconnect/healthconnect.db",
+            listOf("/data/system_ce/{user}/healthconnect/healthconnect.db"),
             256L * 1024 * 1024,
             "系统健康数据暂时不可访问",
         )

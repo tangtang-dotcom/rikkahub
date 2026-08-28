@@ -25,7 +25,7 @@ class AndroidStructuredCommandTest {
     @Test
     fun `settings command has cmd fallback and normalizes output`() {
         assertEquals(
-            "/system/bin/settings get global airplane_mode_on 2>/dev/null || /system/bin/cmd settings get global airplane_mode_on 2>/dev/null",
+            "value=\$(/system/bin/settings get global airplane_mode_on 2>/dev/null); if [ -n \"\$value\" ] && [ \"\$value\" != null ]; then printf '%s\\n' \"\$value\"; else /system/bin/cmd settings get global airplane_mode_on 2>/dev/null; fi",
             getSettingCommand("global", "airplane_mode_on"),
         )
         assertEquals("0", normalizeSettingValue("0\n"))
