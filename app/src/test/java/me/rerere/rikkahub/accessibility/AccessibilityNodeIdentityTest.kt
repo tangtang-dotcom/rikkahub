@@ -10,6 +10,12 @@ class AccessibilityNodeIdentityTest {
         assertFalse(a.matches(a.copy(text = "Delete")))
     }
 
+    @Test fun blankViewIdDoesNotBecomeAnAccidentalIdentityRequirement() {
+        val observed = AccessibilityNodeIdentity(1, "p", "Button", "", "u", "Save", "", false)
+        assertTrue(observed.matches(observed.copy(viewId = "generated:id")))
+        assertFalse(observed.copy(viewId = "stable:id").matches(observed.copy(viewId = "other:id")))
+    }
+
     @Test fun truncatedSnapshotsNeedUniqueId() {
         assertTrue(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(true, true, 1))
         assertFalse(AccessibilityIdentityFreshnessPolicy.canUseAfterContentChange(false, true, 1))

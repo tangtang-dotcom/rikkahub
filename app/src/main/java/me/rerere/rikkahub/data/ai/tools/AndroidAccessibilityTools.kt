@@ -1,14 +1,22 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import android.content.Context
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.RikkaAccessibilityKeeper
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
+import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 
-private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "long_press", "input", "scroll_forward", "scroll_backward", "enter", "back", "home", "recents")
+private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "tap_area", "long_press", "input", "scroll_forward", "scroll_backward", "swipe", "enter", "back", "home", "recents", "notifications", "quick_settings")
 
-fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool> = listOf(Tool(
+fun createAndroidAccessibilityTools(
+    context: Context,
+    requireApproval: Boolean = true,
+    protectionEnabled: Boolean = false,
+    rootController: AndroidRootTerminalController? = null,
+): List<Tool> = listOf(Tool(
     name = "android_accessibility",
     description = "Observe the active Android screen as a bounded UI tree, then act only using the returned observation_id and node index. Use observe before every action. Supports tap, long press, input, enter, scrolling, back, home, and recents. The user-enabled accessibility bridge executes gestures without per-action approval prompts. Expired observations and unavailable service return explicit errors; never retry blindly.",
     parameters = {
@@ -18,6 +26,12 @@ fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool>
                 put("observation_id", buildJsonObject { put("type", "string") })
                 put("node_index", buildJsonObject { put("type", "integer") })
                 put("text", buildJsonObject { put("type", "string") })
+                put("direction", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("up"); add("down"); add("left"); add("right") }) })
+                put("x1", buildJsonObject { put("type", "integer") })
+                put("y1", buildJsonObject { put("type", "integer") })
+                put("x2", buildJsonObject { put("type", "integer") })
+                put("y2", buildJsonObject { put("type", "integer") })
+                put("duration_ms", buildJsonObject { put("type", "integer") })
                 put("max_nodes", buildJsonObject { put("type", "integer") })
             },
             required = listOf("action"),
@@ -30,6 +44,7 @@ fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool>
         val p = input.jsonObject
         val action = p["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
         require(action in ACCESSIBILITY_ACTIONS) { "Unsupported accessibility action: $action" }
+        RikkaAccessibilityKeeper.ensureAvailable(context, protectionEnabled, rootController)
         val result = when {
             action == "observe" -> {
                 val observation = RikkaAccessibilityService.observe((p["max_nodes"]?.jsonPrimitive?.intOrNull ?: 120).coerceIn(1, 120))
@@ -48,8 +63,22 @@ fun createAndroidAccessibilityTools(requireApproval: Boolean = true): List<Tool>
                     })
                 }
             }
-            action in setOf("back", "home", "recents") -> {
+            action in setOf("back", "home", "recents", "notifications", "quick_settings") -> {
                 val r = RikkaAccessibilityService.global(action)
+                buildJsonObject { put("ok", r.ok); put("action", r.action) }
+            }
+            action == "swipe" || action == "tap_area" -> {
+                val left = p["x1"]?.jsonPrimitive?.intOrNull ?: error("x1 is required")
+                val top = p["y1"]?.jsonPrimitive?.intOrNull ?: error("y1 is required")
+                val right = p["x2"]?.jsonPrimitive?.intOrNull ?: error("x2 is required")
+                val bottom = p["y2"]?.jsonPrimitive?.intOrNull ?: error("y2 is required")
+                require(right >= left && bottom >= top) { "ACCESSIBILITY_INVALID_AREA" }
+                val x1 = if (action == "tap_area") left + (right - left) / 2 else left
+                val y1 = if (action == "tap_area") top + (bottom - top) / 2 else top
+                val x2 = if (action == "tap_area") x1 else right
+                val y2 = if (action == "tap_area") y1 else bottom
+                val duration = p["duration_ms"]?.jsonPrimitive?.longOrNull ?: if (action == "tap_area") 100L else 500L
+                val r = RikkaAccessibilityService.gesture(action, x1, y1, x2, y2, duration)
                 buildJsonObject { put("ok", r.ok); put("action", r.action) }
             }
             else -> {

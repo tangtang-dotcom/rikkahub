@@ -92,7 +92,12 @@ fun RootTerminalSettingsPage(
                         trailingContent = {
                             Switch(
                                 checked = settings.rootTerminalEnabled,
-                                onCheckedChange = { vm.updateSettings(settings.copy(rootTerminalEnabled = it)) },
+                                onCheckedChange = {
+                                    vm.updateSettings(settings.copy(
+                                        rootTerminalEnabled = it,
+                                        accessibilityProtectionEnabled = settings.accessibilityProtectionEnabled && it,
+                                    ))
+                                },
                             )
                         },
                     )
@@ -107,6 +112,17 @@ fun RootTerminalSettingsPage(
                                     if (it) vm.updateSettings(settings.copy(rootTerminalNeedsApproval = true))
                                     else showWarning = true
                                 },
+                            )
+                        },
+                    )
+                    item(
+                        headlineContent = { Text(stringResource(R.string.accessibility_protection_enabled)) },
+                        supportingContent = { Text(stringResource(R.string.accessibility_protection_enabled_desc)) },
+                        trailingContent = {
+                            Switch(
+                                checked = settings.accessibilityProtectionEnabled,
+                                enabled = settings.rootTerminalEnabled,
+                                onCheckedChange = { vm.updateSettings(settings.copy(accessibilityProtectionEnabled = it)) },
                             )
                         },
                     )

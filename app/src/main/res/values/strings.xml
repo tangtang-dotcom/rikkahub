@@ -1332,5 +1332,7 @@
   <string name="root_terminal_disable_approval_title">Disable Root command confirmation?</string>
   <string name="root_terminal_disable_approval_warning">After confirmation is disabled, Agent commands will execute immediately with Root privileges. Incorrect commands may damage apps, data, or the system.</string>
   <string name="root_terminal_disable_approval_confirm">Disable confirmation</string>
+  <string name="accessibility_protection_enabled">Force-keep accessibility service</string>
+  <string name="accessibility_protection_enabled_desc">When enabled, Root restores the RikkaHub accessibility service before GUI operations if it disconnects</string>
 </resources>
 

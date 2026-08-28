@@ -28,4 +28,11 @@ class ToolRegistryTest {
         assertTrue((result as UIMessagePart.Text).text.contains("TOOL_EXECUTION_FAILED"))
         assertTrue(result.text.contains("\"ok\":false"))
     }
+    @Test fun `stable first party error codes are preserved`() = runBlocking {
+        val coded = Tool(name = "coded", description = "test", execute = { error("ACTION_OUTCOME_UNKNOWN") })
+        val result = normalizeToolRegistry(listOf(coded)).single()
+            .execute(kotlinx.serialization.json.JsonObject(emptyMap())).single() as UIMessagePart.Text
+        assertTrue(result.text.contains("\"code\":\"ACTION_OUTCOME_UNKNOWN\""))
+    }
+
 }

@@ -85,6 +85,7 @@ class SettingsStore(
         val ROOT_TERMINAL_ENABLED = booleanPreferencesKey("root_terminal_enabled")
         val ROOT_TERMINAL_NEEDS_APPROVAL = booleanPreferencesKey("root_terminal_needs_approval")
         val ACCESSIBILITY_NEEDS_APPROVAL = booleanPreferencesKey("accessibility_needs_approval")
+        val ACCESSIBILITY_PROTECTION_ENABLED = booleanPreferencesKey("accessibility_protection_enabled")
 
         // 模型选择
         val FAVORITE_MODELS = stringPreferencesKey("favorite_models")
@@ -205,6 +206,7 @@ class SettingsStore(
                 rootTerminalEnabled = preferences[ROOT_TERMINAL_ENABLED] == true,
                 rootTerminalNeedsApproval = preferences[ROOT_TERMINAL_NEEDS_APPROVAL] != false,
                 accessibilityNeedsApproval = preferences[ACCESSIBILITY_NEEDS_APPROVAL] != false,
+                accessibilityProtectionEnabled = preferences[ACCESSIBILITY_PROTECTION_ENABLED] == true,
                 displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
                 networkSetting = JsonInstant.decodeFromString(preferences[NETWORK_SETTING] ?: "{}"),
                 searchServices = preferences[SEARCH_SERVICES]?.let {
@@ -367,6 +369,7 @@ class SettingsStore(
             preferences[ROOT_TERMINAL_ENABLED] = settings.rootTerminalEnabled
             preferences[ROOT_TERMINAL_NEEDS_APPROVAL] = settings.rootTerminalNeedsApproval
             preferences[ACCESSIBILITY_NEEDS_APPROVAL] = settings.accessibilityNeedsApproval
+            preferences[ACCESSIBILITY_PROTECTION_ENABLED] = settings.accessibilityProtectionEnabled
             preferences[DISPLAY_SETTING] = JsonInstant.encodeToString(settings.displaySetting)
             preferences[NETWORK_SETTING] = JsonInstant.encodeToString(settings.networkSetting)
 
@@ -528,6 +531,7 @@ data class Settings(
     val rootTerminalEnabled: Boolean = false,
     val rootTerminalNeedsApproval: Boolean = true,
     val accessibilityNeedsApproval: Boolean = true,
+    val accessibilityProtectionEnabled: Boolean = false,
     val displaySetting: DisplaySetting = DisplaySetting(),
     val networkSetting: NetworkSetting = NetworkSetting(),
     val favoriteModels: List<Uuid> = emptyList(),

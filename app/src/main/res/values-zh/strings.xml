@@ -1326,5 +1326,7 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="root_terminal_disable_approval_title">关闭 Root 命令确认？</string>
   <string name="root_terminal_disable_approval_warning">关闭后，Agent 发起的命令会立即以 Root 权限执行。错误命令可能损坏应用、数据或系统。</string>
   <string name="root_terminal_disable_approval_confirm">关闭确认</string>
+  <string name="accessibility_protection_enabled">强制保持无障碍</string>
+  <string name="accessibility_protection_enabled_desc">开启后，GUI 操作前若服务断连，将通过 Root 恢复 RikkaHub 无障碍服务</string>
 </resources>
 

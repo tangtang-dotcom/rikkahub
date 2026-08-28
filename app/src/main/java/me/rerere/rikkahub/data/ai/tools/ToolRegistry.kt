@@ -34,11 +34,17 @@ private fun withToolErrorBoundary(tool: Tool): Tool = tool.copy(
     }
 )
 
-private fun errorCode(error: Throwable): String = when (error) {
-    is IllegalArgumentException -> "INVALID_ARGUMENT"
-    is SecurityException -> "PERMISSION_DENIED"
-    is java.util.concurrent.TimeoutException -> "TIMEOUT"
-    else -> "TOOL_EXECUTION_FAILED"
+private fun errorCode(error: Throwable): String {
+    val message = error.message.orEmpty()
+    // First-party tools use stable machine-readable codes as exception messages.
+    // Preserve them instead of collapsing them into TOOL_EXECUTION_FAILED.
+    if (message.matches(Regex("[A-Z][A-Z0-9_]+"))) return message
+    return when (error) {
+        is IllegalArgumentException -> "INVALID_ARGUMENT"
+        is SecurityException -> "PERMISSION_DENIED"
+        is java.util.concurrent.TimeoutException -> "TIMEOUT"
+        else -> "TOOL_EXECUTION_FAILED"
+    }
 }
 
 private fun isRetryable(error: Throwable): Boolean =

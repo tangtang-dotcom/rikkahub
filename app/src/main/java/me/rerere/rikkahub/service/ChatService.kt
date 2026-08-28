@@ -592,7 +592,12 @@ class ChatService(
                     addAll(createAndroidUriTools(context))
                     addAll(createAndroidLocationTools(context))
                     addAll(createAndroidConnectivityTools(context))
-                    addAll(createAndroidAccessibilityTools(settings.accessibilityNeedsApproval))
+                    addAll(createAndroidAccessibilityTools(
+                        context = context,
+                        requireApproval = settings.accessibilityNeedsApproval,
+                        protectionEnabled = settings.accessibilityProtectionEnabled,
+                        rootController = rootTerminalController.takeIf { settings.rootTerminalEnabled },
+                    ))
                     if (settings.rootTerminalEnabled) {
                         addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
                     }

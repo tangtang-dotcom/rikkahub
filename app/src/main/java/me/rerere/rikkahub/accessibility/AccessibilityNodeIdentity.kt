@@ -13,11 +13,12 @@ data class AccessibilityNodeIdentity(
     val description: String,
     val password: Boolean,
 ) {
-    fun matches(other: AccessibilityNodeIdentity): Boolean =
-        windowId == other.windowId && packageName == other.packageName &&
-            className == other.className && viewId == other.viewId &&
-            uniqueId == other.uniqueId && text == other.text &&
-            description == other.description && password == other.password
+    fun matches(other: AccessibilityNodeIdentity): Boolean {
+        if (windowId != other.windowId || packageName != other.packageName || className != other.className) return false
+        if (password != other.password || uniqueId != other.uniqueId) return false
+        if (viewId.isNotBlank() && viewId != other.viewId) return false
+        return text == other.text && description == other.description
+    }
 
     companion object {
         fun from(node: AccessibilityNodeInfo) = AccessibilityNodeIdentity(
