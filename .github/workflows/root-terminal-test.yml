@@ -20,6 +20,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Ensure material color utilities submodule is present
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          test -f material3/material-color-utilities/kotlin/dynamiccolor/DynamicScheme.kt
+
       - name: Avoid broken committed Gradle daemon toolchain pin
         run: rm -f gradle/gradle-daemon-jvm.properties
 
