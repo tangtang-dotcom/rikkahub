@@ -407,7 +407,7 @@ class AndroidRootTerminalController(
             closedSession = closeSession(id)
         }
         jobId?.takeIf { it.isNotBlank() }?.let { id ->
-            closedJob = closeJob(id)
+            closedJob = closeAsyncJob(id)
         }
         return JSONObject()
             .put("ok", closedSession || closedJob)
@@ -452,7 +452,7 @@ class AndroidRootTerminalController(
         val jobs = synchronized(asyncJobs) {
             asyncJobs.values.toList().also { asyncJobs.clear() }
         }
-        jobs.forEach(::closeJob)
+        jobs.forEach(::closeAsyncJob)
 
         val remainingProcesses = processSupervisor.takeRemainingProcesses()
         remainingProcesses.forEach { process ->
@@ -473,13 +473,13 @@ class AndroidRootTerminalController(
         return true
     }
 
-    private fun closeJob(id: String): Boolean {
+    private fun closeAsyncJob(id: String): Boolean {
         val job = synchronized(asyncJobs) { asyncJobs.remove(id) } ?: return false
-        closeJob(job)
+        closeAsyncJob(job)
         return true
     }
 
-    private fun closeJob(job: AsyncCommand) {
+    private fun closeAsyncJob(job: AsyncCommand) {
         processSupervisor.terminateAndReap(job.process)
         runCatching { job.stdoutThread.join(500) }
         runCatching { job.stderrThread.join(500) }
