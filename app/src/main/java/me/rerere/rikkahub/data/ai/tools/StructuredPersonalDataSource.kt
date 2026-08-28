@@ -110,7 +110,7 @@ internal class StructuredPersonalDataSource(
     private fun searchDownloads(args: JSONObject): String = query(
         tool = "search_downloads",
         uri = "content://downloads/my_downloads",
-        projection = listOf("_id", "title", "description", "mime_type", "total_size", "lastmod", "status", "local_uri"),
+        projection = listOf("_id", "title", "description", "lastmod", "status", "local_uri"),
         sort = "lastmod DESC",
         searchableColumns = listOf("title", "description"),
         fixedWhere = null,

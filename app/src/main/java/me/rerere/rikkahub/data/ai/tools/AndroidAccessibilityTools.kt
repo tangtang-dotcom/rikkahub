@@ -110,7 +110,12 @@ fun createAndroidAccessibilityTools(
                 val observationId = p["observation_id"]?.jsonPrimitive?.contentOrNull ?: error("observation_id is required")
                 val value = if (action == "scroll") p["direction"]?.jsonPrimitive?.contentOrNull
                     else p["text"]?.jsonPrimitive?.contentOrNull
-                val r = RikkaAccessibilityService.execute(observationId, index, action, value)
+                val r = runCatching { RikkaAccessibilityService.execute(observationId, index, action, value) }
+                    .getOrElse { failure ->
+                        if (action != "tap" && action != "long_press") throw failure
+                        val bounds = RikkaAccessibilityService.nodeBounds(observationId, index)
+                        RikkaAccessibilityService.gesture(action, bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), if (action == "long_press") p["duration_ms"]?.jsonPrimitive?.longOrNull ?: 800L else 100L, observationId, "screen")
+                    }
                 buildJsonObject {
                     put("ok", r.ok); put("action", r.action); put("observation_id", observationId)
                     r.direction?.let { put("direction", it) }; r.moved?.let { put("moved", it) }
