@@ -293,7 +293,7 @@ internal class StructuredPersonalDataSource(
     private fun error(code: String, message: String): String =
         JSONObject().put("ok", false).put("code", code).put("message", message).toString()
 
-    private fun sensitive(content: String) = String(content = content, sensitive = true)
+    private fun sensitive(content: String) = content
 
     private companion object {
         const val DEFAULT_LIMIT = 10
