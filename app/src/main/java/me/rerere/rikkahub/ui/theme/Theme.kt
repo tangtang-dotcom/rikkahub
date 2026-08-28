@@ -43,6 +43,7 @@ enum class ColorMode {
 @Composable
 fun RikkahubTheme(
     colorMode: ColorMode = rememberCurrentColorMode(),
+    onResolvedDarkModeChange: (Boolean) -> Unit = {},
     content: @Composable () -> Unit
 ) {
     val settings by rememberUserSettingsState()
@@ -86,6 +87,7 @@ fun RikkahubTheme(
                 isAppearanceLightStatusBars = !darkTheme
                 isAppearanceLightNavigationBars = !darkTheme
             }
+            onResolvedDarkModeChange(darkTheme)
         }
     }
 
