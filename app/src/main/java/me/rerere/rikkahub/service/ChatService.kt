@@ -76,6 +76,8 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredCoreTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidPrivateDatabaseTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredContextTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidColorOsMemoryTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidBrowserTools
+import me.rerere.rikkahub.data.ai.browser.AgentBrowserSession
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
@@ -608,6 +610,7 @@ class ChatService(
                     addAll(createAndroidUriTools(context))
                     addAll(createAndroidLocationTools(context))
                     addAll(createAndroidConnectivityTools(context))
+                    addAll(createAndroidBrowserTools(context, conversationId.toString()))
                     addAll(createAndroidAccessibilityTools(
                         context = context,
                         requireApproval = settings.accessibilityNeedsApproval,
@@ -673,6 +676,7 @@ class ChatService(
                     }
                 }.let(::normalizeToolRegistry),
             ).onCompletion {
+                AgentBrowserSession.interruptAgentAction(conversationId.toString())
                 closeGenerationRootController(conversationId, generationRootController)
                 // 可能被取消了，或者意外结束，兜底更新
                 val updatedConversation = getConversationFlow(conversationId).value.copy(
