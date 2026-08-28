@@ -9,6 +9,14 @@ interface TerminalLog {
 
 internal object TerminalLogger : TerminalLog {
     private const val TAG = "RikkaHubTerminal"
-    override fun info(message: String) = Log.i(TAG, message).let { Unit }
-    override fun warn(message: String) = Log.w(TAG, message).let { Unit }
+
+    // Android's host-side unit-test stub throws here. Logging must never change a
+    // terminal command's result or prevent cancellation cleanup from completing.
+    override fun info(message: String) {
+        runCatching { Log.i(TAG, message) }
+    }
+
+    override fun warn(message: String) {
+        runCatching { Log.w(TAG, message) }
+    }
 }
