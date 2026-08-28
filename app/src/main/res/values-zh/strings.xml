@@ -1328,5 +1328,36 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="root_terminal_disable_approval_confirm">关闭确认</string>
   <string name="accessibility_protection_enabled">强制保持无障碍</string>
   <string name="accessibility_protection_enabled_desc">开启后，GUI 操作前若服务断连，将通过 Root 恢复 RikkaHub 无障碍服务</string>
+  <string name="linux_environment_title">Linux 工具环境</string>
+  <string name="linux_environment_desc">安装经过完整性校验的 Alpine 环境，用于 Git、压缩、包管理、Python、Node.js、SSH 和可选 APK 分析。</string>
+  <string name="linux_environment_not_installed">未安装</string>
+  <string name="linux_environment_base_ready">基础环境已就绪，仍需安装常用工具</string>
+  <string name="linux_environment_ready">已就绪%1$s</string>
+  <string name="linux_environment_install">下载并安装</string>
+  <string name="linux_environment_continue">继续安装</string>
+  <string name="linux_environment_busy">正在安装…</string>
+  <string name="linux_environment_health">环境健康检查</string>
+  <string name="linux_environment_health_desc">检查命令可用性以及私有工作区、共享存储挂载。</string>
+  <string name="linux_environment_check">检查</string>
+  <string name="linux_environment_repair">修复</string>
+  <string name="linux_environment_healthy">健康：%1$d 个工具，工作区已就绪</string>
+  <string name="linux_environment_unhealthy">需要修复：缺少 %1$s</string>
+  <string name="linux_optional_tools">可选 Linux 工具</string>
+  <string name="linux_python_tools">Python 工具</string>
+  <string name="linux_python_tools_desc">python3、pip、pipx、virtualenv、uv 和 ruff</string>
+  <string name="linux_node_tools">Node.js 环境</string>
+  <string name="linux_node_tools_desc">node 和 npm</string>
+  <string name="linux_ssh_tools">SSH 远程访问</string>
+  <string name="linux_ssh_tools_desc">OpenSSH 客户端/服务端和预生成主机密钥</string>
+  <string name="linux_apk_tools">APK 分析</string>
+  <string name="linux_apk_tools_desc">OpenJDK 17、jadx、apktool、smali 和 baksmali。没有 ARM64 AAPT2 时仍不支持 Apktool 回编译。</string>
+  <string name="linux_install">安装</string>
+  <string name="linux_installed">已安装</string>
+  <string name="linux_install_failed">安装失败：%1$s 阶段</string>
+  <string name="linux_install_complete">安装完成</string>
+  <string name="linux_root_unavailable">Root 不可用</string>
+  <string name="linux_busybox_unavailable">未找到完整的 Magisk/KernelSU/APatch BusyBox</string>
+  <string name="linux_abi_unsupported">不支持的 ABI：%1$s</string>
+  <string name="linux_space_insufficient">空间不足：需要 %1$s，可用 %2$s</string>
 </resources>
 

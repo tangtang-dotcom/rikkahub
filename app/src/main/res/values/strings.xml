@@ -1334,5 +1334,36 @@
   <string name="root_terminal_disable_approval_confirm">Disable confirmation</string>
   <string name="accessibility_protection_enabled">Force-keep accessibility service</string>
   <string name="accessibility_protection_enabled_desc">When enabled, Root restores the RikkaHub accessibility service before GUI operations if it disconnects</string>
+  <string name="linux_environment_title">Linux tool environment</string>
+  <string name="linux_environment_desc">Install a verified Alpine environment for Git, archives, package management, Python, Node.js, SSH and optional APK analysis.</string>
+  <string name="linux_environment_not_installed">Not installed</string>
+  <string name="linux_environment_base_ready">Base environment ready; common tools still need installation</string>
+  <string name="linux_environment_ready">Ready%1$s</string>
+  <string name="linux_environment_install">Download and install</string>
+  <string name="linux_environment_continue">Continue installation</string>
+  <string name="linux_environment_busy">Installing…</string>
+  <string name="linux_environment_health">Environment health</string>
+  <string name="linux_environment_health_desc">Check command availability and private workspace/shared-storage mounts.</string>
+  <string name="linux_environment_check">Check</string>
+  <string name="linux_environment_repair">Repair</string>
+  <string name="linux_environment_healthy">Healthy: %1$d tools, workspace ready</string>
+  <string name="linux_environment_unhealthy">Needs repair: missing %1$s</string>
+  <string name="linux_optional_tools">Optional Linux tools</string>
+  <string name="linux_python_tools">Python tools</string>
+  <string name="linux_python_tools_desc">python3, pip, pipx, virtualenv, uv and ruff</string>
+  <string name="linux_node_tools">Node.js environment</string>
+  <string name="linux_node_tools_desc">node and npm</string>
+  <string name="linux_ssh_tools">SSH remote access</string>
+  <string name="linux_ssh_tools_desc">OpenSSH client/server and generated host keys</string>
+  <string name="linux_apk_tools">APK analysis</string>
+  <string name="linux_apk_tools_desc">OpenJDK 17, jadx, apktool, smali and baksmali. Apktool build remains unavailable without ARM64 AAPT2.</string>
+  <string name="linux_install">Install</string>
+  <string name="linux_installed">Installed</string>
+  <string name="linux_install_failed">Installation failed at %1$s</string>
+  <string name="linux_install_complete">Installation complete</string>
+  <string name="linux_root_unavailable">Root is unavailable</string>
+  <string name="linux_busybox_unavailable">A complete Magisk/KernelSU/APatch BusyBox is unavailable</string>
+  <string name="linux_abi_unsupported">Unsupported ABI: %1$s</string>
+  <string name="linux_space_insufficient">Insufficient space: %1$s required, %2$s available</string>
 </resources>
 

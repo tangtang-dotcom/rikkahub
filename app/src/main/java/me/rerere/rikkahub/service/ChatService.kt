@@ -188,13 +188,13 @@ class ChatService(
     private val skillManager: SkillManager,
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
-    private val rootTerminalController: AndroidRootTerminalController,
 ) {
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
 
     // 统一会话管理
     private val sessions = ConcurrentHashMap<Uuid, ConversationSession>()
+    private val activeRootControllers = ConcurrentHashMap<Uuid, AndroidRootTerminalController>()
     private val _sessionsVersion = MutableStateFlow(0L)
 
     // 错误状态
@@ -344,6 +344,7 @@ class ChatService(
 
         val session = getOrCreateSession(conversationId)
         val previousJob = session.getJob()
+        interruptActiveRootTools(conversationId)
         previousJob?.cancel()
 
         val job = appScope.launch {
@@ -406,6 +407,7 @@ class ChatService(
         regenerateAssistantMsg: Boolean = true
     ) {
         val session = getOrCreateSession(conversationId)
+        interruptActiveRootTools(conversationId)
         session.getJob()?.cancel()
 
         val job = appScope.launch {
@@ -450,6 +452,7 @@ class ChatService(
         answer: String? = null,
     ) {
         val session = getOrCreateSession(conversationId)
+        interruptActiveRootTools(conversationId)
         session.getJob()?.cancel()
 
         val job = appScope.launch {
@@ -521,6 +524,13 @@ class ChatService(
             model.displayName
         }
         val useExternalWebSearch = shouldUseExternalWebSearch(assistant, model)
+        val generationRootController = if (settings.rootTerminalEnabled) {
+            AndroidRootTerminalController(context.cacheDir, context.filesDir).also { controller ->
+                activeRootControllers.put(conversationId, controller)?.interruptAll()
+            }
+        } else {
+            null
+        }
 
         runCatching {
 
@@ -596,10 +606,10 @@ class ChatService(
                         context = context,
                         requireApproval = settings.accessibilityNeedsApproval,
                         protectionEnabled = settings.accessibilityProtectionEnabled,
-                        rootController = rootTerminalController.takeIf { settings.rootTerminalEnabled },
+                        rootController = generationRootController,
                     ))
                     if (settings.rootTerminalEnabled) {
-                        addAll(createAndroidRootTerminalTools(rootTerminalController, settings.rootTerminalNeedsApproval))
+                        addAll(createAndroidRootTerminalTools(requireNotNull(generationRootController), settings.rootTerminalNeedsApproval))
                     }
                     if (assistant.enableRecentChatsReference) {
                         addAll(createConversationTools(conversationRepo, assistant.id))
@@ -645,6 +655,7 @@ class ChatService(
                     }
                 }.let(::normalizeToolRegistry),
             ).onCompletion {
+                closeGenerationRootController(conversationId, generationRootController)
                 // 可能被取消了，或者意外结束，兜底更新
                 val updatedConversation = getConversationFlow(conversationId).value.copy(
                     messageNodes = getConversationFlow(conversationId).value.messageNodes.map { node ->
@@ -681,6 +692,7 @@ class ChatService(
                 }
             }
         }.onFailure {
+            closeGenerationRootController(conversationId, generationRootController)
             // 兜底取消 Live Update 通知（生成开始前失败时 onCompletion 不会执行）
             appEventBus.tryEmit(AppEvent.ChatGenerationEnded(conversationId, senderName, null))
 
@@ -1317,9 +1329,24 @@ class ChatService(
         updateConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
     }
 
+
+    private fun interruptActiveRootTools(conversationId: Uuid) {
+        activeRootControllers.remove(conversationId)?.interruptAll()
+    }
+
+    private fun closeGenerationRootController(
+        conversationId: Uuid,
+        controller: AndroidRootTerminalController?,
+    ) {
+        if (controller == null) return
+        activeRootControllers.remove(conversationId, controller)
+        controller.interruptAll()
+    }
+
     // 停止当前会话生成任务（不清理会话缓存）
     suspend fun stopGeneration(conversationId: Uuid) {
         val job = sessions[conversationId]?.getJob() ?: return
+        interruptActiveRootTools(conversationId)
         job.cancel()
         runCatching { job.join() }
         finishInterruptedPendingTools(conversationId)

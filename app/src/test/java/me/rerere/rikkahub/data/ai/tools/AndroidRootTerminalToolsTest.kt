@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.ai.tools
 
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import java.nio.file.Files
+import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -9,23 +9,23 @@ import org.junit.Test
 
 class AndroidRootTerminalToolsTest {
     @Test
-    fun `action is required and validated`() {
-        val missing = runCatching { rootTerminalAction(buildJsonObject {}) }.exceptionOrNull()
-        assertTrue(missing is IllegalStateException)
-
-        val invalid = runCatching {
-            rootTerminalAction(buildJsonObject { put("action", "unknown") })
-        }.exceptionOrNull()
-        assertTrue(invalid is IllegalArgumentException)
+    fun `catalog exposes the complete Eta terminal contract`() {
+        val root = Files.createTempDirectory("terminal-tools-").toFile()
+        AndroidRootTerminalController(root, root).use { controller ->
+            assertEquals(
+                listOf("terminal", "run_command", "read_file", "write_file", "list_directory"),
+                createAndroidRootTerminalTools(controller, requireApproval = true).map { it.name },
+            )
+        }
     }
 
     @Test
-    fun `only command actions require approval`() {
-        assertTrue(rootTerminalNeedsApproval(buildJsonObject { put("action", "run") }, true))
-        assertTrue(rootTerminalNeedsApproval(buildJsonObject { put("action", "start") }, true))
-        assertFalse(rootTerminalNeedsApproval(buildJsonObject { put("action", "status") }, true))
-        assertFalse(rootTerminalNeedsApproval(buildJsonObject { put("action", "read") }, true))
-        assertFalse(rootTerminalNeedsApproval(buildJsonObject { put("action", "run") }, false))
-        assertEquals("close", rootTerminalAction(buildJsonObject { put("action", "close") }))
+    fun `only terminal command execution requires approval`() {
+        assertTrue(terminalNeedsApproval("exec", true))
+        assertTrue(terminalNeedsApproval("open_and_exec", true))
+        assertFalse(terminalNeedsApproval("open", true))
+        assertFalse(terminalNeedsApproval("read_async_result", true))
+        assertFalse(terminalNeedsApproval("close", true))
+        assertFalse(terminalNeedsApproval("exec", false))
     }
 }
