@@ -36,10 +36,10 @@ class AccessibilityGesturePolicyTest {
     }
 
     @Test fun `content directions map to platform scroll actions`() {
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_DOWN, AccessibilityGesturePolicy.scrollAction("down"))
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_UP, AccessibilityGesturePolicy.scrollAction("up"))
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_LEFT, AccessibilityGesturePolicy.scrollAction("left"))
-        assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_RIGHT, AccessibilityGesturePolicy.scrollAction("right"))
+        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id, AccessibilityGesturePolicy.scrollAction("down"))
+        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id, AccessibilityGesturePolicy.scrollAction("up"))
+        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id, AccessibilityGesturePolicy.scrollAction("left"))
+        assertEquals(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id, AccessibilityGesturePolicy.scrollAction("right"))
         assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityGesturePolicy.fallbackScrollAction("down"))
         assertEquals(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD, AccessibilityGesturePolicy.fallbackScrollAction("up"))
         assertTrue(AccessibilityGesturePolicy.fallbackScrollAction("left") == null)

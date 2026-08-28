@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.accessibility
 
 /** Keeps tool coordinates aligned with the physical display used by accessibility gestures. */
-internal object AccessibilityGesturePolicy {
+object AccessibilityGesturePolicy {
     data class DisplaySize(val width: Int, val height: Int) {
         init {
             require(width > 0 && height > 0) { "ACCESSIBILITY_DISPLAY_UNAVAILABLE" }
@@ -32,10 +32,10 @@ internal object AccessibilityGesturePolicy {
     }
 
     fun scrollAction(direction: String): Int = when (direction) {
-        "down" -> android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_DOWN
-        "up" -> android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_UP
-        "left" -> android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_LEFT
-        "right" -> android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_RIGHT
+        "down" -> android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+        "up" -> android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
+        "left" -> android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id
+        "right" -> android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id
         else -> error("ACCESSIBILITY_INVALID_SCROLL_DIRECTION")
     }
 
