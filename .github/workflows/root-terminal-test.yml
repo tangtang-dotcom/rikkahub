@@ -52,12 +52,22 @@ jobs:
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
 
-      - name: Install Android native build toolchain
+      - name: Prepare Android native build toolchain
+        uses: android-actions/setup-android@v3
+
+      - name: Verify Android native build toolchain
+        shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "cmake;3.22.1" "ndk;28.2.13676358"
-          file "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake"
-          "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake" --version
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK_ROOT"
+          export ANDROID_SDK_ROOT="$SDK_ROOT"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          command -v sdkmanager || true
+          test -x "$SDK_ROOT/cmake/3.22.1/bin/cmake"
+          test -d "$SDK_ROOT/ndk/28.2.13676358"
+          file "$SDK_ROOT/cmake/3.22.1/bin/cmake"
+          "$SDK_ROOT/cmake/3.22.1/bin/cmake" --version
 
       - name: Create test Firebase configuration
         run: |
