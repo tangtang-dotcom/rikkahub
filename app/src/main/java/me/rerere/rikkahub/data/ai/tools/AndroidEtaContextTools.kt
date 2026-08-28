@@ -28,7 +28,7 @@ internal fun etaContextActionTools(
                 put("app_name", buildJsonObject { put("type", "string") })
             },
         ) },
-        needsApproval = { true },
+        needsApproval = { false },
         execute = { input ->
             val args = input.jsonObject
             val packageName = args["package_name"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()

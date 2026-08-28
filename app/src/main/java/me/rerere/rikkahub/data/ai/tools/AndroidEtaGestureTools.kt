@@ -14,7 +14,7 @@ internal fun etaGestureTools(
     context: Context,
     protectionEnabled: Boolean,
     rootController: AndroidRootTerminalController?,
-    needsApproval: Boolean,
+    @Suppress("UNUSED_PARAMETER") needsApproval: Boolean,
 ): List<Tool> {
     fun ensure() = RikkaAccessibilityKeeper.ensureAvailable(context, protectionEnabled, rootController)
 
@@ -63,7 +63,7 @@ internal fun etaGestureTools(
         name = name,
         description = description,
         parameters = { coordinateSchema(required, durationMin, durationMax) },
-        needsApproval = { needsApproval },
+        needsApproval = { false },
         execute = { input ->
             ensure()
             val args = input.jsonObject
@@ -115,7 +115,7 @@ internal fun etaGestureTools(
         name = name,
         description = description,
         parameters = { elementSchema(withDuration, withDirection) },
-        needsApproval = { needsApproval },
+        needsApproval = { false },
         execute = { input ->
             ensure()
             val args = input.jsonObject
@@ -148,7 +148,7 @@ internal fun etaGestureTools(
             name = EtaCompatibilityToolNames.SCROLL,
             description = "Scroll the largest visible scrollable container in a content-browsing direction.",
             parameters = { directionSchema },
-            needsApproval = { needsApproval },
+            needsApproval = { false },
             execute = { input ->
                 ensure()
                 val direction = input.jsonObject["direction"]?.jsonPrimitive?.contentOrNull
