@@ -1,102 +1,86 @@
 package me.rerere.rikkahub.data.ai.tools
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.utils.toLocalString
+import java.security.MessageDigest
 import java.time.LocalDate
 
 fun buildMemoryTools(
     json: Json,
     onCreation: suspend (String) -> AssistantMemory,
     onUpdate: suspend (Int, String) -> AssistantMemory,
-    onDelete: suspend (Int) -> Unit
-): List<Tool> = listOf(
-    Tool(
-        name = "memory_tool",
-        description = """
-            The memory tool stores long-term information across conversations.
-            Use `action` to control the operation: `create` (add), `edit` (update), `delete` (remove).
-            - No relevant record: `create` + `content`
-            - Existing relevant record: `edit` + `id` + `content`
-            - Outdated/irrelevant record: `delete` + `id`
-            Memories will automatically appear in the <memories> tag in later conversations.
-            Do not store sensitive information (e.g., ethnicity, religion, sexual orientation, political views, sex life, criminal records).
-            You may store: preferred name, preferences, plans, work-related notes, chat style preferences, first chat time, etc.
-            Do not show memory content directly in the conversation unless the user explicitly asks.
-            Today is ${LocalDate.now().toLocalString(true)}.
-            Similar memories should be merged; prefer updating existing records.
+    onDelete: suspend (Int) -> Unit,
+    onRead: suspend () -> List<AssistantMemory>,
+    includeMutations: Boolean = true,
+): List<Tool> = buildList {
+    add(buildMemoryGetTool(onRead))
+    if (includeMutations) add(buildMemoryMutationTool(json, onCreation, onUpdate, onDelete))
+}
 
-            Examples:
-            {"action":"create","content":"User prefers brief replies and is more active on weekends."}
-            {"action":"edit","id":12,"content":"User’s preferred name updated to “A-Xing”, prefers Chinese replies."}
-            {"action":"delete","id":7}
-        """.trimIndent(),
-        parameters = {
-            InputSchema.Obj(
-                properties = buildJsonObject {
-                    put("action", buildJsonObject {
-                        put("type", "string")
-                        put(
-                            "enum",
-                            buildJsonArray {
-                                add("create")
-                                add("edit")
-                                add("delete")
-                            }
-                        )
-                        put("description", "Operation to perform: create, edit, or delete")
-                    })
-                    put("id", buildJsonObject {
-                        put("type", "integer")
-                        put("description", "The id of the memory record (required for edit/delete)")
-                    })
-                    put("content", buildJsonObject {
-                        put("type", "string")
-                        put("description", "The content of the memory record (required for create/edit)")
-                    })
-                },
-                required = listOf("action")
-            )
-        },
-        execute = {
-            val params = it.jsonObject
-            val action = params["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
-            val payload = when (action) {
-                "create" -> {
-                    val content = params["content"]?.jsonPrimitive?.contentOrNull ?: error("content is required")
-                    json.encodeToJsonElement(AssistantMemory.serializer(), onCreation(content))
-                }
-
-                "edit" -> {
-                    val id = params["id"]?.jsonPrimitive?.intOrNull ?: error("id is required")
-                    val content = params["content"]?.jsonPrimitive?.contentOrNull ?: error("content is required")
-                    json.encodeToJsonElement(AssistantMemory.serializer(), onUpdate(id, content))
-                }
-
-                "delete" -> {
-                    val id = params["id"]?.jsonPrimitive?.intOrNull ?: error("id is required")
-                    onDelete(id)
-                    buildJsonObject {
-                        put("success", true)
-                        put("id", id)
-                    }
-                }
-
-                else -> error("unknown action: $action, must be one of [create, edit, delete]")
-            }
-            listOf(UIMessagePart.Text(payload.toString()))
+private fun buildMemoryGetTool(onRead: suspend () -> List<AssistantMemory>) = Tool(
+    name = "memory_get",
+    description = "Read persistent cross-conversation memory with bounded paging or case-insensitive query matching.",
+    parameters = { InputSchema.Obj(properties = buildJsonObject {
+        put("query", buildJsonObject { put("type", "string"); put("maxLength", 500) })
+        put("start_line", buildJsonObject { put("type", "integer"); put("minimum", 1) })
+        put("max_chars", buildJsonObject { put("type", "integer"); put("minimum", 1); put("maximum", 32000) })
+    }) },
+    execute = { input ->
+        val document = buildString {
+            appendLine("# RikkaHub Memory")
+            onRead().forEach { memory -> appendLine(); appendLine("## Memory ${memory.id}"); appendLine(memory.content) }
+        }.trimEnd()
+        val bytes = document.toByteArray()
+        val revision = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        val lines = document.lines()
+        val query = input.jsonObject["query"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+        val maxChars = (input.jsonObject["max_chars"]?.jsonPrimitive?.intOrNull ?: 12_000).coerceIn(1, 32_000)
+        val start = (input.jsonObject["start_line"]?.jsonPrimitive?.intOrNull ?: 1).coerceAtLeast(1)
+        val selected = if (query.isBlank()) lines.drop(start - 1) else lines.mapIndexedNotNull { index, line ->
+            if (line.contains(query, ignoreCase = true)) "${index + 1}: $line" else null
         }
-    )
+        val visible = ArrayList<String>(); var charCount = 0
+        for (line in selected) {
+            val extra = line.length + if (visible.isEmpty()) 0 else 1
+            if (charCount + extra > maxChars) break
+            visible += line; charCount += extra
+        }
+        val payload = buildJsonObject {
+            put("ok", true); put("revision", revision); put("bytes", bytes.size); put("line_count", lines.size)
+            if (query.isBlank()) {
+                put("start_line", start); if (visible.isEmpty()) put("end_line", JsonNull) else put("end_line", start + visible.size - 1)
+            } else { put("start_line", JsonNull); put("end_line", JsonNull) }
+            put("matched_lines", if (query.isBlank()) visible.size else selected.size)
+            put("has_more", visible.size < selected.size); put("content", visible.joinToString("\n"))
+        }
+        listOf(UIMessagePart.Text(payload.toString()))
+    },
+)
+
+private fun buildMemoryMutationTool(
+    json: Json,
+    onCreation: suspend (String) -> AssistantMemory,
+    onUpdate: suspend (Int, String) -> AssistantMemory,
+    onDelete: suspend (Int) -> Unit,
+) = Tool(
+    name = "memory_tool",
+    description = "Store long-term information across conversations with create, edit, or delete. Merge similar records and do not store sensitive information. Today is ${LocalDate.now().toLocalString(true)}.",
+    parameters = { InputSchema.Obj(properties = buildJsonObject {
+        put("action", buildJsonObject { put("type", "string"); put("enum", buildJsonArray { add("create"); add("edit"); add("delete") }) })
+        put("id", buildJsonObject { put("type", "integer") }); put("content", buildJsonObject { put("type", "string") })
+    }, required = listOf("action")) },
+    execute = {
+        val params = it.jsonObject; val action = params["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
+        val payload = when (action) {
+            "create" -> json.encodeToJsonElement(AssistantMemory.serializer(), onCreation(params["content"]?.jsonPrimitive?.contentOrNull ?: error("content is required")))
+            "edit" -> json.encodeToJsonElement(AssistantMemory.serializer(), onUpdate(params["id"]?.jsonPrimitive?.intOrNull ?: error("id is required"), params["content"]?.jsonPrimitive?.contentOrNull ?: error("content is required")))
+            "delete" -> { val id = params["id"]?.jsonPrimitive?.intOrNull ?: error("id is required"); onDelete(id); buildJsonObject { put("success", true); put("id", id) } }
+            else -> error("unknown action: $action")
+        }
+        listOf(UIMessagePart.Text(payload.toString()))
+    },
 )

@@ -77,6 +77,7 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidPrivateDatabaseTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredContextTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidColorOsMemoryTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidBrowserTools
+import me.rerere.rikkahub.data.ai.tools.createEtaAndroidCompatibilityTools
 import me.rerere.rikkahub.data.ai.browser.AgentBrowserSession
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
@@ -611,6 +612,13 @@ class ChatService(
                     addAll(createAndroidLocationTools(context))
                     addAll(createAndroidConnectivityTools(context))
                     addAll(createAndroidBrowserTools(context, conversationId.toString()))
+                    addAll(createEtaAndroidCompatibilityTools(
+                        context = context,
+                        skillManager = skillManager,
+                        enabledSkills = assistant.enabledSkills,
+                        protectionEnabled = settings.accessibilityProtectionEnabled,
+                        rootController = generationRootController,
+                    ))
                     addAll(createAndroidAccessibilityTools(
                         context = context,
                         requireApproval = settings.accessibilityNeedsApproval,

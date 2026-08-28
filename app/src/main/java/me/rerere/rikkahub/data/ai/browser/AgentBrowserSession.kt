@@ -549,25 +549,45 @@ internal object AgentBrowserSession {
 
     private fun historyNavigation(action: String, backwards: Boolean): BrowserToolResult {
         val view = requirePage()
-        val hasTarget = callOnMain {
+        val targetIndex = callOnMain {
             val history = view.copyBackForwardList()
-            val targetIndex = history.currentIndex + if (backwards) -1 else 1
-            targetIndex in 0 until history.size
-        }
-        if (!hasTarget) throw BrowserFailure("HISTORY_UNAVAILABLE", "当前没有可用的浏览记录")
+            browserHistoryTargetIndex(history.currentIndex, history.size, backwards)
+        } ?: throw BrowserFailure("HISTORY_UNAVAILABLE", "当前没有可用的浏览记录")
         val epoch = activeOperationEpoch
         val generation = navigationGeneration.incrementAndGet()
         callOnMain {
             requireActiveOperation(epoch)
             if (navigationGeneration.get() != generation) return@callOnMain
             currentLoading = true
-            currentPageVisible = false
             currentProgress = 0
             publishSnapshotOnMain()
             if (backwards) view.goBack() else view.goForward()
         }
-        waitForPostAction()
-        return toolResult(baseEnvelope(action, true, "ok"))
+        val deadline = System.currentTimeMillis() + POST_ACTION_TIMEOUT_MS
+        var reached = false
+        while (System.currentTimeMillis() < deadline) {
+            throwIfInterrupted()
+            reached = callOnMain { view.copyBackForwardList().currentIndex == targetIndex }
+            if (reached) break
+            Thread.sleep(50L)
+        }
+        if (!reached) throw BrowserFailure("ACTION_TIMEOUT", "浏览器历史位置未发生切换", "timeout")
+        // WebChromeClient may leave progress below 100 for cached history restores even though
+        // WebView has already committed the target item. History position is the source of truth.
+        val settledDeadline = System.currentTimeMillis() + 2_000L
+        while (snapshots.value.isLoading && System.currentTimeMillis() < settledDeadline) {
+            throwIfInterrupted(); Thread.sleep(50L)
+        }
+        callOnMain {
+            val item = view.copyBackForwardList().currentItem
+            currentUrl = item?.url.orEmpty().ifBlank { view.url.orEmpty() }
+            currentHost = hostOf(currentUrl)
+            currentTitle = view.title.orEmpty()
+            currentLoading = false
+            currentPageVisible = currentUrl.isNotBlank()
+            publishSnapshotOnMain()
+        }
+        return toolResult(baseEnvelope(action, true, "ok").put("history_index", targetIndex))
     }
 
     private fun reload(): BrowserToolResult {
@@ -1131,4 +1151,8 @@ internal object AgentBrowserSession {
         "wait_for_selector",
     )
 
+
 }
+
+internal fun browserHistoryTargetIndex(currentIndex: Int, size: Int, backwards: Boolean): Int? =
+    (currentIndex + if (backwards) -1 else 1).takeIf { it in 0 until size }
