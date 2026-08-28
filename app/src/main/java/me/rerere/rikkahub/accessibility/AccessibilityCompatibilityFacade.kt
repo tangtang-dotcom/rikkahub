@@ -46,6 +46,8 @@ fun compatPasteFocused(text: String) = service().pasteText(text).out("paste_text
 fun compatReplaceText(id: String?, index: Int?, text: String) = service().setTextNode(id?.let(::snap),index,text).out("replace_text")
 fun compatClearText(id: String?, index: Int?) = service().setTextNode(id?.let(::snap),index,"").out("clear_text")
 fun compatPressEnter() = service().imeEnter().out("enter")
+fun compatScroll(direction: String): AccessibilityActionResult =
+    service().scrollCurrent(ScrollDirection.parse(direction) ?: error("ACCESSIBILITY_INVALID_SCROLL_DIRECTION")).out("scroll")
 fun compatCurrentPackageName() = service().currentPackageName()
 fun compatGlobal(action: String) = service().globalActionResult(action).out(action)
 

@@ -2367,6 +2367,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         fun replaceText(id: String?, index: Int?, text: String) = compatReplaceText(id, index, text)
         fun clearText(id: String?, index: Int?) = compatClearText(id, index)
         fun pressEnter() = compatPressEnter()
+        fun scroll(direction: String) = compatScroll(direction)
         fun currentPackageName() = compatCurrentPackageName()
         fun global(action: String) = compatGlobal(action)
         fun queryText(text: String, includeDescription: Boolean, matchMode: String) = compatQueryText(text, includeDescription, matchMode)

@@ -159,16 +159,8 @@ internal fun etaGestureTools(
                 ensure()
                 val direction = input.jsonObject["direction"]?.jsonPrimitive?.contentOrNull
                     ?: error("direction is required")
-                val observation = RikkaAccessibilityService.observe(120)
-                val target = observation.nodes.asSequence()
-                    .filter { it.scrollable && it.enabled }
-                    .maxByOrNull {
-                        (it.right - it.left).coerceAtLeast(0).toLong() *
-                            (it.bottom - it.top).coerceAtLeast(0).toLong()
-                    }
-                    ?: error("ACCESSIBILITY_NODE_NOT_SCROLLABLE")
                 resultParts(
-                    RikkaAccessibilityService.execute(observation.observationId, target.index, "scroll", direction),
+                    RikkaAccessibilityService.scroll(direction),
                     EtaCompatibilityToolNames.SCROLL,
                 )
             },
