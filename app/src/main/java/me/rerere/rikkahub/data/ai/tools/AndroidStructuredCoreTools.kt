@@ -37,33 +37,18 @@ private fun JsonObject.str(name:String)=this[name]?.jsonPrimitive?.contentOrNull
 internal fun topMemoryAppsCommand(limit: Int): String =
     "/system/bin/ps -A -o rss,comm 2>/dev/null | tail -n +2 | sort -nr | head -n ${limit.coerceIn(1, 30)}"
 
-internal fun getSettingCommand(namespace: String, key: String): String =
-    "value=\$(/system/bin/settings get $namespace $key 2>/dev/null); " +
-        "if [ -n \"\$value\" ] && [ \"\$value\" != null ]; then printf '%s\\n' \"\$value\"; " +
-        "else /system/bin/cmd settings get $namespace $key 2>/dev/null; fi"
+internal fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
-internal fun normalizeSettingValue(raw: String): String? = raw.lineSequence()
-    .map(String::trim)
-    .lastOrNull { it.isNotEmpty() && it != "null" }
+internal fun getSettingCommand(namespace: String, key: String): String =
+    "settings --user current get ${shellQuote(namespace)} ${shellQuote(key)}"
+
+internal fun setSettingCommand(namespace: String, key: String, value: String): String =
+    "settings --user current put ${shellQuote(namespace)} ${shellQuote(key)} ${shellQuote(value)}"
 
 internal fun setDeviceStateCommand(target: String, enabled: Boolean): String = when (target) {
-    "wifi" -> "/system/bin/cmd wifi set-wifi-enabled ${if (enabled) "enabled" else "disabled"}"
-    "bluetooth" -> "/system/bin/cmd bluetooth_manager ${if (enabled) "enable" else "disable"}"
+    "wifi" -> "cmd wifi set-wifi-enabled ${if (enabled) "enabled" else "disabled"}"
+    "bluetooth" -> "cmd bluetooth_manager ${if (enabled) "enable" else "disable"}"
     else -> error("INVALID_ARGUMENT")
-}
-
-internal fun waitForDeviceState(context: Context, target: String, expected: Boolean): Boolean {
-    fun current(): Boolean = when (target) {
-        "wifi" -> (context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).isWifiEnabled
-        "bluetooth" -> android.bluetooth.BluetoothAdapter.getDefaultAdapter()?.isEnabled == true
-        else -> error("INVALID_ARGUMENT")
-    }
-    repeat(20) {
-        val value = current()
-        if (value == expected) return value
-        Thread.sleep(250)
-    }
-    return current()
 }
 
 fun createAndroidStructuredCoreTools(context:Context,root:AndroidRootTerminalController):List<Tool>{
@@ -104,13 +89,13 @@ fun createAndroidStructuredCoreTools(context:Context,root:AndroidRootTerminalCon
             val percent=o.int("percent",-1);require(percent in 0..100){"INVALID_ARGUMENT"};val channel=stream(o.str("stream"));val index=(audio.getStreamMaxVolume(channel)*percent/100.0).toInt();audio.setStreamVolume(channel,index,0);buildJsonObject{put("ok",true);put("tool","set_volume");put("stream",o.str("stream")?:"media");put("percent",percent);put("index",index)}
         },
         structuredTool("get_setting","Read an exact Android Settings value.",buildJsonObject{put("namespace",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("system");add("secure");add("global")})});put("key",buildJsonObject{put("type","string")})},listOf("namespace","key")){o->
-            val key=o.str("key")?.takeIf{it.matches(Regex("[A-Za-z0-9_.-]{1,200}"))}?:error("INVALID_ARGUMENT");val namespace=o.str("namespace")?:error("INVALID_ARGUMENT");val frameworkValue=when(namespace){"system"->Settings.System.getString(context.contentResolver,key);"secure"->Settings.Secure.getString(context.contentResolver,key);"global"->if(key=="airplane_mode_on") Settings.Global.getInt(context.contentResolver,key,0).toString() else Settings.Global.getString(context.contentResolver,key);else->error("INVALID_ARGUMENT")};val rootResult=if(frameworkValue==null)root.executeSync(getSettingCommand(namespace,key),timeoutMs=10_000)else null;val value=frameworkValue?:rootResult?.takeIf{it.exitCode==0&&!it.timedOut}?.stdout?.let(::normalizeSettingValue);buildJsonObject{put("ok",true);put("tool","get_setting");put("namespace",namespace);put("key",key);put("source",if(frameworkValue!=null)"framework" else if(value!=null)"root" else "unavailable");value?.let{put("value",it)}?:put("value",JsonNull)}
+            val key=o.str("key")?.takeIf{it.matches(Regex("[A-Za-z0-9_.-]{1,200}"))}?:error("INVALID_ARGUMENT");val namespace=o.str("namespace")?.lowercase(java.util.Locale.ROOT)?:error("INVALID_ARGUMENT");val publicValue=runCatching{when(namespace){"system"->Settings.System.getString(context.contentResolver,key);"secure"->Settings.Secure.getString(context.contentResolver,key);"global"->Settings.Global.getString(context.contentResolver,key);else->null}}.getOrNull();val value=publicValue?:root.executeSync(getSettingCommand(namespace,key),timeoutMs=10_000).takeIf{it.exitCode==0&&!it.timedOut}?.stdout?.trim()?.takeUnless{it=="null"};buildJsonObject{put("ok",true);put("tool","get_setting");put("namespace",namespace);put("key",key);value?.let{put("value",it)}?:put("value",JsonNull)}
         },
         structuredTool("set_setting","Modify a non-critical Android Settings value.",buildJsonObject{put("namespace",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("system");add("secure");add("global")})});put("key",buildJsonObject{put("type","string")});put("value",buildJsonObject{put("type","string")})},listOf("namespace","key","value"),true){o->
-            val key=o.str("key")?.takeIf{it.matches(Regex("[A-Za-z0-9_.-]{1,200}"))}?:error("INVALID_ARGUMENT");require(key !in setOf("enabled_accessibility_services","accessibility_enabled","adb_enabled","device_provisioned","user_setup_complete")){"SETTING_PROTECTED"};val value=o.str("value")?:error("INVALID_ARGUMENT");val command="/system/bin/settings put ${o.str("namespace")} '$key' '${value.replace("'","'\\''")}'";val r=root.executeSync(command,timeoutMs=10_000);if(r.exitCode!=0||r.timedOut)error("SETTING_WRITE_FAILED");buildJsonObject{put("ok",true);put("tool","set_setting");put("namespace",o.str("namespace")?:"");put("key",key)}
+            val key=o.str("key")?.takeIf{it.matches(Regex("[A-Za-z0-9_.-]{1,200}"))}?:error("INVALID_ARGUMENT");require(key !in setOf("enabled_accessibility_services","accessibility_enabled","adb_enabled","device_provisioned","user_setup_complete")){"SETTING_PROTECTED"};val namespace=o.str("namespace")?.lowercase(java.util.Locale.ROOT)?:error("INVALID_ARGUMENT");val value=o.str("value")?:error("INVALID_ARGUMENT");val r=root.executeSync(setSettingCommand(namespace,key,value),timeoutMs=10_000);if(r.exitCode!=0||r.timedOut)error("SETTING_WRITE_FAILED");buildJsonObject{put("ok",true);put("tool","set_setting");put("namespace",namespace);put("key",key)}
         },
         structuredTool("set_device_state","Enable or disable Wi-Fi or Bluetooth.",buildJsonObject{put("target",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("wifi");add("bluetooth")})});put("enabled",buildJsonObject{put("type","boolean")})},listOf("target","enabled"),true){o->
-            val enabled=o["enabled"]?.jsonPrimitive?.booleanOrNull?:error("INVALID_ARGUMENT");val target=o.str("target")?:error("INVALID_ARGUMENT");val command=setDeviceStateCommand(target,enabled);val r=root.executeSync(command,timeoutMs=10_000);if(r.exitCode!=0||r.timedOut)error("DEVICE_STATE_CHANGE_FAILED");val observed=waitForDeviceState(context,target,enabled);if(observed!=enabled)error("DEVICE_STATE_NOT_CONFIRMED");buildJsonObject{put("ok",true);put("tool","set_device_state");put("target",target);put("enabled",enabled);put("observed_enabled",observed);put("verified",true)}
+            val enabled=o["enabled"]?.jsonPrimitive?.booleanOrNull?:error("INVALID_ARGUMENT");val target=o.str("target")?.lowercase(java.util.Locale.ROOT)?:error("INVALID_ARGUMENT");val r=root.executeSync(setDeviceStateCommand(target,enabled),timeoutMs=10_000);if(r.exitCode!=0||r.timedOut)error("DEVICE_STATE_CHANGE_FAILED");buildJsonObject{put("ok",true);put("tool","set_device_state");put("target",target);put("enabled",enabled)}
         },
         structuredTool("app_state_control","Force-stop, freeze, or unfreeze a non-core package.",buildJsonObject{put("package_name",buildJsonObject{put("type","string")});put("action",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("force_stop");add("freeze");add("unfreeze")})})},listOf("package_name","action"),true){o->
             val pkg=o.str("package_name")?.takeIf{it.matches(Regex("[A-Za-z0-9_.]+"))}?:error("INVALID_ARGUMENT");require(pkg!=context.packageName&&pkg !in setOf("android","com.android.systemui","com.android.settings")){"PACKAGE_PROTECTED"};val action=o.str("action")?:error("INVALID_ARGUMENT");val command=when(action){"force_stop"->"am force-stop '$pkg'";"freeze"->"pm disable-user --user 0 '$pkg'";"unfreeze"->"pm enable --user 0 '$pkg'";else->error("INVALID_ARGUMENT")};val r=root.executeSync(command,timeoutMs=15_000);if(r.exitCode!=0||r.timedOut)error("APP_STATE_CHANGE_FAILED");buildJsonObject{put("ok",true);put("tool","app_state_control");put("package_name",pkg);put("action",action)}

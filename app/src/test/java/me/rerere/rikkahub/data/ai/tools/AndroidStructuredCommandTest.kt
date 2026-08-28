@@ -11,25 +11,19 @@ class AndroidStructuredCommandTest {
         assertTrue(command.endsWith("head -n 10"))
     }
 
-    @Test fun `device state commands use Android service entry points`() {
-        assertEquals(
-            "/system/bin/cmd wifi set-wifi-enabled disabled",
-            setDeviceStateCommand("wifi", false),
-        )
-        assertEquals(
-            "/system/bin/cmd bluetooth_manager enable",
-            setDeviceStateCommand("bluetooth", true),
-        )
+    @Test fun `device state commands match Eta`() {
+        assertEquals("cmd wifi set-wifi-enabled disabled", setDeviceStateCommand("wifi", false))
+        assertEquals("cmd bluetooth_manager enable", setDeviceStateCommand("bluetooth", true))
     }
 
-    @Test
-    fun `settings command has cmd fallback and normalizes output`() {
+    @Test fun `settings commands match Eta`() {
         assertEquals(
-            "value=\$(/system/bin/settings get global airplane_mode_on 2>/dev/null); if [ -n \"\$value\" ] && [ \"\$value\" != null ]; then printf '%s\\n' \"\$value\"; else /system/bin/cmd settings get global airplane_mode_on 2>/dev/null; fi",
+            "settings --user current get 'global' 'airplane_mode_on'",
             getSettingCommand("global", "airplane_mode_on"),
         )
-        assertEquals("0", normalizeSettingValue("0\n"))
-        assertEquals("1", normalizeSettingValue("warning\n1\n"))
-        assertEquals(null, normalizeSettingValue("null\n"))
+        assertEquals(
+            "settings --user current put 'system' 'haptic_feedback_enabled' '1'",
+            setSettingCommand("system", "haptic_feedback_enabled", "1"),
+        )
     }
 }
