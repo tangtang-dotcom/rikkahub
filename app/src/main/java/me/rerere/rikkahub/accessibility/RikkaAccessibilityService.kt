@@ -2,6 +2,9 @@ package me.rerere.rikkahub.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Path
 import android.graphics.Point
@@ -146,6 +149,132 @@ class RikkaAccessibilityService : AccessibilityService() {
                     AccessibilityActionResult(true, action)
                 }
             }
+        }
+
+        fun inputFocused(text: String): AccessibilityActionResult = editFocused("input_text", text, false, false)
+        fun pasteFocused(text: String): AccessibilityActionResult = editFocused("paste_text", text, false, true)
+
+        fun replaceText(observationId: String?, index: Int?, text: String): AccessibilityActionResult {
+            val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
+            return if (index != null) {
+                val id = observationId ?: error("NO_OBSERVATION")
+                val record = synchronized(lock) { observations[id] } ?: error("ACCESSIBILITY_OBSERVATION_EXPIRED")
+                if (record.serviceToken != service.serviceToken) error("ACCESSIBILITY_OBSERVATION_EXPIRED")
+                service.runOnMainSync {
+                    withResolvedNode(service, record, index) { node ->
+                        require(node.isEditable && node.isEnabled) { "ACCESSIBILITY_NODE_NOT_EDITABLE" }
+                        setNodeText(node, text, text.length, "replace_text")
+                    }
+                }
+            } else editFocused("replace_text", text, true, false)
+        }
+
+        fun clearText(observationId: String?, index: Int?): AccessibilityActionResult =
+            replaceText(observationId, index, "").copy(action = "clear_text")
+
+        fun pressEnter(): AccessibilityActionResult {
+            val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
+            return service.runOnMainSync {
+                val node = focusedEditable(service) ?: error("NO_FOCUSED_EDITABLE")
+                try {
+                    val accepted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                        node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+                    if (!accepted) error("ACTION_OUTCOME_UNKNOWN")
+                    AccessibilityActionResult(true, "press_key", method = "ACTION_IME_ENTER")
+                } finally { node.recycle() }
+            }
+        }
+
+        fun currentPackageName(): String? {
+            val service = instance ?: return null
+            return runCatching { service.runOnMainSync {
+                service.rootInActiveWindow?.let { root -> try { root.packageName?.toString() } finally { root.recycle() } }
+            } }.getOrNull()
+        }
+
+        fun queryText(text: String, includeDescription: Boolean, matchMode: String): AccessibilityTextMatch? {
+            val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
+            val regex = if (matchMode == "regex") runCatching { Regex(text) }.getOrElse { error("INVALID_REGEX") } else null
+            fun matches(value: String?): Boolean {
+                val candidate = value ?: return false
+                return when (matchMode) {
+                    "contains" -> candidate.contains(text, true)
+                    "exact" -> candidate.equals(text, true)
+                    "prefix" -> candidate.startsWith(text, true)
+                    "regex" -> regex!!.containsMatchIn(candidate)
+                    else -> error("INVALID_MATCH_MODE")
+                }
+            }
+            return service.runOnMainSync {
+                val root = service.rootInActiveWindow ?: error("ACCESSIBILITY_NO_ACTIVE_WINDOW")
+                try {
+                    val queue = ArrayDeque<AccessibilityNodeInfo>()
+                    queue.add(AccessibilityNodeInfo.obtain(root))
+                    var visited = 0
+                    while (queue.isNotEmpty() && visited < 240) {
+                        val node = queue.removeFirst()
+                        try {
+                            visited++
+                            val nodeText = node.text?.toString()
+                            val description = node.contentDescription?.toString()
+                            if (matches(nodeText) || (includeDescription && matches(description))) {
+                                val bounds = Rect().also { node.getBoundsInScreen(it) }
+                                return@runOnMainSync AccessibilityTextMatch(nodeText, description, node.className?.toString(), bounds.left, bounds.top, bounds.right, bounds.bottom)
+                            }
+                            for (i in 0 until node.childCount) node.getChild(i)?.let(queue::addLast)
+                        } finally { node.recycle() }
+                    }
+                    null
+                } finally { root.recycle() }
+            }
+        }
+
+        private fun editFocused(action: String, insertedText: String, replace: Boolean, allowPasteFallback: Boolean): AccessibilityActionResult {
+            val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
+            return service.runOnMainSync {
+                val node = focusedEditable(service) ?: error("NO_FOCUSED_EDITABLE")
+                try {
+                    if (replace) return@runOnMainSync setNodeText(node, insertedText, insertedText.length, action)
+                    if (node.isPassword || node.text == null) error("TEXT_CONTENT_UNAVAILABLE")
+                    val plan = AccessibilityTextEditPlanner.insertAtSelection(node.text.toString(), insertedText, node.textSelectionStart, node.textSelectionEnd)
+                        ?: error("TEXT_SELECTION_UNAVAILABLE")
+                    runCatching { setNodeText(node, plan.text, plan.cursor, action) }.getOrElse { failure ->
+                        if (!allowPasteFallback || failure.message != "ACTION_OUTCOME_UNKNOWN") throw failure
+                        val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val original = runCatching { clipboard.primaryClip }.getOrNull()
+                        try {
+                            clipboard.setPrimaryClip(ClipData.newPlainText("RikkaHub temporary input", insertedText))
+                            if (!node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) error("ACTION_OUTCOME_UNKNOWN")
+                            AccessibilityActionResult(true, action, method = "ACTION_PASTE")
+                        } finally {
+                            runCatching { if (original != null) clipboard.setPrimaryClip(original) else clipboard.clearPrimaryClip() }
+                        }
+                    }
+                } finally { node.recycle() }
+            }
+        }
+
+        private fun focusedEditable(service: RikkaAccessibilityService): AccessibilityNodeInfo? {
+            val root = service.rootInActiveWindow ?: return null
+            return try {
+                val focused = runCatching { root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
+                if (focused != null && focused.isEditable && focused.isEnabled && focused.isVisibleToUser) focused
+                else { focused?.recycle(); null }
+            } finally { root.recycle() }
+        }
+
+        private fun setNodeText(node: AccessibilityNodeInfo, text: String, cursor: Int, action: String): AccessibilityActionResult {
+            val arguments = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text) }
+            if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)) error("ACTION_OUTCOME_UNKNOWN")
+            val safeCursor = cursor.coerceIn(0, text.length)
+            val selection = Bundle().apply {
+                putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, safeCursor)
+                putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, safeCursor)
+            }
+            val refreshed = runCatching { node.refresh() }.getOrDefault(false)
+            if (!node.isPassword && (!refreshed || node.text?.toString() != text)) error("ACTION_OUTCOME_UNKNOWN")
+            val selected = refreshed && node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selection)
+            return AccessibilityActionResult(true, action, method = if (selected) "ACTION_SET_TEXT_AND_SELECTION" else "ACTION_SET_TEXT")
         }
 
         fun gesture(
@@ -551,3 +680,5 @@ data class AccessibilityActionResult(
     val verifiedBy: String? = null,
     val elapsedMs: Long? = null,
 )
+
+data class AccessibilityTextMatch(val text: String?, val contentDescription: String?, val className: String?, val left: Int, val top: Int, val right: Int, val bottom: Int)

@@ -70,6 +70,12 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidUriTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidLocationTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidConnectivityTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidAccessibilityTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidTextSystemTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidPersonalSearchTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredCoreTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidPrivateDatabaseTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredContextTools
+import me.rerere.rikkahub.data.ai.tools.createAndroidColorOsMemoryTools
 import me.rerere.rikkahub.data.ai.tools.normalizeToolRegistry
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.data.files.SkillManager
@@ -608,8 +614,20 @@ class ChatService(
                         protectionEnabled = settings.accessibilityProtectionEnabled,
                         rootController = generationRootController,
                     ))
+                    addAll(createAndroidTextSystemTools(
+                        context = context,
+                        requireApproval = settings.accessibilityNeedsApproval,
+                        protectionEnabled = settings.accessibilityProtectionEnabled,
+                        rootController = generationRootController,
+                    ))
                     if (settings.rootTerminalEnabled) {
-                        addAll(createAndroidRootTerminalTools(requireNotNull(generationRootController), settings.rootTerminalNeedsApproval))
+                        val rootController = requireNotNull(generationRootController)
+                        addAll(createAndroidStructuredCoreTools(context, rootController))
+                        addAll(createAndroidStructuredContextTools(context, rootController))
+                        addAll(createAndroidPrivateDatabaseTools(context, rootController))
+                        addAll(createAndroidColorOsMemoryTools(context, rootController))
+                        addAll(createAndroidPersonalSearchTools(rootController))
+                        addAll(createAndroidRootTerminalTools(rootController, settings.rootTerminalNeedsApproval))
                     }
                     if (assistant.enableRecentChatsReference) {
                         addAll(createConversationTools(conversationRepo, assistant.id))

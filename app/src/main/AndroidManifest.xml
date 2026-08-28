@@ -69,6 +69,15 @@
       android:label="@string/title_activity_safe_mode"
       android:theme="@style/Theme.Rikkahub" />
     <service
+      android:name=".service.RikkaNotificationHistoryService"
+      android:label="RikkaHub Agent notification history"
+      android:exported="false"
+      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+    <service
       android:name=".accessibility.RikkaAccessibilityService"
       android:exported="false"
       android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
