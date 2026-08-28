@@ -30,9 +30,20 @@ internal object EtaCompatibilityToolNames {
     const val OBSERVE_SCREEN = "observe_screen"
     const val SEARCH_APPS = "search_apps"
     const val CURRENT_CONTEXT = "get_current_context"
+    const val TAP = "tap"
+    const val TAP_AREA = "tap_area"
+    const val TAP_ELEMENT = "tap_element"
+    const val LONG_PRESS = "long_press"
+    const val LONG_PRESS_ELEMENT = "long_press_element"
+    const val SWIPE = "swipe"
+    const val SCROLL = "scroll"
+    const val SCROLL_ELEMENT = "scroll_element"
     const val SKILLS_LIST = "skills_list"
     const val SKILLS_READ = "skills_read"
-    val all = listOf(OBSERVE_SCREEN, SEARCH_APPS, CURRENT_CONTEXT, SKILLS_LIST, SKILLS_READ)
+    val all = listOf(
+        OBSERVE_SCREEN, TAP, TAP_AREA, TAP_ELEMENT, LONG_PRESS, LONG_PRESS_ELEMENT, SWIPE,
+        SCROLL, SCROLL_ELEMENT, SEARCH_APPS, CURRENT_CONTEXT, SKILLS_LIST, SKILLS_READ,
+    )
 }
 
 /** Eta-compatible split entry points backed by RikkaHub's real stores. */
@@ -42,8 +53,10 @@ fun createEtaAndroidCompatibilityTools(
     enabledSkills: Set<String>,
     protectionEnabled: Boolean = false,
     rootController: AndroidRootTerminalController? = null,
+    accessibilityNeedsApproval: Boolean = false,
 ): List<Tool> = listOf(
     observeScreenTool(context, protectionEnabled, rootController),
+    *etaGestureTools(context, protectionEnabled, rootController, accessibilityNeedsApproval).toTypedArray(),
     searchAppsTool(context), currentContextTool(context),
     skillsListTool(skillManager, enabledSkills), skillsReadTool(skillManager, enabledSkills),
 )
@@ -78,7 +91,7 @@ private fun observeScreenTool(context: Context, protectionEnabled: Boolean, root
                 if (includeTree) observation.nodes.forEach { node -> add(buildJsonObject {
                     put("index", node.index); node.className?.let { put("class", it) }
                     node.text?.let { put("text", it) }; node.contentDescription?.let { put("desc", it) }
-                    put("clickable", node.clickable); put("editable", node.editable); put("enabled", node.enabled)
+                    put("clickable", node.clickable); put("editable", node.editable); put("scrollable", node.scrollable); put("enabled", node.enabled)
                     put("bounds", buildJsonObject { put("left", node.left); put("top", node.top); put("right", node.right); put("bottom", node.bottom) })
                     put("center", buildJsonObject { put("x", (node.left + node.right) / 2); put("y", (node.top + node.bottom) / 2) })
                 }) }

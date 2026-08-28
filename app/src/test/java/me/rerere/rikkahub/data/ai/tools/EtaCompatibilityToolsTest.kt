@@ -16,7 +16,10 @@ class EtaCompatibilityToolsTest {
     @Test
     fun `strict Eta compatibility catalog exposes split names`() {
         assertEquals(
-            listOf("observe_screen", "search_apps", "get_current_context", "skills_list", "skills_read"),
+            listOf(
+                "observe_screen", "tap", "tap_area", "tap_element", "long_press", "long_press_element",
+                "swipe", "scroll", "scroll_element", "search_apps", "get_current_context", "skills_list", "skills_read",
+            ),
             EtaCompatibilityToolNames.all,
         )
     }

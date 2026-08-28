@@ -81,7 +81,7 @@ fun createAndroidAccessibilityTools(
                             add(buildJsonObject {
                                 put("index", node.index); node.className?.let { put("class_name", it) }
                                 node.text?.let { put("text", it) }; node.contentDescription?.let { put("content_description", it) }
-                                put("clickable", node.clickable); put("editable", node.editable); put("enabled", node.enabled)
+                                put("clickable", node.clickable); put("editable", node.editable); put("scrollable", node.scrollable); put("enabled", node.enabled)
                                 put("bounds", buildJsonObject { put("left", node.left); put("top", node.top); put("right", node.right); put("bottom", node.bottom) })
                             })
                         }

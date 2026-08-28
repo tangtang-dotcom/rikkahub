@@ -282,7 +282,12 @@ class RikkaAccessibilityService : AccessibilityService() {
             observationId: String? = null, coordinateSpace: String? = null,
         ): AccessibilityActionResult {
             val service = instance ?: error("ACCESSIBILITY_UNAVAILABLE")
-            require(durationMs in 100..2000) { "ACCESSIBILITY_INVALID_GESTURE_DURATION" }
+            val durationRange = when (action) {
+                "long_press" -> 300L..3_000L
+                "tap", "tap_area", "swipe" -> 100L..2_000L
+                else -> error("ACCESSIBILITY_GESTURE_UNSUPPORTED")
+            }
+            require(durationMs in durationRange) { "ACCESSIBILITY_INVALID_GESTURE_DURATION" }
             val display = service.runOnMainSync { service.displaySize() }
             val effectiveObservationId = observationId ?: synchronized(lock) { latestObservationId }
             val record = effectiveObservationId?.let { id ->
@@ -314,7 +319,8 @@ class RikkaAccessibilityService : AccessibilityService() {
                     AccessibilityGesturePolicy.validateArea(area, display)
                     intArrayOf(area.centerX(), area.centerY(), area.centerX(), area.centerY())
                 }
-                else -> intArrayOf(first.x, first.y, second.x, second.y)
+                "tap", "long_press" -> intArrayOf(first.x, first.y, first.x, first.y)
+                else -> error("ACCESSIBILITY_GESTURE_UNSUPPORTED")
             }
             val path = Path().apply {
                 moveTo(points[0].toFloat(), points[1].toFloat())
@@ -550,7 +556,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         private fun collect(node: AccessibilityNodeInfo, out: MutableList<NodeRef>, max: Int, depth: Int) {
             if (out.size >= max || depth > 32) return
             val bounds = Rect().also { node.getBoundsInScreen(it) }
-            out += NodeRef(AccessibilityNodeIdentity.from(node), AccessibilityNodeSnapshot(out.size, node.className?.toString(), node.text?.toString(), node.contentDescription?.toString(), node.isClickable, node.isEditable, node.isEnabled, bounds.left, bounds.top, bounds.right, bounds.bottom))
+            out += NodeRef(AccessibilityNodeIdentity.from(node), AccessibilityNodeSnapshot(out.size, node.className?.toString(), node.text?.toString(), node.contentDescription?.toString(), node.isClickable, node.isEditable, node.isScrollable, node.isEnabled, bounds.left, bounds.top, bounds.right, bounds.bottom))
             for (i in 0 until node.childCount) node.getChild(i)?.let { child -> collect(child, out, max, depth + 1); child.recycle() }
         }
     }
@@ -667,7 +673,7 @@ data class AccessibilityObservation(
     val display: AccessibilityGesturePolicy.DisplaySize,
 )
 data class AccessibilityScreenshot(val uri: String, val width: Int, val height: Int)
-data class AccessibilityNodeSnapshot(val index: Int, val className: String?, val text: String?, val contentDescription: String?, val clickable: Boolean, val editable: Boolean, val enabled: Boolean, val left: Int, val top: Int, val right: Int, val bottom: Int)
+data class AccessibilityNodeSnapshot(val index: Int, val className: String?, val text: String?, val contentDescription: String?, val clickable: Boolean, val editable: Boolean, val scrollable: Boolean, val enabled: Boolean, val left: Int, val top: Int, val right: Int, val bottom: Int)
 data class AccessibilityActionResult(
     val ok: Boolean,
     val action: String,

@@ -618,6 +618,7 @@ class ChatService(
                         enabledSkills = assistant.enabledSkills,
                         protectionEnabled = settings.accessibilityProtectionEnabled,
                         rootController = generationRootController,
+                        accessibilityNeedsApproval = settings.accessibilityNeedsApproval,
                     ))
                     addAll(createAndroidAccessibilityTools(
                         context = context,
