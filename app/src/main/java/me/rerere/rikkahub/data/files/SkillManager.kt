@@ -2,6 +2,7 @@ package me.rerere.rikkahub.data.files
 
 import android.content.Context
 import android.util.Log
+import org.json.JSONObject
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +14,11 @@ class SkillManager(
 ) {
     companion object {
         private const val TAG = "SkillManager"
+        private const val BUILTIN_SKILLS_MANIFEST = "builtin_skills/manifest.json"
     }
+
+    @Volatile
+    private var builtinSkillsSeeded = false
 
     fun getSkillsDir(): File {
         val dir = context.filesDir.resolve(FileFolders.SKILLS)
@@ -22,6 +27,7 @@ class SkillManager(
     }
 
     fun listSkills(): List<SkillMetadata> {
+        ensureBuiltinSkillsSeeded()
         val skillsDir = getSkillsDir()
         return skillsDir.listFiles()
             ?.filter { it.isDirectory }
@@ -33,13 +39,71 @@ class SkillManager(
             ?: emptyList()
     }
 
+
+    /**
+     * Seed Eta's packaged built-in skills into RikkaHub's normal skill directory.
+     * Existing directories are never overwritten, so user-managed skills remain authoritative.
+     */
+    internal fun ensureBuiltinSkillsSeeded() {
+        if (builtinSkillsSeeded) return
+        synchronized(this) {
+            if (builtinSkillsSeeded) return
+            val seeded = runCatching {
+                val builtins = context.assets.open(BUILTIN_SKILLS_MANIFEST).bufferedReader().use { reader ->
+                    parseBuiltinSkillManifest(reader.readText())
+                }
+                val skillsRoot = getSkillsDir()
+                for (builtin in builtins) {
+                    val id = builtin.id
+                    val assetPath = builtin.assetPath
+                    val targetDir = SkillPaths.resolveSkillDir(skillsRoot, id) ?: continue
+                    if (targetDir.resolve("SKILL.md").isFile) continue
+                    if (targetDir.exists()) {
+                        Log.w(TAG, "Builtin skill target exists but is incomplete; preserving it: $id")
+                        continue
+                    }
+                    val files = linkedMapOf<String, ByteArray>()
+                    collectAssetFiles(assetPath, "", files)
+                    if (!saveSkillFileBytesAtomically(id, files)) {
+                        error("Unable to install built-in skill: $id")
+                    }
+                }
+            }.onFailure { error ->
+                Log.w(TAG, "Failed to seed built-in skills", error)
+            }.isSuccess
+            builtinSkillsSeeded = seeded
+        }
+    }
+
+    private fun collectAssetFiles(
+        assetPath: String,
+        relativePath: String,
+        output: MutableMap<String, ByteArray>,
+    ) {
+        val children = context.assets.list(assetPath).orEmpty()
+        if (children.isEmpty()) {
+            if (relativePath.isBlank()) error("Invalid empty built-in skill asset: $assetPath")
+            output[relativePath] = context.assets.open(assetPath).use { it.readBytes() }
+            return
+        }
+        children.forEach { child ->
+            collectAssetFiles(
+                assetPath = "$assetPath/$child",
+                relativePath = if (relativePath.isBlank()) child else "$relativePath/$child",
+                output = output,
+            )
+        }
+    }
+
     fun readSkillBody(skillName: String): String? {
+        ensureBuiltinSkillsSeeded()
         val skillFile = resolveSkillDir(skillName)?.resolve("SKILL.md") ?: return null
         if (!skillFile.exists()) return null
         return SkillFrontmatterParser.extractBody(skillFile.readText())
     }
 
     fun readSkillContent(skillName: String): String? {
+        ensureBuiltinSkillsSeeded()
         val skillFile = resolveSkillDir(skillName)?.resolve("SKILL.md") ?: return null
         if (!skillFile.exists()) return null
         return skillFile.readText()
@@ -212,4 +276,24 @@ data class SkillMetadata(
     val skillDir: File,
 ) {
     val skillFile: File get() = skillDir.resolve("SKILL.md")
+}
+
+
+internal data class BuiltinSkillAssetSpec(
+    val id: String,
+    val assetPath: String,
+)
+
+internal fun parseBuiltinSkillManifest(content: String): List<BuiltinSkillAssetSpec> {
+    val skills = JSONObject(content).optJSONArray("skills") ?: error("Missing skills array")
+    return buildList {
+        for (index in 0 until skills.length()) {
+            val item = skills.optJSONObject(index) ?: continue
+            val id = item.optString("id").trim()
+            val assetPath = item.optString("assetPath").trim()
+            if (id.isNotBlank() && assetPath.isNotBlank()) {
+                add(BuiltinSkillAssetSpec(id = id, assetPath = assetPath))
+            }
+        }
+    }
 }
