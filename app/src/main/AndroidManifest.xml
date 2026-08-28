@@ -3,6 +3,8 @@
   xmlns:tools="http://schemas.android.com/tools">
 
   <uses-permission android:name="android.permission.INTERNET" />
+  <permission android:name="me.rerere.rikkahub.permission.CONTROL_ACCESSIBILITY_PROTECTION" android:protectionLevel="signature" />
+  <uses-permission android:name="me.rerere.rikkahub.permission.CONTROL_ACCESSIBILITY_PROTECTION" />
   <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -65,6 +67,8 @@
     android:theme="@style/Theme.Rikkahub"
     android:usesCleartextTraffic="true"
     tools:targetApi="33">
+    <provider android:name=".accessibility.RikkaAccessibilityHealthProvider" android:authorities="me.rerere.rikkahub.accessibility.health" android:exported="true" android:grantUriPermissions="false" android:permission="android.permission.MANAGE_ACCESSIBILITY" />
+
     <activity
       android:name=".ui.activity.SafeModeActivity"
       android:exported="false"
