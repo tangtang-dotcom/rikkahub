@@ -16,7 +16,9 @@ class AndroidRootTerminalControllerTest {
 
     @Test fun `invalid commands and environment values are rejected before process start`() {
         controller().use { terminal ->
-            assertThrows(IllegalArgumentException::class.java) { terminal.executeSync("   ") }
+            val blank = JSONObject(terminal.terminalOpenAndExec("   ", null, 5_000, "user", false))
+            assertFalse(blank.toString(), blank.getBoolean("ok"))
+            assertEquals("INVALID_ARGUMENT", blank.getString("code"))
             assertThrows(IllegalArgumentException::class.java) { terminal.executeSync("x".repeat(4_001)) }
             assertThrows(IllegalArgumentException::class.java) {
                 terminal.action("open_and_exec", command = "true", environment = "unknown")
