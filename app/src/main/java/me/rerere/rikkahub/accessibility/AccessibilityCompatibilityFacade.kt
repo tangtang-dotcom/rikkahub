@@ -15,7 +15,7 @@ data class AccessibilityScreenshot(val uri: String, val width: Int, val height: 
 data class AccessibilityTextMatch(val text: String?, val contentDescription: String?, val className: String?, val left: Int, val top: Int, val right: Int, val bottom: Int)
 
 fun compatObserve(maxNodes: Int): AccessibilityObservation {
-    val s = current() ?: error("ACCESSIBILITY_UNAVAILABLE")
+    val s = RikkaAccessibilityService.current() ?: error("ACCESSIBILITY_UNAVAILABLE")
     val snap = s.captureNodeSnapshot(maxNodes) ?: error("ACCESSIBILITY_NO_ACTIVE_WINDOW")
     synchronized(compatSnapshots) { compatSnapshots[snap.id] = snap; while (compatSnapshots.size > 8) compatSnapshots.remove(compatSnapshots.keys.first()) }
     val d = s.displaySize() ?: (0 to 0)

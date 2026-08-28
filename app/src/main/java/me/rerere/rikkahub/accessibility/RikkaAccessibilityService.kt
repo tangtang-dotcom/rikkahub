@@ -997,11 +997,11 @@ class RikkaAccessibilityService : AccessibilityService() {
         if (unknownRelevantWindowIds.isNotEmpty()) {
             val expectedWindows = allWindows.size
             allWindows.forEach { window -> runCatching { window.recycle() } }
-            AccessibilityLog.warn(
+            AccessibilityLog.warnThrottled("capture_screenshot") {
                 "Agent accessibility action=capture_screenshot outcome=failed " +
                     "reason=unknown_relevant_window_during_exclusion " +
                     "windows=${unknownRelevantWindowIds.size}"
-            )
+            }
             return ScreenshotCaptureResult.blockedByUnknownWindow(
                 expectedWindows = expectedWindows,
                 windowIds = unknownRelevantWindowIds,
