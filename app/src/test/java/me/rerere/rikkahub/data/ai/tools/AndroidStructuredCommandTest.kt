@@ -11,13 +11,6 @@ class AndroidStructuredCommandTest {
         assertTrue(command.endsWith("head -n 10"))
     }
 
-    @Test fun `settings read uses Android settings binary`() {
-        assertEquals(
-            "/system/bin/settings get global bluetooth_on",
-            getSettingCommand("global", "bluetooth_on"),
-        )
-    }
-
     @Test fun `device state commands use Android service entry points`() {
         assertEquals(
             "/system/bin/cmd wifi set-wifi-enabled disabled",
@@ -27,5 +20,16 @@ class AndroidStructuredCommandTest {
             "/system/bin/cmd bluetooth_manager enable",
             setDeviceStateCommand("bluetooth", true),
         )
+    }
+
+    @Test
+    fun `settings command has cmd fallback and normalizes output`() {
+        assertEquals(
+            "/system/bin/settings get global airplane_mode_on 2>/dev/null || /system/bin/cmd settings get global airplane_mode_on 2>/dev/null",
+            getSettingCommand("global", "airplane_mode_on"),
+        )
+        assertEquals("0", normalizeSettingValue("0\n"))
+        assertEquals("1", normalizeSettingValue("warning\n1\n"))
+        assertEquals(null, normalizeSettingValue("null\n"))
     }
 }
