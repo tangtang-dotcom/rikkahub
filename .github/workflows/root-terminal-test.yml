@@ -53,7 +53,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prepare Android native build toolchain
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools cmake;3.22.1 ndk;28.2.13676358'
 
       - name: Verify Android native build toolchain
         shell: bash
