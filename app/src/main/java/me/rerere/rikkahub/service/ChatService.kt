@@ -1353,6 +1353,7 @@ class ChatService(
 
 
     private fun interruptActiveRootTools(conversationId: Uuid) {
+        AgentBrowserSession.interruptAgentAction(conversationId.toString())
         activeRootControllers.remove(conversationId)?.interruptAll()
     }
 
