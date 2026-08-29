@@ -34,14 +34,11 @@ android {
 
     splits {
         abi {
-            // App bundles must not consume multiple APK split outputs. APK builds
-            // still publish arm64-v8a, x86_64, and a universal APK.
-            //noinspection WrongGradleMethod
-            val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
+            // Keep one universal APK for the formal release. AGP 9.3 resource
+            // shrinking cannot consume multiple ABI APK split outputs while the
+            // same invocation also builds an app bundle.
             reset()
-            include("arm64-v8a", "x86_64")
-            isUniversalApk = true
-            isEnable = !isBuildingBundle
+            isEnable = false
         }
     }
 
