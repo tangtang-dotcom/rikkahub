@@ -33,10 +33,6 @@ internal data class AccessibilityNodeIdentity(
  * 截断快照无法证明 text/desc 指纹在窗口其余部分不存在重复项。
  */
 internal object AccessibilityIdentityFreshnessPolicy {
-    // 保留 RikkaHub 现有 JVM 合约；核心判定仍使用 Eta 的唯一身份规则。
-    fun canUseAfterContentChange(firstSignal: Boolean, secondSignal: Boolean, generationDelta: Int): Boolean =
-        generationDelta == 1 && firstSignal != secondSignal
-
     fun canBypassContentChange(
         hasUniqueId: Boolean,
         snapshotTruncated: Boolean,

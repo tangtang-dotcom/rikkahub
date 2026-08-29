@@ -13,11 +13,11 @@ internal object AccessibilityProtectionProtocol {
     const val VERSION = 1
 
     const val ACTION_SET =
-        "me.rerere.rikkahub.action.SET_ACCESSIBILITY_PROTECTION"
+        "fuck.andes.action.SET_ACCESSIBILITY_PROTECTION"
     const val ACTION_RECOVER =
-        "me.rerere.rikkahub.action.RECOVER_ACCESSIBILITY_SERVICE"
+        "fuck.andes.action.RECOVER_ACCESSIBILITY_SERVICE"
     const val PERMISSION =
-        "me.rerere.rikkahub.permission.CONTROL_ACCESSIBILITY_PROTECTION"
+        "fuck.andes.permission.CONTROL_ACCESSIBILITY_PROTECTION"
     const val RECEIVER_PACKAGE = "android"
 
     const val EXTRA_PROTOCOL_VERSION = "protocol_version"
@@ -30,7 +30,7 @@ internal object AccessibilityProtectionProtocol {
     const val SETTING_NAME = "eta_accessibility_protection_enabled"
     const val DEFAULT_ENABLED = false
 
-    const val HEALTH_AUTHORITY = "me.rerere.rikkahub.accessibility.health"
+    const val HEALTH_AUTHORITY = "fuck.andes.accessibility.health"
     const val HEALTH_METHOD = "accessibility_health"
     const val HEALTH_STATUS = "status"
     const val HEALTH_STATUS_CONNECTED = "connected"

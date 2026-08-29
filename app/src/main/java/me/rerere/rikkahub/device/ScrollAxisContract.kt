@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.accessibility
+package me.rerere.rikkahub.device
 
 /** 明确暴露另一滚动轴时禁止手势兜底，避免把滚动误变成列表项侧滑。 */
 internal object ScrollAxisContract {

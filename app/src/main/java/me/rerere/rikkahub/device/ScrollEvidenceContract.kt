@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.accessibility
+package me.rerere.rikkahub.device
 
 internal enum class ScrollEvidence {
     MOVED_BY_EVENT,

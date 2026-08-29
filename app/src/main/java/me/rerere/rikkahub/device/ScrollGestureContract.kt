@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.accessibility
+package me.rerere.rikkahub.device
 
 import android.graphics.Rect
 import kotlin.math.roundToInt

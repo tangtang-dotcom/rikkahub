@@ -26,13 +26,14 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
-import me.rerere.rikkahub.accessibility.ScrollAxis
-import me.rerere.rikkahub.accessibility.ScrollAxisContract
-import me.rerere.rikkahub.accessibility.ScrollDirection
-import me.rerere.rikkahub.accessibility.ScrollEvidence
-import me.rerere.rikkahub.accessibility.ScrollEvidenceContract
-import me.rerere.rikkahub.accessibility.ScrollMovementSource
-import me.rerere.rikkahub.accessibility.RootScrollMotionContract
+import me.rerere.rikkahub.device.ScrollAxis
+import me.rerere.rikkahub.device.ScrollAxisContract
+import me.rerere.rikkahub.device.ScrollDirection
+import me.rerere.rikkahub.device.ScrollEvidence
+import me.rerere.rikkahub.device.ScrollEvidenceContract
+import me.rerere.rikkahub.device.ScrollMovementSource
+import me.rerere.rikkahub.device.RootScrollMotionContract
+import fuck.andes.core.AndroidAgentLogger
 import java.util.ArrayDeque
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -162,7 +163,7 @@ class RikkaAccessibilityService : AccessibilityService() {
             truncated = traversal.truncated,
             indexedNodes = indexedNodes.toList(),
         ).also { snapshot ->
-            AccessibilityLog.debug {
+            AndroidAgentLogger.debug {
                 "Agent accessibility action=observe_tree observation=${snapshot.id} " +
                     "nodes=${snapshot.nodes.size} visited=${traversal.visitedNodes} " +
                     "truncated=${traversal.truncated} " +
@@ -287,7 +288,7 @@ class RikkaAccessibilityService : AccessibilityService() {
             val eventCopy = try {
                 AccessibilityEvent(event)
             } catch (error: RuntimeException) {
-                AccessibilityLog.warnThrottled("scroll_event_copy") {
+                AndroidAgentLogger.warnThrottled("scroll_event_copy") {
                     "Agent accessibility action=observe_scroll_event " +
                         "outcome=copy_failed error=${error.javaClass.simpleName}"
                 }
@@ -307,7 +308,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         val source = try {
             event.getSource(0)
         } catch (error: RuntimeException) {
-            AccessibilityLog.warnThrottled("scroll_event_source") {
+            AndroidAgentLogger.warnThrottled("scroll_event_source") {
                 "Agent accessibility action=resolve_scroll_event " +
                     "outcome=source_failed error=${error.javaClass.simpleName}"
             }
@@ -1004,7 +1005,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         if (unknownRelevantWindowIds.isNotEmpty()) {
             val expectedWindows = allWindows.size
             allWindows.forEach { window -> runCatching { window.recycle() } }
-            AccessibilityLog.warn(
+            AndroidAgentLogger.warn(
                 "Agent accessibility action=capture_screenshot outcome=failed " +
                     "reason=unknown_relevant_window_during_exclusion " +
                     "windows=${unknownRelevantWindowIds.size}"
@@ -1122,7 +1123,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         }
         val failureCodes = synchronized(lock) { failures.toMap() }
         val complete = completed && missingIds.isEmpty() && merged != null
-        AccessibilityLog.debug {
+        AndroidAgentLogger.debug {
             "Agent accessibility action=capture_screenshot outcome=merged " +
                 "allWindows=${allWindows.size} validWindows=${captureWindows.size} " +
                 "excludedPackages=${excludedPackages.size} " +
@@ -2296,7 +2297,7 @@ class RikkaAccessibilityService : AccessibilityService() {
     }
 
     companion object {
-        private const val CLIP_LABEL = "rikkahub_agent"
+        private const val CLIP_LABEL = "fuck_andes_agent"
         private const val WINDOW_POLL_FALLBACK_MS = 80L
         private const val MAX_UI_TREE_DEPTH = 24
         private const val UI_TREE_VISIT_MULTIPLIER = 8
@@ -2367,20 +2368,6 @@ class RikkaAccessibilityService : AccessibilityService() {
 
         fun current(): RikkaAccessibilityService? = instance
 
-        fun observe(maxNodes: Int = 120) = compatObserve(maxNodes)
-        fun nodeBounds(id: String, index: Int) = compatNodeBounds(id, index)
-        fun execute(id: String, index: Int, action: String, value: String? = null) = compatExecute(id, index, action, value)
-        fun inputFocused(text: String) = compatInputFocused(text)
-        fun pasteFocused(text: String) = compatPasteFocused(text)
-        fun replaceText(id: String?, index: Int?, text: String) = compatReplaceText(id, index, text)
-        fun clearText(id: String?, index: Int?) = compatClearText(id, index)
-        fun pressEnter() = compatPressEnter()
-        fun scroll(direction: String) = compatScroll(direction)
-        fun currentPackageName() = compatCurrentPackageName()
-        fun global(action: String) = compatGlobal(action)
-        fun queryText(text: String, includeDescription: Boolean, matchMode: String) = compatQueryText(text, includeDescription, matchMode)
-        fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String? = null, coordinateSpace: String? = null) = compatGesture(action, x1, y1, x2, y2, durationMs, observationId, coordinateSpace)
-        fun captureScreenshot(id: String? = null) = compatCaptureScreenshot(id)
         fun isAvailable(): Boolean = instance != null
     }
 

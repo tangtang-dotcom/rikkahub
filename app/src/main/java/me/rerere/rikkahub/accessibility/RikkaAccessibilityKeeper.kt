@@ -2,7 +2,7 @@ package me.rerere.rikkahub.accessibility
 
 import android.content.Context
 import android.os.SystemClock
-import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
+import android.util.Log
 
 /**
  * 在 GUI 工具执行前确认 Eta 无障碍服务已经真实连接。
@@ -24,29 +24,19 @@ object RikkaAccessibilityKeeper {
         )
         val elapsedMs = SystemClock.elapsedRealtime() - startedAt
         if (result.available) {
-            AccessibilityLog.info(
+            AndroidAgentLogger.info(
                 "Agent accessibility action=ensure_for_gui outcome=completed " +
                     "recoveryRequested=${result.recoveryRequested} " +
                     "elapsed_ms=$elapsedMs"
             )
         } else {
-            AccessibilityLog.warn(
+            AndroidAgentLogger.warn(
                 "Agent accessibility action=ensure_for_gui outcome=failed " +
                     "code=${result.code} recoveryRequested=${result.recoveryRequested} " +
                     "elapsed_ms=$elapsedMs"
             )
         }
         return result
-    }
-
-    // 兼容 RikkaHub 现有工具入口；实际执行路径统一走 Eta 的保护协议。
-    fun ensureAvailable(
-        context: Context,
-        protectionEnabled: Boolean,
-        rootController: AndroidRootTerminalController?,
-    ) {
-        val result = ensureEnabledForGuiOperation(context)
-        if (!result.available) error(result.code)
     }
 
     internal fun ensureAvailable(
