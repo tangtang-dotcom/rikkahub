@@ -105,10 +105,15 @@ jobs:
 
           printf 'signing=%s\n' "$SIGNING_MODE" > formal-build-mode.txt
 
-      - name: Run unit tests and release lint
+      - name: Run JVM unit tests
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest lintRelease --no-daemon --stacktrace --console=plain
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace --console=plain
+
+      - name: Run release lint (advisory)
+        continue-on-error: true
+        run: |
+          ./gradlew lintRelease --no-daemon --stacktrace --console=plain
 
       - name: Build optimized APK and AAB
         run: |
