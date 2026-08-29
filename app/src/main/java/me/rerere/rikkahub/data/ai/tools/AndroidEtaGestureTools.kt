@@ -79,6 +79,7 @@ internal fun etaGestureTools(
                     x2 = x2,
                     y2 = y2,
                     durationMs = args["duration_ms"]?.jsonPrimitive?.longOrNull ?: defaultDuration,
+                    observationId = null,
                     coordinateSpace = args["coordinate_space"]?.jsonPrimitive?.contentOrNull,
                 ),
                 name,

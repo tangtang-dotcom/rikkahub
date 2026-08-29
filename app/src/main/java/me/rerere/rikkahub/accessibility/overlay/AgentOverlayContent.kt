@@ -84,9 +84,8 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.composables.icons.lucide.R as LucideR
+import com.composables.icons.lucide.Lucide
 import me.rerere.rikkahub.R
 
 // Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
@@ -419,7 +418,7 @@ internal fun AgentOverlayBubble(
                         cornerRadius = 14.dp
                     ) {
                         Icon(
-                            painter = painterResource(LucideR.drawable.lucide_ic_pencil),
+                            imageVector = Lucide.Pencil,
                             contentDescription = stringResource(R.string.overlay_supplement),
                             modifier = Modifier.size(14.dp),
                             tint = MiuixTheme.colorScheme.onSurface,
@@ -433,7 +432,7 @@ internal fun AgentOverlayBubble(
                             cornerRadius = 14.dp
                         ) {
                             Icon(
-                                painter = painterResource(LucideR.drawable.lucide_ic_pause),
+                                imageVector = Lucide.Pause,
                                 contentDescription = stringResource(R.string.overlay_pause),
                                 modifier = Modifier.size(14.dp),
                                 tint = MiuixTheme.colorScheme.onSurface,
@@ -447,7 +446,7 @@ internal fun AgentOverlayBubble(
                             cornerRadius = 14.dp,
                         ) {
                             Icon(
-                                painter = painterResource(LucideR.drawable.lucide_ic_play),
+                                imageVector = Lucide.Play,
                                 contentDescription = stringResource(R.string.overlay_resume),
                                 modifier = Modifier.size(14.dp),
                                 tint = MiuixTheme.colorScheme.primary,
@@ -461,7 +460,7 @@ internal fun AgentOverlayBubble(
                         cornerRadius = 14.dp,
                     ) {
                         Icon(
-                            painter = painterResource(LucideR.drawable.lucide_ic_square),
+                            imageVector = Lucide.Square,
                             contentDescription = stringResource(R.string.action_stop),
                             modifier = Modifier.size(14.dp),
                             tint = MiuixTheme.colorScheme.error,
@@ -637,7 +636,7 @@ internal fun AgentResultCard(
                             cornerRadius = 16.dp,
                         ) {
                             Icon(
-                                painter = painterResource(LucideR.drawable.lucide_ic_x),
+                                imageVector = Lucide.X,
                                 contentDescription = stringResource(R.string.action_close),
                                 modifier = Modifier.size(16.dp),
                                 tint = MiuixTheme.colorScheme.onSurfaceVariantActions,

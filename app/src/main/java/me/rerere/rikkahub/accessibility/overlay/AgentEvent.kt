@@ -214,8 +214,3 @@ private fun String.extractResultCode(): String? {
         .minOrNull() ?: length
     return substring(valueStart, valueEnd)
 }
-
-private const val MAX_LOGGED_TOOL_NAMES = 8
-internal fun String?.toSafeLogToken(): String = this?.replace(Regex("[^A-Za-z0-9_.:-]"), "_") ?: "none"
-internal fun String.toSafeResultLogFields(): String = "result_chars=${length}"
-internal data class AgentTokenUsage(val contextTokens:Int=0,val inputTokens:Int=0,val outputTokens:Int=0,val reasoningTokens:Int=0,val cachedTokens:Int=0)

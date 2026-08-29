@@ -12,6 +12,16 @@ import me.rerere.rikkahub.accessibility.internal.AndroidAgentLogger
  * Root，也不直接改系统设置；保护关闭或后端不可用时 fail closed。
  */
 object RikkaAccessibilityKeeper {
+    fun ensureAvailable(context: Context, protectionEnabled: Boolean, rootController: Any? = null) {
+        val result = ensureAvailable(
+            serviceAvailable = RikkaAccessibilityService::isAvailable,
+            protectionEnabled = { protectionEnabled },
+            requestRecovery = { false },
+            awaitServiceBinding = { RikkaAccessibilityService.isAvailable() },
+        )
+        if (!result.available) error(result.code.ifBlank { "ACCESSIBILITY_UNAVAILABLE" })
+    }
+
     internal fun ensureEnabledForGuiOperation(context: Context): AccessibilityEnableResult {
         val startedAt = SystemClock.elapsedRealtime()
         val result = ensureAvailable(
