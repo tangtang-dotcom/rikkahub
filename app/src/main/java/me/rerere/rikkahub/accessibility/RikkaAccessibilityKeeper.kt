@@ -10,19 +10,23 @@ object RikkaAccessibilityKeeper {
         val result = ensure(RikkaAccessibilityService::isAvailable, { protectionEnabled }, {
             val controller = rootController ?: return@ensure false
             val component = "${context.packageName}/${RikkaAccessibilityService::class.java.name}"
+            val dollar = '$'
             val command = """
-                current=\$(settings get secure enabled_accessibility_services 2>/dev/null)
-                case ":\$current:" in
-                  *":$component:"*) next="\$current" ;;
+                current=${dollar}(settings get secure enabled_accessibility_services 2>/dev/null)
+                case ":${dollar}current:" in
+                  *":$component:"*) next="${dollar}current" ;;
                   ":null:"|"::") next="$component" ;;
-                  *) next="\$current:$component" ;;
+                  *) next="${dollar}current:$component" ;;
                 esac
-                settings put secure enabled_accessibility_services "\$next" && settings put secure accessibility_enabled 1
+                settings put secure enabled_accessibility_services "${dollar}next" && settings put secure accessibility_enabled 1
             """.trimIndent()
             runCatching { controller.executeSync(command, timeoutMs = 5_000, mergeStderr = true) }
                 .getOrNull()?.let { it.exitCode == 0 && !it.timedOut } == true
         }, {
-            repeat(60) { if (RikkaAccessibilityService.isAvailable()) return@repeat; SystemClock.sleep(100) }
+            for (attempt in 0 until 60) {
+                if (RikkaAccessibilityService.isAvailable()) return@ensure true
+                SystemClock.sleep(100)
+            }
             RikkaAccessibilityService.isAvailable()
         })
         if (!result.available) error(result.code)
