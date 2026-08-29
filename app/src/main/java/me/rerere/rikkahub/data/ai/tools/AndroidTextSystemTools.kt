@@ -26,7 +26,7 @@ private fun obj(properties: JsonObject = buildJsonObject {}, required: List<Stri
 private fun actionResult(tool: String, result: me.rerere.rikkahub.accessibility.AccessibilityActionResult) = buildJsonObject {
     put("ok", result.ok)
     put("tool", tool)
-    result.method.takeIf { it.isNotEmpty() }?.let { put("method", it) }
+    result.method?.takeIf { it.isNotEmpty() }?.let { put("method", it) }
     result.verifiedBy?.let { put("verified_by", it) }
 }
 
