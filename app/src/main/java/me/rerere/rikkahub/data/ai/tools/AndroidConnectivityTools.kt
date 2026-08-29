@@ -9,6 +9,7 @@ import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 /** Reports radio state and opens the platform settings UI for user-controlled changes. */
 fun createAndroidConnectivityTools(context: Context): List<Tool> = listOf(Tool(
@@ -25,8 +26,8 @@ fun createAndroidConnectivityTools(context: Context): List<Tool> = listOf(Tool(
                 val bluetooth = BluetoothAdapter.getDefaultAdapter()
                 buildJsonObject { put("wifi_enabled", wifi.isWifiEnabled); put("bluetooth_available", bluetooth != null); put("bluetooth_enabled", bluetooth?.isEnabled == true) }
             }
-            "wifi_settings" -> { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); buildJsonObject { put("opened", "wifi_settings") } }
-            "bluetooth_settings" -> { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); buildJsonObject { put("opened", "bluetooth_settings") } }
+            "wifi_settings" -> { AccessibilityActionEffects.showOperation(context, "open_uri"); context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); buildJsonObject { put("opened", "wifi_settings") } }
+            "bluetooth_settings" -> { AccessibilityActionEffects.showOperation(context, "open_uri"); context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); buildJsonObject { put("opened", "bluetooth_settings") } }
             else -> error("Unsupported action: $action")
         }
         listOf(UIMessagePart.Text(buildJsonObject { put("ok", true); put("action", action); put("result", result) }.toString()))

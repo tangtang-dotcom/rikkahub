@@ -71,6 +71,7 @@ import me.rerere.rikkahub.data.ai.tools.createAndroidLocationTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidConnectivityTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidAccessibilityTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidTextSystemTools
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 import me.rerere.rikkahub.data.ai.tools.createAndroidPersonalSearchTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidStructuredCoreTools
 import me.rerere.rikkahub.data.ai.tools.createAndroidPrivateDatabaseTools
@@ -686,6 +687,9 @@ class ChatService(
                     .let { applyNonRootApprovalGate(it, settings.accessibilityNeedsApproval) }
                     .let(::normalizeToolRegistry),
             ).onCompletion {
+                // Eta removes ambient foreground-operation UI when the whole chat
+                // generation ends, including cancellation and tool failures.
+                AccessibilityActionEffects.hideOrb()
                 AgentBrowserSession.interruptAgentAction(conversationId.toString())
                 closeGenerationRootController(conversationId, generationRootController)
                 // 可能被取消了，或者意外结束，兜底更新
@@ -724,6 +728,7 @@ class ChatService(
                 }
             }
         }.onFailure {
+            AccessibilityActionEffects.hideOrb()
             closeGenerationRootController(conversationId, generationRootController)
             // 兜底取消 Live Update 通知（生成开始前失败时 onCompletion 不会执行）
             appEventBus.tryEmit(AppEvent.ChatGenerationEnded(conversationId, senderName, null))

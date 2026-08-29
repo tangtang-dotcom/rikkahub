@@ -8,6 +8,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.accessibility.AccessibilityScreenshot
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityKeeper
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 
 private val ACCESSIBILITY_ACTIONS = listOf("observe", "tap", "tap_area", "long_press", "input", "scroll_forward", "scroll_backward", "scroll", "swipe", "enter", "back", "home", "recents", "notifications", "quick_settings")
@@ -50,6 +51,8 @@ fun createAndroidAccessibilityTools(
         val action = p["action"]?.jsonPrimitive?.contentOrNull ?: error("action is required")
         require(action in ACCESSIBILITY_ACTIONS) { "Unsupported accessibility action: $action" }
         RikkaAccessibilityKeeper.ensureAvailable(context, protectionEnabled, rootController)
+        // Publish the ambient overlay before touching or reading the foreground UI.
+        AccessibilityActionEffects.showOperation(context, action)
         var screenshot: AccessibilityScreenshot? = null
         val result = when {
             action == "observe" -> {

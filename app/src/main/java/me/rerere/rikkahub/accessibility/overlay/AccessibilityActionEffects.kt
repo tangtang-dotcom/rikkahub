@@ -15,5 +15,7 @@ internal object AccessibilityActionEffects {
 
     fun showOrb(context: Context) = AgentOverlayHost.show(context)
 
+    fun showOperation(context: Context, action: String) = AgentOverlayHost.showOperation(context, action)
+
     fun hideOrb() = AgentOverlayHost.hide()
 }

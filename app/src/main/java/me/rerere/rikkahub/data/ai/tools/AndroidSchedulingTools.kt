@@ -7,6 +7,7 @@ import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 fun createAndroidSchedulingTools(context: Context): List<Tool> = listOf(
     Tool(
@@ -58,6 +59,7 @@ fun createAndroidSchedulingTools(context: Context): List<Tool> = listOf(
             require(intent.resolveActivity(context.packageManager) != null) {
                 "No clock application can handle $kind"
             }
+            AccessibilityActionEffects.showOperation(context, "open_uri")
             context.startActivity(intent)
             listOf(UIMessagePart.Text(buildJsonObject {
                 put("ok", true)

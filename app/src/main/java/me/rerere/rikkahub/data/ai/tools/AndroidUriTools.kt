@@ -7,6 +7,7 @@ import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 /** Hands a validated URI to an external Android handler; it never fetches web content itself. */
 fun createAndroidUriTools(context: Context): List<Tool> = listOf(Tool(
@@ -26,6 +27,7 @@ fun createAndroidUriTools(context: Context): List<Tool> = listOf(Tool(
         require(!uri.scheme.isNullOrBlank()) { "URI scheme is required" }
         val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         require(intent.resolveActivity(context.packageManager) != null) { "No application can handle URI" }
+        AccessibilityActionEffects.showOperation(context, "open_uri")
         context.startActivity(intent)
         listOf(UIMessagePart.Text(buildJsonObject {
             put("ok", true); put("opened", true); put("scheme", uri.scheme!!.lowercase())

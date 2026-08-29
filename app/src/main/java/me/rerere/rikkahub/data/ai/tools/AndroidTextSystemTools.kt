@@ -9,6 +9,7 @@ import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityKeeper
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 
 private fun textResult(name: String, block: () -> JsonObject): List<UIMessagePart> {
@@ -51,7 +52,7 @@ fun createAndroidTextSystemTools(
             needsApproval = { requireApproval },
             execute = { input -> textResult("input_text") {
                 val o = input.jsonObject; val text = o["text"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT")
-                require(text.length <= 1_000) { "TEXT_TOO_LONG" }; ensure()
+                require(text.length <= 1_000) { "TEXT_TOO_LONG" }; ensure(); AccessibilityActionEffects.showOperation(context, "input_text")
                 val mode = o["mode"]?.jsonPrimitive?.contentOrNull ?: "append"
                 val result = when (mode) {
                     "append" -> RikkaAccessibilityService.inputFocused(text)
@@ -69,7 +70,7 @@ fun createAndroidTextSystemTools(
             needsApproval = { requireApproval },
             execute = { input -> textResult("replace_text") {
                 val o=input.jsonObject; val text=o["text"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT")
-                require(text.length <= 4_000) { "TEXT_TOO_LONG" }; ensure()
+                require(text.length <= 4_000) { "TEXT_TOO_LONG" }; ensure(); AccessibilityActionEffects.showOperation(context, "replace_text")
                 val result=RikkaAccessibilityService.replaceText(o["observation_id"]?.jsonPrimitive?.contentOrNull,o["index"]?.jsonPrimitive?.intOrNull,text)
                 actionResult("replace_text", result)
             } },
@@ -80,7 +81,7 @@ fun createAndroidTextSystemTools(
             parameters = { obj(buildJsonObject { put("index",buildJsonObject{put("type","integer")});put("observation_id",buildJsonObject{put("type","string")}) }) },
             needsApproval = { requireApproval },
             execute = { input -> textResult("clear_text") {
-                val o=input.jsonObject; ensure(); val result=RikkaAccessibilityService.clearText(o["observation_id"]?.jsonPrimitive?.contentOrNull,o["index"]?.jsonPrimitive?.intOrNull)
+                val o=input.jsonObject; ensure(); AccessibilityActionEffects.showOperation(context, "clear_text"); val result=RikkaAccessibilityService.clearText(o["observation_id"]?.jsonPrimitive?.contentOrNull,o["index"]?.jsonPrimitive?.intOrNull)
                 actionResult("clear_text", result)
             } },
         ),
@@ -107,7 +108,7 @@ fun createAndroidTextSystemTools(
             parameters = { obj(buildJsonObject { put("text",buildJsonObject{put("type","string")}) },listOf("text")) },
             needsApproval = { requireApproval }, execute = { input -> textResult("paste_text") {
                 val text=input.jsonObject["text"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT")
-                require(text.length <= 20_000) { "TEXT_TOO_LONG" };ensure()
+                require(text.length <= 20_000) { "TEXT_TOO_LONG" };ensure(); AccessibilityActionEffects.showOperation(context, "paste_text")
                 val result=RikkaAccessibilityService.pasteFocused(text);actionResult("paste_text", result)
             } },
         ),
@@ -151,7 +152,7 @@ fun createAndroidTextSystemTools(
             name = "press_key", description = "Perform a guarded accessibility global action or IME enter/paste action.",
             parameters = { obj(buildJsonObject { put("button",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("BACK");add("HOME");add("ENTER");add("RECENTS");add("PASTE");add("NOTIFICATIONS");add("QUICK_SETTINGS")})}) },listOf("button")) },
             needsApproval = { requireApproval }, execute = { input -> textResult("press_key") {
-                val button=input.jsonObject["button"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT");ensure()
+                val button=input.jsonObject["button"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT");ensure(); AccessibilityActionEffects.showOperation(context, "press_key")
                 val result=when(button){
                     "BACK"->RikkaAccessibilityService.global("back");"HOME"->RikkaAccessibilityService.global("home")
                     "RECENTS"->RikkaAccessibilityService.global("recents");"NOTIFICATIONS"->RikkaAccessibilityService.global("notifications")
@@ -165,7 +166,7 @@ fun createAndroidTextSystemTools(
             name = "open_system_panel", description = "Open notifications or quick settings through the accessibility service.",
             parameters = { obj(buildJsonObject { put("panel",buildJsonObject{put("type","string");put("enum",buildJsonArray{add("notifications");add("quick_settings")})}) },listOf("panel")) },
             needsApproval = { requireApproval }, execute = { input -> textResult("open_system_panel") {
-                val panel=input.jsonObject["panel"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT");ensure()
+                val panel=input.jsonObject["panel"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT");ensure(); AccessibilityActionEffects.showOperation(context, "open_system_panel")
                 RikkaAccessibilityService.global(panel);buildJsonObject{put("ok",true);put("tool","open_system_panel");put("panel",panel)}
             } },
         ),

@@ -6,6 +6,7 @@ import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 /** Package discovery and explicit app launch. Launching an app is approval-gated. */
 fun createAndroidAppControlTools(context: Context): List<Tool> = listOf(
@@ -29,6 +30,7 @@ fun createAndroidAppControlTools(context: Context): List<Tool> = listOf(
                 }.toString()))
             }
             if (action == "launch") {
+                AccessibilityActionEffects.showOperation(context, "launch_app")
                 val intent = pm.getLaunchIntentForPackage(packageName)
                     ?: return@Tool listOf(UIMessagePart.Text(buildJsonObject {
                         put("error", "NO_LAUNCH_ACTIVITY"); put("package_name", packageName)
