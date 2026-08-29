@@ -8,6 +8,8 @@
   <string name="about_page_website">Website</string>
   <string name="add">Add</string>
   <string name="app_name">RikkaHub</string>
+  <string name="accessibility_service_label">RikkaHub device control</string>
+  <string name="accessibility_service_description">Allow RikkaHub to read the current screen and perform taps, swipes, text input, and system actions.</string>
   <string name="asr_button_content_description">Speech Recognition</string>
   <string name="asr_button_stop">Stop</string>
   <string name="assistant_detail_basic_desc">Configure name, avatar, model, and parameters</string>
