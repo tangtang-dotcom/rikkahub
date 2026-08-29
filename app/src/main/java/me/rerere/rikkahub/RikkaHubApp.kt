@@ -30,6 +30,8 @@ import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.accessibility.RikkaAccessibilityKeeper
+import me.rerere.rikkahub.data.terminal.AndroidRootTerminalController
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.DatabaseUtil
@@ -56,6 +58,7 @@ class RikkaHubApp : Application() {
             workManagerFactory()
             modules(appModule, viewModelModule, dataSourceModule, repositoryModule)
         }
+        restoreProtectedAccessibility()
         this.createNotificationChannel()
 
         // set cursor window size to 32MB
@@ -89,6 +92,25 @@ class RikkaHubApp : Application() {
         incrementLaunchCount()
 
         // Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+    }
+
+    /** App 进程重建后重新执行 Eta 的 Root 保持路径，避免只依赖上一次内存中的 service instance。 */
+    private fun restoreProtectedAccessibility() {
+        get<AppScope>().launch(Dispatchers.IO) {
+            runCatching {
+                val settings = get<SettingsStore>().settingsFlowRaw.first()
+                if (!settings.rootTerminalEnabled || !settings.accessibilityProtectionEnabled) return@runCatching
+                AndroidRootTerminalController(cacheDir, filesDir).use { controller ->
+                    RikkaAccessibilityKeeper.ensureAvailable(
+                        this@RikkaHubApp,
+                        protectionEnabled = true,
+                        rootController = controller,
+                    )
+                }
+            }.onFailure {
+                Log.w(TAG, "restoreProtectedAccessibility failed", it)
+            }
+        }
     }
 
     private fun incrementLaunchCount() {
