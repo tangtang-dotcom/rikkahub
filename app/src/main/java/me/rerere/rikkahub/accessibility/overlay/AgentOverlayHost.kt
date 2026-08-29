@@ -20,6 +20,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
+import me.rerere.rikkahub.accessibility.internal.AndroidAgentLogger
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
@@ -39,7 +40,8 @@ internal object AgentOverlayHost {
 
     fun show(context: Context) {
         main.post {
-            val service = RikkaAccessibilityService.current() ?: return@post
+            try {
+                val service = RikkaAccessibilityService.current() ?: return@post
             if (orbView != null) return@post
             val wm = service.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@post
             val lifecycleOwner = OverlayOwner().also { it.start() }
@@ -81,7 +83,26 @@ internal object AgentOverlayHost {
                 lifecycleOwner.destroy(); owner = null; windowManager = null; return@post
             }
             orbView = orb
-            if (!collapsed.value) showBubble(wm, service)
+                if (!collapsed.value) showBubble(wm, service)
+            } catch (error: Throwable) {
+                // A transient overlay must never bring down AccessibilityService.
+                // In particular, Compose attaches asynchronously during traversal,
+                // so all setup failures need a guarded cleanup path here.
+                AndroidAgentLogger.warn {
+                    "Agent overlay setup failed; accessibility service remains alive " +
+                        "error=${error.javaClass.simpleName}: ${error.message}"
+                }
+                listOf(bubbleView, orbView, glowView).forEach { view ->
+                    view?.let { runCatching { windowManager?.removeView(it) } }
+                }
+                bubbleView = null
+                orbView = null
+                glowView = null
+                bubbleParams = null
+                windowManager = null
+                owner?.destroy()
+                owner = null
+            }
         }
     }
 
@@ -176,15 +197,10 @@ internal object AgentOverlayHost {
     }.getOrDefault(context.resources.displayMetrics.heightPixels)
 
     private fun setSavedStateOwnerTag(view: View, owner: SavedStateRegistryOwner) {
-        // ViewTreeSavedStateRegistryOwner is an Android-only API whose generated
-        // facade is not exposed consistently by all savedstate/KMP variants.
-        // Compose only needs the standard saved-state view-tree tag.
-        val tagId = view.resources.getIdentifier(
-            "view_tree_saved_state_registry_owner",
-            "id",
-            "androidx.savedstate",
-        )
-        if (tagId != 0) view.setTag(tagId, owner)
+        // The AndroidX savedstate-android artifact contains the correct setter, but
+        // its Android-only facade is not exposed to this Kotlin/KMP source set.
+        // The tiny Java bridge still calls the official API; do not guess a tag id.
+        SavedStateOwnerCompat.set(view, owner)
     }
 
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
