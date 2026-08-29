@@ -7,6 +7,7 @@ import android.graphics.Point
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +18,6 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -160,7 +160,7 @@ internal object AgentOverlayHost {
 
     private fun composeView(context: Context, content: @androidx.compose.runtime.Composable () -> Unit) = ComposeView(context).also { view ->
         view.setViewTreeLifecycleOwner(owner)
-        owner?.let { ViewTreeSavedStateRegistryOwner.set(view, it) }
+        owner?.let { setSavedStateOwnerTag(view, it) }
         view.setContent {
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             MiuixTheme(colors = if (night) darkColorScheme() else lightColorScheme()) {
@@ -173,6 +173,18 @@ internal object AgentOverlayHost {
     private fun realHeight(context: Context, wm: WindowManager): Int = runCatching {
         val point = Point(); wm.defaultDisplay.getRealSize(point); point.y
     }.getOrDefault(context.resources.displayMetrics.heightPixels)
+
+    private fun setSavedStateOwnerTag(view: View, owner: SavedStateRegistryOwner) {
+        // ViewTreeSavedStateRegistryOwner is an Android-only API whose generated
+        // facade is not exposed consistently by all savedstate/KMP variants.
+        // Compose only needs the standard saved-state view-tree tag.
+        val tagId = view.resources.getIdentifier(
+            "view_tree_saved_state_registry_owner",
+            "id",
+            "androidx.savedstate",
+        )
+        if (tagId != 0) view.setTag(tagId, owner)
+    }
 
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
