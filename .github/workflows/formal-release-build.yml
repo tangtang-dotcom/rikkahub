@@ -74,8 +74,33 @@ jobs:
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             printf '%s\n' "$GOOGLE_SERVICES_JSON" > app/google-services.json
           else
-            echo "Production Google Services secret is not configured; using the repository test configuration."
-            cp app/src/debug/google-services.json app/google-services.json
+            echo "Production Google Services secret is not configured; using a build-only test configuration."
+            cat > app/google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "rikkahub-formal-build",
+              "storage_bucket": "rikkahub-formal-build.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:0000000000000000",
+                  "android_client_info": { "package_name": "me.rerere.rikkahub" }
+                },
+                "api_key": [{ "current_key": "AIzaSyDUMMY_DUMMY_DUMMY_DUMMY_DUMMY" }]
+              },
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:1111111111111111",
+                  "android_client_info": { "package_name": "me.rerere.rikkahub.debug" }
+                },
+                "api_key": [{ "current_key": "AIzaSyDUMMY_DUMMY_DUMMY_DUMMY_DUMMY" }]
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON
           fi
 
           printf 'signing=%s\n' "$SIGNING_MODE" > formal-build-mode.txt
