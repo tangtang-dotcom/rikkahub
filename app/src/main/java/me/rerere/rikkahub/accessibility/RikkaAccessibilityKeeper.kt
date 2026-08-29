@@ -23,7 +23,10 @@ object RikkaAccessibilityKeeper {
             runCatching { controller.executeSync(command, timeoutMs = 5_000, mergeStderr = true) }
                 .getOrNull()?.let { it.exitCode == 0 && !it.timedOut } == true
         }, {
-            repeat(60) { if (RikkaAccessibilityService.isAvailable()) return@repeat; SystemClock.sleep(100) }
+            for (attempt in 0 until 60) {
+                if (RikkaAccessibilityService.isAvailable()) return@ensure true
+                SystemClock.sleep(100)
+            }
             RikkaAccessibilityService.isAvailable()
         })
         if (!result.available) error(result.code)

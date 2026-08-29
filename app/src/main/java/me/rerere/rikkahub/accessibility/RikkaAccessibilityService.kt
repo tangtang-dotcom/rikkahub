@@ -405,6 +405,8 @@ class RikkaAccessibilityService : AccessibilityService() {
     fun clickNode(snapshot: NodeSnapshot, index: Int): NodeActionResult =
         withValidatedIndexedNode(snapshot, index) { indexed ->
             val node = indexed.node
+            val bounds = clippedNodeBounds(node)
+            AccessibilityActionEffects.showAction(this, "tap", bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), 100L)
             val actionable = indexed.clickTarget?.resolveFor(node)
             if (indexed.clickTarget != null && actionable == null) {
                 NodeActionResult.failure(
@@ -432,6 +434,8 @@ class RikkaAccessibilityService : AccessibilityService() {
         durationMs: Long,
     ): NodeActionResult = withValidatedIndexedNode(snapshot, index) { indexed ->
         val node = indexed.node
+        val bounds = clippedNodeBounds(node)
+        AccessibilityActionEffects.showAction(this, "long_press", bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), durationMs)
         val actionable = indexed.longClickTarget?.resolveFor(node)
         if (indexed.longClickTarget != null && actionable == null) {
             NodeActionResult.failure(
