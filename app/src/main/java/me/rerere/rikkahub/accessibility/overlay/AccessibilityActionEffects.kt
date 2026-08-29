@@ -2,6 +2,8 @@ package me.rerere.rikkahub.accessibility.overlay
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.os.Handler
@@ -14,6 +16,7 @@ import android.view.animation.DecelerateInterpolator
 object AccessibilityActionEffects {
     private val h = Handler(Looper.getMainLooper())
     private var orb: Orb? = null
+    private var glow: Glow? = null
     private var wm: WindowManager? = null
     private var hide: Runnable? = null
 
@@ -24,8 +27,7 @@ object AccessibilityActionEffects {
             "long_press" -> GestureIndicator.showLongPress(c, x1, y1, ms.toInt())
             else -> GestureIndicator.showTap(c, x1, y1)
         }
-        hide?.let(h::removeCallbacks)
-        hide = Runnable { hideOrb() }.also { h.postDelayed(it, 900L.coerceAtLeast(ms + 250L)) }
+
     }
 
     fun showOrb(c: Context) {
@@ -34,6 +36,18 @@ object AccessibilityActionEffects {
             val s = me.rerere.rikkahub.accessibility.RikkaAccessibilityService.current() ?: return@post
             val manager = s.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@post
             val d = s.resources.displayMetrics.density
+            if (glow == null) {
+                val g = Glow(s)
+                val gp = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+                ).apply { gravity = Gravity.TOP or Gravity.START; title = "RikkaHubAccessibilityGlow" }
+                runCatching { manager.addView(g, gp) }.onSuccess { glow = g }
+            }
             val v = Orb(s)
             v.setOnClickListener { hideOrb() }
             val p = WindowManager.LayoutParams((72*d).toInt(), (72*d).toInt(),
@@ -59,6 +73,21 @@ object AccessibilityActionEffects {
             orb = null; val manager = wm; wm = null
             v.animate().alpha(0f).scaleX(.7f).scaleY(.7f).setDuration(180)
                 .withEndAction { runCatching { manager?.removeView(v) } }.start()
+        }
+    }
+
+    private class Glow(c: Context) : View(c) {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var phase = 0f
+        private val tick = object : Runnable { override fun run() { phase = (phase + .006f) % 1f; invalidate(); postDelayed(this, 16L) } }
+        init { setLayerType(View.LAYER_TYPE_SOFTWARE, null); post(tick) }
+        override fun onDetachedFromWindow() { removeCallbacks(tick); super.onDetachedFromWindow() }
+        override fun onDraw(c: Canvas) {
+            val e = 34f * resources.displayMetrics.density
+            p.style = Paint.Style.STROKE; p.strokeWidth = e
+            p.alpha = (45 * (.65f + .35f * ((kotlin.math.sin(phase * Math.PI * 2) + 1) / 2).toFloat())).toInt()
+            p.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), intArrayOf(0xFF2879FB.toInt(), 0xFFB14CFF.toInt(), 0xFF20D9C2), null, Shader.TileMode.MIRROR)
+            val i = e / 2f; c.drawRect(i, i, width - i, height - i, p); p.shader = null
         }
     }
 

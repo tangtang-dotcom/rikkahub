@@ -23,14 +23,11 @@ private fun textResult(name: String, block: () -> JsonObject): List<UIMessagePar
 private fun obj(properties: JsonObject = buildJsonObject {}, required: List<String> = emptyList()) =
     InputSchema.Obj(properties = properties, required = required)
 
-private fun actionResult(tool: String, result: RikkaAccessibilityService.NodeActionResult) = buildJsonObject {
+private fun actionResult(tool: String, result: me.rerere.rikkahub.accessibility.AccessibilityActionResult) = buildJsonObject {
     put("ok", result.ok)
     put("tool", tool)
-    result.code.takeIf { it.isNotEmpty() }?.let { put("code", it) }
-    result.message.takeIf { it.isNotEmpty() }?.let { put("message", it) }
     result.method.takeIf { it.isNotEmpty() }?.let { put("method", it) }
-    put("clipboard_written", result.clipboardWritten)
-    result.verified?.let { put("verified", it) }
+    result.verifiedBy?.let { put("verified_by", it) }
 }
 
 fun createAndroidTextSystemTools(
@@ -161,7 +158,7 @@ fun createAndroidTextSystemTools(
                     "QUICK_SETTINGS"->RikkaAccessibilityService.global("quick_settings");"ENTER"->RikkaAccessibilityService.pressEnter()
                     "PASTE"->{val clipboard=context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager;val text=clipboard.primaryClip?.takeIf{it.itemCount>0}?.getItemAt(0)?.coerceToText(context)?.toString() ?: error("CLIPBOARD_UNAVAILABLE");RikkaAccessibilityService.pasteFocused(text)}
                     else->error("INVALID_ARGUMENT")
-                };okAction("press_key",result.method)
+                }; actionResult("press_key", result)
             } },
         ),
         Tool(
