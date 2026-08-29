@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.accessibility.overlay
 
-import me.rerere.rikkahub.accessibility.overlay.toSafeLogToken
 
 internal sealed interface AgentEvent {
     fun toLogLine(): String
@@ -214,3 +213,14 @@ private fun String.extractResultCode(): String? {
         .minOrNull() ?: length
     return substring(valueStart, valueEnd)
 }
+
+internal fun String?.toSafeLogToken(): String =
+    this?.replace(Regex("[^A-Za-z0-9_.:-]"), "_") ?: "none"
+
+internal data class AgentTokenUsage(
+    val contextTokens: Int = 0,
+    val inputTokens: Int = 0,
+    val outputTokens: Int = 0,
+    val reasoningTokens: Int = 0,
+    val cachedTokens: Int = 0,
+)
