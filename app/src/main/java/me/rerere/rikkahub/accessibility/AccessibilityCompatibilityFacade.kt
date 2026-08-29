@@ -27,8 +27,16 @@ fun compatNodeBounds(id: String, index: Int): Rect = synchronized(compatSnapshot
 
 private fun snap(id: String) = synchronized(compatSnapshots) { compatSnapshots[id] } ?: error("ACCESSIBILITY_OBSERVATION_EXPIRED")
 private fun service() = RikkaAccessibilityService.current() ?: error("ACCESSIBILITY_UNAVAILABLE")
-private fun RikkaAccessibilityService.NodeActionResult.out(action: String) = AccessibilityActionResult(ok, action, code.takeIf { it.isNotBlank() }, message.takeIf { it.isNotBlank() }, method=method.takeIf { it.isNotBlank() }, verifiedBy=if (verified == true) "action" else null, clipboardWritten=clipboardWritten)
-private fun RikkaAccessibilityService.ScrollActionResult.out(action: String) = AccessibilityActionResult(ok, action, direction.name.lowercase(), moved, atBoundary, method, deltaX, deltaY, verifiedBy, elapsedMs)
+private fun RikkaAccessibilityService.NodeActionResult.out(action: String) = AccessibilityActionResult(
+    ok = ok, action = action, code = code.takeIf { it.isNotBlank() },
+    message = message.takeIf { it.isNotBlank() }, method = method.takeIf { it.isNotBlank() },
+    verifiedBy = if (verified == true) "action" else null, clipboardWritten = clipboardWritten,
+)
+private fun RikkaAccessibilityService.ScrollActionResult.out(action: String) = AccessibilityActionResult(
+    ok = ok, action = action, direction = direction.name.lowercase(), moved = moved,
+    atBoundary = atBoundary, method = method, deltaX = deltaX, deltaY = deltaY,
+    verifiedBy = verifiedBy, elapsedMs = elapsedMs,
+)
 
 fun compatExecute(id: String, index: Int, action: String, value: String?): AccessibilityActionResult {
     val s = service(); val o = snap(id)
