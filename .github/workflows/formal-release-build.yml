@@ -44,10 +44,41 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prepare signed release inputs
+        env:
+          KEY_BASE64: ${{ secrets.KEY_BASE64 }}
+          SIGNING_CONFIG: ${{ secrets.SIGNING_CONFIG }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          echo "${{ secrets.KEY_BASE64 }}" | base64 -d > app/app.key
-          echo "${{ secrets.SIGNING_CONFIG }}" > local.properties
-          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+          if [ -n "$KEY_BASE64" ] && [ -n "$SIGNING_CONFIG" ]; then
+            printf '%s' "$KEY_BASE64" | base64 -d > app/app.key
+            printf '%s\n' "$SIGNING_CONFIG" > local.properties
+            SIGNING_MODE=official
+          else
+            echo "Official signing secrets are not configured; generating a CI-only release keystore."
+            keytool -genkeypair -v \
+              -keystore app/app.key \
+              -storepass ci-release-password \
+              -keypass ci-release-password \
+              -alias rikkahub-ci-release \
+              -keyalg RSA -keysize 2048 -validity 3650 \
+              -dname "CN=RikkaHub CI Release, OU=CI, O=RikkaHub, C=US"
+            cat > local.properties <<'PROPS'
+          storeFile=app/app.key
+          storePassword=ci-release-password
+          keyAlias=rikkahub-ci-release
+          keyPassword=ci-release-password
+          PROPS
+            SIGNING_MODE=ci-only
+          fi
+
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s\n' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo "Production Google Services secret is not configured; using the repository test configuration."
+            cp app/src/debug/google-services.json app/google-services.json
+          fi
+
+          printf 'signing=%s\n' "$SIGNING_MODE" > formal-build-mode.txt
 
       - name: Run unit tests and release lint
         run: |
