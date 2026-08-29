@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.accessibility
 
+import me.rerere.rikkahub.device.ScrollDirection
 import android.graphics.Bitmap
 import android.graphics.Rect
 import java.io.File

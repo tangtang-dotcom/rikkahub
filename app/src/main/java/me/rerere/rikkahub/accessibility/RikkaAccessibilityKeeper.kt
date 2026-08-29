@@ -110,3 +110,13 @@ internal data class AccessibilityEnableResult(
         )
     }
 }
+
+fun RikkaAccessibilityKeeper.ensureAvailable(context: android.content.Context, protectionEnabled: Boolean, rootController: Any? = null) {
+    val result = ensureAvailable(
+        serviceAvailable = RikkaAccessibilityService::isAvailable,
+        protectionEnabled = { protectionEnabled },
+        requestRecovery = { false },
+        awaitServiceBinding = { RikkaAccessibilityService.isAvailable() },
+    )
+    if (!result.available) error(result.code.ifBlank { "ACCESSIBILITY_UNAVAILABLE" })
+}

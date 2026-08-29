@@ -33,7 +33,7 @@ import me.rerere.rikkahub.device.ScrollEvidence
 import me.rerere.rikkahub.device.ScrollEvidenceContract
 import me.rerere.rikkahub.device.ScrollMovementSource
 import me.rerere.rikkahub.device.RootScrollMotionContract
-import fuck.andes.core.AndroidAgentLogger
+import me.rerere.rikkahub.accessibility.internal.AndroidAgentLogger
 import java.util.ArrayDeque
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -1920,6 +1920,12 @@ class RikkaAccessibilityService : AccessibilityService() {
         val verified: Boolean? = null,
     ) {
         companion object {
+        fun observe(maxNodes: Int): AccessibilityObservation = compatObserve(maxNodes)
+        fun captureScreenshot(observationId: String?): AccessibilityScreenshot = compatCaptureScreenshot(observationId)
+        fun execute(observationId: String, index: Int, action: String, value: String?): AccessibilityActionResult = compatExecute(observationId, index, action, value)
+        fun nodeBounds(observationId: String, index: Int): android.graphics.Rect = compatNodeBounds(observationId, index)
+        fun global(action: String): AccessibilityActionResult = compatGlobal(action)
+        fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String?, coordinateSpace: String?): AccessibilityActionResult = compatGesture(action, x1, y1, x2, y2, durationMs, observationId, coordinateSpace)
             fun success(method: String, verified: Boolean? = null): NodeActionResult =
                 NodeActionResult(ok = true, method = method, verified = verified)
 
