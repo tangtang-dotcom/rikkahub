@@ -15,6 +15,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.ViewTreeSavedStateRegistryOwner
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -157,6 +160,7 @@ internal object AgentOverlayHost {
 
     private fun composeView(context: Context, content: @androidx.compose.runtime.Composable () -> Unit) = ComposeView(context).also { view ->
         view.setViewTreeLifecycleOwner(owner)
+        owner?.let { ViewTreeSavedStateRegistryOwner.set(view, it) }
         view.setContent {
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             MiuixTheme(colors = if (night) darkColorScheme() else lightColorScheme()) {
@@ -172,10 +176,22 @@ internal object AgentOverlayHost {
 
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
-    private class OverlayOwner : LifecycleOwner {
+    private class OverlayOwner : SavedStateRegistryOwner {
         private val registry = LifecycleRegistry(this)
+        private val savedStateController = SavedStateRegistryController.create(this)
         override val lifecycle: Lifecycle get() = registry
-        fun start() { registry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE); registry.handleLifecycleEvent(Lifecycle.Event.ON_START); registry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME) }
+        override val savedStateRegistry get() = savedStateController.savedStateRegistry
+
+        init {
+            savedStateController.performAttach()
+        }
+
+        fun start() {
+            registry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+            registry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            registry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        }
+
         fun destroy() {
             if (registry.currentState != Lifecycle.State.DESTROYED) {
                 registry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE); registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP); registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
