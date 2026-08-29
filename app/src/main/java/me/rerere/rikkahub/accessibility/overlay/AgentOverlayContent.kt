@@ -123,12 +123,12 @@ private val RainbowColors = listOf(
  * 屏幕四边氛围光窗口：全屏触摸穿透（FLAG_NOT_TOUCHABLE），不挡操作。
  * 窗口类型 TYPE_ACCESSIBILITY_OVERLAY，截图时被 takeScreenshotOfWindow 过滤，对 Agent 透明。
  * - RUNNING：半透明黑底压暗 + 彩虹色旋转 SweepGradient 光圈。
- * - PAUSED / FINISHED / FAILED：不绘制。
+ * - PAUSED：保留 Eta 的常驻光效；FINISHED / FAILED：不绘制。
  */
 @Composable
 internal fun AgentOverlayGlow(state: AgentOverlayState) {
     val phase = state.phase
-    if (phase != AgentOverlayPhase.RUNNING) return
+    if (phase == AgentOverlayPhase.FINISHED || phase == AgentOverlayPhase.FAILED) return
 
     val dimAlpha = 0.31f
     val transition = rememberInfiniteTransition(label = "glow")

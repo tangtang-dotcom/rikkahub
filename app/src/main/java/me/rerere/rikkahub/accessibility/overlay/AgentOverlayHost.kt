@@ -37,13 +37,21 @@ internal object AgentOverlayHost {
     private var bubbleParams: WindowManager.LayoutParams? = null
     private val state = mutableStateOf(AgentOverlayState.Initial.copy(phase = AgentOverlayPhase.PAUSED))
     private val collapsed = mutableStateOf(true)
+    private var showScheduled = false
 
     fun show(context: Context) {
-        main.post {
+        if (showScheduled || orbView != null) return
+        showScheduled = true
+        main.postDelayed({
+            if (orbView != null) {
+                showScheduled = false
+                return@postDelayed
+            }
+            showScheduled = false
             try {
-                val service = RikkaAccessibilityService.current() ?: return@post
-            if (orbView != null) return@post
-            val wm = service.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@post
+                val service = RikkaAccessibilityService.current() ?: return@postDelayed
+            if (orbView != null) return@postDelayed
+            val wm = service.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@postDelayed
             val lifecycleOwner = OverlayOwner().also { it.start() }
             owner = lifecycleOwner
             windowManager = wm
@@ -59,7 +67,7 @@ internal object AgentOverlayHost {
                 PixelFormat.TRANSLUCENT,
             ).apply { gravity = Gravity.TOP or Gravity.START }
             if (!runCatching { wm.addView(glow, glowParams) }.isSuccess) {
-                lifecycleOwner.destroy(); owner = null; windowManager = null; return@post
+                lifecycleOwner.destroy(); owner = null; windowManager = null; return@postDelayed
             }
             glowView = glow
             val orb = composeView(service) {
@@ -80,7 +88,7 @@ internal object AgentOverlayHost {
             }
             if (!runCatching { wm.addView(orb, orbParams) }.isSuccess) {
                 runCatching { wm.removeView(glow) }; glowView = null
-                lifecycleOwner.destroy(); owner = null; windowManager = null; return@post
+                lifecycleOwner.destroy(); owner = null; windowManager = null; return@postDelayed
             }
             orbView = orb
                 if (!collapsed.value) showBubble(wm, service)
@@ -103,7 +111,7 @@ internal object AgentOverlayHost {
                 owner?.destroy()
                 owner = null
             }
-        }
+        }, 350L)
     }
 
     fun showAction(context: Context, action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long) {
@@ -125,6 +133,7 @@ internal object AgentOverlayHost {
 
     fun hide() {
         main.post {
+            showScheduled = false
             val wm = windowManager
             listOf(bubbleView, orbView, glowView).forEach { it?.let { v -> runCatching { wm?.removeView(v) } } }
             bubbleView = null; orbView = null; glowView = null; bubbleParams = null; windowManager = null

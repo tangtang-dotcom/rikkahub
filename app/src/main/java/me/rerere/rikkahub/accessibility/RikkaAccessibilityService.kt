@@ -94,10 +94,10 @@ class RikkaAccessibilityService : AccessibilityService() {
     private val serviceToken = SERVICE_TOKENS.incrementAndGet()
 
     override fun onServiceConnected() {
-        // Match Eta's lifecycle: binding the service only publishes the instance.
-        // The Compose overlay is created lazily by showAction(), never while the
-        // system is still establishing the accessibility connection.
+        // Publish first; the overlay host delays window creation until the service
+        // is fully bound, while retaining Eta's always-visible orb/glow behavior.
         instance = this
+        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -735,6 +735,14 @@ class RikkaAccessibilityService : AccessibilityService() {
                 "NO_FOCUSED_EDITABLE",
                 "没有获得输入焦点的可编辑节点",
             )
+        val inputBounds = clippedNodeBounds(node)
+        AccessibilityActionEffects.showAction(
+            this,
+            "input_text",
+            inputBounds.centerX(), inputBounds.centerY(),
+            inputBounds.centerX(), inputBounds.centerY(),
+            100L,
+        )
         node.incrementalTextValidationError()?.let { error ->
             return@runNodeActionOnMainSync error
         }
