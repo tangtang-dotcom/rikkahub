@@ -11,7 +11,7 @@ private val compatSnapshots = mutableMapOf<String, RikkaAccessibilityService.Nod
 data class AccessibilityDisplaySize(val width: Int, val height: Int)
 data class AccessibilityObservation(val observationId: String, val packageName: String?, val truncated: Boolean, val nodes: List<AccessibilityNodeSnapshot>, val display: AccessibilityDisplaySize)
 data class AccessibilityNodeSnapshot(val index: Int, val className: String?, val text: String?, val contentDescription: String?, val clickable: Boolean, val editable: Boolean, val scrollable: Boolean, val enabled: Boolean, val left: Int, val top: Int, val right: Int, val bottom: Int)
-data class AccessibilityActionResult(val ok: Boolean, val action: String, val direction: String? = null, val moved: Boolean? = null, val atBoundary: Boolean? = null, val method: String? = null, val deltaX: Int? = null, val deltaY: Int? = null, val verifiedBy: String? = null, val elapsedMs: Long? = null)
+data class AccessibilityActionResult(val ok: Boolean, val action: String, val code: String? = null, val message: String? = null, val direction: String? = null, val moved: Boolean? = null, val atBoundary: Boolean? = null, val method: String? = null, val deltaX: Int? = null, val deltaY: Int? = null, val verifiedBy: String? = null, val elapsedMs: Long? = null, val clipboardWritten: Boolean = false)
 data class AccessibilityScreenshot(val uri: String, val width: Int, val height: Int)
 data class AccessibilityTextMatch(val text: String?, val contentDescription: String?, val className: String?, val left: Int, val top: Int, val right: Int, val bottom: Int)
 
@@ -27,7 +27,7 @@ fun compatNodeBounds(id: String, index: Int): Rect = synchronized(compatSnapshot
 
 private fun snap(id: String) = synchronized(compatSnapshots) { compatSnapshots[id] } ?: error("ACCESSIBILITY_OBSERVATION_EXPIRED")
 private fun service() = RikkaAccessibilityService.current() ?: error("ACCESSIBILITY_UNAVAILABLE")
-private fun RikkaAccessibilityService.NodeActionResult.out(action: String) = AccessibilityActionResult(ok, action, method=method.takeIf { it.isNotBlank() }, verifiedBy=if (verified == true) "action" else null)
+private fun RikkaAccessibilityService.NodeActionResult.out(action: String) = AccessibilityActionResult(ok, action, code.takeIf { it.isNotBlank() }, message.takeIf { it.isNotBlank() }, method=method.takeIf { it.isNotBlank() }, verifiedBy=if (verified == true) "action" else null, clipboardWritten=clipboardWritten)
 private fun RikkaAccessibilityService.ScrollActionResult.out(action: String) = AccessibilityActionResult(ok, action, direction.name.lowercase(), moved, atBoundary, method, deltaX, deltaY, verifiedBy, elapsedMs)
 
 fun compatExecute(id: String, index: Int, action: String, value: String?): AccessibilityActionResult {

@@ -87,7 +87,6 @@ class RikkaAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
-        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
