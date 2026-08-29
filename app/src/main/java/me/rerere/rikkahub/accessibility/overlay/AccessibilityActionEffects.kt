@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.WindowManager
+import android.os.Bundle
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -22,6 +23,11 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.*
+import androidx.savedstate.*
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.rerere.rikkahub.accessibility.RikkaAccessibilityService
@@ -32,6 +38,8 @@ object AccessibilityActionEffects {
     private var wm: WindowManager? = null
     private var glow: ComposeView? = null
     private var orb: ComposeView? = null
+    private var glowOwner: EtaOverlayOwner? = null
+    private var orbOwner: EtaOverlayOwner? = null
     private val ui = mutableStateOf(OverlayState())
 
     fun showAction(c: Context, action: String, x1: Int, y1: Int, x2: Int, y2: Int, ms: Long) {
@@ -45,26 +53,37 @@ object AccessibilityActionEffects {
         val manager = s.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@post
         wm = manager
         if (glow == null) {
-            val v = ComposeView(s).apply { setContent { EtaGlow(ui.value) } }
+            val owner = EtaOverlayOwner()
+            val v = ComposeView(s).apply { setViewTreeLifecycleOwner(owner); setViewTreeSavedStateRegistryOwner(owner); setViewTreeViewModelStoreOwner(owner); setContent { EtaGlow(ui.value) } }
             val p = WindowManager.LayoutParams(-1,-1,WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT)
                 .apply { gravity=Gravity.TOP or Gravity.START; title="EtaGlow" }
-            runCatching { manager.addView(v,p) }.onSuccess { glow=v }
+            runCatching { manager.addView(v,p) }.onSuccess { glow=v; glowOwner=owner }.onFailure { owner.destroy() }
         }
         if (orb == null) {
-            val v = ComposeView(s).apply { setContent { EtaPanel(ui, ::hideOrb) } }
+            val owner = EtaOverlayOwner()
+            val v = ComposeView(s).apply { setViewTreeLifecycleOwner(owner); setViewTreeSavedStateRegistryOwner(owner); setViewTreeViewModelStoreOwner(owner); setContent { EtaPanel(ui, ::hideOrb) } }
             val d=s.resources.displayMetrics.density
             val p=WindowManager.LayoutParams((238*d).toInt(),(300*d).toInt(),WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT)
                 .apply { gravity=Gravity.TOP or Gravity.END; x=(8*d).toInt(); y=(s.resources.displayMetrics.heightPixels*.40f).toInt(); title="EtaOrb" }
-            runCatching { manager.addView(v,p) }.onSuccess { orb=v }
+            runCatching { manager.addView(v,p) }.onSuccess { orb=v; orbOwner=owner }.onFailure { owner.destroy() }
         }
     }
 
     fun hideOrb() = handler.post {
         val m=wm; listOf(glow,orb).forEach { it?.let { v -> runCatching { m?.removeView(v) } } }
-        glow=null; orb=null; wm=null; ui.value=OverlayState()
+        glowOwner?.destroy(); orbOwner?.destroy(); glow=null; orb=null; glowOwner=null; orbOwner=null; wm=null; ui.value=OverlayState()
     }
+}
+
+private class EtaOverlayOwner : SavedStateRegistryOwner, ViewModelStoreOwner {
+    private val lr=LifecycleRegistry(this); private val sc=SavedStateRegistryController.create(this)
+    override val lifecycle: Lifecycle get()=lr
+    override val savedStateRegistry get()=sc.savedStateRegistry
+    override val viewModelStore=ViewModelStore()
+    init { sc.performAttach(); sc.performRestore(null as Bundle?); lr.currentState=Lifecycle.State.RESUMED }
+    fun destroy(){ lr.currentState=Lifecycle.State.DESTROYED; viewModelStore.clear() }
 }
 
 private data class OverlayState(val status:String="已连接",val phase:Int=0)
