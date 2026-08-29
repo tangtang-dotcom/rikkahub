@@ -29,6 +29,7 @@ object AccessibilityActionEffects {
     }
 
     fun showOrb(c: Context) {
+        EtaGlowOverlay.show(c)
         h.post {
             if (orb != null) return@post
             val s = me.rerere.rikkahub.accessibility.RikkaAccessibilityService.current() ?: return@post
@@ -53,6 +54,7 @@ object AccessibilityActionEffects {
     }
 
     fun hideOrb() {
+        EtaGlowOverlay.hide()
         h.post {
             hide?.let(h::removeCallbacks)
             val v = orb ?: return@post
