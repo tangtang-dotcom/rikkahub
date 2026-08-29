@@ -2,11 +2,11 @@ package me.rerere.rikkahub.accessibility
 
 /** 可在 JVM 中验证的节点身份指纹；viewId 不是列表项唯一标识。 */
 internal data class AccessibilityNodeIdentity(
+    val uniqueId: String,
     val windowId: Int,
     val packageName: String,
     val className: String,
     val viewId: String,
-    val uniqueId: String,
     val text: String,
     val description: String,
     val password: Boolean,
@@ -33,7 +33,7 @@ internal data class AccessibilityNodeIdentity(
  * 截断快照无法证明 text/desc 指纹在窗口其余部分不存在重复项。
  */
 internal object AccessibilityIdentityFreshnessPolicy {
-    /** JVM-facing compatibility contract: exactly one freshness signal may change per generation. */
+    // 保留 RikkaHub 现有 JVM 合约；核心判定仍使用 Eta 的唯一身份规则。
     fun canUseAfterContentChange(firstSignal: Boolean, secondSignal: Boolean, generationDelta: Int): Boolean =
         generationDelta == 1 && firstSignal != secondSignal
 

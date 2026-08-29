@@ -26,6 +26,13 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import me.rerere.rikkahub.accessibility.ScrollAxis
+import me.rerere.rikkahub.accessibility.ScrollAxisContract
+import me.rerere.rikkahub.accessibility.ScrollDirection
+import me.rerere.rikkahub.accessibility.ScrollEvidence
+import me.rerere.rikkahub.accessibility.ScrollEvidenceContract
+import me.rerere.rikkahub.accessibility.ScrollMovementSource
+import me.rerere.rikkahub.accessibility.RootScrollMotionContract
 import java.util.ArrayDeque
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -38,7 +45,6 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import org.json.JSONObject
-import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 class RikkaAccessibilityService : AccessibilityService() {
 
@@ -90,13 +96,11 @@ class RikkaAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
-        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         scrollEventExecutor.shutdownNow()
         super.onDestroy()
@@ -404,8 +408,6 @@ class RikkaAccessibilityService : AccessibilityService() {
     fun clickNode(snapshot: NodeSnapshot, index: Int): NodeActionResult =
         withValidatedIndexedNode(snapshot, index) { indexed ->
             val node = indexed.node
-            val bounds = clippedNodeBounds(node)
-            AccessibilityActionEffects.showAction(this, "tap", bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), 100L)
             val actionable = indexed.clickTarget?.resolveFor(node)
             if (indexed.clickTarget != null && actionable == null) {
                 NodeActionResult.failure(
@@ -433,8 +435,6 @@ class RikkaAccessibilityService : AccessibilityService() {
         durationMs: Long,
     ): NodeActionResult = withValidatedIndexedNode(snapshot, index) { indexed ->
         val node = indexed.node
-        val bounds = clippedNodeBounds(node)
-        AccessibilityActionEffects.showAction(this, "long_press", bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), durationMs)
         val actionable = indexed.longClickTarget?.resolveFor(node)
         if (indexed.longClickTarget != null && actionable == null) {
             NodeActionResult.failure(
@@ -1004,11 +1004,11 @@ class RikkaAccessibilityService : AccessibilityService() {
         if (unknownRelevantWindowIds.isNotEmpty()) {
             val expectedWindows = allWindows.size
             allWindows.forEach { window -> runCatching { window.recycle() } }
-            AccessibilityLog.warnThrottled("capture_screenshot") {
+            AccessibilityLog.warn(
                 "Agent accessibility action=capture_screenshot outcome=failed " +
                     "reason=unknown_relevant_window_during_exclusion " +
                     "windows=${unknownRelevantWindowIds.size}"
-            }
+            )
             return ScreenshotCaptureResult.blockedByUnknownWindow(
                 expectedWindows = expectedWindows,
                 windowIds = unknownRelevantWindowIds,
@@ -2296,7 +2296,7 @@ class RikkaAccessibilityService : AccessibilityService() {
     }
 
     companion object {
-        private const val CLIP_LABEL = "fuck_andes_agent"
+        private const val CLIP_LABEL = "rikkahub_agent"
         private const val WINDOW_POLL_FALLBACK_MS = 80L
         private const val MAX_UI_TREE_DEPTH = 24
         private const val UI_TREE_VISIT_MULTIPLIER = 8
@@ -2366,6 +2366,7 @@ class RikkaAccessibilityService : AccessibilityService() {
         private var instance: RikkaAccessibilityService? = null
 
         fun current(): RikkaAccessibilityService? = instance
+
         fun observe(maxNodes: Int = 120) = compatObserve(maxNodes)
         fun nodeBounds(id: String, index: Int) = compatNodeBounds(id, index)
         fun execute(id: String, index: Int, action: String, value: String? = null) = compatExecute(id, index, action, value)
