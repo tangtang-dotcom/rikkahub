@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import java.io.File
 import java.io.FileOutputStream
-import me.rerere.rikkahub.accessibility.overlay.GestureIndicator
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 
 private val compatSnapshots = mutableMapOf<String, RikkaAccessibilityService.NodeSnapshot>()
 
@@ -42,8 +42,8 @@ private fun RikkaAccessibilityService.ScrollActionResult.out(action: String) = A
 fun compatExecute(id: String, index: Int, action: String, value: String?): AccessibilityActionResult {
     val s = service(); val o = snap(id)
     return when (action) {
-        "tap" -> { val b=o.nodes.getOrNull(index)?.bounds ?: error("ACCESSIBILITY_NODE_NOT_FOUND"); GestureIndicator.showTap(s, b.centerX(), b.centerY()); s.clickNode(o,index).out(action) }
-        "long_press" -> { val b=o.nodes.getOrNull(index)?.bounds ?: error("ACCESSIBILITY_NODE_NOT_FOUND"); GestureIndicator.showLongPress(s, b.centerX(), b.centerY(), 800); s.longClickNode(o,index,800L).out(action) }
+        "tap" -> { val b=o.nodes.getOrNull(index)?.bounds ?: error("ACCESSIBILITY_NODE_NOT_FOUND"); val direct = s.clickNode(o,index); if (direct.ok) direct.out(action) else { AccessibilityActionEffects.showAction(s, action, b.centerX(), b.centerY(), b.centerX(), b.centerY(), 100L); s.gestureTap(b.centerX().toFloat(), b.centerY().toFloat(), 100L).out(action) } }
+        "long_press" -> { val b=o.nodes.getOrNull(index)?.bounds ?: error("ACCESSIBILITY_NODE_NOT_FOUND"); val direct = s.longClickNode(o,index,800L); if (direct.ok) direct.out(action) else { AccessibilityActionEffects.showAction(s, action, b.centerX(), b.centerY(), b.centerX(), b.centerY(), 800L); s.gestureTap(b.centerX().toFloat(), b.centerY().toFloat(), 800L).out(action) } }
         "input" -> s.setTextNode(o,index,value ?: "").out(action)
         "enter" -> s.imeEnter().out(action)
         "scroll" -> s.scrollNode(o,index,ScrollDirection.valueOf((value ?: error("direction is required")).uppercase())).out(action)
@@ -65,7 +65,7 @@ fun compatQueryText(text: String, includeDescription: Boolean, matchMode: String
     listOfNotNull(n.text.takeIf { it.isNotEmpty() }, n.desc.takeIf { includeDescription && it.isNotEmpty() }).any { if (matchMode == "exact") it == text else it.contains(text,true) }
 }?.let { n -> AccessibilityTextMatch(n.text,n.desc,n.className,n.bounds.left,n.bounds.top,n.bounds.right,n.bounds.bottom) }
 
-fun compatGesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String?, coordinateSpace: String?): AccessibilityActionResult { GestureIndicator.showSwipe(service(), x1, y1, x2, y2, durationMs.toInt()); return if (action == "swipe") service().gestureSwipe(x1.toFloat(),y1.toFloat(),x2.toFloat(),y2.toFloat(),durationMs).out(action) else service().gestureTap(x1.toFloat(),y1.toFloat(),durationMs).out(action) }
+fun compatGesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String?, coordinateSpace: String?): AccessibilityActionResult { AccessibilityActionEffects.showAction(service(), action, x1, y1, x2, y2, durationMs); return if (action == "swipe") service().gestureSwipe(x1.toFloat(),y1.toFloat(),x2.toFloat(),y2.toFloat(),durationMs).out(action) else service().gestureTap(x1.toFloat(),y1.toFloat(),durationMs).out(action) }
 
 fun compatCaptureScreenshot(observationId: String?): AccessibilityScreenshot {
     val s = service(); val r = s.captureScreenshotExcludingOverlays(); val b = r.bitmap ?: error("ACCESSIBILITY_SCREENSHOT_FAILED")

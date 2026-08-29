@@ -23,6 +23,8 @@ internal fun etaGestureTools(
             put("ok", result.ok)
             put("tool", tool)
             put("action", result.action)
+            result.code?.let { put("code", it) }
+            result.message?.let { put("message", it) }
             result.direction?.let { put("direction", it) }
             result.moved?.let { put("moved", it) }
             result.atBoundary?.let { put("at_boundary", it) }
@@ -124,9 +126,12 @@ internal fun etaGestureTools(
                 ?: error("observation_id is required")
             val index = args["index"]?.jsonPrimitive?.intOrNull ?: error("index is required")
             val value = if (withDirection) args["direction"]?.jsonPrimitive?.contentOrNull else null
-            val result = runCatching { RikkaAccessibilityService.execute(observationId, index, action, value) }
-                .getOrElse { failure ->
-                    if (action != "tap" && action != "long_press") throw failure
+            val direct = runCatching { RikkaAccessibilityService.execute(observationId, index, action, value) }
+                    .getOrElse { failure ->
+                        if (action != "tap" && action != "long_press") throw failure
+                        throw failure
+                    }
+                val result = if (direct.ok || (action != "tap" && action != "long_press")) direct else {
                     val bounds = RikkaAccessibilityService.nodeBounds(observationId, index)
                     RikkaAccessibilityService.gesture(action, bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), if (action == "long_press") args["duration_ms"]?.jsonPrimitive?.longOrNull ?: 800L else 100L, observationId, "screen")
                 }

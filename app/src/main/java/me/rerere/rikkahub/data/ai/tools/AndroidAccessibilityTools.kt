@@ -90,7 +90,7 @@ fun createAndroidAccessibilityTools(
             }
             action in setOf("back", "home", "recents", "notifications", "quick_settings") -> {
                 val r = RikkaAccessibilityService.global(action)
-                buildJsonObject { put("ok", r.ok); put("action", r.action) }
+                buildJsonObject { put("ok", r.ok); put("action", r.action); r.code?.let { put("code", it) }; r.message?.let { put("message", it) } }
             }
             action == "swipe" || action == "tap_area" -> {
                 val left = p["x1"]?.jsonPrimitive?.intOrNull ?: error("x1 is required")
@@ -103,21 +103,24 @@ fun createAndroidAccessibilityTools(
                     observationId = p["observation_id"]?.jsonPrimitive?.contentOrNull,
                     coordinateSpace = p["coordinate_space"]?.jsonPrimitive?.contentOrNull,
                 )
-                buildJsonObject { put("ok", r.ok); put("action", r.action) }
+                buildJsonObject { put("ok", r.ok); put("action", r.action); r.code?.let { put("code", it) }; r.message?.let { put("message", it) } }
             }
             else -> {
                 val index = p["node_index"]?.jsonPrimitive?.intOrNull ?: error("node_index is required")
                 val observationId = p["observation_id"]?.jsonPrimitive?.contentOrNull ?: error("observation_id is required")
                 val value = if (action == "scroll") p["direction"]?.jsonPrimitive?.contentOrNull
                     else p["text"]?.jsonPrimitive?.contentOrNull
-                val r = runCatching { RikkaAccessibilityService.execute(observationId, index, action, value) }
+                val direct = runCatching { RikkaAccessibilityService.execute(observationId, index, action, value) }
                     .getOrElse { failure ->
                         if (action != "tap" && action != "long_press") throw failure
-                        val bounds = RikkaAccessibilityService.nodeBounds(observationId, index)
-                        RikkaAccessibilityService.gesture(action, bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), if (action == "long_press") p["duration_ms"]?.jsonPrimitive?.longOrNull ?: 800L else 100L, observationId, "screen")
+                        throw failure
                     }
+                val r = if (direct.ok || (action != "tap" && action != "long_press")) direct else {
+                    val bounds = RikkaAccessibilityService.nodeBounds(observationId, index)
+                    RikkaAccessibilityService.gesture(action, bounds.centerX(), bounds.centerY(), bounds.centerX(), bounds.centerY(), if (action == "long_press") p["duration_ms"]?.jsonPrimitive?.longOrNull ?: 800L else 100L, observationId, "screen")
+                }
                 buildJsonObject {
-                    put("ok", r.ok); put("action", r.action); put("observation_id", observationId)
+                    put("ok", r.ok); put("action", r.action); r.code?.let { put("code", it) }; r.message?.let { put("message", it) }; put("observation_id", observationId)
                     r.direction?.let { put("direction", it) }; r.moved?.let { put("moved", it) }
                     r.atBoundary?.let { put("at_boundary", it) }; r.method?.let { put("method", it) }
                     r.deltaX?.let { put("delta_x", it) }; r.deltaY?.let { put("delta_y", it) }

@@ -34,6 +34,7 @@ import me.rerere.rikkahub.device.ScrollEvidenceContract
 import me.rerere.rikkahub.device.ScrollMovementSource
 import me.rerere.rikkahub.device.RootScrollMotionContract
 import me.rerere.rikkahub.accessibility.internal.AndroidAgentLogger
+import me.rerere.rikkahub.accessibility.overlay.AccessibilityActionEffects
 import java.util.ArrayDeque
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -94,14 +95,17 @@ class RikkaAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
+        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        AccessibilityActionEffects.hideOrb()
         clearCurrentInstance()
         scrollEventExecutor.shutdownNow()
         super.onDestroy()
