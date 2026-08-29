@@ -23,8 +23,14 @@ private fun textResult(name: String, block: () -> JsonObject): List<UIMessagePar
 private fun obj(properties: JsonObject = buildJsonObject {}, required: List<String> = emptyList()) =
     InputSchema.Obj(properties = properties, required = required)
 
-private fun okAction(tool: String, method: String? = null) = buildJsonObject {
-    put("ok", true); put("tool", tool); method?.let { put("method", it) }
+private fun actionResult(tool: String, result: RikkaAccessibilityService.NodeActionResult) = buildJsonObject {
+    put("ok", result.ok)
+    put("tool", tool)
+    result.code.takeIf { it.isNotEmpty() }?.let { put("code", it) }
+    result.message.takeIf { it.isNotEmpty() }?.let { put("message", it) }
+    result.method.takeIf { it.isNotEmpty() }?.let { put("method", it) }
+    put("clipboard_written", result.clipboardWritten)
+    result.verified?.let { put("verified", it) }
 }
 
 fun createAndroidTextSystemTools(
@@ -56,7 +62,7 @@ fun createAndroidTextSystemTools(
                     "replace" -> RikkaAccessibilityService.replaceText(o["observation_id"]?.jsonPrimitive?.contentOrNull, o["index"]?.jsonPrimitive?.intOrNull, text)
                     else -> error("INVALID_ARGUMENT")
                 }
-                okAction("input_text", result.method)
+                actionResult("input_text", result)
             } },
         ),
         Tool(
@@ -68,7 +74,7 @@ fun createAndroidTextSystemTools(
                 val o=input.jsonObject; val text=o["text"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT")
                 require(text.length <= 4_000) { "TEXT_TOO_LONG" }; ensure()
                 val result=RikkaAccessibilityService.replaceText(o["observation_id"]?.jsonPrimitive?.contentOrNull,o["index"]?.jsonPrimitive?.intOrNull,text)
-                okAction("replace_text",result.method)
+                actionResult("replace_text", result)
             } },
         ),
         Tool(
@@ -78,7 +84,7 @@ fun createAndroidTextSystemTools(
             needsApproval = { requireApproval },
             execute = { input -> textResult("clear_text") {
                 val o=input.jsonObject; ensure(); val result=RikkaAccessibilityService.clearText(o["observation_id"]?.jsonPrimitive?.contentOrNull,o["index"]?.jsonPrimitive?.intOrNull)
-                okAction("clear_text",result.method)
+                actionResult("clear_text", result)
             } },
         ),
         Tool(
@@ -105,7 +111,7 @@ fun createAndroidTextSystemTools(
             needsApproval = { requireApproval }, execute = { input -> textResult("paste_text") {
                 val text=input.jsonObject["text"]?.jsonPrimitive?.contentOrNull ?: error("INVALID_ARGUMENT")
                 require(text.length <= 20_000) { "TEXT_TOO_LONG" };ensure()
-                val result=RikkaAccessibilityService.pasteFocused(text);okAction("paste_text",result.method)
+                val result=RikkaAccessibilityService.pasteFocused(text);actionResult("paste_text", result)
             } },
         ),
         Tool(
