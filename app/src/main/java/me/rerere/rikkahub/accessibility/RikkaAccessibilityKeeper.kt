@@ -3,6 +3,7 @@ package me.rerere.rikkahub.accessibility
 import android.content.Context
 import android.os.SystemClock
 import android.util.Log
+import me.rerere.rikkahub.accessibility.internal.AndroidAgentLogger
 
 /**
  * 在 GUI 工具执行前确认 Eta 无障碍服务已经真实连接。

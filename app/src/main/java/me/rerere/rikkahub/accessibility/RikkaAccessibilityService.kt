@@ -1920,12 +1920,6 @@ class RikkaAccessibilityService : AccessibilityService() {
         val verified: Boolean? = null,
     ) {
         companion object {
-        fun observe(maxNodes: Int): AccessibilityObservation = compatObserve(maxNodes)
-        fun captureScreenshot(observationId: String?): AccessibilityScreenshot = compatCaptureScreenshot(observationId)
-        fun execute(observationId: String, index: Int, action: String, value: String?): AccessibilityActionResult = compatExecute(observationId, index, action, value)
-        fun nodeBounds(observationId: String, index: Int): android.graphics.Rect = compatNodeBounds(observationId, index)
-        fun global(action: String): AccessibilityActionResult = compatGlobal(action)
-        fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String?, coordinateSpace: String?): AccessibilityActionResult = compatGesture(action, x1, y1, x2, y2, durationMs, observationId, coordinateSpace)
             fun success(method: String, verified: Boolean? = null): NodeActionResult =
                 NodeActionResult(ok = true, method = method, verified = verified)
 
@@ -2303,6 +2297,22 @@ class RikkaAccessibilityService : AccessibilityService() {
     }
 
     companion object {
+        // Eta-compatible static entry points backed by the real accessibility service.
+        fun observe(maxNodes: Int): AccessibilityObservation = compatObserve(maxNodes)
+        fun captureScreenshot(observationId: String?): AccessibilityScreenshot = compatCaptureScreenshot(observationId)
+        fun execute(observationId: String, index: Int, action: String, value: String?): AccessibilityActionResult = compatExecute(observationId, index, action, value)
+        fun nodeBounds(observationId: String, index: Int): android.graphics.Rect = compatNodeBounds(observationId, index)
+        fun global(action: String): AccessibilityActionResult = compatGlobal(action)
+        fun gesture(action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long, observationId: String?, coordinateSpace: String?): AccessibilityActionResult = compatGesture(action, x1, y1, x2, y2, durationMs, observationId, coordinateSpace)
+        fun scroll(direction: String): AccessibilityActionResult = compatScroll(direction)
+        fun inputFocused(text: String): AccessibilityActionResult = compatInputFocused(text)
+        fun pasteFocused(text: String): AccessibilityActionResult = compatPasteFocused(text)
+        fun replaceText(observationId: String?, index: Int?, text: String): AccessibilityActionResult = compatReplaceText(observationId, index, text)
+        fun clearText(observationId: String?, index: Int?): AccessibilityActionResult = compatClearText(observationId, index)
+        fun pressEnter(): AccessibilityActionResult = compatPressEnter()
+        fun queryText(text: String, includeDescription: Boolean, matchMode: String): AccessibilityTextMatch? = compatQueryText(text, includeDescription, matchMode)
+        fun currentPackageName(): String? = compatCurrentPackageName()
+
         private const val CLIP_LABEL = "fuck_andes_agent"
         private const val WINDOW_POLL_FALLBACK_MS = 80L
         private const val MAX_UI_TREE_DEPTH = 24
