@@ -63,7 +63,7 @@ jobs:
               -keyalg RSA -keysize 2048 -validity 3650 \
               -dname "CN=RikkaHub CI Release, OU=CI, O=RikkaHub, C=US"
             cat > local.properties <<'PROPS'
-          storeFile=app/app.key
+          storeFile=app.key
           storePassword=ci-release-password
           keyAlias=rikkahub-ci-release
           keyPassword=ci-release-password
