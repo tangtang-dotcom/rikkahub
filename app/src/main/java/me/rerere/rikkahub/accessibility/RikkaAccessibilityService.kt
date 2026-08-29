@@ -94,10 +94,9 @@ class RikkaAccessibilityService : AccessibilityService() {
     private val serviceToken = SERVICE_TOKENS.incrementAndGet()
 
     override fun onServiceConnected() {
-        // Publish first; the overlay host delays window creation until the service
-        // is fully bound, while retaining Eta's always-visible orb/glow behavior.
+        // Eta does not create the runtime overlay when AccessibilityService binds.
+        // It reveals the overlay only after a foreground operation is accepted.
         instance = this
-        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

@@ -91,7 +91,8 @@ internal object AgentOverlayHost {
                 lifecycleOwner.destroy(); owner = null; windowManager = null; return@postDelayed
             }
             orbView = orb
-                if (!collapsed.value) showBubble(wm, service)
+            // Match Eta: an action reveals only the collapsed orb. The bubble is
+            // opened exclusively by the user's tap on the orb, never by a tool.
             } catch (error: Throwable) {
                 // A transient overlay must never bring down AccessibilityService.
                 // In particular, Compose attaches asynchronously during traversal,
@@ -115,8 +116,12 @@ internal object AgentOverlayHost {
     }
 
     fun showAction(context: Context, action: String, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Long) {
-        show(context)
         main.post {
+            // Rikka has no Eta AgentRuntimeService run boundary, so establish the
+            // same collapsed-at-operation-start invariant here. A foreground
+            // action must not inherit a stale expanded bubble from an earlier run.
+            if (orbView == null && bubbleView == null) collapsed.value = true
+            show(context)
             state.value = state.value.copy(phase = AgentOverlayPhase.RUNNING, status = AgentOverlayStatus.RunningTool(action))
             AgentHapticFeedback.perform(context, when (action) {
                 "long_press" -> AgentHapticFeedback.Type.LONG_PRESS
@@ -137,6 +142,7 @@ internal object AgentOverlayHost {
             val wm = windowManager
             listOf(bubbleView, orbView, glowView).forEach { it?.let { v -> runCatching { wm?.removeView(v) } } }
             bubbleView = null; orbView = null; glowView = null; bubbleParams = null; windowManager = null
+            collapsed.value = true
             owner?.destroy(); owner = null
         }
     }
