@@ -94,8 +94,10 @@ class RikkaAccessibilityService : AccessibilityService() {
     private val serviceToken = SERVICE_TOKENS.incrementAndGet()
 
     override fun onServiceConnected() {
+        // Match Eta's lifecycle: binding the service only publishes the instance.
+        // The Compose overlay is created lazily by showAction(), never while the
+        // system is still establishing the accessibility connection.
         instance = this
-        AccessibilityActionEffects.showOrb(this)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
