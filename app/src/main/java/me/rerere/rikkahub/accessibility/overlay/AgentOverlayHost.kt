@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Point
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -196,6 +197,11 @@ internal object AgentOverlayHost {
 
         init {
             savedStateController.performAttach()
+            // This host is a transient, non-Activity window, so it has no
+            // previously persisted state. The registry still must be marked
+            // restored before LifecycleRegistry dispatches ON_CREATE; otherwise
+            // Recreator throws from consumeRestoredStateForKey().
+            savedStateController.performRestore(Bundle())
         }
 
         fun start() {
